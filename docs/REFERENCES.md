@@ -109,6 +109,10 @@ Processing semantics are kept deterministic and non-mutating:
 - every Series-to-Series operation preserves axes, stable key and existing source metadata;
 - an ordered `processing_history` record stores operation names and user-controlled parameters without timestamps;
 - missing y values are not silently dropped; algorithms that cannot safely propagate them raise a processing error;
-- interpolation does not extrapolate in v0.1 and supports strictly increasing or decreasing source x while preserving the caller's requested target-grid order;
-- integration is signed by default so descending axes retain their mathematical orientation, with an explicit `absolute=True` option for magnitude-style area reporting;
-- arbitrary interpolation grids and array baselines are represented in provenance by deterministic SHA-256 digests while the transformed Series retains the actual numerical grid/data.
+- interpolation does not extrapolate in v0.1; both source and multi-point target grids must be strictly monotonic, while increasing and decreasing order are both supported;
+- `normalize(method="max")` requires a positive maximum; non-positive or complex traces use explicit alternatives such as `max_abs` rather than silently flipping sign;
+- area normalization records an explicit `area_mode`: `absolute` (default) scales by the positive trapezoidal integral of `abs(y)`, while `net` scales by the magnitude of the net signed/complex integral and can expose cancellation;
+- integration is signed/complex by default; `absolute=True` means positive absolute area `integral(abs(y), x)`, not merely `abs(integral(y, x))`;
+- baseline subtraction using another `Series` requires the same x grid and matching x/y axis names and units, preventing silent subtraction across incompatible physical quantities;
+- integration results carry point count, x orientation, axis names/units and a deterministic source-data SHA-256 in addition to optional key/label provenance;
+- interpolation grids and array/Series baselines are represented in provenance by deterministic SHA-256 digests while transformed Series retain the actual numerical data.
