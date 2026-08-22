@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Mapping
 from dataclasses import dataclass
 from math import isfinite
@@ -29,7 +30,6 @@ BaselineInput = Series | ArrayLike | float | complex
 _RAMAN_SHIFT_NAMES = {"ramanshift", "shift"}
 _INTENSITY_NAMES = {"intensity", "normalizedintensity"}
 _INVERSE_CM_UNITS = {"cm^-1", "cm-1", "1/cm", "cm**-1", "cm^(-1)"}
-
 _COUNT_UNITS = {"count", "counts", "ct", "cts"}
 _COUNT_RATE_UNITS = {
     "cps",
@@ -56,6 +56,7 @@ _ARBITRARY_UNITS = {
     "arbitraryunits",
 }
 _DIMENSIONLESS_UNITS = {"1", "dimensionless"}
+_RATIO_SAFE_NORMALIZATIONS = {"max", "max_abs", "area"}
 
 
 class RamanError(ValueError):
@@ -128,6 +129,22 @@ def _intensity_unit_signature(series: Series) -> tuple[str, str | None]:
             f"not {unit!r}"
         )
     return kind, canonical
+
+
+def _array_digest(values: np.ndarray) -> str:
+    contiguous = np.ascontiguousarray(values)
+    digest = hashlib.sha256()
+    digest.update(str(contiguous.dtype).encode("ascii"))
+    digest.update(str(contiguous.shape).encode("ascii"))
+    digest.update(contiguous.tobytes(order="C"))
+    return digest.hexdigest()
+
+
+def _series_data_digest(series: Series) -> str:
+    digest = hashlib.sha256()
+    digest.update(_array_digest(np.asarray(series.x)).encode("ascii"))
+    digest.update(_array_digest(np.asarray(series.y)).encode("ascii"))
+    return digest.hexdigest()
 
 
 def validate_raman_series(series: Series) -> None:
@@ -215,11 +232,9 @@ def _canonicalize_raman_series(series: Series) -> Series:
     """Return a temporary copy with equivalent Raman semantics canonicalized."""
     validate_raman_series(series)
     _, canonical_y_unit = _intensity_unit_signature(series)
-    y_name = (
-        "normalized_intensity"
-        if _semantic_token(series.y_axis.name) == "normalizedintensity"
-        else "intensity"
-    )
+    normalized = _semantic_token(series.y_axis.name) == "normalizedintensity"
+    y_name = "normalized_intensity" if normalized else "intensity"
+    y_label = "Normalized intensity" if normalized else (series.y_axis.label or "Intensity")
     return Series(
         x=series.x,
         y=series.y,
@@ -233,7 +248,7 @@ def _canonicalize_raman_series(series: Series) -> Series:
         y_axis=Axis(
             name=y_name,
             unit=canonical_y_unit,
-            label=series.y_axis.label,
+            label=y_label,
             metadata=series.y_axis.metadata_dict(),
         ),
         metadata=series.metadata_dict(),
@@ -514,7 +529,11 @@ class RamanBandMeasurement:
     source_key: str
     source_label: str
     source_sha256: str
+    window_sha256: str
+    shift_unit: str | None
+    intensity_unit: str | None
     n_points: int
+    integration_n_points: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -541,13 +560,71 @@ def _require_quantitative_spectrum(series: Series) -> None:
         )
 
 
+def _require_ratio_safe_normalization(series: Series) -> None:
+    method = series.y_axis.metadata.get("normalization_method")
+    if method == "minmax":
+        raise RamanError(
+            "Raman ratios are not computed from min-max-normalized spectra because "
+            "the additive shift changes peak-height and area ratios"
+        )
+    if _semantic_token(series.y_axis.name) == "normalizedintensity":
+        if method not in _RATIO_SAFE_NORMALIZATIONS:
+            raise RamanError(
+                "Raman ratios from normalized_intensity require known multiplicative "
+                "normalization provenance (max, max_abs, or area)"
+            )
+
+
+def _exact_band_series(
+    series: Series,
+    band: RamanBand,
+) -> tuple[Series, Series]:
+    """Return observed band points and an exact-boundary integration Series."""
+    x = np.asarray(series.x, dtype=np.float64)
+    if band.x_min_cm1 < x[0] or band.x_max_cm1 > x[-1]:
+        raise RamanError(
+            "RamanBand must be fully contained within the measured Raman-shift range"
+        )
+
+    try:
+        observed = crop(series, x_min=band.x_min_cm1, x_max=band.x_max_cm1)
+    except ProcessingError as exc:
+        raise RamanError(f"cannot measure Raman band: {exc}") from exc
+
+    observed_x = np.asarray(observed.x, dtype=np.float64)
+    observed_y = np.asarray(observed.y, dtype=np.float64)
+    integration_x = list(observed_x)
+    integration_y = list(observed_y)
+    source_y = np.asarray(series.y, dtype=np.float64)
+
+    if observed_x[0] > band.x_min_cm1:
+        left_y = float(np.interp(band.x_min_cm1, x, source_y))
+        integration_x.insert(0, band.x_min_cm1)
+        integration_y.insert(0, left_y)
+    if observed_x[-1] < band.x_max_cm1:
+        right_y = float(np.interp(band.x_max_cm1, x, source_y))
+        integration_x.append(band.x_max_cm1)
+        integration_y.append(right_y)
+
+    integration_series = Series(
+        x=np.asarray(integration_x, dtype=np.float64),
+        y=np.asarray(integration_y, dtype=np.float64),
+        label=series.label,
+        x_axis=series.x_axis,
+        y_axis=series.y_axis,
+        metadata=series.metadata_dict(),
+        key=series.key,
+    )
+    return observed, integration_series
+
+
 def measure_raman_band(
     series: Series,
     band: RamanBand,
     *,
     area_mode: RamanAreaMode = "net",
 ) -> RamanBandMeasurement:
-    """Measure direct peak height/position and trapezoidal area in an explicit window."""
+    """Measure observed peak height/position and exact-window trapezoidal area."""
     validate_raman_series(series)
     if not isinstance(band, RamanBand):
         raise TypeError("band must be a RamanBand")
@@ -555,24 +632,35 @@ def measure_raman_band(
         raise RamanError("area_mode must be 'absolute' or 'net'")
     _require_quantitative_spectrum(series)
 
+    observed, integration_series = _exact_band_series(series, band)
     try:
-        selected = crop(series, x_min=band.x_min_cm1, x_max=band.x_max_cm1)
-        area_result = integrate(selected, absolute=area_mode == "absolute")
+        area_result = integrate(
+            integration_series,
+            absolute=area_mode == "absolute",
+        )
     except ProcessingError as exc:
         raise RamanError(f"cannot measure Raman band: {exc}") from exc
 
-    y = np.asarray(selected.y, dtype=np.float64)
-    peak_index = int(np.argmax(y))
+    observed_y = np.asarray(observed.y, dtype=np.float64)
+    if np.isnan(observed_y).any():
+        raise RamanError(
+            "cannot measure Raman band: selected window contains missing y values"
+        )
+    peak_index = int(np.argmax(observed_y))
     return RamanBandMeasurement(
         band=band,
-        peak_position_cm1=float(selected.x[peak_index]),
-        peak_intensity=float(y[peak_index]),
+        peak_position_cm1=float(observed.x[peak_index]),
+        peak_intensity=float(observed_y[peak_index]),
         area=float(area_result.value),
         area_mode=area_mode,
         source_key=series.key,
         source_label=series.label,
-        source_sha256=area_result.source_sha256,
-        n_points=selected.n_points,
+        source_sha256=_series_data_digest(series),
+        window_sha256=area_result.source_sha256,
+        shift_unit=series.x_axis.unit,
+        intensity_unit=series.y_axis.unit,
+        n_points=observed.n_points,
+        integration_n_points=integration_series.n_points,
     )
 
 
@@ -587,11 +675,8 @@ def raman_ratio(
     """Return a peak-height or direct-band-area ratio for explicit windows."""
     if metric not in {"height", "area"}:
         raise RamanError("metric must be 'height' or 'area'")
-    if series.y_axis.metadata.get("normalization_method") == "minmax":
-        raise RamanError(
-            "Raman ratios are not computed from min-max-normalized spectra because "
-            "the additive shift changes peak-height and area ratios"
-        )
+    validate_raman_series(series)
+    _require_ratio_safe_normalization(series)
 
     numerator = measure_raman_band(series, numerator_band, area_mode=area_mode)
     denominator = measure_raman_band(series, denominator_band, area_mode=area_mode)
