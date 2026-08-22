@@ -35,11 +35,12 @@ def export_figure(
     dpi: int | None = None,
     transparent: bool | None = None,
 ) -> Path:
-    """Export one figure as PNG, SVG, or PDF without changing its bounding box.
+    """Export one figure as PNG, SVG, or PDF without changing live figure state.
 
     ``bbox_inches='tight'`` is deliberately not used: trimming would change the
     publication figure's requested physical width/height.  When ``spec`` is supplied,
-    the figure canvas is reset to that exact physical size before export.
+    its physical size is applied only for the save operation and the figure's original
+    size is restored afterwards so preview and export dimensions remain independent.
     """
     if not isinstance(figure, Figure):
         raise TypeError("figure must be a matplotlib.figure.Figure")
@@ -49,6 +50,12 @@ def export_figure(
     output_path = Path(path)
     output_format = _resolve_format(output_path, format)
     export = ExportSpec() if spec is None else spec.export
+    output_dpi = export.dpi if dpi is None else int(dpi)
+    if output_dpi <= 0:
+        raise VisualizationError("export dpi must be greater than zero")
+    output_transparent = export.transparent if transparent is None else bool(transparent)
+
+    original_size = tuple(float(value) for value in figure.get_size_inches())
     if spec is not None:
         figure.set_size_inches(
             spec.layout.figure_width_in,
@@ -56,21 +63,20 @@ def export_figure(
             forward=True,
         )
 
-    output_dpi = export.dpi if dpi is None else int(dpi)
-    if output_dpi <= 0:
-        raise VisualizationError("export dpi must be greater than zero")
-    output_transparent = export.transparent if transparent is None else bool(transparent)
-
     rc = {
         "svg.fonttype": export.svg_fonttype,
         "pdf.fonttype": export.pdf_fonttype,
     }
-    with mpl.rc_context(rc):
-        figure.savefig(
-            output_path,
-            format=output_format,
-            dpi=output_dpi,
-            transparent=output_transparent,
-            bbox_inches=None,
-        )
+    try:
+        with mpl.rc_context(rc):
+            figure.savefig(
+                output_path,
+                format=output_format,
+                dpi=output_dpi,
+                transparent=output_transparent,
+                bbox_inches=None,
+            )
+    finally:
+        if spec is not None:
+            figure.set_size_inches(*original_size, forward=True)
     return output_path
