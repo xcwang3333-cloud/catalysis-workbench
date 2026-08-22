@@ -51,6 +51,7 @@ jobs:
           python -m venv .venv-smoke
           .venv-smoke/bin/python -m pip install --upgrade pip
           .venv-smoke/bin/python -m pip install dist/catalysis_workbench-*.whl
+          .venv-smoke/bin/python -m pip check
 
       - name: Smoke documented public API from installed wheel
         run: .venv-smoke/bin/python tests/installed_api_smoke.py
