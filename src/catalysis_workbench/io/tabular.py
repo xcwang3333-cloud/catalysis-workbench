@@ -95,8 +95,9 @@ def _numeric_values(frame: pd.DataFrame, index: int, *, role: str, column: objec
     converted = pd.to_numeric(source, errors="coerce")
     invalid = source.notna() & converted.isna()
     if invalid.any():
-        rows = [int(row) for row in invalid[invalid].index[:5]]
-        examples = [source.loc[row] for row in invalid[invalid].index[:5]]
+        bad_index = invalid[invalid].index[:5]
+        rows = [int(row) for row in bad_index]
+        examples = [source.loc[row] for row in bad_index]
         raise TabularReadError(
             f"{role} column {column!r} contains non-numeric values at rows {rows}: {examples}"
         )
@@ -105,9 +106,9 @@ def _numeric_values(frame: pd.DataFrame, index: int, *, role: str, column: objec
     return converted.to_numpy()
 
 
-def _series_key(path: Path, sheet: str | int | None, x_index: int, y_index: int) -> str:
+def _series_key(path: Path, sheet: str | None, x_index: int, y_index: int) -> str:
     """Return a deterministic non-display key based on source coordinates."""
-    sheet_token = "table" if sheet is None else str(sheet)
+    sheet_token = "table" if sheet is None else sheet
     return f"{path.name}::{sheet_token}::c{x_index}->c{y_index}"
 
 
@@ -115,7 +116,7 @@ def _frame_to_series(
     frame: pd.DataFrame,
     *,
     path: Path,
-    sheet: str | int | None,
+    sheet: str | None,
     x: ColumnRef,
     y: ColumnRef | Sequence[ColumnRef],
     labels: ColumnMap | None,
@@ -154,7 +155,7 @@ def _frame_to_series(
         source_metadata: dict[str, Any] = {
             "file_name": path.name,
             "file_suffix": path.suffix.lower(),
-            "sheet": None if sheet is None else str(sheet),
+            "sheet": sheet,
             "x_column": str(x_column),
             "y_column": str(y_column),
             "x_column_index": x_index,
@@ -189,16 +190,48 @@ def _dataset(
     *,
     path: Path,
     name: str | None,
-    sheets: Sequence[str | int | None],
+    sheets: Sequence[str | None],
     metadata: Mapping[str, Any] | None,
 ) -> Dataset:
     dataset_metadata: dict[str, Any] = dict(metadata or {})
     dataset_metadata["source"] = {
         "file_name": path.name,
         "file_suffix": path.suffix.lower(),
-        "sheets": tuple(None if sheet is None else str(sheet) for sheet in sheets),
+        "sheets": tuple(sheets),
     }
     return Dataset(series=tuple(series), name=name or path.stem, metadata=dataset_metadata)
+
+
+def _resolve_excel_sheets(
+    available: Sequence[str], selection: str | int | Sequence[str | int] | None
+) -> tuple[str, ...]:
+    if selection is None:
+        selected = tuple(available)
+    else:
+        requested: tuple[str | int, ...]
+        if isinstance(selection, (str, int)):
+            requested = (selection,)
+        else:
+            requested = tuple(selection)
+        selected_list: list[str] = []
+        for item in requested:
+            if isinstance(item, int):
+                if item < 0 or item >= len(available):
+                    raise TabularReadError(
+                        f"Excel sheet position {item} is out of range for {len(available)} sheets"
+                    )
+                selected_list.append(available[item])
+            elif item in available:
+                selected_list.append(item)
+            else:
+                raise TabularReadError(
+                    f"Excel sheet {item!r} was not found. Available sheets: {', '.join(available)}"
+                )
+        selected = tuple(selected_list)
+
+    if len(selected) != len(set(selected)):
+        raise TabularReadError("The same Excel sheet was selected more than once")
+    return selected
 
 
 def read_csv(
@@ -306,36 +339,30 @@ def read_excel(
 ) -> Dataset:
     """Read one or several Excel sheets and combine selected curves in one Dataset."""
     source = Path(path)
-    frames = pd.read_excel(
-        source,
-        sheet_name=sheet_name,
-        header=header,
-        skiprows=skiprows,
-        na_values=na_values,
-    )
-
-    if isinstance(frames, pd.DataFrame):
-        sheet_items: list[tuple[str | int | None, pd.DataFrame]] = [(sheet_name, frames)]
-    else:
-        sheet_items = list(frames.items())
-
-    all_series: list[Series] = []
-    sheets: list[str | int | None] = []
-    for sheet, frame in sheet_items:
-        sheets.append(sheet)
-        all_series.extend(
-            _frame_to_series(
-                frame,
-                path=source,
-                sheet=sheet,
-                x=x,
-                y=y,
-                labels=labels,
-                units=units,
-                axis_labels=axis_labels,
-                axis_names=axis_names,
+    with pd.ExcelFile(source) as workbook:
+        sheets = _resolve_excel_sheets(workbook.sheet_names, sheet_name)
+        all_series: list[Series] = []
+        for sheet in sheets:
+            frame = pd.read_excel(
+                workbook,
+                sheet_name=sheet,
+                header=header,
+                skiprows=skiprows,
+                na_values=na_values,
             )
-        )
+            all_series.extend(
+                _frame_to_series(
+                    frame,
+                    path=source,
+                    sheet=sheet,
+                    x=x,
+                    y=y,
+                    labels=labels,
+                    units=units,
+                    axis_labels=axis_labels,
+                    axis_names=axis_names,
+                )
+            )
 
     return _dataset(all_series, path=source, name=name, sheets=sheets, metadata=metadata)
 
