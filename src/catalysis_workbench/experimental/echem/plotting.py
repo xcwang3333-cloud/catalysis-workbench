@@ -22,10 +22,10 @@ from catalysis_workbench.visualization import (
 )
 
 from .lsv import (
-    LSVError,
     _CURRENT_DENSITY_TO_A_CM2,
     _CURRENT_TO_A,
     _POTENTIAL_TO_V,
+    LSVError,
     _compact_unit,
 )
 
