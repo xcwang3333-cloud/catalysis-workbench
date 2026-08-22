@@ -21,7 +21,13 @@ from catalysis_workbench.visualization import (
     render_curves,
 )
 
-from .lsv import LSVError
+from .lsv import (
+    LSVError,
+    _CURRENT_DENSITY_TO_A_CM2,
+    _CURRENT_TO_A,
+    _POTENTIAL_TO_V,
+    _compact_unit,
+)
 
 
 def _series_tuple(data: Series | Dataset) -> tuple[Series, ...]:
@@ -41,10 +47,28 @@ def _validate_lsv_axes(series: Sequence[Series]) -> None:
                 "LSV plotting requires x_axis.name='potential'; "
                 f"got {item.x_axis.name!r}"
             )
-        if item.y_axis.name.casefold() not in {"current", "current_density"}:
+        potential_unit = _compact_unit(item.x_axis.unit)
+        if potential_unit not in _POTENTIAL_TO_V:
+            raise LSVError(
+                "LSV plotting requires potential units V or mV; "
+                f"got {item.x_axis.unit!r}"
+            )
+
+        y_name = item.y_axis.name.casefold()
+        if y_name not in {"current", "current_density"}:
             raise LSVError(
                 "LSV plotting requires y_axis.name='current' or 'current_density'; "
                 f"got {item.y_axis.name!r}"
+            )
+        y_unit = _compact_unit(item.y_axis.unit)
+        supported_units = (
+            _CURRENT_TO_A if y_name == "current" else _CURRENT_DENSITY_TO_A_CM2
+        )
+        if y_unit not in supported_units:
+            quantity = "current" if y_name == "current" else "current density"
+            raise LSVError(
+                f"LSV plotting requires a supported {quantity} unit; "
+                f"got {item.y_axis.unit!r}"
             )
 
 
@@ -55,8 +79,8 @@ def _potential_axis_label(axis: Axis, *, unit_format: str) -> str:
 
     base = axis.label or axis.name
     reference_name = str(reference).strip()
-    if not axis.unit or unit_format == "none":
-        return base
+    if unit_format == "none":
+        return f"{base} vs {reference_name}"
     if unit_format == "parentheses":
         return f"{base} ({axis.unit} vs {reference_name})"
     if unit_format == "slash":
@@ -80,7 +104,8 @@ def plot_lsv(
 
     ``None`` axis labels inherit automatic electrochemical labels.  Explicit strings,
     including ``""``, are preserved exactly.  Potential reference metadata such as
-    ``reference="RHE"`` is rendered as ``Potential (V vs RHE)`` by default.
+    ``reference="RHE"`` is rendered as ``Potential (V vs RHE)`` by default and remains
+    visible even when the global unit-display format is disabled.
     """
     series = _series_tuple(data)
     _validate_lsv_axes(series)
