@@ -21,6 +21,7 @@ from .xrd import (
     PeakAnnotation,
     XRDError,
     XRDReferencePattern,
+    _canonicalize_xrd_series,
     stack_xrd_dataset,
     validate_xrd_series,
 )
@@ -34,6 +35,17 @@ def _series_tuple(data: Series | Dataset) -> tuple[Series, ...]:
             raise XRDError("cannot plot an empty XRD Dataset")
         return tuple(data)
     raise TypeError("data must be a Series or Dataset")
+
+
+def _canonicalize_render_data(data: Series | Dataset) -> Series | Dataset:
+    """Canonicalize equivalent XRD axis spellings on temporary render copies."""
+    if isinstance(data, Series):
+        return _canonicalize_xrd_series(data)
+    return Dataset(
+        series=tuple(_canonicalize_xrd_series(item) for item in data),
+        name=data.name,
+        metadata=data.metadata_dict(),
+    )
 
 
 def _xrd_x_label(unit_format: str) -> str:
@@ -120,15 +132,21 @@ def _reference_layout(
     height: float,
     gap: float,
 ) -> tuple[float, ...]:
-    values = (float(base), float(height), float(gap))
+    base_value = float(base)
+    height_value = float(height)
+    gap_value = float(gap)
+    values = (base_value, height_value, gap_value)
     if any(not isfinite(value) for value in values):
         raise XRDError("reference_base, reference_height, and reference_gap must be finite")
-    if base < 0 or height <= 0 or gap < 0:
+    if base_value < 0 or height_value <= 0 or gap_value < 0:
         raise XRDError(
             "reference_base/gap must be non-negative and reference_height positive"
         )
-    rows = tuple(base + index * (height + gap) for index in range(count))
-    if rows and rows[-1] + height > 1:
+    rows = tuple(
+        base_value + index * (height_value + gap_value)
+        for index in range(count)
+    )
+    if rows and rows[-1] + height_value > 1:
         raise XRDError("reference stick bands do not fit inside the axes height")
     return rows
 
@@ -229,7 +247,13 @@ def plot_xrd(
             raise XRDError("stack_step requires a multi-pattern Dataset")
         render_data = stack_xrd_dataset(data, step=stack_step, start=stack_start)
 
+    # Validation accepts several common XRD spellings, while the generic renderer
+    # intentionally requires exact semantic signatures. Canonicalize only temporary
+    # render copies so equivalent 2θ/intensity spellings overlay without weakening the
+    # shared renderer's physical-compatibility guard.
+    render_data = _canonicalize_render_data(render_data)
     rendered_series = _series_tuple(render_data)
+
     resolved_spec = get_preset(preset) if spec is None else spec
     if not isinstance(resolved_spec, FigureSpec):
         raise TypeError("spec must be a FigureSpec")
