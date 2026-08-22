@@ -29,6 +29,7 @@ Before implementing a scientific or visualization module:
 | XAS | `xraypy/xraylarch` | Mature X-ray spectroscopy/XAS processing ecosystem. | Reference/dependency candidate for XANES/EXAFS algorithms; CatalysisWorkbench should emphasize comparison, result integration and publication figures rather than replace the mature XAS stack. |
 | Electronic structure | `romerogroup/pyprocar` | Electronic-structure parsing/visualization, including projected electronic data. | Reference for DOS/PDOS parsing and projection-selection concepts in v0.6. |
 | Chemical bonding | `JaGeo/LobsterPy` | Analysis of LOBSTER bonding output. | Reference/dependency candidate for COHP/ICOHP parsing and bonding analysis in v0.6. |
+| Matplotlib extensions | `nschloe/matplotx` | Small MIT-licensed collection of Matplotlib styles and extensions. | Reference for keeping style/palette helpers small and composable. No v0.1 dependency is required because the needed curve controls are represented directly in `FigureSpec`. |
 
 ## Core data-model decision for v0.1
 
@@ -116,3 +117,41 @@ Processing semantics are kept deterministic and non-mutating:
 - baseline subtraction using another `Series` requires the same x grid and matching x/y axis names and units, preventing silent subtraction across incompatible physical quantities;
 - integration results carry point count, x orientation, axis names/units and a deterministic source-data SHA-256 in addition to optional key/label provenance;
 - interpolation grids and array/Series baselines are represented in provenance by deterministic SHA-256 digests while transformed Series retain the actual numerical data.
+
+## Publication visualization decision for v0.1
+
+The shared visualization layer was designed after a focused survey of `garrettj403/SciencePlots`, `songfeitong/pretty-lattice`, `nschloe/matplotx`, and Matplotlib's own figure/artist model.
+
+### Prior-art conclusions
+
+- **SciencePlots (MIT)** organizes publication defaults as small style sheets that can be combined, for example a general `science` style with journal-specific overrides. Its base style uses compact physical figure sizes, inward ticks, minor ticks, thin spines, frame-free legends, and a controlled color cycle. CatalysisWorkbench adopts the preset/template idea, but does **not** make global `plt.style` state or LaTeX a requirement. Important values remain explicit fields so a GUI can edit them one by one.
+- **Pretty Lattice (MIT)** treats visualization as a separate concern from scientific analysis and keeps export settings independent from the interactive preview viewport. Its export design explicitly separates visible scene state from export size/quality. CatalysisWorkbench adopts this architectural boundary: scientific data remain in `core`/domain modules, while `FigureSpec` is renderer state; exact export size is independent of any future GUI window size.
+- **matplotx (MIT)** demonstrates that useful Matplotlib additions can stay lightweight instead of becoming a second plotting framework. CatalysisWorkbench therefore keeps Matplotlib as the only v0.1 rendering backend and adds no extra style dependency.
+
+### Figure contract
+
+- `FigureSpec` is the complete redraw recipe and round-trips through plain dictionaries for future GUI persistence.
+- `LayoutSpec` distinguishes whole-figure width/height from the physical axes drawing rectangle. Margins, optional axes width/height, and optional axes width:height ratio are specified in inches and resolved before rendering.
+- `PlotStyle` contains typography, line/marker defaults, spines, ticks, legend behavior, axis-unit label formatting, and color cycle.
+- `SeriesStyle` is addressed only by stable `Series.key`, never by display label, so repeated catalysts with identical visible labels can still be styled independently.
+- `AnnotationSpec` represents text in data or normalized axes coordinates; richer arrows/shapes can be added later without changing the curve renderer contract.
+- `ExportSpec` controls DPI/transparency plus SVG/PDF font handling; editable vector text is preferred by default.
+
+### Renderer and scientific-safety rules
+
+- `render_curves()` accepts one `Series` or one ordered `Dataset`, returns `(fig, ax)`, and never calls `plt.show()`.
+- The implementation does not use pyplot or a GUI figure manager; it constructs a Matplotlib `Figure` with an Agg canvas so headless CI and later programmatic composition use the same renderer.
+- Several curves may share one axes only when x-axis names/units and y-axis names/units match. This prevents silent overlay of, for example, volts with millivolts or total current with current density.
+- Complex x/y arrays are rejected by the generic renderer instead of allowing Matplotlib to silently discard an imaginary component. EIS will later provide an explicit domain projection such as Nyquist/Bode.
+- NaN values remain line gaps and are not silently deleted.
+- Core `Axis` keeps semantic `label` and `unit` separate; `format_axis_label()` in visualization decides whether the rendered form is `Label (unit)`, `Label / unit`, or label-only.
+- Matplotlib rc parameters are changed only inside a local context and explicit artist properties are used for the publication-critical settings.
+
+### Exact physical export
+
+- PNG, SVG, and PDF use the requested figure width/height. PNG pixel dimensions are therefore figure inches × requested DPI.
+- `bbox_inches='tight'` is intentionally **not** the default. Although SciencePlots uses tight save bounds, tight trimming changes the final physical canvas dimensions and conflicts with CatalysisWorkbench's explicit publication-size contract; users should instead control margins/axes geometry directly.
+- SVG defaults to text elements rather than paths and PDF defaults to TrueType font embedding where Matplotlib supports it, keeping downstream vector editing practical.
+- Export does not close the figure, which is necessary for iterative redraw/export in the future interactive editor.
+
+Generic v0.1 presets are `publication`, `compact`, and `wide`. Journal-specific presets can be registered later without changing renderer internals.
