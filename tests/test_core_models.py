@@ -41,6 +41,20 @@ def test_series_coerces_real_numeric_input_and_detaches_source_memory():
         series.y[0] = 1.0
 
 
+def test_series_key_is_keyword_only_and_preserves_legacy_positional_axes():
+    x_axis = Axis("potential", unit="V")
+    y_axis = Axis("current", unit="mA")
+    metadata = {"source": "legacy-positional-call"}
+
+    series = Series([0, 1], [2, 3], "A", x_axis, y_axis, metadata, key="a")
+
+    assert series.label == "A"
+    assert series.x_axis == x_axis
+    assert series.y_axis == y_axis
+    assert series.metadata["source"] == "legacy-positional-call"
+    assert series.key == "a"
+
+
 def test_series_backing_arrays_cannot_be_made_writeable():
     series = Series([0, 1], [2, 3])
 
