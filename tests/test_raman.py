@@ -28,6 +28,7 @@ def _spectrum(
     x_unit="cm^-1",
     y_name="intensity",
     y_unit="counts",
+    y_metadata=None,
 ):
     return Series(
         x=x,
@@ -35,7 +36,12 @@ def _spectrum(
         label=key,
         key=key,
         x_axis=Axis(x_name, unit=x_unit, label="Raman shift"),
-        y_axis=Axis(y_name, unit=y_unit, label="Intensity"),
+        y_axis=Axis(
+            y_name,
+            unit=y_unit,
+            label="Intensity",
+            metadata={} if y_metadata is None else y_metadata,
+        ),
     )
 
 
@@ -209,15 +215,38 @@ def _carbon_spectrum(*, y=None):
     return _spectrum(key="carbon", x=x, y=values)
 
 
-def test_measure_raman_band_reports_direct_peak_and_area():
+def test_measure_raman_band_reports_direct_peak_and_exact_window_area():
     spectrum = _carbon_spectrum()
     d_band = RamanBand(1250.0, 1450.0, "D")
     measurement = measure_raman_band(spectrum, d_band)
     assert measurement.peak_position_cm1 == pytest.approx(1350.0)
     assert measurement.peak_intensity == pytest.approx(4.0)
-    assert measurement.area == pytest.approx(250.0)
+    assert measurement.area == pytest.approx(325.0)
     assert measurement.n_points == 3
+    assert measurement.integration_n_points == 5
     assert measurement.source_key == "carbon"
+    assert measurement.shift_unit == "cm^-1"
+    assert measurement.intensity_unit == "counts"
+
+
+def test_measure_raman_band_rejects_partially_unmeasured_window():
+    spectrum = _carbon_spectrum()
+    with pytest.raises(RamanError, match="fully contained"):
+        measure_raman_band(spectrum, RamanBand(1100.0, 1300.0, "partial"))
+    with pytest.raises(RamanError, match="fully contained"):
+        measure_raman_band(spectrum, RamanBand(1600.0, 1800.0, "partial"))
+
+
+def test_band_provenance_distinguishes_source_and_exact_window_digests():
+    band = RamanBand(1300.0, 1400.0, "D")
+    first = _carbon_spectrum()
+    second = _carbon_spectrum(
+        y=(99.0, 1.0, 4.0, 1.0, 77.0, 2.0, 8.0, 2.0, 66.0)
+    )
+    one = measure_raman_band(first, band)
+    two = measure_raman_band(second, band)
+    assert one.window_sha256 == two.window_sha256
+    assert one.source_sha256 != two.source_sha256
 
 
 def test_raman_ratio_and_id_ig_require_explicit_bands_and_metric():
@@ -228,7 +257,7 @@ def test_raman_ratio_and_id_ig_require_explicit_bands_and_metric():
     height = raman_ratio(spectrum, d_band, g_band, metric="height")
     area = id_ig_ratio(spectrum, d_band, g_band, metric="area")
     assert height.value == pytest.approx(0.5)
-    assert area.value == pytest.approx(1.25)
+    assert area.value == pytest.approx(130 / 119)
     assert height.numerator.band.label == "D"
     assert height.denominator.band.label == "G"
 
@@ -273,3 +302,32 @@ def test_raman_ratio_rejects_minmax_and_non_positive_denominator():
             RamanBand(1250.0, 1450.0, "D"),
             RamanBand(1550.0, 1650.0, "G"),
         )
+
+
+def test_raman_ratio_rejects_unknown_normalized_provenance():
+    unknown = _spectrum(
+        x=(1200.0, 1300.0, 1350.0, 1400.0, 1500.0, 1580.0, 1600.0),
+        y=(0.0, 1.0, 4.0, 1.0, 0.0, 2.0, 8.0),
+        y_name="normalized_intensity",
+        y_unit="a.u.",
+    )
+    with pytest.raises(RamanError, match="known multiplicative normalization provenance"):
+        raman_ratio(
+            unknown,
+            RamanBand(1250.0, 1450.0, "D"),
+            RamanBand(1550.0, 1600.0, "G"),
+        )
+
+
+def test_raman_ratio_accepts_known_multiplicative_normalization():
+    normalized = process_raman(
+        _carbon_spectrum(),
+        RamanProcessingConfig(normalization="max"),
+    )
+    result = raman_ratio(
+        normalized,
+        RamanBand(1250.0, 1450.0, "D"),
+        RamanBand(1550.0, 1650.0, "G"),
+        metric="height",
+    )
+    assert result.value == pytest.approx(0.5)
