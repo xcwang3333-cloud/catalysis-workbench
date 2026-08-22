@@ -25,8 +25,9 @@ def _lsv(
     label: str = "Pb3-N/C",
     reference: str | None = "RHE",
     x_name: str = "potential",
+    x_unit: str | None = "V",
     y_name: str = "current_density",
-    y_unit: str = "mA/cm^2",
+    y_unit: str | None = "mA/cm^2",
     y: tuple[float, ...] = (-1.0, -2.0, -3.0),
 ) -> Series:
     x_metadata: dict[str, object] = {}
@@ -42,7 +43,7 @@ def _lsv(
         key=key,
         x_axis=Axis(
             x_name,
-            unit="V",
+            unit=x_unit,
             label="Potential",
             metadata=x_metadata,
         ),
@@ -76,6 +77,16 @@ def test_plot_lsv_respects_slash_unit_format_and_raw_reference_metadata():
     assert ax.get_ylabel() == "Current density / mA/cm^2"
 
 
+def test_plot_lsv_unit_suppression_still_preserves_reference_metadata():
+    source = _lsv(reference="RHE")
+    spec = FigureSpec(style=PlotStyle(axis_unit_format="none"))
+
+    _, ax = plot_lsv(source, spec)
+
+    assert ax.get_xlabel() == "Potential vs RHE"
+    assert ax.get_ylabel() == "Current density"
+
+
 def test_plot_lsv_without_reference_uses_shared_generic_axis_label():
     source = _lsv(reference=None)
 
@@ -99,6 +110,17 @@ def test_plot_lsv_rejects_non_lsv_axis_semantics():
         plot_lsv(_lsv(x_name="time"))
     with pytest.raises(LSVError, match="y_axis.name='current'"):
         plot_lsv(_lsv(y_name="absorbance", y_unit="a.u."))
+
+
+def test_plot_lsv_rejects_invalid_potential_and_current_dimensions():
+    with pytest.raises(LSVError, match="potential units V or mV"):
+        plot_lsv(_lsv(x_unit="s"))
+    with pytest.raises(LSVError, match="supported current unit"):
+        plot_lsv(_lsv(y_name="current", y_unit="mA/cm^2"))
+    with pytest.raises(LSVError, match="supported current density unit"):
+        plot_lsv(_lsv(y_name="current_density", y_unit="mA"))
+    with pytest.raises(LSVError, match="electrochemical axis unit is required"):
+        plot_lsv(_lsv(x_unit=None))
 
 
 def test_plot_lsv_dataset_inherits_shared_reference_compatibility_guard():
