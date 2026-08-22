@@ -23,12 +23,13 @@ def test_axis_keeps_semantic_label_unit_and_metadata_separate():
 def test_series_coerces_real_numeric_input_and_detaches_source_memory():
     source_x = [0, 1, 2]
     source_y = np.array([3, 4, 5], dtype=float)
-    series = Series(source_x, source_y, label="Pb3-N/C")
+    series = Series(source_x, source_y, label="Pb3-N/C", key="pb3")
 
     source_y[0] = 99
 
     assert series.n_points == 3
     assert series.label == "Pb3-N/C"
+    assert series.key == "pb3"
     assert series.x.dtype == np.float64
     assert series.y.dtype == np.float64
     np.testing.assert_allclose(series.x, [0.0, 1.0, 2.0])
@@ -83,13 +84,14 @@ def test_series_allows_nan_and_reports_missing_values():
     assert series.has_missing
 
 
-def test_with_data_preserves_axes_and_metadata():
+def test_with_data_preserves_axes_metadata_and_key():
     x_axis = Axis("potential", unit="V vs RHE", label="Potential")
     y_axis = Axis("current_density", unit="mA cm^-2", label="Current density")
     series = Series(
         x=[0, 1],
         y=[2, 3],
         label="Pb3-N/C",
+        key="lsv::pb3",
         x_axis=x_axis,
         y_axis=y_axis,
         metadata={"reaction": "CO2RR"},
@@ -98,6 +100,7 @@ def test_with_data_preserves_axes_and_metadata():
     transformed = series.with_data(y=[4, 5])
 
     assert transformed is not series
+    assert transformed.key == "lsv::pb3"
     assert transformed.x_axis == x_axis
     assert transformed.y_axis == y_axis
     assert transformed.metadata["reaction"] == "CO2RR"
@@ -106,24 +109,39 @@ def test_with_data_preserves_axes_and_metadata():
 
 
 def test_with_metadata_returns_new_series_without_mutating_original():
-    series = Series([0, 1], [2, 3], metadata={"step": "raw"})
+    series = Series([0, 1], [2, 3], key="raw", metadata={"step": "raw"})
     updated = series.with_metadata(step="normalized", factor=2.0)
 
     assert series.metadata["step"] == "raw"
+    assert updated.key == "raw"
     assert updated.metadata["step"] == "normalized"
     assert updated.metadata["factor"] == 2.0
 
 
 def test_dataset_supports_multi_catalyst_comparison_and_duplicate_labels():
-    pb1 = Series([0, 1], [1, 2], label="Pb1-N/C")
-    pb3_a = Series([0, 1], [3, 4], label="Pb3-N/C", metadata={"replicate": 1})
-    pb3_b = Series([0, 1], [3.1, 4.1], label="Pb3-N/C", metadata={"replicate": 2})
+    pb1 = Series([0, 1], [1, 2], label="Pb1-N/C", key="pb1")
+    pb3_a = Series(
+        [0, 1], [3, 4], label="Pb3-N/C", key="pb3-r1", metadata={"replicate": 1}
+    )
+    pb3_b = Series(
+        [0, 1], [3.1, 4.1], label="Pb3-N/C", key="pb3-r2", metadata={"replicate": 2}
+    )
 
     dataset = Dataset([pb1, pb3_a, pb3_b], name="LSV comparison")
 
     assert len(dataset) == 3
     assert dataset.labels == ("Pb1-N/C", "Pb3-N/C", "Pb3-N/C")
+    assert dataset.keys == ("pb1", "pb3-r1", "pb3-r2")
     assert dataset.by_label("Pb3-N/C") == (pb3_a, pb3_b)
+    assert dataset.by_key("pb3-r2") == pb3_b
+
+
+def test_dataset_rejects_duplicate_nonempty_keys():
+    a = Series([0, 1], [1, 2], label="A", key="duplicate")
+    b = Series([0, 1], [3, 4], label="B", key="duplicate")
+
+    with pytest.raises(ValueError, match="unique"):
+        Dataset([a, b])
 
 
 def test_dataset_transformations_are_non_mutating_and_preserve_metadata():
@@ -142,7 +160,7 @@ def test_dataset_transformations_are_non_mutating_and_preserve_metadata():
 
 def test_dataset_slice_returns_dataset():
     series = [
-        Series([0, 1], [index, index + 1], label=str(index))
+        Series([0, 1], [index, index + 1], label=str(index), key=f"s{index}")
         for index in range(3)
     ]
     dataset = Dataset(series, name="comparison")
@@ -151,6 +169,7 @@ def test_dataset_slice_returns_dataset():
 
     assert isinstance(sliced, Dataset)
     assert sliced.labels == ("1", "2")
+    assert sliced.keys == ("s1", "s2")
     assert sliced.name == "comparison"
 
 
@@ -159,17 +178,26 @@ def test_series_value_equality_handles_numpy_arrays_and_nan():
         [0, 1],
         [1.0, np.nan],
         label="same",
+        key="same-key",
         metadata={"vector": np.array([1, 2])},
     )
     second = Series(
         [0, 1],
         [1.0, np.nan],
         label="same",
+        key="same-key",
         metadata={"vector": np.array([1, 2])},
     )
 
     assert first == second
     assert first.equals(second)
+
+
+def test_series_value_equality_includes_key():
+    first = Series([0, 1], [1, 2], label="same", key="a")
+    second = Series([0, 1], [1, 2], label="same", key="b")
+
+    assert first != second
 
 
 def test_series_value_equality_handles_complex_values():
@@ -180,8 +208,8 @@ def test_series_value_equality_handles_complex_values():
 
 
 def test_dataset_value_equality_is_order_sensitive():
-    a = Series([0, 1], [1, 2], label="A")
-    b = Series([0, 1], [3, 4], label="B")
+    a = Series([0, 1], [1, 2], label="A", key="a")
+    b = Series([0, 1], [3, 4], label="B", key="b")
 
     assert Dataset([a, b]) == Dataset([a.copy(), b.copy()])
     assert Dataset([a, b]) != Dataset([b, a])
