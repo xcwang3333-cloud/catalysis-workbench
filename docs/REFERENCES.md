@@ -114,3 +114,22 @@ Processing semantics are kept deterministic and non-mutating:
 - baseline subtraction using another `Series` requires the same x grid and matching x/y axis names and units, preventing silent subtraction across incompatible physical quantities;
 - integration results carry point count, x orientation, axis names/units and a deterministic source-data SHA-256 in addition to optional key/label provenance;
 - interpolation grids and array/Series baselines are represented in provenance by deterministic SHA-256 digests while transformed Series retain the actual numerical data.
+
+## LSV / polarization processing and plotting decision for v0.1
+
+`ixdat/ixdat` (MIT) is the main architecture and equation reference for the first electrochemistry layer. Its `ECCalibration` stores reference-electrode offset, electrode area, and uncompensated resistance explicitly. The calibrated potential adds the reference-to-RHE offset, ohmic correction subtracts signed current times resistance, and current normalization divides total current by electrode area. CatalysisWorkbench adopts those transparent numerical semantics while keeping a lighter stateless post-processing API.
+
+The reviewed v0.1 LSV contract is deliberately explicit:
+
+- an LSV trace is a normal core `Series` whose canonical x axis is `potential` and whose y axis is `current` or `current_density`;
+- RHE conversion uses an explicit additive `offset_v`; a helper derives that offset from a user-supplied reference potential versus SHE, pH, and temperature using the Nernst pH term, while v0.1 intentionally has no embedded reference-electrode lookup table;
+- ohmic-drop correction is `E_corrected = E - fraction * I * R` using signed **total current in amperes**; current-density input requires an explicit geometric electrode area before Ohm's law is applied;
+- current-density normalization uses explicit geometric area in cm^2 and refuses double normalization; library-generated density records the area so a later iR reconstruction cannot silently use a different electrode area;
+- repeated/contradictory RHE conversion and repeated iR correction fail explicitly; source-reference declarations must agree with axis metadata;
+- known non-geometric current-density normalization such as ECSA normalization is rejected when geometric-area reconstruction is required;
+- only common V/mV, A/mA/uA, and corresponding per-cm^2 units are interpreted by the processing layer. Missing or unsupported units fail instead of being guessed;
+- electrochemical transformations are non-mutating, preserve stable keys/source metadata, update changed axis semantics, and append deterministic `echem.*` entries to the shared `processing_history`;
+- `LSVProcessingConfig` records the correction/normalization recipe, and Dataset processing can apply stable-key-specific overrides for catalysts measured under different resistance/area/reference conditions;
+- publication rendering is a thin adapter over the shared visualization engine rather than a second electrochemistry-specific Matplotlib stack. `plot_lsv()` performs no numerical correction, smoothing, resampling, or sign inversion; it validates canonical LSV axis semantics, adds reference metadata such as RHE to automatic potential labels, and delegates artists/layout/export behavior to `FigureSpec` and `render_curves`;
+- importing the numerical `experimental.echem` API keeps visualization/Matplotlib lazy; the plotting dependency is imported only when `plot_lsv()` is actually called;
+- multi-catalyst LSV plots inherit the shared renderer's compatibility guards, so equal units are not enough to overlay incompatible electrochemical references or current-density normalization bases.
