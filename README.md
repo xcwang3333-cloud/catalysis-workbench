@@ -38,9 +38,10 @@ src/catalysis_workbench/
 ├── core/              # Shared scientific data models
 ├── io/                # Excel/CSV/TXT and scientific file readers
 ├── processing/        # Reusable mathematical processing
-├── experimental/      # Electrochemistry and characterization analysis
+├── experimental/      # Experimental analysis
 │   ├── echem/
 │   └── characterization/
+├── computation/       # DFT and atomistic post-processing
 └── visualization/     # Publication-quality rendering
 ```
 
