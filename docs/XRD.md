@@ -13,7 +13,11 @@ CatalysisWorkbench keeps the v0.1 XRD workflow narrow and post-processing orient
 
 An experimental powder pattern is a normal core `Series`: x is 2θ in explicit degree units and y is intensity. Common semantic 2θ names are accepted, but radians are not silently converted. X must be real, finite, and strictly increasing. XRD intensity is real-valued; NaN can remain as a plotting gap, while numerical transforms keep the shared explicit missing-data policy.
 
-`XRDProcessingConfig` defines deterministic baseline -> crop -> normalize -> vertical-offset processing. Numerical kernels are delegated to shared `subtract_baseline`, `crop`, `normalize`, and `offset`. Normalized output is relabeled as `Normalized intensity` with `a.u.` units and explicit normalization metadata.
+Raw intensity accepts common count, count-rate, arbitrary-unit, or dimensionless semantics. `normalized_intensity` must use arbitrary or dimensionless units; unrelated physical units such as electrical current are rejected before analysis or rendering. Equivalent spellings such as `count`/`counts`, `deg`/`degree`/`°`, and `two_theta`/`2θ` are canonicalized only on temporary render copies. The source `Series` remains unchanged, while the generic shared renderer can still enforce exact signatures for genuinely incompatible axes such as counts versus cps.
+
+`XRDProcessingConfig` defines deterministic baseline -> crop -> normalize -> vertical-offset processing. Numerical kernels are delegated to shared `subtract_baseline`, `crop`, `normalize`, and `offset`. Normalized output is relabeled as `Normalized intensity` with `a.u.` units and explicit normalization metadata. XRD normalization targets must be positive. The compatibility-critical `normalization` metadata encodes method, target, and area mode when relevant, so max-normalized, area-normalized, target=1, and target=100 patterns cannot silently overlay as equivalent quantitative bases.
+
+An explicit baseline `Series` may use equivalent 2θ/intensity spelling aliases. The XRD layer validates semantic equivalence and adapts only the temporary baseline axes to the source before calling the generic exact-axis `subtract_baseline` primitive; genuinely different intensity bases or x grids remain errors.
 
 `process_xrd_dataset` preserves Dataset order, keys, labels, and metadata and supports stable-key-specific processing overrides/baselines. `stack_xrd_dataset` applies deterministic offsets using the shared `offset()` primitive and records collection-level stack history.
 
@@ -22,6 +26,7 @@ An experimental powder pattern is a normal core `Series`: x is 2θ in explicit d
 `plot_xrd()` delegates ordinary curves, axes layout, typography, legends, per-Series styles, and export behavior to the shared `FigureSpec` / `render_curves` engine. The XRD adapter adds only domain semantics:
 
 - publication-oriented 2θ axis labeling;
+- render-only canonicalization of equivalent XRD axis/unit spellings;
 - optional non-mutating stacked display via `stack_xrd_dataset`;
 - stable-key-addressed peak annotations anchored to interpolated experimental intensity;
 - optional reference sticks drawn in normalized axes-height bands so they do not change the experimental y limits.
