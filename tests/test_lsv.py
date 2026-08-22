@@ -36,7 +36,6 @@ def _lsv(
 
 def test_rhe_offset_from_she_uses_nernst_ph_term():
     offset = rhe_offset_from_she(0.197, 13.0, temperature_k=298.15)
-
     assert offset == pytest.approx(0.9659, abs=5e-4)
 
 
@@ -55,6 +54,7 @@ def test_convert_potential_to_rhe_converts_mv_and_records_reference():
     assert result.x_axis.name == "potential"
     assert result.x_axis.unit == "V"
     assert result.x_axis.metadata["reference"] == "RHE"
+    assert result.x_axis.metadata["source_reference"] == "Ag/AgCl"
     assert result.metadata["source"]["file_name"] == "lsv.csv"
     assert result.key == source.key
     record = result.metadata["processing_history"][-1]
@@ -67,6 +67,45 @@ def test_convert_potential_to_rhe_rejects_missing_or_unsupported_units():
         convert_potential_to_rhe(_lsv(x_unit=None), offset_v=0.9)
     with pytest.raises(LSVError, match="unsupported potential"):
         convert_potential_to_rhe(_lsv(x_unit="kV"), offset_v=0.9)
+
+
+def test_convert_potential_to_rhe_rejects_repeated_conversion():
+    first = convert_potential_to_rhe(_lsv(), offset_v=0.9, source_reference="Ag/AgCl")
+    with pytest.raises(LSVError, match="already"):
+        convert_potential_to_rhe(first, offset_v=0.1, source_reference="SCE")
+
+
+def test_convert_potential_to_rhe_rejects_contradictory_reference_metadata():
+    source = Series(
+        x=(-0.6, -0.5),
+        y=(-1.0, -2.0),
+        x_axis=Axis(
+            "potential",
+            unit="V",
+            label="Potential",
+            metadata={"reference": "Ag/AgCl (3 M KCl)"},
+        ),
+        y_axis=Axis("current", unit="mA", label="Current"),
+    )
+    with pytest.raises(LSVError, match="contradicts"):
+        convert_potential_to_rhe(source, offset_v=0.9, source_reference="SCE")
+
+
+def test_convert_potential_to_rhe_uses_declared_source_reference_when_not_repeated():
+    source = Series(
+        x=(-0.6,),
+        y=(-1.0,),
+        x_axis=Axis(
+            "potential",
+            unit="V",
+            label="Potential",
+            metadata={"reference": "Ag/AgCl"},
+        ),
+        y_axis=Axis("current", unit="mA", label="Current"),
+    )
+    result = convert_potential_to_rhe(source, offset_v=0.9)
+    record = result.metadata["processing_history"][-1]
+    assert record["parameters"]["source_reference"] == "Ag/AgCl"
 
 
 def test_ir_correction_uses_signed_current_for_cathodic_and_anodic_data():
@@ -104,6 +143,40 @@ def test_ir_correction_reconstructs_current_from_current_density_and_area():
     record = result.metadata["processing_history"][-1]
     assert record["parameters"]["current_kind"] == "current_density"
     assert record["parameters"]["electrode_area_cm2"] == pytest.approx(0.2)
+    assert record["parameters"]["density_area_basis"] == "geometric_area_explicit_assumption"
+
+
+def test_ir_correction_accepts_declared_geometric_density_basis():
+    source = Series(
+        x=(-0.5,),
+        y=(-10.0,),
+        x_axis=Axis("potential", unit="V", label="Potential"),
+        y_axis=Axis(
+            "current_density",
+            unit="mA/cm^2",
+            label="Current density",
+            metadata={"normalization": "geometric_area"},
+        ),
+    )
+    result = correct_ir_drop(source, resistance_ohm=10.0, electrode_area_cm2=0.2)
+    record = result.metadata["processing_history"][-1]
+    assert record["parameters"]["density_area_basis"] == "geometric_area_declared"
+
+
+def test_ir_correction_rejects_non_geometric_density_basis():
+    source = Series(
+        x=(-0.5,),
+        y=(-10.0,),
+        x_axis=Axis("potential", unit="V", label="Potential"),
+        y_axis=Axis(
+            "current_density",
+            unit="mA/cm^2",
+            label="Current density",
+            metadata={"normalization": "ECSA"},
+        ),
+    )
+    with pytest.raises(LSVError, match="geometric-area"):
+        correct_ir_drop(source, resistance_ohm=10.0, electrode_area_cm2=0.2)
 
 
 def test_ir_correction_rejects_density_without_area_and_invalid_parameters():
@@ -120,6 +193,18 @@ def test_ir_correction_rejects_missing_current_values():
     source = _lsv(y=(-1.0, np.nan, -3.0))
     with pytest.raises(LSVError, match="missing"):
         correct_ir_drop(source, resistance_ohm=5)
+
+
+def test_ir_correction_rejects_repeated_correction():
+    first = correct_ir_drop(_lsv(x=(-0.5,), y=(-2.0,)), resistance_ohm=10.0)
+    with pytest.raises(LSVError, match="already"):
+        correct_ir_drop(first, resistance_ohm=5.0)
+
+
+def test_ir_correction_supports_unicode_superscript_area_unit():
+    source = _lsv(x=(-0.5,), y=(-10.0,), y_unit="mA cm⁻²")
+    result = correct_ir_drop(source, resistance_ohm=10.0, electrode_area_cm2=0.2)
+    np.testing.assert_allclose(result.x, [-0.48])
 
 
 def test_current_density_conversion_preserves_sign_and_units():
@@ -183,6 +268,18 @@ def test_process_lsv_applies_rhe_then_ir_then_area_normalization():
 def test_lsv_config_requires_area_for_requested_normalization():
     with pytest.raises(LSVError, match="electrode_area_cm2"):
         LSVProcessingConfig(normalize_to_current_density=True)
+
+
+def test_lsv_config_rejects_orphan_or_empty_source_reference():
+    with pytest.raises(LSVError, match="requires rhe_offset_v"):
+        LSVProcessingConfig(source_reference="Ag/AgCl")
+    with pytest.raises(LSVError, match="must not be empty"):
+        LSVProcessingConfig(rhe_offset_v=0.9, source_reference="   ")
+
+
+def test_lsv_config_rejects_rhe_as_source_for_rhe_conversion():
+    with pytest.raises(LSVError, match="must not be RHE"):
+        LSVProcessingConfig(rhe_offset_v=0.1, source_reference="RHE")
 
 
 def test_process_lsv_dataset_preserves_order_metadata_and_supports_key_overrides():
