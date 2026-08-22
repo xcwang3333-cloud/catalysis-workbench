@@ -41,6 +41,8 @@ def export_figure(
     publication figure's requested physical width/height.  When ``spec`` is supplied,
     its physical size is applied only for the save operation and the figure's original
     size is restored afterwards so preview and export dimensions remain independent.
+    Domain/UI code that changes the complete layout recipe should rerender first; this
+    helper only guarantees the requested output canvas size during the save operation.
     """
     if not isinstance(figure, Figure):
         raise TypeError("figure must be a matplotlib.figure.Figure")
@@ -75,6 +77,8 @@ def export_figure(
                 dpi=output_dpi,
                 transparent=output_transparent,
                 bbox_inches=None,
+                facecolor=figure.get_facecolor(),
+                edgecolor=figure.get_edgecolor(),
             )
     finally:
         if spec is not None:
