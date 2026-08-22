@@ -2,6 +2,8 @@
 
 CatalysisWorkbench is developed in staged releases. The project focuses on quantitative post-processing, comparative analysis, and publication-quality visualization of catalysis data.
 
+Before implementing each major scientific or visualization module, comparable open-source projects should be surveyed and useful algorithms, data-model ideas, visualization patterns, tests, and license constraints recorded in [`REFERENCES.md`](REFERENCES.md).
+
 ## v0.1.0 — Common XY workflow
 
 - Core `Dataset` / `Series` models.
@@ -11,6 +13,8 @@ CatalysisWorkbench is developed in staged releases. The project focuses on quant
 - LSV / polarization-curve processing and plotting.
 - XRD processing and multi-sample plotting.
 - Raman processing and multi-sample plotting.
+- Shared `FigureSpec` / `PlotStyle` model with adjustable figure size, axes geometry/aspect ratio, fonts, line widths/styles, markers, ticks, legends, limits, margins and export settings.
+- Publication presets as editable starting templates, not locked themes.
 - SVG / PDF / PNG export.
 
 ## v0.2.x — Core electrochemistry
@@ -46,7 +50,7 @@ CatalysisWorkbench is developed in staged releases. The project focuses on quant
 - EXAFS fitting-result summaries.
 - POSCAR / CONTCAR / CIF / XYZ import.
 - Bond lengths, angles, coordination, and structure comparison.
-- Basic atomic-structure visualization.
+- Basic atomic-structure visualization, informed by dedicated open-source structure-visualization projects such as `pretty-lattice` while keeping structure analysis and rendering separated.
 - DFT energetics and adsorption-energy analysis.
 
 ## v0.6.x — Electronic structure and catalysis thermodynamics
@@ -75,19 +79,21 @@ CatalysisWorkbench is developed in staged releases. The project focuses on quant
 - Peak area / position / FWHM versus potential or time.
 - Cross-modal correlation analysis.
 
-## v0.9.x — Reproducible workflows
+## v0.9.x — Reproducible and interactive workflows
 
 - Batch processing.
 - Publication figure presets.
 - Reusable analysis recipes.
 - Scientific QA checks.
 - Processing metadata and reproducibility records.
+- First interactive plot editor prototype using the existing `FigureSpec` model for immediate redraw when style/layout parameters change.
 
 ## v1.0.0 — Personal catalysis data workbench
 
 - Stable Python API.
 - Project workspace for processed experimental, characterization, and computational data.
-- Local GUI with file import, parameter controls, preview, and export.
+- Local GUI with file import, parameter controls, real-time figure preview, style-template selection, per-parameter override, and export.
+- Real-time controls should include font size, line width/style, marker symbol/size, axis dimensions/aspect ratio, margins, ticks, legends, limits and related publication parameters without changing the scientific analysis pipeline.
 
 ## Explicitly out of scope
 
