@@ -16,17 +16,31 @@ The v0.1 common-XY roadmap is function-complete on `main`:
 
 The final Raman PR quality gate brought the full test suite to 218 passing tests before merge. Earlier v0.1 feature PRs were also formally reviewed and merged only after their scientific/API regression suites passed.
 
-## Release-readiness gaps
+## Release-hardening status
 
-The scientific implementation is complete, but v0.1 should not yet be presented as a finished release:
+Issue #18 / the v0.1 release-hardening branch resolves the non-scientific gaps identified by the initial audit:
 
-1. `pyproject.toml` still reports `0.1.0.dev0`.
-2. `examples/README.md` is still a placeholder; there are no compact end-to-end user examples for import -> process -> plot -> export.
-3. README still describes the project as early development and does not yet provide a minimal installation/quick-start/API map.
-4. A release smoke test should exercise the public imports and one representative LSV, XRD, and Raman workflow from a clean installation.
-5. Release notes/changelog and the v0.1 tag/release step remain to be completed.
+- README now contains source-install instructions, an executable public-API quickstart, accurate v0.1/future scope boundaries, and a public import-surface map.
+- `examples/` contains compact synthetic LSV, XRD, and Raman data plus end-to-end import -> process -> plot -> PNG/SVG/PDF scripts.
+- `CHANGELOG.md` records the unreleased v0.1 feature set and scientific/API principles.
+- `docs/RELEASING.md` defines the explicit wheel/install/smoke/review gate and separates the later version/tag action from feature work.
+- CI now builds a wheel, installs it into a fresh virtual environment, proves imports do not resolve from the repository `src/` tree, runs representative public-API LSV/XRD/Raman smoke workflows, and executes the three documented examples against the installed wheel.
+- The release-hardening Draft CI passes Ruff, all 218 pytest tests, wheel build/install smoke, and all documented end-to-end examples.
 
-These are release-hardening tasks, not missing scientific v0.1 features.
+The only intentionally unresolved release step is the final version/tag action. `pyproject.toml` and `catalysis_workbench.__version__` remain `0.1.0.dev0` until the release-hardening PR receives formal review and explicit approval. They must be changed to `0.1.0` together in the later release gate, followed by one more full CI/wheel smoke run before tagging `v0.1.0`.
+
+## Public API audit
+
+The reviewed v0.1 public surfaces are coherent and do not require renaming for release hardening:
+
+- `catalysis_workbench.core`
+- `catalysis_workbench.io`
+- `catalysis_workbench.processing`
+- `catalysis_workbench.experimental.echem`
+- `catalysis_workbench.experimental.characterization`
+- `catalysis_workbench.visualization`
+
+Their package-level `__all__` exports match the documented reviewed APIs. The root package intentionally remains small and exposes version metadata rather than flattening all domain APIs into one namespace. No reviewed scientific public call is removed or renamed by Issue #18.
 
 ## Architecture audit before v0.2
 
@@ -62,7 +76,7 @@ v0.2 Faradaic-efficiency calculations should start from explicit product amount,
 
 ## Recommended v0.2 implementation order
 
-1. v0.1 release hardening.
+1. Complete and review v0.1 release hardening, then perform the separate version/tag gate.
 2. Shared electrochemistry quantity/unit/result conventions.
 3. Shared scatter/bar visualization primitives.
 4. Tafel analysis.
