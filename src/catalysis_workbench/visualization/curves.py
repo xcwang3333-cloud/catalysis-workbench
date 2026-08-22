@@ -15,6 +15,8 @@ from catalysis_workbench.core import Axis, Dataset, Series
 from .presets import get_preset
 from .specs import FigureSpec, SeriesStyle, VisualizationError
 
+_COMPATIBILITY_METADATA_KEYS = ("reference", "normalization")
+
 
 def format_axis_label(axis: Axis, *, unit_format: str = "parentheses") -> str:
     """Construct a rendered axis label from semantic core axis metadata."""
@@ -49,6 +51,30 @@ def _validate_real_curves(series: Sequence[Series]) -> None:
             )
 
 
+def _semantic_metadata_value(axis: Axis, key: str) -> object:
+    value = axis.metadata.get(key)
+    if isinstance(value, str):
+        return value.strip().casefold()
+    return value
+
+
+def _validate_semantic_axis_metadata(
+    first_axis: Axis,
+    other_axis: Axis,
+    *,
+    axis_name: str,
+) -> None:
+    for key in _COMPATIBILITY_METADATA_KEYS:
+        first_value = _semantic_metadata_value(first_axis, key)
+        other_value = _semantic_metadata_value(other_axis, key)
+        if first_value != other_value:
+            raise VisualizationError(
+                f"all curves on one axes must have matching {axis_name}-axis "
+                f"{key!r} metadata; got {first_axis.metadata.get(key)!r} and "
+                f"{other_axis.metadata.get(key)!r}"
+            )
+
+
 def _validate_axis_compatibility(series: Sequence[Series]) -> None:
     first = series[0]
     x_signature = (first.x_axis.name, first.x_axis.unit)
@@ -62,6 +88,16 @@ def _validate_axis_compatibility(series: Sequence[Series]) -> None:
             raise VisualizationError(
                 "all curves on one axes must have matching y-axis names and units"
             )
+        _validate_semantic_axis_metadata(
+            first.x_axis,
+            item.x_axis,
+            axis_name="x",
+        )
+        _validate_semantic_axis_metadata(
+            first.y_axis,
+            item.y_axis,
+            axis_name="y",
+        )
 
 
 def _validate_style_keys(series: Sequence[Series], spec: FigureSpec) -> None:
@@ -182,13 +218,21 @@ def render_curves(
         if resolved_spec.ylim is not None:
             ax.set_ylim(*resolved_spec.ylim)
 
-        xlabel = resolved_spec.xlabel or format_axis_label(
-            series[0].x_axis,
-            unit_format=style.axis_unit_format,
+        xlabel = (
+            format_axis_label(
+                series[0].x_axis,
+                unit_format=style.axis_unit_format,
+            )
+            if resolved_spec.xlabel is None
+            else resolved_spec.xlabel
         )
-        ylabel = resolved_spec.ylabel or format_axis_label(
-            series[0].y_axis,
-            unit_format=style.axis_unit_format,
+        ylabel = (
+            format_axis_label(
+                series[0].y_axis,
+                unit_format=style.axis_unit_format,
+            )
+            if resolved_spec.ylabel is None
+            else resolved_spec.ylabel
         )
         ax.set_xlabel(xlabel, fontsize=style.axis_label_size)
         ax.set_ylabel(ylabel, fontsize=style.axis_label_size)
