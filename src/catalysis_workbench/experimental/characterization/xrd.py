@@ -369,7 +369,10 @@ class XRDReferencePattern:
     line_width: float = 0.8
 
     def __post_init__(self) -> None:
-        positions = tuple(_finite_float(value, name="reference 2theta") for value in self.positions_deg)
+        positions = tuple(
+            _finite_float(value, name="reference 2theta")
+            for value in self.positions_deg
+        )
         if not positions:
             raise XRDError("reference pattern requires at least one 2theta position")
         if any(value < 0 or value > 180 for value in positions):
