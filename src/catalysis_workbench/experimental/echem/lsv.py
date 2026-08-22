@@ -70,7 +70,9 @@ def _normalize_reference_name(reference: str) -> str:
 
 
 def _same_reference(left: str, right: str) -> bool:
-    return _normalize_reference_name(left).casefold() == _normalize_reference_name(right).casefold()
+    left_name = _normalize_reference_name(left).casefold()
+    right_name = _normalize_reference_name(right).casefold()
+    return left_name == right_name
 
 
 def _history_has(series: Series, operation: str) -> bool:
@@ -174,6 +176,31 @@ def _current_in_a(series: Series) -> np.ndarray:
     return current * factor
 
 
+def _density_area_basis(series: Series, supplied_area_cm2: float) -> str:
+    declared = series.y_axis.metadata.get("normalization")
+    if declared is None:
+        return "geometric_area_explicit_assumption"
+
+    declared_name = str(declared).strip().lower().replace(" ", "_")
+    if declared_name not in _GEOMETRIC_NORMALIZATION_NAMES:
+        raise LSVError(
+            "current-density iR reconstruction requires geometric-area "
+            f"normalization; found {declared!r}"
+        )
+
+    stored_area = series.y_axis.metadata.get("electrode_area_cm2")
+    if stored_area is None:
+        return "geometric_area_declared"
+
+    normalized_area = _positive_finite(stored_area, name="stored electrode_area_cm2")
+    if not np.isclose(normalized_area, supplied_area_cm2, rtol=1e-12, atol=0.0):
+        raise LSVError(
+            "electrode_area_cm2 does not match the area used to create current density: "
+            f"{supplied_area_cm2!r} vs {normalized_area!r}"
+        )
+    return "geometric_area_declared_matched"
+
+
 def _current_from_series_in_a(
     series: Series,
     *,
@@ -190,17 +217,7 @@ def _current_from_series_in_a(
                 "electrode_area_cm2 is required for iR correction of current-density data"
             )
         area = _positive_finite(electrode_area_cm2, name="electrode_area_cm2")
-        declared = series.y_axis.metadata.get("normalization")
-        if declared is not None:
-            declared_name = str(declared).strip().lower().replace(" ", "_")
-            if declared_name not in _GEOMETRIC_NORMALIZATION_NAMES:
-                raise LSVError(
-                    "current-density iR reconstruction requires geometric-area "
-                    f"normalization; found {declared!r}"
-                )
-            area_basis = "geometric_area_declared"
-        else:
-            area_basis = "geometric_area_explicit_assumption"
+        area_basis = _density_area_basis(series, area)
         density_a_cm2 = values * _CURRENT_DENSITY_TO_A_CM2[unit]
         return density_a_cm2 * area, "current_density", area_basis
     raise LSVError(f"unsupported current/current-density unit {series.y_axis.unit!r}")
@@ -363,7 +380,10 @@ def to_current_density(
         name="current_density",
         unit=canonical_unit,
         label="Current density",
-        metadata_updates={"normalization": "geometric_area"},
+        metadata_updates={
+            "normalization": "geometric_area",
+            "electrode_area_cm2": area,
+        },
     )
     return _transform(
         series,
@@ -387,7 +407,6 @@ class LSVProcessingConfig:
     current_density_unit: str = "mA/cm^2"
 
     def __post_init__(self) -> None:
-        reference_name = None
         if self.source_reference is not None:
             reference_name = _normalize_reference_name(self.source_reference)
             if self.rhe_offset_v is None:
