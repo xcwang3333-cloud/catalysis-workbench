@@ -71,7 +71,9 @@ def _resolve_column(frame: pd.DataFrame, ref: ColumnRef) -> tuple[int, object]:
     matches = [index for index, column in enumerate(frame.columns) if str(column) == ref]
     if not matches:
         available = ", ".join(str(column) for column in frame.columns)
-        raise TabularReadError(f"Column {ref!r} was not found. Available columns: {available}")
+        raise TabularReadError(
+            f"Column {ref!r} was not found. Available columns: {available}"
+        )
     if len(matches) > 1:
         raise TabularReadError(
             f"Column name {ref!r} is ambiguous; select it by integer position instead"
@@ -80,7 +82,12 @@ def _resolve_column(frame: pd.DataFrame, ref: ColumnRef) -> tuple[int, object]:
     return index, frame.columns[index]
 
 
-def _lookup(mapping: ColumnMap | None, ref: ColumnRef, column: object, index: int) -> str | None:
+def _lookup(
+    mapping: ColumnMap | None,
+    ref: ColumnRef,
+    column: object,
+    index: int,
+) -> str | None:
     if mapping is None:
         return None
     for candidate in (ref, column, index):
@@ -99,23 +106,42 @@ def _numeric_values(frame: pd.DataFrame, index: int, *, role: str, column: objec
         rows = [int(row) for row in bad_index]
         examples = [source.loc[row] for row in bad_index]
         raise TabularReadError(
-            f"{role} column {column!r} contains non-numeric values at rows {rows}: {examples}"
+            f"{role} column {column!r} contains non-numeric values "
+            f"at rows {rows}: {examples}"
         )
     if converted.isna().all():
         raise TabularReadError(f"{role} column {column!r} contains no numeric values")
     return converted.to_numpy()
 
 
-def _series_key(path: Path, sheet: str | None, x_index: int, y_index: int) -> str:
+def _source_identity(path: Path, source_id: str | None) -> tuple[str, str]:
+    """Return a collision-resistant source identity and normalized source path."""
+    source_path = path.resolve().as_posix()
+    if source_id is None:
+        return source_path, source_path
+    normalized = str(source_id).strip()
+    if not normalized:
+        raise TabularReadError("source_id must not be empty")
+    return normalized, source_path
+
+
+def _series_key(
+    source_id: str,
+    sheet: str | None,
+    x_index: int,
+    y_index: int,
+) -> str:
     """Return a deterministic non-display key based on source coordinates."""
     sheet_token = "table" if sheet is None else sheet
-    return f"{path.name}::{sheet_token}::c{x_index}->c{y_index}"
+    return f"{source_id}::{sheet_token}::c{x_index}->c{y_index}"
 
 
 def _frame_to_series(
     frame: pd.DataFrame,
     *,
     path: Path,
+    source_id: str,
+    source_path: str,
     sheet: str | None,
     x: ColumnRef,
     y: ColumnRef | Sequence[ColumnRef],
@@ -137,11 +163,17 @@ def _frame_to_series(
     )
 
     y_refs = _normalize_y_refs(y)
+    seen_y_indexes: set[int] = set()
     series_items: list[Series] = []
     for y_ref in y_refs:
         y_index, y_column = _resolve_column(frame, y_ref)
         if y_index == x_index:
             raise TabularReadError("x and y must refer to different columns")
+        if y_index in seen_y_indexes:
+            raise TabularReadError(
+                f"y column {y_column!r} was selected more than once"
+            )
+        seen_y_indexes.add(y_index)
 
         y_values = _numeric_values(frame, y_index, role="y", column=y_column)
         y_header_label, y_inferred_unit = _header_parts(y_column)
@@ -153,6 +185,8 @@ def _frame_to_series(
         display_label = _lookup(labels, y_ref, y_column, y_index) or y_header_label
 
         source_metadata: dict[str, Any] = {
+            "source_id": source_id,
+            "source_path": source_path,
             "file_name": path.name,
             "file_suffix": path.suffix.lower(),
             "sheet": sheet,
@@ -166,18 +200,24 @@ def _frame_to_series(
                 x=x_values,
                 y=y_values,
                 label=display_label,
-                key=_series_key(path, sheet, x_index, y_index),
+                key=_series_key(source_id, sheet, x_index, y_index),
                 x_axis=Axis(
                     name=x_name,
                     label=x_label,
                     unit=x_unit,
-                    metadata={"source_column": str(x_column), "column_index": x_index},
+                    metadata={
+                        "source_column": str(x_column),
+                        "column_index": x_index,
+                    },
                 ),
                 y_axis=Axis(
                     name=y_name,
                     label=y_axis_label,
                     unit=y_unit,
-                    metadata={"source_column": str(y_column), "column_index": y_index},
+                    metadata={
+                        "source_column": str(y_column),
+                        "column_index": y_index,
+                    },
                 ),
                 metadata={"source": source_metadata},
             )
@@ -189,12 +229,16 @@ def _dataset(
     series: Sequence[Series],
     *,
     path: Path,
+    source_id: str,
+    source_path: str,
     name: str | None,
     sheets: Sequence[str | None],
     metadata: Mapping[str, Any] | None,
 ) -> Dataset:
     dataset_metadata: dict[str, Any] = dict(metadata or {})
     dataset_metadata["source"] = {
+        "source_id": source_id,
+        "source_path": source_path,
         "file_name": path.name,
         "file_suffix": path.suffix.lower(),
         "sheets": tuple(sheets),
@@ -203,7 +247,8 @@ def _dataset(
 
 
 def _resolve_excel_sheets(
-    available: Sequence[str], selection: str | int | Sequence[str | int] | None
+    available: Sequence[str],
+    selection: str | int | Sequence[str | int] | None,
 ) -> tuple[str, ...]:
     if selection is None:
         selected = tuple(available)
@@ -218,17 +263,21 @@ def _resolve_excel_sheets(
             if isinstance(item, int):
                 if item < 0 or item >= len(available):
                     raise TabularReadError(
-                        f"Excel sheet position {item} is out of range for {len(available)} sheets"
+                        f"Excel sheet position {item} is out of range "
+                        f"for {len(available)} sheets"
                     )
                 selected_list.append(available[item])
             elif item in available:
                 selected_list.append(item)
             else:
                 raise TabularReadError(
-                    f"Excel sheet {item!r} was not found. Available sheets: {', '.join(available)}"
+                    f"Excel sheet {item!r} was not found. "
+                    f"Available sheets: {', '.join(available)}"
                 )
         selected = tuple(selected_list)
 
+    if not selected:
+        raise TabularReadError("At least one Excel sheet must be selected")
     if len(selected) != len(set(selected)):
         raise TabularReadError("The same Excel sheet was selected more than once")
     return selected
@@ -245,6 +294,7 @@ def read_csv(
     axis_names: ColumnMap | None = None,
     name: str | None = None,
     metadata: Mapping[str, Any] | None = None,
+    source_id: str | None = None,
     sep: str = ",",
     header: int | None = 0,
     skiprows: int | Sequence[int] | None = None,
@@ -254,6 +304,7 @@ def read_csv(
 ) -> Dataset:
     """Read one CSV file into a file-format-agnostic :class:`Dataset`."""
     source = Path(path)
+    identity, source_path = _source_identity(source, source_id)
     frame = pd.read_csv(
         source,
         sep=sep,
@@ -266,6 +317,8 @@ def read_csv(
     series = _frame_to_series(
         frame,
         path=source,
+        source_id=identity,
+        source_path=source_path,
         sheet=None,
         x=x,
         y=y,
@@ -274,7 +327,15 @@ def read_csv(
         axis_labels=axis_labels,
         axis_names=axis_names,
     )
-    return _dataset(series, path=source, name=name, sheets=(None,), metadata=metadata)
+    return _dataset(
+        series,
+        path=source,
+        source_id=identity,
+        source_path=source_path,
+        name=name,
+        sheets=(None,),
+        metadata=metadata,
+    )
 
 
 def read_txt(
@@ -288,6 +349,7 @@ def read_txt(
     axis_names: ColumnMap | None = None,
     name: str | None = None,
     metadata: Mapping[str, Any] | None = None,
+    source_id: str | None = None,
     sep: str | None = None,
     header: int | None = 0,
     skiprows: int | Sequence[int] | None = None,
@@ -297,6 +359,7 @@ def read_txt(
 ) -> Dataset:
     """Read delimited text, using pandas delimiter sniffing when ``sep`` is omitted."""
     source = Path(path)
+    identity, source_path = _source_identity(source, source_id)
     frame = pd.read_csv(
         source,
         sep=sep,
@@ -310,6 +373,8 @@ def read_txt(
     series = _frame_to_series(
         frame,
         path=source,
+        source_id=identity,
+        source_path=source_path,
         sheet=None,
         x=x,
         y=y,
@@ -318,7 +383,15 @@ def read_txt(
         axis_labels=axis_labels,
         axis_names=axis_names,
     )
-    return _dataset(series, path=source, name=name, sheets=(None,), metadata=metadata)
+    return _dataset(
+        series,
+        path=source,
+        source_id=identity,
+        source_path=source_path,
+        name=name,
+        sheets=(None,),
+        metadata=metadata,
+    )
 
 
 def read_excel(
@@ -332,6 +405,7 @@ def read_excel(
     axis_names: ColumnMap | None = None,
     name: str | None = None,
     metadata: Mapping[str, Any] | None = None,
+    source_id: str | None = None,
     sheet_name: str | int | Sequence[str | int] | None = 0,
     header: int | None = 0,
     skiprows: int | Sequence[int] | None = None,
@@ -339,6 +413,7 @@ def read_excel(
 ) -> Dataset:
     """Read one or several Excel sheets and combine selected curves in one Dataset."""
     source = Path(path)
+    identity, source_path = _source_identity(source, source_id)
     with pd.ExcelFile(source) as workbook:
         sheets = _resolve_excel_sheets(workbook.sheet_names, sheet_name)
         all_series: list[Series] = []
@@ -354,6 +429,8 @@ def read_excel(
                 _frame_to_series(
                     frame,
                     path=source,
+                    source_id=identity,
+                    source_path=source_path,
                     sheet=sheet,
                     x=x,
                     y=y,
@@ -364,7 +441,15 @@ def read_excel(
                 )
             )
 
-    return _dataset(all_series, path=source, name=name, sheets=sheets, metadata=metadata)
+    return _dataset(
+        all_series,
+        path=source,
+        source_id=identity,
+        source_path=source_path,
+        name=name,
+        sheets=sheets,
+        metadata=metadata,
+    )
 
 
 def read_tabular(path: str | Path, **kwargs: Any) -> Dataset:
@@ -380,5 +465,6 @@ def read_tabular(path: str | Path, **kwargs: Any) -> Dataset:
     if suffix in {".xlsx", ".xlsm"}:
         return read_excel(source, **kwargs)
     raise TabularReadError(
-        f"Unsupported tabular extension {suffix!r}; supported: .csv, .txt, .tsv, .dat, .xlsx, .xlsm"
+        f"Unsupported tabular extension {suffix!r}; supported: "
+        ".csv, .txt, .tsv, .dat, .xlsx, .xlsm"
     )
