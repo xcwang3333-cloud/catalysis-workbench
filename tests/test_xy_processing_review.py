@@ -2,7 +2,13 @@ import numpy as np
 import pytest
 
 from catalysis_workbench.core import Axis, Series
-from catalysis_workbench.processing import ProcessingError, integrate, interpolate, normalize, subtract_baseline
+from catalysis_workbench.processing import (
+    ProcessingError,
+    integrate,
+    interpolate,
+    normalize,
+    subtract_baseline,
+)
 
 
 def _series(*, x=(0.0, 1.0, 2.0), y=(1.0, 2.0, 3.0), key="sample"):
