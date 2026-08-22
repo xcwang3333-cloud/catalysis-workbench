@@ -1,0 +1,99 @@
+# CatalysisWorkbench Roadmap
+
+CatalysisWorkbench is developed in staged releases. The project focuses on quantitative post-processing, comparative analysis, and publication-quality visualization of catalysis data.
+
+## v0.1.0 — Common XY workflow
+
+- Core `Dataset` / `Series` models.
+- Excel / CSV / TXT import.
+- Multi-catalyst series handling.
+- Crop, normalization, offset, baseline, smoothing, interpolation, integration.
+- LSV / polarization-curve processing and plotting.
+- XRD processing and multi-sample plotting.
+- Raman processing and multi-sample plotting.
+- SVG / PDF / PNG export.
+
+## v0.2.x — Core electrochemistry
+
+- Tafel analysis.
+- Faradaic efficiency.
+- Partial current density.
+- Mass/specific activity.
+- TOF / TOFapp.
+- CV / Cdl / ECSA.
+- Stability analysis.
+- RRDE / Koutecky–Levich basics.
+
+## v0.3.x — Extended experimental processing
+
+- FTIR / ATR-FTIR.
+- Basic BET/sorption plotting.
+- ICP/composition data integration.
+- TGA / DTG / TPR / TPD.
+- Shared peak-fitting primitives.
+
+## v0.4.x — Advanced experimental analysis
+
+- XPS processing and constrained peak fitting.
+- EIS plotting and basic equivalent-circuit fitting.
+- BET quantitative fitting.
+- Product quantification from calibration data and GC/HPLC/NMR-derived values.
+
+## v0.5.x — XAS and structures
+
+- XANES import, normalization, and comparison.
+- FT-EXAFS and WT-EXAFS visualization.
+- EXAFS fitting-result summaries.
+- POSCAR / CONTCAR / CIF / XYZ import.
+- Bond lengths, angles, coordination, and structure comparison.
+- Basic atomic-structure visualization.
+- DFT energetics and adsorption-energy analysis.
+
+## v0.6.x — Electronic structure and catalysis thermodynamics
+
+- CHE and free-energy analysis.
+- Free-energy diagrams.
+- DOS / PDOS processing and band-center analysis.
+- Bader charge analysis.
+- COHP / ICOHP analysis.
+- Geometry–bonding correlations.
+- Charge-density-difference calculation with lattice/grid validation.
+
+## v0.7.x — Advanced computational visualization
+
+- Charge-density-difference isosurfaces and slices.
+- ELF / charge-density visualization.
+- Band-structure plotting.
+- Work-function processing.
+- NEB / barrier plots.
+
+## v0.8.x — Operando and time-resolved data
+
+- Operando Raman / IR stacks, waterfalls, and heatmaps.
+- Operando XAS mapping.
+- Operando XRD mapping.
+- Peak area / position / FWHM versus potential or time.
+- Cross-modal correlation analysis.
+
+## v0.9.x — Reproducible workflows
+
+- Batch processing.
+- Publication figure presets.
+- Reusable analysis recipes.
+- Scientific QA checks.
+- Processing metadata and reproducibility records.
+
+## v1.0.0 — Personal catalysis data workbench
+
+- Stable Python API.
+- Project workspace for processed experimental, characterization, and computational data.
+- Local GUI with file import, parameter controls, preview, and export.
+
+## Explicitly out of scope
+
+- Synthesis management and electronic laboratory notebooks.
+- TEM/SEM image processing and STEM atom recognition.
+- Instrument control.
+- Full Rietveld refinement engine.
+- Full Artemis-class EXAFS fitting engine.
+- HPC job submission or complete VASP workflow management.
