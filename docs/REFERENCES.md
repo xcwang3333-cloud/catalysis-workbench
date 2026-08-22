@@ -94,3 +94,25 @@ The v0.1 API should expose these values programmatically. A later local GUI (tar
 - make preview and export part of the same rendering model.
 
 CatalysisWorkbench should follow these principles while preserving its own role: DFT/geometry analysis lives in the computation layer, while publication-oriented structure rendering lives in the visualization layer.
+
+## XY processing decision for v0.1
+
+The shared processing layer deliberately wraps mature numerical primitives instead of reimplementing them.
+
+- `scipy/scipy` (BSD-3-Clause) is the backend for Savitzky-Golay filtering. CatalysisWorkbench exposes explicit window length, polynomial order, edge mode and constant-padding value, and filters real/imaginary components separately for complex data so SciPy's float conversion cannot silently discard an EIS-like imaginary component.
+- `numpy/numpy` supplies linear interpolation and trapezoidal integration primitives. CatalysisWorkbench adds stricter scientific guards around source-axis monotonicity, duplicate x values, missing data and extrapolation.
+- `derb12/pybaselines` (BSD-3-Clause) is the preferred later backend for baseline estimation. Its 50+ algorithms include literature-based AsLS, airPLS, ModPoly, SNIP and related methods across Raman, FTIR, XRD and other experimental techniques. v0.1 therefore implements only explicit baseline subtraction and does not clone baseline-estimation algorithms.
+- `lmfit/lmfit-py` remains relevant to later constrained peak fitting but is not needed for crop/normalize/offset/smoothing/interpolation/integration primitives.
+
+Processing semantics are kept deterministic and non-mutating:
+
+- every Series-to-Series operation preserves axes, stable key and existing source metadata;
+- an ordered `processing_history` record stores operation names and user-controlled parameters without timestamps;
+- missing y values are not silently dropped; algorithms that cannot safely propagate them raise a processing error;
+- interpolation does not extrapolate in v0.1; both source and multi-point target grids must be strictly monotonic, while increasing and decreasing order are both supported;
+- `normalize(method="max")` requires a positive maximum; non-positive or complex traces use explicit alternatives such as `max_abs` rather than silently flipping sign;
+- area normalization records an explicit `area_mode`: `absolute` (default) scales by the positive trapezoidal integral of `abs(y)`, while `net` scales by the magnitude of the net signed/complex integral and can expose cancellation;
+- integration is signed/complex by default; `absolute=True` means positive absolute area `integral(abs(y), x)`, not merely `abs(integral(y, x))`;
+- baseline subtraction using another `Series` requires the same x grid and matching x/y axis names and units, preventing silent subtraction across incompatible physical quantities;
+- integration results carry point count, x orientation, axis names/units and a deterministic source-data SHA-256 in addition to optional key/label provenance;
+- interpolation grids and array/Series baselines are represented in provenance by deterministic SHA-256 digests while transformed Series retain the actual numerical data.
