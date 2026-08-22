@@ -15,7 +15,16 @@ from catalysis_workbench.experimental.characterization import (
 )
 
 
-def _pattern(*, key="sample", x=(10.0, 20.0, 30.0, 40.0), y=(2.0, 4.0, 8.0, 4.0), x_name="two_theta", x_unit="deg", y_name="intensity", y_unit="counts"):
+def _pattern(
+    *,
+    key="sample",
+    x=(10.0, 20.0, 30.0, 40.0),
+    y=(2.0, 4.0, 8.0, 4.0),
+    x_name="two_theta",
+    x_unit="deg",
+    y_name="intensity",
+    y_unit="counts",
+):
     return Series(
         x=x,
         y=y,
@@ -71,36 +80,54 @@ def test_process_xrd_reuses_shared_baseline_crop_normalize_and_offset():
 
 
 def test_process_xrd_dataset_supports_keyed_overrides_and_baselines():
-    dataset = Dataset([
-        _pattern(key="a"),
-        _pattern(key="b", y=(5.0, 10.0, 15.0, 10.0)),
-    ], metadata={"campaign": "demo"})
+    dataset = Dataset(
+        [
+            _pattern(key="a"),
+            _pattern(key="b", y=(5.0, 10.0, 15.0, 10.0)),
+        ],
+        metadata={"campaign": "demo"},
+    )
     result = process_xrd_dataset(
         dataset,
         XRDProcessingConfig(normalization="max"),
-        overrides={"b": XRDProcessingConfig(normalization="max", vertical_offset=2.0)},
+        overrides={
+            "b": XRDProcessingConfig(normalization="max", vertical_offset=2.0)
+        },
         baselines={"a": 1.0},
     )
 
     assert result.keys == ("a", "b")
     assert result.metadata["campaign"] == "demo"
     np.testing.assert_allclose(result[0].y, (1 / 7, 3 / 7, 1.0, 3 / 7))
-    np.testing.assert_allclose(result[1].y, (2 + 1 / 3, 2 + 2 / 3, 3.0, 2 + 2 / 3))
+    np.testing.assert_allclose(
+        result[1].y,
+        (2 + 1 / 3, 2 + 2 / 3, 3.0, 2 + 2 / 3),
+    )
 
 
 def test_process_xrd_dataset_rejects_unknown_keys():
     dataset = Dataset([_pattern(key="a")])
     with pytest.raises(XRDError, match="override keys not present"):
-        process_xrd_dataset(dataset, XRDProcessingConfig(), overrides={"missing": XRDProcessingConfig()})
+        process_xrd_dataset(
+            dataset,
+            XRDProcessingConfig(),
+            overrides={"missing": XRDProcessingConfig()},
+        )
     with pytest.raises(XRDError, match="baseline keys not present"):
-        process_xrd_dataset(dataset, XRDProcessingConfig(), baselines={"missing": 1.0})
+        process_xrd_dataset(
+            dataset,
+            XRDProcessingConfig(),
+            baselines={"missing": 1.0},
+        )
 
 
 def test_stack_xrd_dataset_is_non_mutating_and_records_provenance():
-    dataset = Dataset([
-        _pattern(key="a", y=(0.0, 1.0, 2.0, 1.0)),
-        _pattern(key="b", y=(0.0, 2.0, 4.0, 2.0)),
-    ])
+    dataset = Dataset(
+        [
+            _pattern(key="a", y=(0.0, 1.0, 2.0, 1.0)),
+            _pattern(key="b", y=(0.0, 2.0, 4.0, 2.0)),
+        ]
+    )
     stacked = stack_xrd_dataset(dataset, step=3.0, start=1.0)
 
     np.testing.assert_allclose(stacked[0].y, (1.0, 2.0, 3.0, 2.0))
@@ -111,7 +138,11 @@ def test_stack_xrd_dataset_is_non_mutating_and_records_provenance():
 
 
 def test_reference_pattern_validation():
-    reference = XRDReferencePattern([20.0, 30.0], [20.0, 100.0], label="reference")
+    reference = XRDReferencePattern(
+        [20.0, 30.0],
+        [20.0, 100.0],
+        label="reference",
+    )
     assert reference.positions_deg == (20.0, 30.0)
     assert reference.intensities == (20.0, 100.0)
     with pytest.raises(XRDError, match="match reference positions"):
