@@ -21,6 +21,33 @@ _TWO_THETA_NAMES = {"twotheta", "2theta"}
 _INTENSITY_NAMES = {"intensity", "normalizedintensity"}
 _DEGREE_UNITS = {"deg", "degree", "degrees", "°"}
 
+_COUNT_UNITS = {"count", "counts", "ct", "cts"}
+_COUNT_RATE_UNITS = {
+    "cps",
+    "count/s",
+    "counts/s",
+    "ct/s",
+    "cts/s",
+    "countpersecond",
+    "countspersecond",
+    "countss^-1",
+    "countss-1",
+    "counts^-1",
+    "counts-1",
+}
+_ARBITRARY_UNITS = {
+    "a.u.",
+    "a.u",
+    "au",
+    "arb.u.",
+    "arb.u",
+    "arb.unit",
+    "arb.units",
+    "arbitraryunit",
+    "arbitraryunits",
+}
+_DIMENSIONLESS_UNITS = {"1", "dimensionless"}
+
 
 class XRDError(ValueError):
     """Raised when XRD data or a requested XRD operation is scientifically invalid."""
@@ -52,6 +79,51 @@ def _degree_unit(unit: str | None) -> str:
     return normalized
 
 
+def _compact_unit(unit: str) -> str:
+    return (
+        "".join(str(unit).strip().casefold().split())
+        .replace("−", "-")
+        .replace("⁻", "-")
+        .replace("¹", "1")
+    )
+
+
+def _intensity_unit_signature(
+    series: Series,
+) -> tuple[str, str | None]:
+    """Return a conservative intensity-basis kind and canonical display unit."""
+    unit = series.y_axis.unit
+    if unit is None or not str(unit).strip():
+        kind = "dimensionless"
+        canonical: str | None = None
+    else:
+        compact = _compact_unit(str(unit))
+        if compact in _COUNT_UNITS:
+            kind, canonical = "counts", "counts"
+        elif compact in _COUNT_RATE_UNITS:
+            kind, canonical = "count_rate", "cps"
+        elif compact in _ARBITRARY_UNITS:
+            kind, canonical = "arbitrary", "a.u."
+        elif compact in _DIMENSIONLESS_UNITS:
+            kind, canonical = "dimensionless", None
+        else:
+            raise XRDError(
+                f"unsupported XRD intensity unit {unit!r}; use counts, cps, "
+                "arbitrary units, or dimensionless intensity"
+            )
+
+    semantic_name = _semantic_token(series.y_axis.name)
+    if semantic_name == "normalizedintensity" and kind not in {
+        "arbitrary",
+        "dimensionless",
+    }:
+        raise XRDError(
+            "normalized_intensity must use arbitrary or dimensionless units, "
+            f"not {unit!r}"
+        )
+    return kind, canonical
+
+
 def validate_xrd_series(series: Series) -> None:
     """Validate one experimental XRD pattern without modifying it."""
     if not isinstance(series, Series):
@@ -68,6 +140,7 @@ def validate_xrd_series(series: Series) -> None:
         raise XRDError(
             "XRD requires y_axis.name='intensity' or 'normalized_intensity'"
         )
+    _intensity_unit_signature(series)
 
     x = np.asarray(series.x)
     if np.iscomplexobj(x):
@@ -87,6 +160,17 @@ def validate_xrd_series(series: Series) -> None:
         raise XRDError("XRD intensity values must not contain +/-inf")
 
 
+def _normalization_signature(
+    method: XRDNormalization,
+    target: float,
+    area_mode: XRDAreaMode,
+) -> str:
+    signature = f"xrd:{method}:target={float(target)!r}"
+    if method == "area":
+        signature += f":area_mode={area_mode}"
+    return signature
+
+
 def _with_normalized_intensity_axis(
     series: Series,
     *,
@@ -97,7 +181,7 @@ def _with_normalized_intensity_axis(
     metadata = series.y_axis.metadata_dict()
     metadata.update(
         {
-            "normalization": "xrd_normalized",
+            "normalization": _normalization_signature(method, target, area_mode),
             "normalization_method": method,
             "normalization_target": target,
         }
@@ -118,6 +202,66 @@ def _with_normalized_intensity_axis(
         y_axis=y_axis,
         metadata=series.metadata_dict(),
         key=series.key,
+    )
+
+
+def _canonicalize_xrd_series(series: Series) -> Series:
+    """Return a render-only copy with equivalent XRD semantics canonicalized."""
+    validate_xrd_series(series)
+    _, canonical_y_unit = _intensity_unit_signature(series)
+    y_name = (
+        "normalized_intensity"
+        if _semantic_token(series.y_axis.name) == "normalizedintensity"
+        else "intensity"
+    )
+    return Series(
+        x=series.x,
+        y=series.y,
+        label=series.label,
+        x_axis=Axis(
+            name="two_theta",
+            unit="deg",
+            label=series.x_axis.label,
+            metadata=series.x_axis.metadata_dict(),
+        ),
+        y_axis=Axis(
+            name=y_name,
+            unit=canonical_y_unit,
+            label=series.y_axis.label,
+            metadata=series.y_axis.metadata_dict(),
+        ),
+        metadata=series.metadata_dict(),
+        key=series.key,
+    )
+
+
+def _baseline_for_source(source: Series, baseline: Series) -> Series:
+    """Adapt semantically equivalent baseline axes to the exact source axis objects."""
+    validate_xrd_series(baseline)
+    source_name = _semantic_token(source.y_axis.name)
+    baseline_name = _semantic_token(baseline.y_axis.name)
+    if source_name != baseline_name:
+        raise XRDError(
+            "baseline Series intensity semantics must match the source "
+            f"({source.y_axis.name!r} != {baseline.y_axis.name!r})"
+        )
+
+    source_kind, _ = _intensity_unit_signature(source)
+    baseline_kind, _ = _intensity_unit_signature(baseline)
+    if source_kind != baseline_kind:
+        raise XRDError(
+            "baseline Series intensity basis must match the source "
+            f"({source.y_axis.unit!r} != {baseline.y_axis.unit!r})"
+        )
+
+    return Series(
+        x=baseline.x,
+        y=baseline.y,
+        label=baseline.label,
+        x_axis=source.x_axis,
+        y_axis=source.y_axis,
+        metadata=baseline.metadata_dict(),
+        key=baseline.key,
     )
 
 
@@ -160,11 +304,13 @@ class XRDProcessingConfig:
             raise XRDError(f"unsupported XRD normalization {self.normalization!r}")
         if self.normalization_area_mode not in {"absolute", "net"}:
             raise XRDError("normalization_area_mode must be 'absolute' or 'net'")
-        object.__setattr__(
-            self,
-            "normalization_target",
-            _finite_float(self.normalization_target, name="normalization_target"),
+        normalization_target = _finite_float(
+            self.normalization_target,
+            name="normalization_target",
         )
+        if normalization_target <= 0:
+            raise XRDError("normalization_target must be greater than zero for XRD")
+        object.__setattr__(self, "normalization_target", normalization_target)
         object.__setattr__(
             self,
             "vertical_offset",
@@ -185,9 +331,12 @@ def process_xrd(
 
     result = series
     if baseline is not None:
-        if isinstance(baseline, Series):
-            validate_xrd_series(baseline)
-        result = subtract_baseline(result, baseline)
+        baseline_input = (
+            _baseline_for_source(result, baseline)
+            if isinstance(baseline, Series)
+            else baseline
+        )
+        result = subtract_baseline(result, baseline_input)
 
     if config.x_min_deg is not None or config.x_max_deg is not None:
         result = crop(
