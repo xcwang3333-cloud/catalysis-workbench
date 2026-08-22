@@ -41,6 +41,24 @@ def test_validate_xrd_accepts_common_two_theta_semantics(name, unit):
     validate_xrd_series(_pattern(x_name=name, x_unit=unit))
 
 
+@pytest.mark.parametrize(
+    ("unit", "y_name"),
+    [
+        ("counts", "intensity"),
+        ("count", "intensity"),
+        ("cps", "intensity"),
+        ("counts/s", "intensity"),
+        ("a.u.", "intensity"),
+        (None, "intensity"),
+        ("1", "intensity"),
+        ("a.u.", "normalized_intensity"),
+        (None, "normalized_intensity"),
+    ],
+)
+def test_validate_xrd_accepts_common_intensity_bases(unit, y_name):
+    validate_xrd_series(_pattern(y_unit=unit, y_name=y_name))
+
+
 def test_validate_xrd_rejects_bad_semantics_units_and_grid():
     with pytest.raises(XRDError, match="x_axis.name"):
         validate_xrd_series(_pattern(x_name="time"))
@@ -48,8 +66,18 @@ def test_validate_xrd_rejects_bad_semantics_units_and_grid():
         validate_xrd_series(_pattern(x_unit="rad"))
     with pytest.raises(XRDError, match="y_axis.name"):
         validate_xrd_series(_pattern(y_name="current"))
+    with pytest.raises(XRDError, match="unsupported XRD intensity unit"):
+        validate_xrd_series(_pattern(y_unit="mA"))
+    with pytest.raises(XRDError, match="normalized_intensity"):
+        validate_xrd_series(_pattern(y_name="normalized_intensity", y_unit="counts"))
     with pytest.raises(XRDError, match="strictly increasing"):
         validate_xrd_series(_pattern(x=(10.0, 20.0, 20.0, 40.0)))
+
+
+@pytest.mark.parametrize("target", [0.0, -1.0])
+def test_xrd_config_rejects_non_positive_normalization_target(target):
+    with pytest.raises(XRDError, match="normalization_target"):
+        XRDProcessingConfig(normalization="max", normalization_target=target)
 
 
 def test_process_xrd_reuses_shared_baseline_crop_normalize_and_offset():
@@ -70,6 +98,7 @@ def test_process_xrd_reuses_shared_baseline_crop_normalize_and_offset():
     assert result.y_axis.name == "normalized_intensity"
     assert result.y_axis.unit == "a.u."
     assert result.y_axis.metadata["normalization_method"] == "max"
+    assert result.y_axis.metadata["normalization"] == "xrd:max:target=1.0"
     assert [item["operation"] for item in result.metadata["processing_history"]] == [
         "subtract_baseline",
         "crop",
@@ -77,6 +106,23 @@ def test_process_xrd_reuses_shared_baseline_crop_normalize_and_offset():
         "offset",
     ]
     np.testing.assert_allclose(source.y, (2.0, 4.0, 8.0, 4.0))
+
+
+def test_process_xrd_accepts_semantically_equivalent_baseline_axis_aliases():
+    source = _pattern(y=(3.0, 6.0, 9.0, 6.0))
+    baseline = _pattern(
+        key="baseline",
+        y=(1.0, 1.0, 1.0, 1.0),
+        x_name="2θ",
+        x_unit="degree",
+        y_unit="count",
+    )
+    result = process_xrd(source, XRDProcessingConfig(), baseline=baseline)
+
+    np.testing.assert_allclose(result.y, (2.0, 5.0, 8.0, 5.0))
+    assert result.x_axis.name == source.x_axis.name
+    assert result.x_axis.unit == source.x_axis.unit
+    assert result.y_axis.unit == source.y_axis.unit
 
 
 def test_process_xrd_dataset_supports_keyed_overrides_and_baselines():
