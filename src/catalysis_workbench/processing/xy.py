@@ -98,6 +98,18 @@ def _monotonic_direction(x: np.ndarray, *, operation: str) -> int:
     )
 
 
+def _require_uniform_spacing(x: np.ndarray, *, operation: str) -> float:
+    _monotonic_direction(x, operation=operation)
+    spacing = np.diff(x)
+    reference = float(spacing[0])
+    tolerance = max(abs(reference) * 1e-6, np.finfo(np.float64).eps * 32)
+    if not np.allclose(spacing, reference, rtol=1e-6, atol=tolerance):
+        raise ProcessingError(
+            f"{operation} requires approximately uniform x spacing; interpolate first"
+        )
+    return reference
+
+
 def _require_complete_y(series: Series, *, operation: str) -> np.ndarray:
     y = np.asarray(series.y)
     if np.isnan(y).any():
@@ -221,7 +233,9 @@ def savgol(
     mode: str = "interp",
     cval: float = 0.0,
 ) -> Series:
-    """Smooth y with SciPy's Savitzky-Golay implementation."""
+    """Smooth uniformly sampled y data with SciPy's Savitzky-Golay filter."""
+    x = _require_real_finite_x(series, operation="savgol")
+    spacing = _require_uniform_spacing(x, operation="savgol")
     y = _require_complete_y(series, operation="savgol")
     try:
         if np.iscomplexobj(y):
@@ -250,6 +264,7 @@ def savgol(
             "polyorder": int(polyorder),
             "mode": mode,
             "cval": float(cval),
+            "x_spacing": spacing,
         },
     )
 
