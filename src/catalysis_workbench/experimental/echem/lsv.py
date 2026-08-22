@@ -146,7 +146,9 @@ def _current_in_a(series: Series) -> np.ndarray:
         factor = _CURRENT_TO_A[unit]
     except KeyError as exc:
         if unit in _CURRENT_DENSITY_TO_A_CM2:
-            raise LSVError("current-density input requires electrode area to recover total current") from exc
+            raise LSVError(
+                "current-density input requires electrode area to recover total current"
+            ) from exc
         raise LSVError(
             f"unsupported current unit {series.y_axis.unit!r}; use A, mA, or uA"
         ) from exc
