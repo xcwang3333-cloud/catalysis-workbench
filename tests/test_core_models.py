@@ -4,13 +4,15 @@ import pytest
 from catalysis_workbench.core import Axis, Dataset, Series
 
 
-def test_axis_display_label_and_metadata_are_detached():
+def test_axis_keeps_semantic_label_unit_and_metadata_separate():
     source = {"reference": "RHE", "tags": ["corrected"]}
     axis = Axis("potential", unit="V", label="Potential", metadata=source)
 
     source["tags"].append("mutated")
 
-    assert axis.display_label == "Potential (V)"
+    assert axis.name == "potential"
+    assert axis.label == "Potential"
+    assert axis.unit == "V"
     assert axis.metadata["reference"] == "RHE"
     assert axis.metadata["tags"] == ("corrected",)
 
@@ -18,7 +20,7 @@ def test_axis_display_label_and_metadata_are_detached():
         axis.metadata["new"] = "value"
 
 
-def test_series_coerces_numeric_input_and_protects_arrays():
+def test_series_coerces_real_numeric_input_and_detaches_source_memory():
     source_x = [0, 1, 2]
     source_y = np.array([3, 4, 5], dtype=float)
     series = Series(source_x, source_y, label="Pb3-N/C")
@@ -27,6 +29,8 @@ def test_series_coerces_numeric_input_and_protects_arrays():
 
     assert series.n_points == 3
     assert series.label == "Pb3-N/C"
+    assert series.x.dtype == np.float64
+    assert series.y.dtype == np.float64
     np.testing.assert_allclose(series.x, [0.0, 1.0, 2.0])
     np.testing.assert_allclose(series.y, [3.0, 4.0, 5.0])
     assert not series.x.flags.writeable
@@ -34,6 +38,30 @@ def test_series_coerces_numeric_input_and_protects_arrays():
 
     with pytest.raises(ValueError):
         series.y[0] = 1.0
+
+
+def test_series_backing_arrays_cannot_be_made_writeable():
+    series = Series([0, 1], [2, 3])
+
+    with pytest.raises(ValueError):
+        series.x.setflags(write=True)
+    with pytest.raises(ValueError):
+        series.y.setflags(write=True)
+
+    np.testing.assert_allclose(series.x, [0, 1])
+    np.testing.assert_allclose(series.y, [2, 3])
+
+
+def test_series_preserves_complex_values_without_silent_truncation():
+    impedance = np.array([10 + 2j, 8 - 3j], dtype=np.complex128)
+    series = Series(x=[1, 10], y=impedance, label="EIS")
+
+    assert series.y.dtype == np.complex128
+    np.testing.assert_allclose(series.y, impedance)
+    assert np.any(np.imag(series.y) != 0)
+
+    with pytest.raises(ValueError):
+        series.y.setflags(write=True)
 
 
 @pytest.mark.parametrize(
@@ -142,6 +170,13 @@ def test_series_value_equality_handles_numpy_arrays_and_nan():
 
     assert first == second
     assert first.equals(second)
+
+
+def test_series_value_equality_handles_complex_values():
+    first = Series([0, 1], [1 + 2j, 3 - 4j], label="EIS")
+    second = Series([0, 1], [1 + 2j, 3 - 4j], label="EIS")
+
+    assert first == second
 
 
 def test_dataset_value_equality_is_order_sensitive():
