@@ -28,3 +28,35 @@ jobs:
 
       - name: Run tests
         run: python -m pytest
+
+  package-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Build wheel
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip wheel . --no-deps --wheel-dir dist
+
+      - name: Install wheel in a fresh virtual environment
+        run: |
+          python -m venv .venv-smoke
+          .venv-smoke/bin/python -m pip install --upgrade pip
+          .venv-smoke/bin/python -m pip install dist/catalysis_workbench-*.whl
+
+      - name: Smoke documented public API from installed wheel
+        run: .venv-smoke/bin/python tests/installed_api_smoke.py
+
+      - name: Run end-to-end v0.1 examples from installed wheel
+        run: |
+          .venv-smoke/bin/python examples/lsv_quickstart.py
+          .venv-smoke/bin/python examples/xrd_quickstart.py
+          .venv-smoke/bin/python examples/raman_quickstart.py
