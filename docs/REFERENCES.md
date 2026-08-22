@@ -29,6 +29,7 @@ Before implementing a scientific or visualization module:
 | XAS | `xraypy/xraylarch` | Mature X-ray spectroscopy/XAS processing ecosystem. | Reference/dependency candidate for XANES/EXAFS algorithms; CatalysisWorkbench should emphasize comparison, result integration and publication figures rather than replace the mature XAS stack. |
 | Electronic structure | `romerogroup/pyprocar` | Electronic-structure parsing/visualization, including projected electronic data. | Reference for DOS/PDOS parsing and projection-selection concepts in v0.6. |
 | Chemical bonding | `JaGeo/LobsterPy` | Analysis of LOBSTER bonding output. | Reference/dependency candidate for COHP/ICOHP parsing and bonding analysis in v0.6. |
+| Matplotlib extensions | `nschloe/matplotx` | Small composable style/palette extensions on Matplotlib. MIT licensed. | Architectural reference only for v0.1: keep extensions narrow and composable; do not add an extra plotting dependency for capabilities already represented in `FigureSpec`. |
 
 ## Core data-model decision for v0.1
 
@@ -63,25 +64,22 @@ This keeps the I/O layer format-oriented and leaves LSV/XRD/Raman semantics to t
 
 ## Visualization design principle
 
-Publication presets are **starting templates**, not locked themes. From the first plotting API, visual parameters should be represented explicitly in a `FigureSpec` / `PlotStyle` model so the same figure can later be adjusted interactively without changing the scientific analysis code.
+Publication presets are **starting templates**, not locked themes. From the first plotting API, visual parameters are represented explicitly in a `FigureSpec` / `PlotStyle` model so the same scientific data can later be redrawn interactively without changing analysis code.
 
-Parameters that should remain user-adjustable include:
+The v0.1 shared renderer follows these reviewed rules:
 
-- figure width and height;
-- axes width/height or aspect ratio;
-- plot margins;
-- font family and font sizes;
-- axis-label and tick-label sizes;
-- line width and line style;
-- marker symbol and marker size;
-- axis-spine width;
-- tick length and tick width;
-- legend location and typography;
-- x/y limits and scales;
-- annotation size/position;
-- export format, physical size and DPI.
+- whole-figure physical size and axes drawing-region size are separate `LayoutSpec` concerns;
+- `FigureSpec` and nested specs are immutable and dictionary-serializable for future GUI state;
+- generic presets (`publication`, `compact`, `wide`) are editable starting points rather than hidden global styles;
+- rendering starts from Matplotlib defaults inside a local `rc_context`, then applies explicit `FigureSpec` settings, so unrelated ambient rcParams such as grids or axes face colors do not alter the result and are restored afterwards;
+- multi-Series overlays require matching axis names/units and matching compatibility-critical axis metadata for `reference` and `normalization`; provenance-only metadata such as `source_reference` and `electrode_area_cm2` may differ when the final physical basis is compatible;
+- complex curves are rejected by the generic 2-D renderer instead of silently dropping an imaginary component;
+- `None` means automatic axis-label generation, while an explicit empty label suppresses rendering of that axis label;
+- stable `Series.key` values, not display labels, address per-Series visual overrides;
+- exact-size export avoids `bbox_inches="tight"`; PNG uses explicit DPI, while SVG/PDF preserve vector artists and configured font embedding;
+- export settings are applied without closing the figure, leaking global rc state, or permanently changing a live figure's preview size; if the complete layout recipe changes, callers should rerender through the same renderer before export.
 
-The v0.1 API should expose these values programmatically. A later local GUI (target v0.9-v1.0) should bind controls directly to the same parameter object and redraw the figure immediately.
+Parameters that remain user-adjustable include figure/axes dimensions, margins, typography, line/marker settings, spines, ticks, legend settings, limits/scales, annotations, and export DPI/font behavior. A later local GUI (target v0.9-v1.0) should bind controls directly to the same specification objects and request deterministic redraws.
 
 ## Structure-visualization note
 
@@ -91,7 +89,7 @@ The v0.1 API should expose these values programmatically. A later local GUI (tar
 - rely on a mature structure library instead of rebuilding crystallographic parsing;
 - construct an intermediate scene representation between structure data and the renderer;
 - provide attractive defaults but expose fine-grained atom/bond/material controls;
-- make preview and export part of the same rendering model.
+- make preview and export part of the same rendering model while keeping output dimensions independent from the interactive viewport.
 
 CatalysisWorkbench should follow these principles while preserving its own role: DFT/geometry analysis lives in the computation layer, while publication-oriented structure rendering lives in the visualization layer.
 
