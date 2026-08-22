@@ -56,6 +56,35 @@ def _thaw_value(value: Any) -> Any:
     return deepcopy(value)
 
 
+def _metadata_equal(left: Mapping[str, Any], right: Mapping[str, Any]) -> bool:
+    if left.keys() != right.keys():
+        return False
+    return all(_value_equal(left[key], right[key]) for key in left)
+
+
+def _value_equal(left: Any, right: Any) -> bool:
+    if isinstance(left, Mapping) and isinstance(right, Mapping):
+        return _metadata_equal(left, right)
+    if isinstance(left, np.ndarray) or isinstance(right, np.ndarray):
+        try:
+            return bool(np.array_equal(np.asarray(left), np.asarray(right), equal_nan=True))
+        except TypeError:
+            return bool(np.array_equal(np.asarray(left), np.asarray(right)))
+    if isinstance(left, tuple) and isinstance(right, tuple):
+        return len(left) == len(right) and all(
+            _value_equal(a, b) for a, b in zip(left, right)
+        )
+    if isinstance(left, frozenset) and isinstance(right, frozenset):
+        return left == right
+    try:
+        result = left == right
+    except Exception:
+        return False
+    if isinstance(result, np.ndarray):
+        return bool(np.all(result))
+    return bool(result)
+
+
 def _as_readonly_1d(values: ArrayLike, *, field_name: str) -> NDArray[np.float64]:
     try:
         array = np.array(values, dtype=np.float64, copy=True)
@@ -73,7 +102,7 @@ def _as_readonly_1d(values: ArrayLike, *, field_name: str) -> NDArray[np.float64
     return array
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True, eq=False)
 class Axis:
     """Metadata describing one numerical axis."""
 
@@ -101,12 +130,25 @@ class Axis:
         base = self.label or self.name
         return f"{base} ({self.unit})" if self.unit else base
 
+    def equals(self, other: object) -> bool:
+        """Return whether another axis has the same scientific content."""
+        return (
+            isinstance(other, Axis)
+            and self.name == other.name
+            and self.unit == other.unit
+            and self.label == other.label
+            and _metadata_equal(self.metadata, other.metadata)
+        )
+
+    def __eq__(self, other: object) -> bool:
+        return self.equals(other)
+
     def metadata_dict(self) -> dict[str, Any]:
         """Return an independent mutable copy of axis metadata."""
         return {key: _thaw_value(value) for key, value in self.metadata.items()}
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True, eq=False)
 class Series:
     """One numerical ``y(x)`` trace plus lightweight scientific metadata."""
 
@@ -140,6 +182,28 @@ class Series:
     def has_missing(self) -> bool:
         """Whether either axis contains one or more NaN values."""
         return bool(np.isnan(self.x).any() or np.isnan(self.y).any())
+
+    def equals(self, other: object) -> bool:
+        """Return whether another series has the same values and metadata."""
+        if not isinstance(other, Series):
+            return False
+        try:
+            x_equal = np.array_equal(self.x, other.x, equal_nan=True)
+            y_equal = np.array_equal(self.y, other.y, equal_nan=True)
+        except TypeError:
+            x_equal = np.array_equal(self.x, other.x)
+            y_equal = np.array_equal(self.y, other.y)
+        return bool(
+            x_equal
+            and y_equal
+            and self.label == other.label
+            and self.x_axis.equals(other.x_axis)
+            and self.y_axis.equals(other.y_axis)
+            and _metadata_equal(self.metadata, other.metadata)
+        )
+
+    def __eq__(self, other: object) -> bool:
+        return self.equals(other)
 
     def metadata_dict(self) -> dict[str, Any]:
         """Return an independent mutable copy of series metadata."""
@@ -187,7 +251,7 @@ class Series:
         )
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True, eq=False)
 class Dataset:
     """Ordered collection of scientific series for comparison or joint analysis."""
 
@@ -222,6 +286,19 @@ class Dataset:
     @property
     def labels(self) -> tuple[str, ...]:
         return tuple(item.label for item in self.series)
+
+    def equals(self, other: object) -> bool:
+        """Return whether another dataset has the same ordered scientific content."""
+        return (
+            isinstance(other, Dataset)
+            and self.name == other.name
+            and len(self.series) == len(other.series)
+            and all(a.equals(b) for a, b in zip(self.series, other.series))
+            and _metadata_equal(self.metadata, other.metadata)
+        )
+
+    def __eq__(self, other: object) -> bool:
+        return self.equals(other)
 
     def metadata_dict(self) -> dict[str, Any]:
         """Return an independent mutable copy of dataset metadata."""
