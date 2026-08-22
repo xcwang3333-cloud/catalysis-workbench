@@ -575,6 +575,36 @@ def _require_ratio_safe_normalization(series: Series) -> None:
             )
 
 
+def _interpolate_boundary(
+    x: np.ndarray,
+    y: np.ndarray,
+    position: float,
+) -> float:
+    """Interpolate one in-range boundary without crossing missing-data gaps."""
+    index = int(np.searchsorted(x, position, side="left"))
+    if index < x.size and x[index] == position:
+        value = float(y[index])
+        if not isfinite(value):
+            raise RamanError(
+                "cannot measure Raman band: boundary intensity is missing"
+            )
+        return value
+    if index == 0 or index >= x.size:
+        raise RamanError(
+            "RamanBand boundary lies outside the measured Raman-shift range"
+        )
+    x0 = float(x[index - 1])
+    x1 = float(x[index])
+    y0 = float(y[index - 1])
+    y1 = float(y[index])
+    if not isfinite(y0) or not isfinite(y1):
+        raise RamanError(
+            "cannot measure Raman band: boundary interpolation crosses missing y values"
+        )
+    fraction = (position - x0) / (x1 - x0)
+    return y0 + fraction * (y1 - y0)
+
+
 def _exact_band_series(
     series: Series,
     band: RamanBand,
@@ -598,11 +628,11 @@ def _exact_band_series(
     source_y = np.asarray(series.y, dtype=np.float64)
 
     if observed_x[0] > band.x_min_cm1:
-        left_y = float(np.interp(band.x_min_cm1, x, source_y))
+        left_y = _interpolate_boundary(x, source_y, band.x_min_cm1)
         integration_x.insert(0, band.x_min_cm1)
         integration_y.insert(0, left_y)
     if observed_x[-1] < band.x_max_cm1:
-        right_y = float(np.interp(band.x_max_cm1, x, source_y))
+        right_y = _interpolate_boundary(x, source_y, band.x_max_cm1)
         integration_x.append(band.x_max_cm1)
         integration_y.append(right_y)
 
