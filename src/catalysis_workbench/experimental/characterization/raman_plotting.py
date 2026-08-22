@@ -10,7 +10,12 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
 from catalysis_workbench.core import Dataset, Series
-from catalysis_workbench.visualization import FigureSpec, format_axis_label, get_preset, render_curves
+from catalysis_workbench.visualization import (
+    FigureSpec,
+    format_axis_label,
+    get_preset,
+    render_curves,
+)
 
 from .raman import (
     RamanError,
