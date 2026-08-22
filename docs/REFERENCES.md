@@ -116,3 +116,18 @@ Processing semantics are kept deterministic and non-mutating:
 - baseline subtraction using another `Series` requires the same x grid and matching x/y axis names and units, preventing silent subtraction across incompatible physical quantities;
 - integration results carry point count, x orientation, axis names/units and a deterministic source-data SHA-256 in addition to optional key/label provenance;
 - interpolation grids and array/Series baselines are represented in provenance by deterministic SHA-256 digests while transformed Series retain the actual numerical data.
+
+## LSV / polarization processing decision for v0.1
+
+`ixdat/ixdat` (MIT) is the main architecture and equation reference for the first electrochemistry layer. Its `ECCalibration` stores reference-electrode offset, electrode area, and uncompensated resistance explicitly. The calibrated potential adds the reference-to-RHE offset, ohmic correction subtracts signed current times resistance, and current normalization divides total current by electrode area. CatalysisWorkbench adopts those transparent numerical semantics while keeping a much lighter post-processing API.
+
+The v0.1 LSV contract is deliberately explicit:
+
+- an LSV trace is a normal core `Series` whose x values are potential and y values are either total current or current density;
+- RHE conversion uses an explicit additive `offset_v`; a helper can derive that offset from a user-supplied reference potential versus SHE, pH, and temperature using the Nernst pH term, but v0.1 does not embed a reference-electrode lookup table;
+- ohmic-drop correction is `E_corrected = E - fraction * I * R` using signed **total current in amperes**; if the input y data are current density, geometric electrode area is mandatory before applying Ohm's law;
+- current-density normalization uses explicit geometric area in cm^2 and refuses to normalize an already-normalized current-density trace again;
+- only common electrochemical V/mV, A/mA/uA, and corresponding per-cm^2 units are interpreted in v0.1. Missing or unsupported units fail rather than being guessed;
+- electrochemical transformations are non-mutating, preserve stable keys/source metadata, update changed axis semantics, and append deterministic `echem.*` entries to the shared `processing_history`;
+- `LSVProcessingConfig` records the complete correction/normalization recipe. Dataset processing can apply one common recipe with stable-key-specific overrides for catalysts measured under different resistance/area/reference conditions;
+- plotting is intentionally not implemented inside the electrochemistry module. LSV rendering must consume the shared `FigureSpec`/curve renderer from Issue #7 so LSV, XRD, and Raman do not develop separate Matplotlib style systems.
