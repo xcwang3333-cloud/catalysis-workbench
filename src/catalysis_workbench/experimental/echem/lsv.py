@@ -19,15 +19,8 @@ from catalysis_workbench.core import Axis, Dataset, Series
 _GAS_CONSTANT_J_MOL_K = 8.31446261815324
 _FARADAY_CONSTANT_C_MOL = 96485.33212
 
-_POTENTIAL_TO_V = {
-    "v": 1.0,
-    "mv": 1e-3,
-}
-_CURRENT_TO_A = {
-    "a": 1.0,
-    "ma": 1e-3,
-    "ua": 1e-6,
-}
+_POTENTIAL_TO_V = {"v": 1.0, "mv": 1e-3}
+_CURRENT_TO_A = {"a": 1.0, "ma": 1e-3, "ua": 1e-6}
 _CURRENT_DENSITY_TO_A_CM2 = {
     "a/cm^2": 1.0,
     "a/cm2": 1.0,
@@ -47,6 +40,11 @@ _CANONICAL_DENSITY_UNITS = {
     "ma/cm^2": "mA/cm^2",
     "ua/cm^2": "uA/cm^2",
 }
+_GEOMETRIC_NORMALIZATION_NAMES = {
+    "geometric",
+    "geometric_area",
+    "geometric_area_cm2",
+}
 
 
 class LSVError(ValueError):
@@ -58,9 +56,29 @@ def _compact_unit(unit: str | None) -> str:
         raise LSVError("electrochemical axis unit is required")
     compact = str(unit).strip().lower()
     compact = compact.replace("µ", "u").replace("μ", "u")
-    compact = compact.replace("−", "-").replace("²", "^2")
+    compact = compact.replace("⁻²", "^-2")
+    compact = compact.replace("−", "-").replace("⁻", "-").replace("²", "^2")
     compact = compact.replace("·", "").replace("*", "").replace(" ", "")
     return compact
+
+
+def _normalize_reference_name(reference: str) -> str:
+    name = " ".join(str(reference).split())
+    if not name:
+        raise LSVError("source_reference must not be empty")
+    return name
+
+
+def _same_reference(left: str, right: str) -> bool:
+    return _normalize_reference_name(left).casefold() == _normalize_reference_name(right).casefold()
+
+
+def _history_has(series: Series, operation: str) -> bool:
+    history = series.metadata.get("processing_history", ())
+    return any(
+        isinstance(record, Mapping) and record.get("operation") == operation
+        for record in history
+    )
 
 
 def _require_real(values: np.ndarray, *, quantity: str, allow_nan: bool = True) -> np.ndarray:
@@ -161,22 +179,31 @@ def _current_from_series_in_a(
     *,
     electrode_area_cm2: float | None,
     allow_nan: bool,
-) -> tuple[np.ndarray, str]:
+) -> tuple[np.ndarray, str, str | None]:
     unit = _compact_unit(series.y_axis.unit)
     values = _require_real(series.y, quantity="current", allow_nan=allow_nan)
     if unit in _CURRENT_TO_A:
-        return values * _CURRENT_TO_A[unit], "current"
+        return values * _CURRENT_TO_A[unit], "current", None
     if unit in _CURRENT_DENSITY_TO_A_CM2:
         if electrode_area_cm2 is None:
             raise LSVError(
                 "electrode_area_cm2 is required for iR correction of current-density data"
             )
         area = _positive_finite(electrode_area_cm2, name="electrode_area_cm2")
+        declared = series.y_axis.metadata.get("normalization")
+        if declared is not None:
+            declared_name = str(declared).strip().lower().replace(" ", "_")
+            if declared_name not in _GEOMETRIC_NORMALIZATION_NAMES:
+                raise LSVError(
+                    "current-density iR reconstruction requires geometric-area "
+                    f"normalization; found {declared!r}"
+                )
+            area_basis = "geometric_area_declared"
+        else:
+            area_basis = "geometric_area_explicit_assumption"
         density_a_cm2 = values * _CURRENT_DENSITY_TO_A_CM2[unit]
-        return density_a_cm2 * area, "current_density"
-    raise LSVError(
-        f"unsupported current/current-density unit {series.y_axis.unit!r}"
-    )
+        return density_a_cm2 * area, "current_density", area_basis
+    raise LSVError(f"unsupported current/current-density unit {series.y_axis.unit!r}")
 
 
 def rhe_offset_from_she(
@@ -185,18 +212,12 @@ def rhe_offset_from_she(
     *,
     temperature_k: float = 298.15,
 ) -> float:
-    """Return the additive offset converting ``E vs reference`` to ``E vs RHE``.
-
-    The caller supplies the reference electrode potential versus SHE in volts. The
-    Nernst contribution is evaluated explicitly at ``temperature_k``; no reference
-    electrode lookup table is embedded in v0.1.
-    """
+    """Return the additive offset converting ``E vs reference`` to ``E vs RHE``."""
     reference = float(reference_potential_vs_she_v)
     ph_value = float(ph)
     temperature = _positive_finite(temperature_k, name="temperature_k")
     if not isfinite(reference) or not isfinite(ph_value):
         raise LSVError("reference_potential_vs_she_v and ph must be finite")
-
     nernst_slope = (
         2.303 * _GAS_CONSTANT_J_MOL_K * temperature / _FARADAY_CONSTANT_C_MOL
     )
@@ -210,21 +231,45 @@ def convert_potential_to_rhe(
     source_reference: str | None = None,
 ) -> Series:
     """Convert the x-axis potential to RHE using an explicit additive offset in volts."""
+    if _history_has(series, "echem.convert_potential_to_rhe"):
+        raise LSVError("potential has already been converted to RHE")
+
+    declared_reference = series.x_axis.metadata.get("reference")
+    declared_name = None
+    if declared_reference is not None:
+        declared_name = _normalize_reference_name(str(declared_reference))
+        if declared_name.casefold() == "rhe":
+            raise LSVError("potential is already referenced to RHE")
+
+    reference_name = None
+    if source_reference is not None:
+        reference_name = _normalize_reference_name(source_reference)
+        if reference_name.casefold() == "rhe":
+            raise LSVError("source_reference is already RHE; no RHE conversion is needed")
+        if declared_name is not None and not _same_reference(declared_name, reference_name):
+            raise LSVError(
+                "source_reference contradicts x-axis reference metadata: "
+                f"{reference_name!r} vs {declared_name!r}"
+            )
+    elif declared_name is not None:
+        reference_name = declared_name
+
     offset = float(offset_v)
     if not isfinite(offset):
         raise LSVError("offset_v must be finite")
-    potential_v = _potential_in_v(series)
-    converted = potential_v + offset
-    reference_name = str(source_reference).strip() if source_reference is not None else None
+    converted = _potential_in_v(series) + offset
+    axis_updates: dict[str, Any] = {"reference": "RHE"}
+    if reference_name is not None:
+        axis_updates["source_reference"] = reference_name
     x_axis = _axis_with(
         series.x_axis,
         name="potential",
         unit="V",
         label="Potential",
-        metadata_updates={"reference": "RHE"},
+        metadata_updates=axis_updates,
     )
     parameters: dict[str, Any] = {"offset_v": offset, "target_reference": "RHE"}
-    if reference_name:
+    if reference_name is not None:
         parameters["source_reference"] = reference_name
     return _transform(
         series,
@@ -242,18 +287,19 @@ def correct_ir_drop(
     correction_fraction: float = 1.0,
     electrode_area_cm2: float | None = None,
 ) -> Series:
-    """Apply signed ohmic-drop correction ``E_corr = E - f * I * R``.
+    """Apply signed ohmic-drop correction ``E_corr = E - f * I * R``."""
+    if series.x_axis.metadata.get("ir_corrected") is True or _history_has(
+        series, "echem.correct_ir_drop"
+    ):
+        raise LSVError("potential has already been iR corrected")
 
-    If y is current density, ``electrode_area_cm2`` is required to reconstruct total
-    current before Ohm's law is applied.
-    """
     resistance = _nonnegative_finite(resistance_ohm, name="resistance_ohm")
     fraction = float(correction_fraction)
     if not isfinite(fraction) or not 0 <= fraction <= 1:
         raise LSVError("correction_fraction must be finite and between 0 and 1")
 
     potential_v = _potential_in_v(series)
-    current_a, current_kind = _current_from_series_in_a(
+    current_a, current_kind, area_basis = _current_from_series_in_a(
         series,
         electrode_area_cm2=electrode_area_cm2,
         allow_nan=False,
@@ -274,6 +320,7 @@ def correct_ir_drop(
     }
     if current_kind == "current_density":
         parameters["electrode_area_cm2"] = float(electrode_area_cm2)
+        parameters["density_area_basis"] = area_basis
 
     return _transform(
         series,
@@ -323,10 +370,7 @@ def to_current_density(
         y=density,
         y_axis=y_axis,
         operation="echem.to_current_density",
-        parameters={
-            "electrode_area_cm2": area,
-            "output_unit": canonical_unit,
-        },
+        parameters={"electrode_area_cm2": area, "output_unit": canonical_unit},
     )
 
 
@@ -343,6 +387,15 @@ class LSVProcessingConfig:
     current_density_unit: str = "mA/cm^2"
 
     def __post_init__(self) -> None:
+        reference_name = None
+        if self.source_reference is not None:
+            reference_name = _normalize_reference_name(self.source_reference)
+            if self.rhe_offset_v is None:
+                raise LSVError("source_reference requires rhe_offset_v")
+            if reference_name.casefold() == "rhe":
+                raise LSVError("source_reference must not be RHE when applying an RHE offset")
+            object.__setattr__(self, "source_reference", reference_name)
+
         if self.rhe_offset_v is not None and not isfinite(float(self.rhe_offset_v)):
             raise LSVError("rhe_offset_v must be finite")
         if self.resistance_ohm is not None:
