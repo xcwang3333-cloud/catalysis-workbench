@@ -35,7 +35,7 @@ Before implementing a scientific or visualization module:
 The first core model follows a deliberately narrow contract:
 
 - `Axis`: semantic axis name, optional semantic label, unit string and lightweight metadata. Final rendered forms such as `Potential (V)` or `Potential / V` belong to the visualization layer rather than the core model.
-- `Series`: one numerical `y(x)` trace plus its two axes, display label, optional stable non-display key, and metadata.
+- `Series`: one numerical `y(x)` trace plus its two axes, display label, optional stable non-display key, and metadata. `key` is keyword-only so introducing it does not disturb the pre-existing positional constructor order for axes and metadata.
 - `Dataset`: ordered collection of `Series` objects; it also serves the multi-catalyst collection role in v0.1, so a separate `SeriesCollection` type is intentionally avoided.
 - Scientific x/y arrays are detached from caller-owned memory and stored on immutable byte-backed NumPy arrays. The WRITEABLE flag therefore cannot be re-enabled by callers, and processing functions must return new objects instead of mutating source data in place.
 - Real numeric input is normalized to float64; complex numeric input is preserved as complex128 so future EIS data are not silently truncated.
@@ -53,10 +53,11 @@ The first reader layer uses pandas as a backend and adds a deliberately small sc
 - `read_csv`, `read_txt`, `read_excel`, and extension-dispatching `read_tabular` return core `Dataset` objects directly.
 - x/y columns can be selected by exact header or zero-based position; several y columns can share one x column for multi-catalyst comparison.
 - Excel integer sheet selectors are resolved to canonical sheet names before keys/metadata are generated, so keys are independent of whether the user selected `1` or `"Sheet2"`.
-- A deterministic key is generated from source filename, canonical sheet name, and x/y column positions, for example `lsv.xlsx::Sheet1::c0->c2`. It is non-display metadata, while the human-facing `label` can remain identical for replicate measurements.
+- Reader-generated keys use a source identity, canonical sheet name, and x/y column positions. By default the source identity is the normalized source path so same-named files in different folders do not collide when datasets are combined. Users can provide an explicit `source_id` for portable project-level identifiers.
 - Units are conservatively inferred only from trailing square brackets such as `Potential [V]`; users can override units, axis labels, axis names, and series labels explicitly.
 - Selected non-numeric cells raise `TabularReadError` instead of being silently discarded. Explicit missing values remain NaN for later cleaning policy.
-- Reader source metadata records filename, sheet, column headers, and column positions without introducing sample-registry or experiment-management concepts.
+- Duplicate y-column selection and zero-sheet Excel selection are rejected explicitly in the reader layer.
+- Reader source metadata records source id/path, filename, sheet, column headers, and column positions without introducing sample-registry or experiment-management concepts.
 
 This keeps the I/O layer format-oriented and leaves LSV/XRD/Raman semantics to their later domain modules.
 
