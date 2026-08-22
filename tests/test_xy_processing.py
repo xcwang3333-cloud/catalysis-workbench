@@ -133,15 +133,16 @@ def test_savgol_rejects_missing_values_and_invalid_window():
         savgol(_series(), window_length=3, polyorder=3)
 
 
-def test_interpolate_supports_descending_source_and_preserves_requested_grid_order():
+def test_interpolate_supports_descending_source_and_monotonic_target():
     source = _series(x=(4, 3, 2, 1, 0), y=(8, 6, 4, 2, 0))
-    target = np.array([0.5, 2.5, 1.5])
+    target = np.array([0.5, 1.5, 2.5])
     result = interpolate(source, target)
 
     np.testing.assert_allclose(result.x, target)
-    np.testing.assert_allclose(result.y, [1, 5, 3])
+    np.testing.assert_allclose(result.y, [1, 3, 5])
     record = result.metadata["processing_history"][-1]
     assert record["parameters"]["method"] == "linear"
+    assert record["parameters"]["target_direction"] == 1
     assert len(record["parameters"]["grid_sha256"]) == 64
 
 
@@ -189,7 +190,14 @@ def test_subtract_baseline_supports_scalar_array_and_aligned_series():
     source = _series(y=(5, 6, 7, 8, 9))
     scalar = subtract_baseline(source, 1)
     array = subtract_baseline(source, [1, 2, 3, 4, 5])
-    baseline = Series(source.x, [1, 1, 1, 1, 1], label="baseline", key="baseline")
+    baseline = Series(
+        source.x,
+        [1, 1, 1, 1, 1],
+        label="baseline",
+        x_axis=source.x_axis,
+        y_axis=source.y_axis,
+        key="baseline",
+    )
     aligned = subtract_baseline(source, baseline)
 
     np.testing.assert_allclose(scalar.y, [4, 5, 6, 7, 8])
