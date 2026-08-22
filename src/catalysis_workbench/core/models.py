@@ -73,7 +73,7 @@ def _value_equal(left: Any, right: Any) -> bool:
             return bool(np.array_equal(np.asarray(left), np.asarray(right)))
     if isinstance(left, tuple) and isinstance(right, tuple):
         return len(left) == len(right) and all(
-            _value_equal(a, b) for a, b in zip(left, right)
+            _value_equal(a, b) for a, b in zip(left, right, strict=True)
         )
     if isinstance(left, frozenset) and isinstance(right, frozenset):
         return left == right
@@ -316,7 +316,10 @@ class Dataset:
             isinstance(other, Dataset)
             and self.name == other.name
             and len(self.series) == len(other.series)
-            and all(a.equals(b) for a, b in zip(self.series, other.series))
+            and all(
+                a.equals(b)
+                for a, b in zip(self.series, other.series, strict=True)
+            )
             and _metadata_equal(self.metadata, other.metadata)
         )
 
