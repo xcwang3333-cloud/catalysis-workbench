@@ -32,15 +32,18 @@ Before implementing a scientific or visualization module:
 
 The first core model follows a deliberately narrow contract:
 
-- `Axis`: axis name, display label, unit string and lightweight metadata.
+- `Axis`: semantic axis name, optional semantic label, unit string and lightweight metadata. Final rendered forms such as `Potential (V)` or `Potential / V` belong to the visualization layer rather than the core model.
 - `Series`: one numerical `y(x)` trace plus its two axes, display label and metadata.
 - `Dataset`: ordered collection of `Series` objects; it also serves the multi-catalyst collection role in v0.1, so a separate `SeriesCollection` type is intentionally avoided.
-- Numerical arrays are copied on construction and exposed read-only so processing functions return new objects instead of mutating source data in place.
+- Scientific x/y arrays are detached from caller-owned memory and stored on immutable byte-backed NumPy arrays. The WRITEABLE flag therefore cannot be re-enabled by callers, and processing functions must return new objects instead of mutating source data in place.
+- Real numeric input is normalized to float64; complex numeric input is preserved as complex128 so future EIS data are not silently truncated.
 - Duplicate series labels are allowed so replicate measurements of the same catalyst can coexist.
 - NaN is preserved as explicit missing data for later cleaning policies; malformed arrays and +/-inf are rejected.
 - Units are explicit strings in v0.1. General unit arithmetic/conversion is not part of the core; domain-specific conversions belong in analysis modules.
 
 This takes the useful metadata-coupling idea from ixdat and the label/attribute separation idea from xarray without importing either project's full object model.
+
+A stable non-display series key/identifier remains a follow-up design item for the GUI/style-control layer; it is intentionally not added until the file readers establish a deterministic naming policy for replicates.
 
 ## Visualization design principle
 
