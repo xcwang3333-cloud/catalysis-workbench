@@ -17,6 +17,7 @@ import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
 Metadata = Mapping[str, Any]
+NumericArray = NDArray[np.float64] | NDArray[np.complex128]
 
 
 def _freeze_value(value: Any) -> Any:
@@ -85,26 +86,54 @@ def _value_equal(left: Any, right: Any) -> bool:
     return bool(result)
 
 
-def _as_readonly_1d(values: ArrayLike, *, field_name: str) -> NDArray[np.float64]:
+def _as_immutable_numeric_1d(values: ArrayLike, *, field_name: str) -> NumericArray:
+    """Normalize one numeric vector and store it on immutable byte-backed memory.
+
+    Real-valued input is normalized to float64 and complex-valued input to complex128.
+    The returned ndarray is backed by a Python ``bytes`` object, so callers cannot
+    re-enable NumPy's WRITEABLE flag and mutate the stored scientific data in place.
+    """
     try:
-        array = np.array(values, dtype=np.float64, copy=True)
+        source = np.asarray(values)
     except (TypeError, ValueError) as exc:
         raise TypeError(f"{field_name} must contain numeric values") from exc
 
-    if array.ndim != 1:
-        raise ValueError(f"{field_name} must be one-dimensional; got shape {array.shape}")
-    if array.size == 0:
+    if source.ndim != 1:
+        raise ValueError(
+            f"{field_name} must be one-dimensional; got shape {source.shape}"
+        )
+    if source.size == 0:
         raise ValueError(f"{field_name} must contain at least one point")
-    if np.isinf(array).any():
+    if source.dtype.kind not in "biufc":
+        raise TypeError(f"{field_name} must contain numeric values")
+
+    dtype = (
+        np.complex128
+        if np.issubdtype(source.dtype, np.complexfloating)
+        else np.float64
+    )
+    normalized = np.ascontiguousarray(source, dtype=dtype)
+
+    if np.isinf(normalized).any():
         raise ValueError(f"{field_name} must not contain +/-inf")
 
+    immutable_buffer = normalized.tobytes(order="C")
+    array = np.frombuffer(
+        immutable_buffer,
+        dtype=normalized.dtype,
+        count=normalized.size,
+    )
     array.setflags(write=False)
     return array
 
 
 @dataclass(frozen=True, slots=True, eq=False)
 class Axis:
-    """Metadata describing one numerical axis."""
+    """Semantic metadata describing one numerical axis.
+
+    ``label`` and ``unit`` are stored separately. Final rendered strings such as
+    ``Potential (V)`` or ``Potential / V`` are the responsibility of visualization.
+    """
 
     name: str
     unit: str | None = None
@@ -123,12 +152,6 @@ class Axis:
         object.__setattr__(self, "unit", unit or None)
         object.__setattr__(self, "label", label or None)
         object.__setattr__(self, "metadata", _freeze_metadata(self.metadata))
-
-    @property
-    def display_label(self) -> str:
-        """Return a publication-friendly axis label."""
-        base = self.label or self.name
-        return f"{base} ({self.unit})" if self.unit else base
 
     def equals(self, other: object) -> bool:
         """Return whether another axis has the same scientific content."""
@@ -160,8 +183,8 @@ class Series:
     metadata: Metadata = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        x = _as_readonly_1d(self.x, field_name="x")
-        y = _as_readonly_1d(self.y, field_name="y")
+        x = _as_immutable_numeric_1d(self.x, field_name="x")
+        y = _as_immutable_numeric_1d(self.y, field_name="y")
         if x.size != y.size:
             raise ValueError(
                 f"x and y must contain the same number of points; got {x.size} and {y.size}"
@@ -180,7 +203,7 @@ class Series:
 
     @property
     def has_missing(self) -> bool:
-        """Whether either axis contains one or more NaN values."""
+        """Whether either numerical vector contains one or more NaN values."""
         return bool(np.isnan(self.x).any() or np.isnan(self.y).any())
 
     def equals(self, other: object) -> bool:
@@ -210,7 +233,7 @@ class Series:
         return {key: _thaw_value(value) for key, value in self.metadata.items()}
 
     def copy(self) -> Series:
-        """Return a detached copy with independent read-only numerical arrays."""
+        """Return a detached copy with independently normalized numerical arrays."""
         return Series(
             x=self.x,
             y=self.y,
