@@ -2,7 +2,12 @@
 
 from pathlib import Path
 
-from catalysis_workbench.experimental.echem import LSVProcessingConfig, plot_lsv, process_lsv
+from catalysis_workbench.experimental.echem import (
+    LSVProcessingConfig,
+    plot_lsv,
+    process_lsv,
+    rhe_offset_from_she,
+)
 from catalysis_workbench.io import read_csv
 from catalysis_workbench.visualization import export_figure, get_preset
 
@@ -19,10 +24,18 @@ def main(output_dir: Path | None = None) -> None:
         y="Current [mA]",
         source_id="example-lsv",
     )
+
+    # Illustrative Ag/AgCl reference potential versus SHE. In real work, use the
+    # value appropriate to the actual reference electrode/filling solution.
+    rhe_offset_v = rhe_offset_from_she(
+        reference_potential_vs_she_v=0.210,
+        ph=13.0,
+        temperature_k=298.15,
+    )
     processed = process_lsv(
         dataset[0],
         LSVProcessingConfig(
-            rhe_offset_v=0.210,
+            rhe_offset_v=rhe_offset_v,
             source_reference="Ag/AgCl",
             resistance_ohm=5.0,
             electrode_area_cm2=0.196,
