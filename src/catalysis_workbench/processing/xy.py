@@ -14,6 +14,7 @@ from scipy.signal import savgol_filter
 from catalysis_workbench.core import Dataset, Series
 
 NormalizationMethod = Literal["max", "max_abs", "minmax", "area"]
+AreaMode = Literal["absolute", "net"]
 
 
 class ProcessingError(ValueError):
@@ -29,8 +30,14 @@ class IntegrationResult:
     absolute: bool
     source_key: str
     source_label: str
+    source_sha256: str
+    n_points: int
+    x_start: float
+    x_end: float
     x_min: float
     x_max: float
+    x_axis_name: str
+    y_axis_name: str
     x_unit: str | None
     y_unit: str | None
 
@@ -74,6 +81,15 @@ def _numeric_scalar(value: Any, *, name: str) -> float | complex:
     if not np.isfinite(scalar):
         raise ProcessingError(f"{name} must be finite")
     return scalar
+
+
+def _real_numeric_scalar(value: Any, *, name: str) -> float:
+    scalar = _numeric_scalar(value, name=name)
+    if isinstance(scalar, complex):
+        if scalar.imag != 0:
+            raise ProcessingError(f"{name} must be real-valued")
+        scalar = scalar.real
+    return float(scalar)
 
 
 def _require_real_finite_x(series: Series, *, operation: str) -> np.ndarray:
@@ -128,6 +144,28 @@ def _array_digest(values: np.ndarray) -> str:
     return digest.hexdigest()
 
 
+def _series_data_digest(series: Series) -> str:
+    digest = hashlib.sha256()
+    digest.update(_array_digest(np.asarray(series.x)).encode("ascii"))
+    digest.update(_array_digest(np.asarray(series.y)).encode("ascii"))
+    return digest.hexdigest()
+
+
+def _require_baseline_axis_compatibility(series: Series, baseline: Series) -> None:
+    checks = (
+        ("x-axis name", series.x_axis.name, baseline.x_axis.name),
+        ("x-axis unit", series.x_axis.unit, baseline.x_axis.unit),
+        ("y-axis name", series.y_axis.name, baseline.y_axis.name),
+        ("y-axis unit", series.y_axis.unit, baseline.y_axis.unit),
+    )
+    for description, source_value, baseline_value in checks:
+        if source_value != baseline_value:
+            raise ProcessingError(
+                "baseline Series is incompatible with source "
+                f"{description}: {source_value!r} != {baseline_value!r}"
+            )
+
+
 def crop(
     series: Series,
     *,
@@ -175,11 +213,17 @@ def normalize(
     *,
     method: NormalizationMethod = "max",
     target: float = 1.0,
+    area_mode: AreaMode = "absolute",
 ) -> Series:
-    """Normalize y using an explicit, reproducible scaling rule."""
+    """Normalize y using an explicit, reproducible scaling rule.
+
+    For ``method='area'``, ``area_mode='absolute'`` uses the positive L1-like
+    trapezoidal area ``integral(abs(y), x)`` and is the default. ``area_mode='net'``
+    uses the magnitude of the signed/complex net integral and can therefore cancel
+    across sign changes.
+    """
     y = _require_complete_y(series, operation="normalize")
-    if not np.isfinite(target):
-        raise ProcessingError("normalize target must be finite")
+    target_value = _real_numeric_scalar(target, name="normalize target")
 
     if method == "max":
         if np.iscomplexobj(y):
@@ -187,16 +231,19 @@ def normalize(
                 "normalize(method='max') is undefined for complex y; use 'max_abs'"
             )
         denominator = float(np.max(y))
-        if denominator == 0:
-            raise ProcessingError("normalize denominator is zero")
-        output = y / denominator * target
-        parameters: dict[str, Any] = {"method": method, "target": target}
+        if denominator <= 0:
+            raise ProcessingError(
+                "normalize(method='max') requires a positive maximum; use 'max_abs' "
+                "for sign-preserving scaling of non-positive data"
+            )
+        output = y / denominator * target_value
+        parameters: dict[str, Any] = {"method": method, "target": target_value}
     elif method == "max_abs":
         denominator = float(np.max(np.abs(y)))
         if denominator == 0:
             raise ProcessingError("normalize denominator is zero")
-        output = y / denominator * target
-        parameters = {"method": method, "target": target}
+        output = y / denominator * target_value
+        parameters = {"method": method, "target": target_value}
     elif method == "minmax":
         if np.iscomplexobj(y):
             raise ProcessingError("normalize(method='minmax') is undefined for complex y")
@@ -204,16 +251,27 @@ def normalize(
         span = float(np.max(y) - minimum)
         if span == 0:
             raise ProcessingError("normalize min-max span is zero")
-        output = (y - minimum) / span * target
-        parameters = {"method": method, "target": target}
+        output = (y - minimum) / span * target_value
+        parameters = {"method": method, "target": target_value}
     elif method == "area":
         x = _require_real_finite_x(series, operation="normalize(method='area')")
         _monotonic_direction(x, operation="normalize(method='area')")
-        denominator = float(abs(np.trapezoid(y, x=x)))
+        if area_mode == "absolute":
+            denominator = float(abs(np.trapezoid(np.abs(y), x=x)))
+        elif area_mode == "net":
+            denominator = float(abs(np.trapezoid(y, x=x)))
+        else:
+            raise ProcessingError(f"Unknown area_mode {area_mode!r}")
         if denominator == 0:
-            raise ProcessingError("normalize area is zero")
-        output = y / denominator * target
-        parameters = {"method": method, "target": target}
+            raise ProcessingError(
+                f"normalize area denominator is zero for area_mode={area_mode!r}"
+            )
+        output = y / denominator * target_value
+        parameters = {
+            "method": method,
+            "target": target_value,
+            "area_mode": area_mode,
+        }
     else:
         raise ProcessingError(f"Unknown normalization method {method!r}")
 
@@ -270,7 +328,7 @@ def savgol(
 
 
 def interpolate(series: Series, x_new: ArrayLike) -> Series:
-    """Linearly interpolate y onto a finite target grid without extrapolation."""
+    """Linearly interpolate y onto a finite monotonic target grid without extrapolation."""
     x = _require_real_finite_x(series, operation="interpolate")
     direction = _monotonic_direction(x, operation="interpolate")
     y = _require_complete_y(series, operation="interpolate")
@@ -286,6 +344,10 @@ def interpolate(series: Series, x_new: ArrayLike) -> Series:
         raise ProcessingError("interpolate x_new must contain numeric values") from exc
     if np.isnan(target).any() or np.isinf(target).any():
         raise ProcessingError("interpolate x_new must contain only finite values")
+    if target.size > 1:
+        target_direction = _monotonic_direction(target, operation="interpolate target grid")
+    else:
+        target_direction = 0
 
     lower = float(np.min(x))
     upper = float(np.max(x))
@@ -313,6 +375,7 @@ def interpolate(series: Series, x_new: ArrayLike) -> Series:
             "n_points": int(target.size),
             "x_min": float(np.min(target)),
             "x_max": float(np.max(target)),
+            "target_direction": target_direction,
             "grid_sha256": _array_digest(target),
             "extrapolation": False,
         },
@@ -320,13 +383,18 @@ def interpolate(series: Series, x_new: ArrayLike) -> Series:
 
 
 def integrate(series: Series, *, absolute: bool = False) -> IntegrationResult:
-    """Integrate y(x) using NumPy's trapezoidal rule."""
+    """Integrate y(x) with the trapezoidal rule.
+
+    ``absolute=False`` returns the signed/complex net integral. ``absolute=True``
+    returns the positive absolute area ``integral(abs(y), x)`` independent of x order.
+    """
     x = _require_real_finite_x(series, operation="integrate")
     _monotonic_direction(x, operation="integrate")
     y = _require_complete_y(series, operation="integrate")
-    value = np.trapezoid(y, x=x)
     if absolute:
-        value = abs(value)
+        value = abs(np.trapezoid(np.abs(y), x=x))
+    else:
+        value = np.trapezoid(y, x=x)
 
     if np.iscomplexobj(value):
         result_value: float | complex = complex(value)
@@ -339,8 +407,14 @@ def integrate(series: Series, *, absolute: bool = False) -> IntegrationResult:
         absolute=absolute,
         source_key=series.key,
         source_label=series.label,
+        source_sha256=_series_data_digest(series),
+        n_points=series.n_points,
+        x_start=float(x[0]),
+        x_end=float(x[-1]),
         x_min=float(np.min(x)),
         x_max=float(np.max(x)),
+        x_axis_name=series.x_axis.name,
+        y_axis_name=series.y_axis.name,
         x_unit=series.x_axis.unit,
         y_unit=series.y_axis.unit,
     )
@@ -354,11 +428,13 @@ def subtract_baseline(
     if isinstance(baseline, Series):
         if not np.array_equal(series.x, baseline.x, equal_nan=True):
             raise ProcessingError("baseline Series must use exactly the same x grid")
+        _require_baseline_axis_compatibility(series, baseline)
         baseline_values = np.asarray(baseline.y)
         descriptor: dict[str, Any] = {
             "baseline_type": "series",
             "baseline_key": baseline.key,
             "baseline_label": baseline.label,
+            "baseline_sha256": _series_data_digest(baseline),
         }
     elif np.isscalar(baseline):
         numeric_baseline = _numeric_scalar(baseline, name="baseline")
