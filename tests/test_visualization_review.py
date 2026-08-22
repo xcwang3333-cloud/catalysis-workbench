@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import matplotlib as mpl
 import matplotlib.image as mpimg
 import pytest
 
@@ -107,6 +108,25 @@ def test_explicit_blank_axis_labels_disable_automatic_labels():
 
     assert ax.get_xlabel() == ""
     assert ax.get_ylabel() == ""
+
+
+def test_renderer_ignores_ambient_rc_style_and_restores_it():
+    original_facecolor = mpl.rcParams["axes.facecolor"]
+    original_grid = mpl.rcParams["axes.grid"]
+    try:
+        mpl.rcParams["axes.facecolor"] = "red"
+        mpl.rcParams["axes.grid"] = True
+
+        _, ax = render_curves(_curve(key="a"))
+
+        assert ax.get_facecolor() == pytest.approx((1.0, 1.0, 1.0, 1.0))
+        assert not any(line.get_visible() for line in ax.get_xgridlines())
+        assert not any(line.get_visible() for line in ax.get_ygridlines())
+        assert mpl.rcParams["axes.facecolor"] == "red"
+        assert mpl.rcParams["axes.grid"] is True
+    finally:
+        mpl.rcParams["axes.facecolor"] = original_facecolor
+        mpl.rcParams["axes.grid"] = original_grid
 
 
 def test_export_restores_live_figure_size_after_temporary_export_layout(tmp_path):
