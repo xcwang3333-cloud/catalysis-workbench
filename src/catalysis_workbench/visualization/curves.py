@@ -171,7 +171,9 @@ def render_curves(
 
     The function does not import pyplot, register a GUI figure manager, call
     ``show()``, or mutate the scientific input objects.  ``spec`` is the complete
-    redraw recipe; when omitted, a registered immutable preset is used.
+    redraw recipe; when omitted, a registered immutable preset is used. Rendering starts
+    from Matplotlib defaults inside a local rc context so unrelated user rcParams do not
+    alter the result and are restored after the figure is constructed.
     """
     resolved_spec = get_preset(preset) if spec is None else spec
     if not isinstance(resolved_spec, FigureSpec):
@@ -189,7 +191,9 @@ def render_curves(
         "font.size": style.font_size,
         "axes.unicode_minus": True,
     }
-    with mpl.rc_context(rc):
+    with mpl.rc_context():
+        mpl.rcdefaults()
+        mpl.rcParams.update(rc)
         figure = Figure(
             figsize=(layout.figure_width_in, layout.figure_height_in),
             dpi=100,
