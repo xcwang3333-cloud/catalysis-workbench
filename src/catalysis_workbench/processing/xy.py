@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import hashlib
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from typing import Any, Literal
 
@@ -59,8 +59,21 @@ def _with_data_and_record(
     operation: str,
     parameters: Mapping[str, Any],
 ) -> Series:
-    transformed = series.with_data(x=series.x if x is None else x, y=series.y if y is None else y)
+    transformed = series.with_data(
+        x=series.x if x is None else x,
+        y=series.y if y is None else y,
+    )
     return _record(transformed, operation, parameters)
+
+
+def _numeric_scalar(value: Any, *, name: str) -> float | complex:
+    array = np.asarray(value)
+    if array.ndim != 0 or array.dtype.kind not in "biufc":
+        raise TypeError(f"{name} must be a numeric scalar")
+    scalar = array.item()
+    if not np.isfinite(scalar):
+        raise ProcessingError(f"{name} must be finite")
+    return scalar
 
 
 def _require_real_finite_x(series: Series, *, operation: str) -> np.ndarray:
@@ -96,7 +109,11 @@ def _require_complete_y(series: Series, *, operation: str) -> np.ndarray:
 
 def _array_digest(values: np.ndarray) -> str:
     contiguous = np.ascontiguousarray(values)
-    return hashlib.sha256(contiguous.tobytes(order="C")).hexdigest()
+    digest = hashlib.sha256()
+    digest.update(str(contiguous.dtype).encode("ascii"))
+    digest.update(str(contiguous.shape).encode("ascii"))
+    digest.update(contiguous.tobytes(order="C"))
+    return digest.hexdigest()
 
 
 def crop(
@@ -131,14 +148,13 @@ def crop(
 
 
 def offset(series: Series, value: float | complex) -> Series:
-    """Add a constant vertical offset to y."""
-    if not np.isscalar(value):
-        raise TypeError("offset value must be a scalar")
+    """Add a finite constant vertical offset to y."""
+    numeric_value = _numeric_scalar(value, name="offset value")
     return _with_data_and_record(
         series,
-        y=np.asarray(series.y) + value,
+        y=np.asarray(series.y) + numeric_value,
         operation="offset",
-        parameters={"value": value},
+        parameters={"value": numeric_value},
     )
 
 
@@ -155,7 +171,9 @@ def normalize(
 
     if method == "max":
         if np.iscomplexobj(y):
-            raise ProcessingError("normalize(method='max') is undefined for complex y; use 'max_abs'")
+            raise ProcessingError(
+                "normalize(method='max') is undefined for complex y; use 'max_abs'"
+            )
         denominator = float(np.max(y))
         if denominator == 0:
             raise ProcessingError("normalize denominator is zero")
@@ -213,8 +231,14 @@ def savgol(
                 np.imag(y), window_length, polyorder, mode=mode, cval=cval
             )
         else:
-            filtered = savgol_filter(y, window_length, polyorder, mode=mode, cval=cval)
-    except ValueError as exc:
+            filtered = savgol_filter(
+                y,
+                window_length,
+                polyorder,
+                mode=mode,
+                cval=cval,
+            )
+    except (TypeError, ValueError) as exc:
         raise ProcessingError(str(exc)) from exc
 
     return _with_data_and_record(
@@ -256,7 +280,11 @@ def interpolate(series: Series, x_new: ArrayLike) -> Series:
     xp = x if direction > 0 else x[::-1]
     fp = y if direction > 0 else y[::-1]
     if np.iscomplexobj(fp):
-        output = np.interp(target, xp, np.real(fp)) + 1j * np.interp(target, xp, np.imag(fp))
+        output = np.interp(target, xp, np.real(fp)) + 1j * np.interp(
+            target,
+            xp,
+            np.imag(fp),
+        )
     else:
         output = np.interp(target, xp, fp)
 
@@ -303,7 +331,10 @@ def integrate(series: Series, *, absolute: bool = False) -> IntegrationResult:
     )
 
 
-def subtract_baseline(series: Series, baseline: Series | ArrayLike | float | complex) -> Series:
+def subtract_baseline(
+    series: Series,
+    baseline: Series | ArrayLike | float | complex,
+) -> Series:
     """Subtract an explicitly supplied baseline without estimating it."""
     if isinstance(baseline, Series):
         if not np.array_equal(series.x, baseline.x, equal_nan=True):
@@ -315,8 +346,9 @@ def subtract_baseline(series: Series, baseline: Series | ArrayLike | float | com
             "baseline_label": baseline.label,
         }
     elif np.isscalar(baseline):
-        baseline_values = np.asarray(baseline)
-        descriptor = {"baseline_type": "scalar", "value": baseline}
+        numeric_baseline = _numeric_scalar(baseline, name="baseline")
+        baseline_values = np.asarray(numeric_baseline)
+        descriptor = {"baseline_type": "scalar", "value": numeric_baseline}
     else:
         try:
             baseline_values = np.asarray(baseline)
@@ -326,6 +358,8 @@ def subtract_baseline(series: Series, baseline: Series | ArrayLike | float | com
             raise ProcessingError("baseline array must be one-dimensional and match Series length")
         if baseline_values.dtype.kind not in "biufc":
             raise ProcessingError("baseline must contain numeric values")
+        if np.isinf(baseline_values).any():
+            raise ProcessingError("baseline must not contain +/-inf")
         descriptor = {
             "baseline_type": "array",
             "n_points": int(baseline_values.size),
