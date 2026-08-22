@@ -43,12 +43,13 @@ def export_figure(
     """
     if not isinstance(figure, Figure):
         raise TypeError("figure must be a matplotlib.figure.Figure")
+    if spec is not None and not isinstance(spec, FigureSpec):
+        raise TypeError("spec must be a FigureSpec")
+
     output_path = Path(path)
     output_format = _resolve_format(output_path, format)
     export = ExportSpec() if spec is None else spec.export
     if spec is not None:
-        if not isinstance(spec, FigureSpec):
-            raise TypeError("spec must be a FigureSpec")
         figure.set_size_inches(
             spec.layout.figure_width_in,
             spec.layout.figure_height_in,
