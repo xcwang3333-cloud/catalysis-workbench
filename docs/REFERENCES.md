@@ -23,6 +23,8 @@ Before implementing a scientific or visualization module:
 | Curve fitting | `lmfit/lmfit-py` | Flexible constrained nonlinear least-squares fitting on top of SciPy. | Reference/dependency candidate for peak fitting, constrained XPS components, spectroscopy fitting and uncertainty reporting. Verify license terms before direct code reuse. |
 | Electrochemical experimental data | `ixdat/ixdat` | In-situ experimental data architecture and electrochemistry-oriented scientific data handling. `DataSeries` wraps NumPy data together with unit/axis context and higher-level fields reference explicit axes. MIT licensed. | Core-model reference for keeping numerical values attached to scientific metadata while avoiding ixdat's database/persistence layer. Also relevant to future time/potential-resolved workflows. |
 | Labeled scientific arrays | `pydata/xarray` | General labeled N-D arrays and datasets. Xarray explicitly separates raw NumPy-like values from dimensions, coordinates and arbitrary attributes, and uses a Dataset as a container for labeled arrays. Apache-2.0 licensed. | Conceptual reference for labels/metadata and Dataset semantics. Do not add xarray as a v0.1 dependency; CatalysisWorkbench starts with a deliberately lightweight 1-D XY model and can add adapters later if N-D operando data justify it. |
+| Tabular I/O | `pandas-dev/pandas` | Mature CSV and Excel parsers with explicit sheet, header, selected-column, missing-value, delimiter, and dtype controls. BSD-3-Clause licensed. | Use pandas as the parsing backend rather than rebuilding CSV/Excel parsing. CatalysisWorkbench adds the catalysis-specific conversion into `Axis`/`Series`/`Dataset`, source metadata, validation, and deterministic keys. |
+| Scientific reader patterns | `ixdat/ixdat` readers | Dedicated format readers keep parsing separate from scientific objects; the CSV reader retains header/column/unit context, while the XRD XY reader performs conservative header/comment detection and leaves domain data in explicit series/fields. MIT licensed. | Follow the parser-adapter pattern: parse file structure first, then construct standard core objects. Avoid silently skipping malformed selected values; CatalysisWorkbench raises explicit validation errors for user-selected scientific columns. |
 | Electrochemical impedance | `ECSHackWeek/impedance.py` | Mature Python package for electrochemical impedance data and circuit fitting. | Reference/dependency candidate when EIS is implemented in v0.4. |
 | XAS | `xraypy/xraylarch` | Mature X-ray spectroscopy/XAS processing ecosystem. | Reference/dependency candidate for XANES/EXAFS algorithms; CatalysisWorkbench should emphasize comparison, result integration and publication figures rather than replace the mature XAS stack. |
 | Electronic structure | `romerogroup/pyprocar` | Electronic-structure parsing/visualization, including projected electronic data. | Reference for DOS/PDOS parsing and projection-selection concepts in v0.6. |
@@ -33,17 +35,31 @@ Before implementing a scientific or visualization module:
 The first core model follows a deliberately narrow contract:
 
 - `Axis`: semantic axis name, optional semantic label, unit string and lightweight metadata. Final rendered forms such as `Potential (V)` or `Potential / V` belong to the visualization layer rather than the core model.
-- `Series`: one numerical `y(x)` trace plus its two axes, display label and metadata.
+- `Series`: one numerical `y(x)` trace plus its two axes, display label, optional stable non-display key, and metadata. `key` is keyword-only so introducing it does not disturb the pre-existing positional constructor order for axes and metadata.
 - `Dataset`: ordered collection of `Series` objects; it also serves the multi-catalyst collection role in v0.1, so a separate `SeriesCollection` type is intentionally avoided.
 - Scientific x/y arrays are detached from caller-owned memory and stored on immutable byte-backed NumPy arrays. The WRITEABLE flag therefore cannot be re-enabled by callers, and processing functions must return new objects instead of mutating source data in place.
 - Real numeric input is normalized to float64; complex numeric input is preserved as complex128 so future EIS data are not silently truncated.
 - Duplicate series labels are allowed so replicate measurements of the same catalyst can coexist.
+- Non-empty `Series.key` values must be unique within a `Dataset`, allowing later GUI/style controls to address repeated labels independently.
 - NaN is preserved as explicit missing data for later cleaning policies; malformed arrays and +/-inf are rejected.
 - Units are explicit strings in v0.1. General unit arithmetic/conversion is not part of the core; domain-specific conversions belong in analysis modules.
 
 This takes the useful metadata-coupling idea from ixdat and the label/attribute separation idea from xarray without importing either project's full object model.
 
-A stable non-display series key/identifier remains a follow-up design item for the GUI/style-control layer; it is intentionally not added until the file readers establish a deterministic naming policy for replicates.
+## Tabular reader decision for v0.1
+
+The first reader layer uses pandas as a backend and adds a deliberately small scientific contract:
+
+- `read_csv`, `read_txt`, `read_excel`, and extension-dispatching `read_tabular` return core `Dataset` objects directly.
+- x/y columns can be selected by exact header or zero-based position; several y columns can share one x column for multi-catalyst comparison.
+- Excel integer sheet selectors are resolved to canonical sheet names before keys/metadata are generated, so keys are independent of whether the user selected `1` or `"Sheet2"`.
+- Reader-generated keys use a source identity, canonical sheet name, and x/y column positions. By default the source identity is the normalized source path so same-named files in different folders do not collide when datasets are combined. Users can provide an explicit `source_id` for portable project-level identifiers.
+- Units are conservatively inferred only from trailing square brackets such as `Potential [V]`; users can override units, axis labels, axis names, and series labels explicitly.
+- Selected non-numeric cells raise `TabularReadError` instead of being silently discarded. Explicit missing values remain NaN for later cleaning policy.
+- Duplicate y-column selection and zero-sheet Excel selection are rejected explicitly in the reader layer.
+- Reader source metadata records source id/path, filename, sheet, column headers, and column positions without introducing sample-registry or experiment-management concepts.
+
+This keeps the I/O layer format-oriented and leaves LSV/XRD/Raman semantics to their later domain modules.
 
 ## Visualization design principle
 
