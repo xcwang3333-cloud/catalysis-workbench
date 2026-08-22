@@ -124,3 +124,29 @@ def test_dataset_slice_returns_dataset():
     assert isinstance(sliced, Dataset)
     assert sliced.labels == ("1", "2")
     assert sliced.name == "comparison"
+
+
+def test_series_value_equality_handles_numpy_arrays_and_nan():
+    first = Series(
+        [0, 1],
+        [1.0, np.nan],
+        label="same",
+        metadata={"vector": np.array([1, 2])},
+    )
+    second = Series(
+        [0, 1],
+        [1.0, np.nan],
+        label="same",
+        metadata={"vector": np.array([1, 2])},
+    )
+
+    assert first == second
+    assert first.equals(second)
+
+
+def test_dataset_value_equality_is_order_sensitive():
+    a = Series([0, 1], [1, 2], label="A")
+    b = Series([0, 1], [3, 4], label="B")
+
+    assert Dataset([a, b]) == Dataset([a.copy(), b.copy()])
+    assert Dataset([a, b]) != Dataset([b, a])
