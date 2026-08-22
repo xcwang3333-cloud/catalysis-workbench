@@ -160,6 +160,19 @@ def test_export_restores_live_figure_size_after_temporary_export_layout(tmp_path
     assert tuple(figure.get_size_inches()) == pytest.approx((4.0, 3.0))
 
 
+def test_export_uses_figure_facecolor_not_ambient_savefig_facecolor(tmp_path):
+    figure, _ = render_curves(_curve(key="a"))
+    original = mpl.rcParams["savefig.facecolor"]
+    try:
+        mpl.rcParams["savefig.facecolor"] = "red"
+        output = export_figure(figure, tmp_path / "facecolor.png", dpi=72)
+        image = mpimg.imread(output)
+        assert image[0, 0, :3] == pytest.approx((1.0, 1.0, 1.0), abs=1 / 255)
+        assert mpl.rcParams["savefig.facecolor"] == "red"
+    finally:
+        mpl.rcParams["savefig.facecolor"] = original
+
+
 def test_export_rejects_invalid_spec_type_with_documented_type_error(tmp_path):
     figure, _ = render_curves(_curve(key="a"))
 
