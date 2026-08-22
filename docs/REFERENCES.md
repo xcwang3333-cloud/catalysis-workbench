@@ -94,3 +94,21 @@ The v0.1 API should expose these values programmatically. A later local GUI (tar
 - make preview and export part of the same rendering model.
 
 CatalysisWorkbench should follow these principles while preserving its own role: DFT/geometry analysis lives in the computation layer, while publication-oriented structure rendering lives in the visualization layer.
+
+## XY processing decision for v0.1
+
+The shared processing layer deliberately wraps mature numerical primitives instead of reimplementing them.
+
+- `scipy/scipy` (BSD-3-Clause) is the backend for Savitzky-Golay filtering. CatalysisWorkbench exposes explicit window length, polynomial order, edge mode and constant-padding value, and filters real/imaginary components separately for complex data so SciPy's float conversion cannot silently discard an EIS-like imaginary component.
+- `numpy/numpy` supplies linear interpolation and trapezoidal integration primitives. CatalysisWorkbench adds stricter scientific guards around source-axis monotonicity, duplicate x values, missing data and extrapolation.
+- `derb12/pybaselines` (BSD-3-Clause) is the preferred later backend for baseline estimation. Its 50+ algorithms include literature-based AsLS, airPLS, ModPoly, SNIP and related methods across Raman, FTIR, XRD and other experimental techniques. v0.1 therefore implements only explicit baseline subtraction and does not clone baseline-estimation algorithms.
+- `lmfit/lmfit-py` remains relevant to later constrained peak fitting but is not needed for crop/normalize/offset/smoothing/interpolation/integration primitives.
+
+Processing semantics are kept deterministic and non-mutating:
+
+- every Series-to-Series operation preserves axes, stable key and existing source metadata;
+- an ordered `processing_history` record stores operation names and user-controlled parameters without timestamps;
+- missing y values are not silently dropped; algorithms that cannot safely propagate them raise a processing error;
+- interpolation does not extrapolate in v0.1 and supports strictly increasing or decreasing source x while preserving the caller's requested target-grid order;
+- integration is signed by default so descending axes retain their mathematical orientation, with an explicit `absolute=True` option for magnitude-style area reporting;
+- arbitrary interpolation grids and array baselines are represented in provenance by deterministic SHA-256 digests while the transformed Series retains the actual numerical grid/data.
