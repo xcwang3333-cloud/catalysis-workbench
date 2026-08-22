@@ -21,11 +21,12 @@ The final Raman PR quality gate brought the full test suite to 218 passing tests
 Issue #18 / the v0.1 release-hardening branch resolves the non-scientific gaps identified by the initial audit:
 
 - README now contains source-install instructions, an executable public-API quickstart, accurate v0.1/future scope boundaries, and a public import-surface map.
-- `examples/` contains compact synthetic LSV, XRD, and Raman data plus end-to-end import -> process -> plot -> PNG/SVG/PDF scripts.
+- `examples/` contains compact synthetic LSV, XRD, and Raman data plus end-to-end import -> process -> plot -> PNG/SVG/PDF scripts. Generated figures are ignored under `examples/output/` so following the examples does not dirty the checkout.
+- The LSV quickstart derives the RHE offset from an explicit illustrative reference potential versus SHE, pH, and temperature through `rhe_offset_from_she(...)`; it no longer presents a reference-electrode potential as though it were already a complete RHE offset.
 - `CHANGELOG.md` records the unreleased v0.1 feature set and scientific/API principles.
 - `docs/RELEASING.md` defines the explicit wheel/install/smoke/review gate and separates the later version/tag action from feature work.
-- CI now builds a wheel, installs it into a fresh virtual environment, proves imports do not resolve from the repository `src/` tree, runs representative public-API LSV/XRD/Raman smoke workflows, and executes the three documented examples against the installed wheel.
-- The release-hardening Draft CI passes Ruff, all 218 pytest tests, wheel build/install smoke, and all documented end-to-end examples.
+- CI builds a wheel, installs it into a fresh virtual environment, runs `pip check`, proves imports do not resolve from the repository `src/` tree, verifies installed distribution metadata equals runtime `__version__`, resolves every name in the six documented package-level `__all__` surfaces, runs representative public-API LSV/XRD/Raman smoke workflows, and executes all three documented examples against the installed wheel.
+- The post-review release-hardening CI passes Ruff, all 218 pytest tests, wheel build/install/dependency checks, installed public-API/version/export smoke, and all documented end-to-end examples.
 
 The only intentionally unresolved release step is the final version/tag action. `pyproject.toml` and `catalysis_workbench.__version__` remain `0.1.0.dev0` until the release-hardening PR receives formal review and explicit approval. They must be changed to `0.1.0` together in the later release gate, followed by one more full CI/wheel smoke run before tagging `v0.1.0`.
 
@@ -40,7 +41,7 @@ The reviewed v0.1 public surfaces are coherent and do not require renaming for r
 - `catalysis_workbench.experimental.characterization`
 - `catalysis_workbench.visualization`
 
-Their package-level `__all__` exports match the documented reviewed APIs. The root package intentionally remains small and exposes version metadata rather than flattening all domain APIs into one namespace. No reviewed scientific public call is removed or renamed by Issue #18.
+Their package-level `__all__` exports match the documented reviewed APIs and are now resolved directly from the installed wheel in CI. The root package intentionally remains small and exposes version metadata rather than flattening all domain APIs into one namespace. No reviewed scientific public call is removed or renamed by Issue #18.
 
 ## Architecture audit before v0.2
 
