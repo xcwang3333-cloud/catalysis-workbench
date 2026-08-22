@@ -216,6 +216,28 @@ def test_current_density_conversion_preserves_sign_and_units():
     assert result.y_axis.label == "Current density"
     assert result.y_axis.unit == "mA/cm^2"
     assert result.y_axis.metadata["normalization"] == "geometric_area"
+    assert result.y_axis.metadata["electrode_area_cm2"] == pytest.approx(0.2)
+
+
+def test_ir_correction_round_trip_from_library_current_density_uses_stored_area():
+    density = to_current_density(
+        _lsv(x=(-0.5,), y=(-2.0,), y_unit="mA"),
+        electrode_area_cm2=0.2,
+    )
+    result = correct_ir_drop(density, resistance_ohm=10.0, electrode_area_cm2=0.2)
+
+    np.testing.assert_allclose(result.x, [-0.48])
+    record = result.metadata["processing_history"][-1]
+    assert record["parameters"]["density_area_basis"] == "geometric_area_declared_matched"
+
+
+def test_ir_correction_rejects_area_mismatch_for_library_current_density():
+    density = to_current_density(
+        _lsv(x=(-0.5,), y=(-2.0,), y_unit="mA"),
+        electrode_area_cm2=0.2,
+    )
+    with pytest.raises(LSVError, match="does not match"):
+        correct_ir_drop(density, resistance_ohm=10.0, electrode_area_cm2=0.5)
 
 
 def test_current_density_conversion_supports_microamp_and_output_unit():
