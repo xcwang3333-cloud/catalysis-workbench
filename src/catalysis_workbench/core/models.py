@@ -176,17 +176,17 @@ class Series:
     """One numerical ``y(x)`` trace plus lightweight scientific metadata.
 
     ``label`` is presentation-facing and may be duplicated for replicate measurements.
-    ``key`` is an optional non-display identifier intended for stable addressing by
-    readers, processing pipelines, and later GUI/style controls.
+    ``key`` is an optional keyword-only non-display identifier intended for stable
+    addressing by readers, processing pipelines, and later GUI/style controls.
     """
 
     x: ArrayLike
     y: ArrayLike
     label: str = ""
-    key: str = ""
     x_axis: Axis = field(default_factory=lambda: Axis("x"))
     y_axis: Axis = field(default_factory=lambda: Axis("y"))
     metadata: Metadata = field(default_factory=dict)
+    key: str = field(default="", kw_only=True)
 
     def __post_init__(self) -> None:
         x = _as_immutable_numeric_1d(self.x, field_name="x")
