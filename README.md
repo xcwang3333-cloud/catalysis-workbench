@@ -27,6 +27,7 @@ from catalysis_workbench.experimental.echem import (
     LSVProcessingConfig,
     plot_lsv,
     process_lsv,
+    rhe_offset_from_she,
 )
 from catalysis_workbench.io import read_csv
 from catalysis_workbench.visualization import FigureSpec, export_figure, get_preset
@@ -38,10 +39,18 @@ raw = read_csv(
     source_id="quickstart-lsv",
 )
 
+# Illustrative Ag/AgCl reference potential versus SHE. Replace this with the
+# value appropriate to the actual reference electrode/filling solution.
+rhe_offset_v = rhe_offset_from_she(
+    reference_potential_vs_she_v=0.210,
+    ph=13.0,
+    temperature_k=298.15,
+)
+
 processed = process_lsv(
     raw[0],
     LSVProcessingConfig(
-        rhe_offset_v=0.210,
+        rhe_offset_v=rhe_offset_v,
         source_reference="Ag/AgCl",
         resistance_ohm=5.0,
         electrode_area_cm2=0.196,
@@ -56,13 +65,13 @@ spec: FigureSpec = (
     .with_export(dpi=300)
 )
 
-fig, ax = plot_lsv(processed, spec)
+fig, _ = plot_lsv(processed, spec)
 export_figure(fig, "lsv.svg", spec=spec)
 export_figure(fig, "lsv.pdf", spec=spec)
 export_figure(fig, "lsv.png", spec=spec)
 ```
 
-The processing API does not silently guess a reference electrode, reverse current sign, or infer an electrode area. Those choices remain explicit and are stored in provenance.
+The processing API does not silently guess a reference electrode, pH, reference potential, current sign, or electrode area. Those choices remain explicit and are stored in provenance.
 
 Three complete compact examples are available in [`examples/`](examples/):
 
