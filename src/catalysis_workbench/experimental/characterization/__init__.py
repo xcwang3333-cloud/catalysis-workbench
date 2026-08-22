@@ -4,6 +4,21 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from .raman import (
+    RamanBand,
+    RamanBandMeasurement,
+    RamanError,
+    RamanPeakAnnotation,
+    RamanProcessingConfig,
+    RamanRatioResult,
+    id_ig_ratio,
+    measure_raman_band,
+    process_raman,
+    process_raman_dataset,
+    raman_ratio,
+    stack_raman_dataset,
+    validate_raman_series,
+)
 from .xrd import (
     PeakAnnotation,
     XRDError,
@@ -55,14 +70,50 @@ def plot_xrd(
     )
 
 
+def plot_raman(
+    data: Series | Dataset,
+    spec: FigureSpec | None = None,
+    *,
+    preset: str = "publication",
+    stack_step: float | None = None,
+    stack_start: float = 0.0,
+    peak_annotations: Sequence[RamanPeakAnnotation] = (),
+) -> tuple[Figure, Axes]:
+    """Lazily dispatch to the shared-renderer Raman publication adapter."""
+    from .raman_plotting import plot_raman as _plot_raman
+
+    return _plot_raman(
+        data,
+        spec,
+        preset=preset,
+        stack_step=stack_step,
+        stack_start=stack_start,
+        peak_annotations=peak_annotations,
+    )
+
+
 __all__ = [
     "PeakAnnotation",
+    "RamanBand",
+    "RamanBandMeasurement",
+    "RamanError",
+    "RamanPeakAnnotation",
+    "RamanProcessingConfig",
+    "RamanRatioResult",
     "XRDError",
     "XRDProcessingConfig",
     "XRDReferencePattern",
+    "id_ig_ratio",
+    "measure_raman_band",
+    "plot_raman",
     "plot_xrd",
+    "process_raman",
+    "process_raman_dataset",
     "process_xrd",
     "process_xrd_dataset",
+    "raman_ratio",
+    "stack_raman_dataset",
     "stack_xrd_dataset",
+    "validate_raman_series",
     "validate_xrd_series",
 ]
