@@ -14,13 +14,13 @@ python examples/xrd_quickstart.py
 python examples/raman_quickstart.py
 ```
 
-By default the scripts write figures to `examples/output/`.
+By default the scripts write figures to `examples/output/`. Generated files in that directory are ignored by Git, so running the documented examples does not dirty the source checkout.
 
 ## LSV
 
-`lsv_quickstart.py` reads `data/lsv_example.csv`, performs an explicit reference-potential shift, iR correction, geometric current-density normalization, publication plotting, and PNG/SVG/PDF export.
+`lsv_quickstart.py` reads `data/lsv_example.csv`, derives an RHE conversion offset from an explicit illustrative Ag/AgCl reference potential versus SHE, pH, and temperature, then applies iR correction, geometric current-density normalization, publication plotting, and PNG/SVG/PDF export.
 
-The example values are synthetic and exist only to exercise the workflow; they are not benchmark electrochemical data.
+The example uses `0.210 V vs SHE`, pH 13.0, and 298.15 K only to demonstrate the API. In real work, the reference-potential term must match the actual reference electrode/filling solution and the pH/temperature must match the experiment. The synthetic current/potential values are not benchmark electrochemical data.
 
 ## XRD
 
