@@ -28,6 +28,7 @@ def test_read_csv_builds_multi_catalyst_dataset_with_units_and_keys(tmp_path):
         units={"Pb1-N/C": "mA cm^-2", "Pb3-N/C": "mA cm^-2"},
         axis_labels={"Pb1-N/C": "Current density", "Pb3-N/C": "Current density"},
         axis_names={"Pb1-N/C": "current_density", "Pb3-N/C": "current_density"},
+        source_id="lsv.csv",
     )
 
     assert dataset.name == "lsv"
@@ -63,6 +64,27 @@ def test_read_csv_accepts_column_positions_without_header(tmp_path):
     np.testing.assert_allclose(dataset[1].y, [2, 4, 6])
 
 
+def test_default_source_identity_distinguishes_same_named_files(tmp_path):
+    first_path = tmp_path / "run1" / "data.csv"
+    second_path = tmp_path / "run2" / "data.csv"
+    first_path.parent.mkdir()
+    second_path.parent.mkdir()
+    first_path.write_text("x,y\n0,1\n1,2\n", encoding="utf-8")
+    second_path.write_text("x,y\n0,3\n1,4\n", encoding="utf-8")
+
+    first = read_csv(first_path, x="x", y="y")
+    second = read_csv(second_path, x="x", y="y")
+    combined = first.extend(second)
+
+    assert first[0].key != second[0].key
+    assert len(combined) == 2
+    assert first[0].metadata["source"]["file_name"] == "data.csv"
+    assert second[0].metadata["source"]["file_name"] == "data.csv"
+    assert first[0].metadata["source"]["source_path"] != second[0].metadata["source"][
+        "source_path"
+    ]
+
+
 def test_read_csv_preserves_explicit_missing_values(tmp_path):
     path = tmp_path / "missing.csv"
     path.write_text("x,y\n0,1\n1,\n2,3\n", encoding="utf-8")
@@ -79,6 +101,22 @@ def test_read_csv_rejects_non_numeric_selected_data(tmp_path):
 
     with pytest.raises(TabularReadError, match="non-numeric"):
         read_csv(path, x="x", y="y")
+
+
+def test_reader_rejects_duplicate_y_column_selection(tmp_path):
+    path = tmp_path / "duplicate_y.csv"
+    path.write_text("x,y\n0,1\n1,2\n", encoding="utf-8")
+
+    with pytest.raises(TabularReadError, match="selected more than once"):
+        read_csv(path, x="x", y=["y", 1])
+
+
+def test_reader_rejects_empty_source_id_override(tmp_path):
+    path = tmp_path / "data.csv"
+    path.write_text("x,y\n0,1\n1,2\n", encoding="utf-8")
+
+    with pytest.raises(TabularReadError, match="source_id"):
+        read_csv(path, x="x", y="y", source_id="   ")
 
 
 def test_read_txt_can_sniff_tab_delimiter(tmp_path):
@@ -102,7 +140,7 @@ def test_read_tabular_dispatches_tsv(tmp_path):
     path = tmp_path / "xrd.tsv"
     path.write_text("2theta\tA\n20\t100\n30\t200\n", encoding="utf-8")
 
-    dataset = read_tabular(path, x="2theta", y="A")
+    dataset = read_tabular(path, x="2theta", y="A", source_id="xrd.tsv")
 
     assert dataset[0].key == "xrd.tsv::table::c0->c1"
     np.testing.assert_allclose(dataset[0].y, [100, 200])
@@ -122,6 +160,7 @@ def test_read_excel_all_sheets_uses_canonical_sheet_names_and_duplicate_labels(t
         x="Potential [V]",
         y="Signal [a.u.]",
         labels={"Signal [a.u.]": "Pb3-N/C"},
+        source_id="replicates.xlsx",
     )
 
     assert dataset.labels == ("Pb3-N/C", "Pb3-N/C")
@@ -140,10 +179,24 @@ def test_read_excel_integer_sheet_selection_resolves_to_sheet_name(tmp_path):
         frame.to_excel(writer, sheet_name="First", index=False)
         frame.to_excel(writer, sheet_name="Second", index=False)
 
-    dataset = read_excel(path, sheet_name=1, x="x", y="y")
+    dataset = read_excel(
+        path,
+        sheet_name=1,
+        x="x",
+        y="y",
+        source_id="two_sheets.xlsx",
+    )
 
     assert dataset.keys == ("two_sheets.xlsx::Second::c0->c1",)
     assert dataset.metadata["source"]["sheets"] == ("Second",)
+
+
+def test_read_excel_rejects_empty_sheet_selection(tmp_path):
+    path = tmp_path / "data.xlsx"
+    pd.DataFrame({"x": [0, 1], "y": [2, 3]}).to_excel(path, index=False)
+
+    with pytest.raises(TabularReadError, match="At least one Excel sheet"):
+        read_excel(path, sheet_name=[], x="x", y="y")
 
 
 def test_reader_reports_missing_column(tmp_path):
@@ -172,12 +225,15 @@ def test_reader_preserves_dataset_metadata(tmp_path):
         y="y",
         name="Comparison",
         metadata={"technique": "generic", "note": "raw export"},
+        source_id="project/data.csv",
     )
 
     assert dataset.name == "Comparison"
     assert dataset.metadata["technique"] == "generic"
     assert dataset.metadata["note"] == "raw export"
     assert dataset.metadata["source"]["file_name"] == "data.csv"
+    assert dataset.metadata["source"]["source_id"] == "project/data.csv"
+    assert dataset.metadata["source"]["source_path"] == path.resolve().as_posix()
 
 
 def test_read_tabular_rejects_unsupported_extension(tmp_path):
