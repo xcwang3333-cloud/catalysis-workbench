@@ -54,9 +54,14 @@ def _immutable_float_array(values: ArrayLike, *, name: str) -> NDArray[np.float6
 
 def _immutable_bool_array(values: ArrayLike, *, name: str) -> NDArray[np.bool_]:
     try:
-        normalized = np.ascontiguousarray(np.asarray(values), dtype=np.bool_)
+        source = np.asarray(values)
     except (TypeError, ValueError) as exc:
         raise FaradaicEfficiencyError(f"{name} must contain boolean values") from exc
+    if source.size == 0:
+        raise FaradaicEfficiencyError(f"{name} must contain at least one value")
+    if source.dtype.kind != "b":
+        raise FaradaicEfficiencyError(f"{name} must contain boolean values")
+    normalized = np.ascontiguousarray(source, dtype=np.bool_)
     immutable_buffer = normalized.tobytes(order="C")
     result = np.frombuffer(immutable_buffer, dtype=np.bool_, count=normalized.size)
     result = result.reshape(normalized.shape)
@@ -80,12 +85,13 @@ def _validated_electron_number(value: object) -> int:
         raise FaradaicEfficiencyError(str(exc)) from exc
 
 
-def _reject_boolean_array(values: ArrayLike, *, name: str) -> None:
+def _require_real_numeric_input(values: ArrayLike, *, name: str) -> None:
+    """Reject strings, booleans, complex values, and object coercion at the FE boundary."""
     try:
         source = np.asarray(values)
     except (TypeError, ValueError) as exc:
         raise FaradaicEfficiencyError(f"{name} must contain real numeric values") from exc
-    if source.dtype.kind == "b":
+    if source.dtype.kind not in "iuf" or np.iscomplexobj(source):
         raise FaradaicEfficiencyError(f"{name} must contain real numeric values")
 
 
@@ -183,8 +189,8 @@ def faradaic_efficiency_from_amount(
     electron_number: int,
 ) -> FaradaicEfficiencyResult:
     """Calculate accumulated-product FE from amount and signed total charge."""
-    _reject_boolean_array(product_amount, name="product amount")
-    _reject_boolean_array(charge, name="charge")
+    _require_real_numeric_input(product_amount, name="product amount")
+    _require_real_numeric_input(charge, name="charge")
     try:
         product_mol = amount_to_mol(product_amount, amount_unit, allow_nan=False)
         charge_c = charge_to_c(charge, charge_unit, allow_nan=False)
@@ -208,8 +214,8 @@ def faradaic_efficiency_from_rate(
     electron_number: int,
 ) -> FaradaicEfficiencyResult:
     """Calculate steady-state FE from molar production rate and signed current."""
-    _reject_boolean_array(product_rate, name="product rate")
-    _reject_boolean_array(current, name="current")
+    _require_real_numeric_input(product_rate, name="product rate")
+    _require_real_numeric_input(current, name="current")
     try:
         rate_mol_s = molar_rate_to_mol_s(product_rate, rate_unit, allow_nan=False)
         current_a = current_to_a(current, current_unit, allow_nan=False)
@@ -441,6 +447,7 @@ class FaradaicEfficiencyClosure:
     total_fraction: ArrayLike
     exceeds_limit: ArrayLike
     product_keys: tuple[str, ...]
+    sources: tuple[SourceDataRef, ...]
     limit_fraction: float = 1.0
     tolerance_fraction: float = 1e-6
 
@@ -467,6 +474,35 @@ class FaradaicEfficiencyClosure:
         if len(keys) != len(set(keys)):
             raise FaradaicEfficiencyError("product_keys must be unique")
 
+        sources = tuple(self.sources)
+        if not sources or not all(isinstance(source, SourceDataRef) for source in sources):
+            raise TypeError("sources must contain only SourceDataRef instances")
+        if len(sources) != len(keys):
+            raise FaradaicEfficiencyError(
+                "closure sources must contain one SourceDataRef per product key"
+            )
+        for key, source in zip(keys, sources, strict=True):
+            if source.key and source.key != key:
+                raise FaradaicEfficiencyError(
+                    "closure source keys must match product_keys when source keys are present"
+                )
+            if source.x_name.casefold() != self.condition_axis.name.casefold():
+                raise FaradaicEfficiencyError(
+                    "closure source condition-axis names must match condition_axis"
+                )
+            if source.x_unit != self.condition_axis.unit:
+                raise FaradaicEfficiencyError(
+                    "closure source condition-axis units must match condition_axis"
+                )
+            if source.y_name.casefold() != "faradaic_efficiency":
+                raise FaradaicEfficiencyError(
+                    "closure sources must reference faradaic_efficiency Series"
+                )
+            if source.y_unit not in {"fraction", "%"}:
+                raise FaradaicEfficiencyError(
+                    "closure source FE units must be 'fraction' or '%'"
+                )
+
         limit = _strict_real_scalar(self.limit_fraction, name="limit_fraction")
         tolerance = _strict_real_scalar(
             self.tolerance_fraction,
@@ -486,6 +522,7 @@ class FaradaicEfficiencyClosure:
         object.__setattr__(self, "total_fraction", total)
         object.__setattr__(self, "exceeds_limit", exceeds)
         object.__setattr__(self, "product_keys", keys)
+        object.__setattr__(self, "sources", sources)
         object.__setattr__(self, "limit_fraction", limit)
         object.__setattr__(self, "tolerance_fraction", tolerance)
 
@@ -552,6 +589,7 @@ def faradaic_efficiency_closure(
         total_fraction=total,
         exceeds_limit=exceeds,
         product_keys=tuple(keys),
+        sources=tuple(source_data_ref(item) for item in series),
         limit_fraction=limit,
         tolerance_fraction=tolerance,
     )
