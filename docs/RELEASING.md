@@ -37,6 +37,8 @@ The release candidate changes `[project].version` and `catalysis_workbench.__ver
 
 The `v0.1.0` tag must point to the reviewed `main` commit that already reports version `0.1.0`. Tag creation is intentionally a separate operation from the version bump/merge so the reviewed commit can be verified first.
 
+`CHANGELOG.md` should carry the actual release/tag calendar date. If final tag creation occurs on a later date than the date currently recorded for `0.1.0`, correct that date in a reviewed commit and rerun the required gate before creating the tag.
+
 Package-registry publication is not implied by creating the Git tag. Attach or publish artifacts only if a package-registry/release-distribution workflow, licensing, credentials, artifact provenance/signing, and intended distribution policy have been explicitly configured and reviewed.
 
 ## What not to do
