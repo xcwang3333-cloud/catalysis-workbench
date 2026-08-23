@@ -2,9 +2,21 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING
 
+from .fe import (
+    FaradaicEfficiencyClosure,
+    FaradaicEfficiencyError,
+    FaradaicEfficiencyMode,
+    FaradaicEfficiencyOutputUnit,
+    FaradaicEfficiencyResult,
+    faradaic_efficiency_closure,
+    faradaic_efficiency_dataset,
+    faradaic_efficiency_from_amount,
+    faradaic_efficiency_from_rate,
+    faradaic_efficiency_series,
+)
 from .lsv import (
     LSVError,
     LSVProcessingConfig,
@@ -57,7 +69,7 @@ if TYPE_CHECKING:
     from matplotlib.figure import Figure
 
     from catalysis_workbench.core import Dataset, Series
-    from catalysis_workbench.visualization import FigureSpec
+    from catalysis_workbench.visualization import FigureSpec, ScatterError
 
 
 def plot_lsv(
@@ -89,11 +101,36 @@ def plot_tafel(
     return _plot_tafel(results, spec, preset=preset)
 
 
+def plot_faradaic_efficiency(
+    data: Series | Dataset,
+    spec: FigureSpec | None = None,
+    *,
+    kind: str = "scatter",
+    errors: ScatterError | Mapping[str, ScatterError] | None = None,
+    preset: str = "publication",
+) -> tuple[Figure, Axes]:
+    """Lazily dispatch already calculated FE data to shared publication rendering."""
+    from .fe_plotting import plot_faradaic_efficiency as _plot_faradaic_efficiency
+
+    return _plot_faradaic_efficiency(
+        data,
+        spec,
+        kind=kind,  # type: ignore[arg-type]
+        errors=errors,
+        preset=preset,
+    )
+
+
 __all__ = [
     "AnalysisProvenance",
     "CurrentSign",
     "EchemQuantityError",
     "FARADAY_CONSTANT_C_MOL",
+    "FaradaicEfficiencyClosure",
+    "FaradaicEfficiencyError",
+    "FaradaicEfficiencyMode",
+    "FaradaicEfficiencyOutputUnit",
+    "FaradaicEfficiencyResult",
     "FitWindow",
     "GAS_CONSTANT_J_MOL_K",
     "LSVError",
@@ -110,6 +147,11 @@ __all__ = [
     "current_density_to_a_cm2",
     "current_to_a",
     "electron_number",
+    "faradaic_efficiency_closure",
+    "faradaic_efficiency_dataset",
+    "faradaic_efficiency_from_amount",
+    "faradaic_efficiency_from_rate",
+    "faradaic_efficiency_series",
     "fit_tafel",
     "fit_tafel_dataset",
     "loading_to_g_cm2",
@@ -117,6 +159,7 @@ __all__ = [
     "mass_to_g",
     "molar_rate_to_mol_s",
     "normalize_reference_name",
+    "plot_faradaic_efficiency",
     "plot_lsv",
     "plot_tafel",
     "potential_to_v",
