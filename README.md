@@ -18,7 +18,7 @@ For development and tests:
 python -m pip install -e ".[dev]"
 ```
 
-The v0.1.0 release candidate has completed the separate release-hardening gate. The final `v0.1.0` tag is created only after the version-gate CI/review passes and an explicit final release authorization is given; see [`docs/RELEASING.md`](docs/RELEASING.md).
+The v0.1.0 release process uses a separate release-hardening gate followed by a final-version gate. A `v0.1.0` tag must point to reviewed `main` only after the final-version CI/review passes and explicit release authorization is given; see [`docs/RELEASING.md`](docs/RELEASING.md).
 
 ## Quickstart: CSV -> LSV processing -> publication export
 
@@ -138,9 +138,9 @@ Raw data -> I/O -> standardized data -> scientific analysis -> result -> visuali
 
 A catalyst or sample name remains lightweight metadata on a data series; CatalysisWorkbench does not introduce a laboratory sample-management system.
 
-## v0.1.0 release status
+## v0.1.0 release validation
 
-The v0.1 scientific/common-XY feature set and release-hardening gate are complete. The release candidate reports version `0.1.0`; before the `v0.1.0` tag is created, the version-gate branch must pass the full Ruff/pytest and installed-wheel smoke checks, receive formal review, be merged to `main`, and then receive explicit final tag authorization. See [`docs/V0_1_AUDIT.md`](docs/V0_1_AUDIT.md), [`CHANGELOG.md`](CHANGELOG.md), and [`docs/RELEASING.md`](docs/RELEASING.md).
+The v0.1 scientific/common-XY feature set and release-hardening gate are complete, and the final release version is `0.1.0`. The release policy requires the final-version wheel, Ruff/pytest suite, installed-wheel smoke checks, and formal release/API/packaging review to pass before a `v0.1.0` tag may point to the reviewed `main` commit. See [`docs/V0_1_AUDIT.md`](docs/V0_1_AUDIT.md), [`CHANGELOG.md`](CHANGELOG.md), and [`docs/RELEASING.md`](docs/RELEASING.md).
 
 ## Roadmap
 
@@ -152,4 +152,4 @@ See [`docs/ROADMAP.md`](docs/ROADMAP.md) and [`docs/V0_2_PLAN.md`](docs/V0_2_PLA
 
 ## Development status
 
-The `main` branch is kept stable. New work should be developed through feature/release branches and pull requests. v0.1 is feature-complete and release-hardened; the `0.1.0` version candidate remains untagged until the final release gate is explicitly approved.
+The `main` branch is kept stable. New work should be developed through feature/release branches and pull requests. v0.1 is feature-complete and release-hardened; release tags are created only from a reviewed final-version `main` commit after the documented release gate.
