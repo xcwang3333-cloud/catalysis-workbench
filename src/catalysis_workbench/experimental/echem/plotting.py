@@ -47,6 +47,8 @@ def _validate_lsv_axes(series: Sequence[Series]) -> None:
                 "LSV plotting requires x_axis.name='potential'; "
                 f"got {item.x_axis.name!r}"
             )
+        if item.x_axis.unit is None or not str(item.x_axis.unit).strip():
+            raise LSVError("electrochemical axis unit is required")
         try:
             potential_to_v([0.0], item.x_axis.unit, allow_nan=False)
         except EchemQuantityError as exc:
@@ -61,6 +63,8 @@ def _validate_lsv_axes(series: Sequence[Series]) -> None:
                 "LSV plotting requires y_axis.name='current' or 'current_density'; "
                 f"got {item.y_axis.name!r}"
             )
+        if item.y_axis.unit is None or not str(item.y_axis.unit).strip():
+            raise LSVError("electrochemical axis unit is required")
         supported = (
             is_current_unit(item.y_axis.unit)
             if y_name == "current"
