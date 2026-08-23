@@ -4,11 +4,16 @@ The v0.2 electrochemistry layer intentionally uses explicit string units rather 
 full unit registry. These helpers provide conservative conversions for the quantities
 needed by the reviewed electrochemistry roadmap while refusing ambiguous or missing
 units.
+
+Vectorized quantity converters always return float64 NumPy arrays and preserve the
+input shape. A scalar input therefore returns a zero-dimensional NumPy array; callers
+that specifically need a Python scalar can use ``.item()`` explicitly.
 """
 
 from __future__ import annotations
 
 from math import isfinite, pi
+from numbers import Real
 from typing import Any
 
 import numpy as np
@@ -24,9 +29,11 @@ class EchemQuantityError(ValueError):
 
 def normalize_unit(unit: str | None) -> str:
     """Return a conservative comparison token for an explicit unit string."""
-    if unit is None or not str(unit).strip():
+    if unit is None or (isinstance(unit, str) and not unit.strip()):
         raise EchemQuantityError("electrochemical unit is required")
-    compact = str(unit).strip().casefold()
+    if not isinstance(unit, str):
+        raise EchemQuantityError("electrochemical unit must be a string")
+    compact = unit.strip().casefold()
     compact = compact.replace("µ", "u").replace("μ", "u")
     compact = compact.replace("⁻²", "^-2").replace("⁻¹", "^-1")
     compact = compact.replace("−", "-").replace("⁻", "-")
@@ -47,7 +54,10 @@ def require_real(
     array = np.asarray(values)
     if np.iscomplexobj(array):
         raise EchemQuantityError(f"{quantity} must be real-valued")
-    real = array.astype(np.float64, copy=False)
+    try:
+        real = array.astype(np.float64, copy=False)
+    except (TypeError, ValueError) as exc:
+        raise EchemQuantityError(f"{quantity} must contain real numeric values") from exc
     if np.isinf(real).any():
         raise EchemQuantityError(f"{quantity} must not contain +/-inf")
     if not allow_nan and np.isnan(real).any():
@@ -78,13 +88,10 @@ def nonnegative_finite(value: Any, *, name: str) -> float:
 
 
 def electron_number(value: Any) -> int:
-    """Validate an explicit positive integer electron stoichiometry."""
-    if isinstance(value, bool):
+    """Validate an explicit positive integer-valued numeric electron stoichiometry."""
+    if isinstance(value, (bool, np.bool_)) or not isinstance(value, Real):
         raise EchemQuantityError("electron_number must be a positive integer")
-    try:
-        numeric = float(value)
-    except (TypeError, ValueError) as exc:
-        raise EchemQuantityError("electron_number must be a positive integer") from exc
+    numeric = float(value)
     if not isfinite(numeric) or numeric <= 0 or not numeric.is_integer():
         raise EchemQuantityError("electron_number must be a positive integer")
     return int(numeric)
@@ -92,7 +99,9 @@ def electron_number(value: Any) -> int:
 
 def normalize_reference_name(reference: str) -> str:
     """Normalize whitespace while preserving the caller's reference-electrode name."""
-    name = " ".join(str(reference).split())
+    if not isinstance(reference, str):
+        raise EchemQuantityError("reference must be a string")
+    name = " ".join(reference.split())
     if not name:
         raise EchemQuantityError("reference must not be empty")
     return name
