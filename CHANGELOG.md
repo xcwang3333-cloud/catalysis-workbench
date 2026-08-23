@@ -10,6 +10,7 @@ All notable changes to CatalysisWorkbench are recorded here.
 - Reusable frozen electrochemistry provenance records for source-data identity, fit windows, input basis, units, and deterministic analysis parameters.
 - Generic publication scatter rendering for `Series`/`Dataset`, including stable-key styles and explicit-only x/y error bars.
 - Generic single-series/grouped categorical bar rendering with stable category/series keys, optional explicit errors, category overrides, and shared exact-size figure/export behavior.
+- Explicit Tafel analysis with caller-supplied fit windows, physical branch plus numeric current-sign declarations, signed slope/intercept/R^2 reporting, immutable provenance-rich results, stable-key Dataset fitting, and shared publication plotting.
 
 ### Changed
 
