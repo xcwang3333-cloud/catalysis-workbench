@@ -1,16 +1,16 @@
-# v0.1.0 release candidate
+# v0.1.0 release validation record
 
 Date: 2026-08-23
 
-This branch is the final version gate for CatalysisWorkbench v0.1.0. It contains no new scientific algorithms.
+This document records the final version gate for CatalysisWorkbench v0.1.0. It contains no new scientific algorithms and is intentionally written so the same snapshot remains accurate before and after the release tag is created.
 
-## Candidate version
+## Final version
 
 - Distribution metadata: `0.1.0`
 - Runtime `catalysis_workbench.__version__`: `0.1.0`
-- Intended tag after final authorization: `v0.1.0`
+- Release tag name: `v0.1.0`
 
-## Required validation before tag
+## Required validation
 
 - Ruff passes.
 - Full pytest suite passes.
@@ -22,4 +22,6 @@ This branch is the final version gate for CatalysisWorkbench v0.1.0. It contains
 - All three documented examples execute against the installed wheel.
 - Formal release/API/packaging review reports no blocker.
 
-The tag is deliberately not created on this branch. The reviewed candidate must first be merged to `main`, rechecked there, and then receive explicit final tag authorization.
+## Tag policy
+
+A `v0.1.0` tag may point only to the reviewed `main` commit that already reports version `0.1.0`, after the final-version checks pass and explicit release authorization is given. Tag creation is a separate operation from the version-gate PR merge.
