@@ -20,9 +20,9 @@ from .quantities import (
     amount_to_mol,
     charge_to_c,
     current_to_a,
-    electron_number as validate_electron_number,
     molar_rate_to_mol_s,
 )
+from .quantities import electron_number as validate_electron_number
 
 FaradaicEfficiencyMode = Literal["amount_charge", "rate_current"]
 FaradaicEfficiencyOutputUnit = Literal["fraction", "%"]
