@@ -8,10 +8,13 @@ All notable changes to CatalysisWorkbench are recorded here.
 
 - Shared electrochemistry quantity/unit conversion helpers covering potential, current, current density, charge, time, scan rate, area, mass/loading, amount, molar rate, rotation rate, reference names, and explicit electron stoichiometry.
 - Reusable frozen electrochemistry provenance records for source-data identity, fit windows, input basis, units, and deterministic analysis parameters.
+- Generic publication scatter rendering for `Series`/`Dataset`, including stable-key styles and explicit-only x/y error bars.
+- Generic single-series/grouped categorical bar rendering with stable category/series keys, optional explicit errors, category overrides, and shared exact-size figure/export behavior.
 
 ### Changed
 
 - LSV/polarization processing now delegates common low-level quantity parsing and conversion to the shared electrochemistry foundation while preserving the reviewed v0.1 public API and numerical behavior.
+- Shared visualization specifications now include categorical style overrides, configurable bar-group width, and error-bar cap size while preserving existing curve-rendering behavior.
 - Development version advanced to `0.2.0.dev0` after the tagged `v0.1.0` release.
 
 ## [0.1.0] - 2026-08-23
