@@ -306,6 +306,7 @@ def render_bars(
             xlabel=xlabel,
             ylabel=ylabel,
             labeled_count=labeled_count,
+            apply_xscale=False,
         )
 
     return figure, ax
