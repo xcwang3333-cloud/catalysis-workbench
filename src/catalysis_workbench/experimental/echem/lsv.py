@@ -6,19 +6,19 @@ This module deliberately contains no plotting code. Publication rendering is own
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from math import isfinite
-from typing import Any, Callable, TypeVar
+from typing import Any, TypeVar
 
 import numpy as np
 
 from catalysis_workbench.core import Axis, Dataset, Series
 
 from .quantities import (
-    EchemQuantityError,
     FARADAY_CONSTANT_C_MOL,
     GAS_CONSTANT_J_MOL_K,
+    EchemQuantityError,
     canonical_current_density_unit,
     current_density_from_a_cm2,
     current_density_to_a_cm2,
