@@ -23,9 +23,9 @@ from .provenance import (
     source_data_ref,
 )
 from .quantities import (
-    EchemQuantityError,
     FARADAY_CONSTANT_C_MOL,
     GAS_CONSTANT_J_MOL_K,
+    EchemQuantityError,
     amount_to_mol,
     area_to_cm2,
     charge_to_c,
