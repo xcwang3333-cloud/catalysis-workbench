@@ -56,6 +56,19 @@ def test_potential_to_v(unit, expected):
     np.testing.assert_allclose(potential_to_v([0.1, 0.2], unit), expected)
 
 
+def test_quantity_converters_return_float64_ndarrays_and_preserve_shape():
+    scalar = potential_to_v(100.0, "mV")
+    vector = potential_to_v([[100.0, 200.0]], "mV")
+    assert isinstance(scalar, np.ndarray)
+    assert scalar.dtype == np.float64
+    assert scalar.shape == ()
+    assert scalar.item() == pytest.approx(0.1)
+    assert isinstance(vector, np.ndarray)
+    assert vector.dtype == np.float64
+    assert vector.shape == (1, 2)
+    np.testing.assert_allclose(vector, [[0.1, 0.2]])
+
+
 @pytest.mark.parametrize(
     ("unit", "expected"),
     [
@@ -79,16 +92,20 @@ def test_current_density_aliases_are_equivalent(unit):
     )
 
 
-def test_missing_and_unsupported_units_fail_explicitly():
+def test_missing_unsupported_and_non_string_units_fail_explicitly():
     with pytest.raises(EchemQuantityError, match="unit is required"):
         potential_to_v([0.1], None)
+    with pytest.raises(EchemQuantityError, match="unit must be a string"):
+        potential_to_v([0.1], 1)
     with pytest.raises(EchemQuantityError, match="unsupported current"):
         current_to_a([1.0], "C/s")
     with pytest.raises(EchemQuantityError, match="unsupported current density"):
         current_density_to_a_cm2([1.0], "A/m^2")
 
 
-def test_quantity_helpers_reject_complex_infinite_and_missing_when_required():
+def test_quantity_helpers_reject_non_numeric_complex_infinite_and_missing_data():
+    with pytest.raises(EchemQuantityError, match="numeric"):
+        potential_to_v(["not-a-number"], "V")
     with pytest.raises(EchemQuantityError, match="real-valued"):
         current_to_a(np.array([1.0 + 1.0j]), "A")
     with pytest.raises(EchemQuantityError, match="inf"):
@@ -132,20 +149,23 @@ def test_rotation_rate_conversion_is_explicit():
         rotation_rate_to_rad_s([1600.0], "Hz")
 
 
-def test_electron_number_requires_positive_integer():
+def test_electron_number_requires_positive_integer_valued_numeric_input():
     assert electron_number(4) == 4
     assert electron_number(2.0) == 2
-    for invalid in (0, -1, 2.5, np.nan, True, "two"):
+    assert electron_number(np.int64(4)) == 4
+    for invalid in (0, -1, 2.5, np.nan, True, np.bool_(True), "4", "two"):
         with pytest.raises(EchemQuantityError, match="positive integer"):
             electron_number(invalid)
 
 
-def test_reference_names_are_explicit_and_case_insensitive_only_for_comparison():
+def test_reference_names_are_explicit_strings_and_case_insensitive_only_for_comparison():
     assert normalize_reference_name("  Ag/AgCl   (3 M KCl)  ") == "Ag/AgCl (3 M KCl)"
     assert same_reference("RHE", "rhe")
     assert not same_reference("RHE", "SHE")
     with pytest.raises(EchemQuantityError, match="must not be empty"):
         normalize_reference_name("   ")
+    with pytest.raises(EchemQuantityError, match="must be a string"):
+        normalize_reference_name(None)
 
 
 def test_faraday_constant_is_exposed_for_later_echem_equations():
@@ -175,6 +195,31 @@ def test_source_data_ref_retains_key_label_axes_units_and_digest():
     )
 
 
+def test_source_data_ref_direct_constructor_enforces_digest_and_axis_invariants():
+    digest = series_data_sha256(_series())
+    direct = SourceDataRef(
+        key=" cat-a ",
+        label=" Cat A ",
+        sha256=digest.upper(),
+        x_name=" potential ",
+        x_unit=" V ",
+        y_name=" current_density ",
+        y_unit=" mA/cm^2 ",
+    )
+    assert direct.key == "cat-a"
+    assert direct.label == "Cat A"
+    assert direct.sha256 == digest
+    assert direct.x_name == "potential"
+    assert direct.x_unit == "V"
+
+    with pytest.raises(EchemQuantityError, match="sha256"):
+        SourceDataRef("", "", "bad", "potential", "V", "current", "A")
+    with pytest.raises(EchemQuantityError, match="x_name"):
+        SourceDataRef("", "", digest, " ", "V", "current", "A")
+    with pytest.raises(EchemQuantityError, match="x_unit"):
+        SourceDataRef("", "", digest, "potential", 1, "current", "A")
+
+
 def test_fit_window_requires_explicit_order_unit_and_point_count():
     window = FitWindow(0.2, 0.4, "V", 5)
     assert window.lower == pytest.approx(0.2)
@@ -188,6 +233,17 @@ def test_fit_window_requires_explicit_order_unit_and_point_count():
         FitWindow(0.2, 0.4, "", 5)
     with pytest.raises(EchemQuantityError, match="n_points"):
         FitWindow(0.2, 0.4, "V", 1)
+
+
+def test_fit_window_invalid_types_fail_with_echem_quantity_error():
+    with pytest.raises(EchemQuantityError, match="real numeric"):
+        FitWindow("0.2", 0.4, "V", 5)
+    with pytest.raises(EchemQuantityError, match="finite"):
+        FitWindow(np.nan, 0.4, "V", 5)
+    with pytest.raises(EchemQuantityError, match="n_points"):
+        FitWindow(0.2, 0.4, "V", "5")
+    with pytest.raises(EchemQuantityError, match="n_points"):
+        FitWindow(0.2, 0.4, "V", 5.5)
 
 
 def test_make_analysis_provenance_is_deterministic_and_sorts_metadata():
@@ -212,15 +268,69 @@ def test_make_analysis_provenance_is_deterministic_and_sorts_metadata():
     assert one.parameters == (("branch", "cathodic"), ("magnitude", True))
 
 
-def test_analysis_provenance_rejects_empty_basis_and_non_scalar_metadata():
+def test_analysis_provenance_rejects_empty_basis_bad_units_and_non_scalar_parameters():
     source = _series()
     with pytest.raises(EchemQuantityError, match="input_basis"):
         make_analysis_provenance(source, input_basis="  ")
+    with pytest.raises(EchemQuantityError, match="unit string"):
+        make_analysis_provenance(
+            source,
+            input_basis="current_density",
+            units={"slope": 42},
+        )
+    with pytest.raises(EchemQuantityError, match="unit string"):
+        make_analysis_provenance(
+            source,
+            input_basis="current_density",
+            units={"slope": "  "},
+        )
     with pytest.raises(EchemQuantityError, match="scalar"):
         make_analysis_provenance(
             source,
             input_basis="current_density",
             parameters={"bad": [1, 2]},
+        )
+
+
+def test_analysis_provenance_direct_constructor_protects_public_invariants():
+    source_ref = source_data_ref(_series())
+    window = FitWindow(0.1, 0.3, "V", 3)
+    direct = AnalysisProvenance(
+        source=source_ref,
+        input_basis=" geometric_current_density ",
+        fit_window=window,
+        units=(("slope", "mV/dec"), ("current", "mA/cm^2")),
+        parameters=(("magnitude", np.bool_(True)), ("branch", "cathodic")),
+    )
+    assert direct.input_basis == "geometric_current_density"
+    assert direct.units == (("current", "mA/cm^2"), ("slope", "mV/dec"))
+    assert direct.parameters == (("branch", "cathodic"), ("magnitude", True))
+
+    with pytest.raises(TypeError, match="SourceDataRef"):
+        AnalysisProvenance(source="bad", input_basis="current_density")
+    with pytest.raises(TypeError, match="FitWindow"):
+        AnalysisProvenance(
+            source=source_ref,
+            input_basis="current_density",
+            fit_window="bad",
+        )
+    with pytest.raises(EchemQuantityError, match="unit string"):
+        AnalysisProvenance(
+            source=source_ref,
+            input_basis="current_density",
+            units=(("slope", 42),),
+        )
+    with pytest.raises(EchemQuantityError, match="scalar"):
+        AnalysisProvenance(
+            source=source_ref,
+            input_basis="current_density",
+            parameters=(("bad", [1, 2]),),
+        )
+    with pytest.raises(EchemQuantityError, match="unique"):
+        AnalysisProvenance(
+            source=source_ref,
+            input_basis="current_density",
+            units=((" slope ", "mV/dec"), ("slope", "V/dec")),
         )
 
 
