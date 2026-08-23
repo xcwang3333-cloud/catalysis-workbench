@@ -4,14 +4,13 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-import matplotlib as mpl
 import numpy as np
 from matplotlib.axes import Axes
-from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.figure import Figure
 
 from catalysis_workbench.core import Axis, Dataset, Series
 
+from ._rendering import figure_axes_context, finalize_axes
 from .presets import get_preset
 from .specs import FigureSpec, SeriesStyle, VisualizationError
 
@@ -170,7 +169,7 @@ def render_curves(
     """Render one or several compatible curves and return ``(figure, axes)``.
 
     The function does not import pyplot, register a GUI figure manager, call
-    ``show()``, or mutate the scientific input objects.  ``spec`` is the complete
+    ``show()``, or mutate the scientific input objects. ``spec`` is the complete
     redraw recipe; when omitted, a registered immutable preset is used. Rendering starts
     from Matplotlib defaults inside a local rc context so unrelated user rcParams do not
     alter the result and are restored after the figure is constructed.
@@ -184,25 +183,9 @@ def render_curves(
     _validate_axis_compatibility(series)
     _validate_style_keys(series, resolved_spec)
 
-    layout = resolved_spec.layout
-    style = resolved_spec.style
-    rc = {
-        "font.family": style.font_family,
-        "font.size": style.font_size,
-        "axes.unicode_minus": True,
-    }
-    with mpl.rc_context():
-        mpl.rcdefaults()
-        mpl.rcParams.update(rc)
-        figure = Figure(
-            figsize=(layout.figure_width_in, layout.figure_height_in),
-            dpi=100,
-        )
-        FigureCanvasAgg(figure)
-        ax = figure.add_axes(layout.axes_bounds_fraction())
-
-        visible_count = 0
-        labeled_count = 0
+    visible_count = 0
+    labeled_count = 0
+    with figure_axes_context(resolved_spec) as (figure, ax):
         for index, item in enumerate(series):
             kwargs, override = _line_kwargs(item, index=index, spec=resolved_spec)
             if override is not None and not override.visible:
@@ -215,17 +198,10 @@ def render_curves(
         if visible_count == 0:
             raise VisualizationError("all curves are hidden by SeriesStyle overrides")
 
-        ax.set_xscale(resolved_spec.xscale)
-        ax.set_yscale(resolved_spec.yscale)
-        if resolved_spec.xlim is not None:
-            ax.set_xlim(*resolved_spec.xlim)
-        if resolved_spec.ylim is not None:
-            ax.set_ylim(*resolved_spec.ylim)
-
         xlabel = (
             format_axis_label(
                 series[0].x_axis,
-                unit_format=style.axis_unit_format,
+                unit_format=resolved_spec.style.axis_unit_format,
             )
             if resolved_spec.xlabel is None
             else resolved_spec.xlabel
@@ -233,68 +209,17 @@ def render_curves(
         ylabel = (
             format_axis_label(
                 series[0].y_axis,
-                unit_format=style.axis_unit_format,
+                unit_format=resolved_spec.style.axis_unit_format,
             )
             if resolved_spec.ylabel is None
             else resolved_spec.ylabel
         )
-        ax.set_xlabel(xlabel, fontsize=style.axis_label_size)
-        ax.set_ylabel(ylabel, fontsize=style.axis_label_size)
-        if resolved_spec.title:
-            ax.set_title(resolved_spec.title, fontsize=style.title_size)
-
-        for spine in ax.spines.values():
-            spine.set_linewidth(style.spine_width)
-        ax.tick_params(
-            axis="both",
-            which="major",
-            direction=style.tick_direction,
-            length=style.tick_length,
-            width=style.tick_width,
-            labelsize=style.tick_label_size,
-            top=style.top_ticks,
-            right=style.right_ticks,
+        finalize_axes(
+            ax,
+            resolved_spec,
+            xlabel=xlabel,
+            ylabel=ylabel,
+            labeled_count=labeled_count,
         )
-        ax.tick_params(
-            axis="both",
-            which="minor",
-            direction=style.tick_direction,
-            length=style.tick_length * 0.55,
-            width=style.tick_width,
-            top=style.top_ticks,
-            right=style.right_ticks,
-        )
-        if style.minor_ticks:
-            ax.minorticks_on()
-        else:
-            ax.minorticks_off()
-
-        show_legend = (
-            labeled_count > 1
-            if resolved_spec.show_legend is None
-            else resolved_spec.show_legend
-        )
-        if show_legend and labeled_count:
-            ax.legend(
-                loc=style.legend_location,
-                fontsize=style.legend_font_size,
-                frameon=style.legend_frame,
-            )
-
-        for annotation in resolved_spec.annotations:
-            transform = ax.transAxes if annotation.coordinates == "axes" else ax.transData
-            ax.text(
-                annotation.x,
-                annotation.y,
-                annotation.text,
-                transform=transform,
-                fontsize=(
-                    style.font_size if annotation.font_size is None else annotation.font_size
-                ),
-                ha=annotation.horizontal_alignment,
-                va=annotation.vertical_alignment,
-                rotation=annotation.rotation,
-                color=annotation.color,
-            )
 
     return figure, ax
