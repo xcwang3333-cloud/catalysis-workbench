@@ -1,6 +1,6 @@
 """Publication rendering adapter for LSV and polarization curves.
 
-Scientific correction and normalization remain in :mod:`.lsv`.  This module is a
+Scientific correction and normalization remain in :mod:`.lsv`. This module is a
 thin domain adapter over the shared visualization engine: it validates canonical
 LSV axis semantics, adds electrochemical reference information to automatic axis
 labels, and delegates all artists/layout/export styling to ``render_curves``.
@@ -21,12 +21,12 @@ from catalysis_workbench.visualization import (
     render_curves,
 )
 
-from .lsv import (
-    _CURRENT_DENSITY_TO_A_CM2,
-    _CURRENT_TO_A,
-    _POTENTIAL_TO_V,
-    LSVError,
-    _compact_unit,
+from .lsv import LSVError
+from .quantities import (
+    EchemQuantityError,
+    is_current_density_unit,
+    is_current_unit,
+    potential_to_v,
 )
 
 
@@ -47,12 +47,15 @@ def _validate_lsv_axes(series: Sequence[Series]) -> None:
                 "LSV plotting requires x_axis.name='potential'; "
                 f"got {item.x_axis.name!r}"
             )
-        potential_unit = _compact_unit(item.x_axis.unit)
-        if potential_unit not in _POTENTIAL_TO_V:
+        if item.x_axis.unit is None or not str(item.x_axis.unit).strip():
+            raise LSVError("electrochemical axis unit is required")
+        try:
+            potential_to_v([0.0], item.x_axis.unit, allow_nan=False)
+        except EchemQuantityError as exc:
             raise LSVError(
                 "LSV plotting requires potential units V or mV; "
                 f"got {item.x_axis.unit!r}"
-            )
+            ) from exc
 
         y_name = item.y_axis.name.casefold()
         if y_name not in {"current", "current_density"}:
@@ -60,11 +63,14 @@ def _validate_lsv_axes(series: Sequence[Series]) -> None:
                 "LSV plotting requires y_axis.name='current' or 'current_density'; "
                 f"got {item.y_axis.name!r}"
             )
-        y_unit = _compact_unit(item.y_axis.unit)
-        supported_units = (
-            _CURRENT_TO_A if y_name == "current" else _CURRENT_DENSITY_TO_A_CM2
+        if item.y_axis.unit is None or not str(item.y_axis.unit).strip():
+            raise LSVError("electrochemical axis unit is required")
+        supported = (
+            is_current_unit(item.y_axis.unit)
+            if y_name == "current"
+            else is_current_density_unit(item.y_axis.unit)
         )
-        if y_unit not in supported_units:
+        if not supported:
             quantity = "current" if y_name == "current" else "current density"
             raise LSVError(
                 f"LSV plotting requires a supported {quantity} unit; "
@@ -99,11 +105,11 @@ def plot_lsv(
     """Render an LSV/polarization curve through the shared publication renderer.
 
     The adapter performs **no** numerical correction, normalization, smoothing, sign
-    inversion, or resampling.  Process data explicitly with :func:`process_lsv` or
+    inversion, or resampling. Process data explicitly with :func:`process_lsv` or
     :func:`process_lsv_dataset` before plotting when those operations are required.
 
-    ``None`` axis labels inherit automatic electrochemical labels.  Explicit strings,
-    including ``""``, are preserved exactly.  Potential reference metadata such as
+    ``None`` axis labels inherit automatic electrochemical labels. Explicit strings,
+    including ``""``, are preserved exactly. Potential reference metadata such as
     ``reference="RHE"`` is rendered as ``Potential (V vs RHE)`` by default and remains
     visible even when the global unit-display format is disabled.
     """

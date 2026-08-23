@@ -1,78 +1,76 @@
 """Scientific processing for LSV and polarization curves.
 
 This module deliberately contains no plotting code. Publication rendering is owned by
-``catalysis_workbench.visualization`` and will be connected through a thin LSV adapter
-once the shared visualization layer is available.
+``catalysis_workbench.visualization`` and connected through a thin LSV adapter.
 """
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from math import isfinite
-from typing import Any
+from typing import Any, TypeVar
 
 import numpy as np
 
 from catalysis_workbench.core import Axis, Dataset, Series
 
-_GAS_CONSTANT_J_MOL_K = 8.31446261815324
-_FARADAY_CONSTANT_C_MOL = 96485.33212
+from .quantities import (
+    FARADAY_CONSTANT_C_MOL,
+    GAS_CONSTANT_J_MOL_K,
+    EchemQuantityError,
+    canonical_current_density_unit,
+    current_density_from_a_cm2,
+    current_density_to_a_cm2,
+    current_to_a,
+    is_current_density_unit,
+    is_current_unit,
+    nonnegative_finite,
+    normalize_reference_name,
+    normalize_unit,
+    positive_finite,
+    potential_to_v,
+    same_reference,
+)
 
-_POTENTIAL_TO_V = {"v": 1.0, "mv": 1e-3}
-_CURRENT_TO_A = {"a": 1.0, "ma": 1e-3, "ua": 1e-6}
-_CURRENT_DENSITY_TO_A_CM2 = {
-    "a/cm^2": 1.0,
-    "a/cm2": 1.0,
-    "acm^-2": 1.0,
-    "acm-2": 1.0,
-    "ma/cm^2": 1e-3,
-    "ma/cm2": 1e-3,
-    "macm^-2": 1e-3,
-    "macm-2": 1e-3,
-    "ua/cm^2": 1e-6,
-    "ua/cm2": 1e-6,
-    "uacm^-2": 1e-6,
-    "uacm-2": 1e-6,
-}
-_CANONICAL_DENSITY_UNITS = {
-    "a/cm^2": "A/cm^2",
-    "ma/cm^2": "mA/cm^2",
-    "ua/cm^2": "uA/cm^2",
-}
 _GEOMETRIC_NORMALIZATION_NAMES = {
     "geometric",
     "geometric_area",
     "geometric_area_cm2",
 }
+_T = TypeVar("_T")
 
 
 class LSVError(ValueError):
     """Raised when an LSV transformation is scientifically or numerically invalid."""
 
 
+def _translate_quantity_error(function: Callable[..., _T], *args: Any, **kwargs: Any) -> _T:
+    try:
+        return function(*args, **kwargs)
+    except EchemQuantityError as exc:
+        raise LSVError(str(exc)) from exc
+
+
 def _compact_unit(unit: str | None) -> str:
-    if unit is None or not str(unit).strip():
-        raise LSVError("electrochemical axis unit is required")
-    compact = str(unit).strip().lower()
-    compact = compact.replace("µ", "u").replace("μ", "u")
-    compact = compact.replace("⁻²", "^-2")
-    compact = compact.replace("−", "-").replace("⁻", "-").replace("²", "^2")
-    compact = compact.replace("·", "").replace("*", "").replace(" ", "")
-    return compact
+    try:
+        return normalize_unit(unit)
+    except EchemQuantityError as exc:
+        raise LSVError("electrochemical axis unit is required") from exc
 
 
 def _normalize_reference_name(reference: str) -> str:
-    name = " ".join(str(reference).split())
-    if not name:
-        raise LSVError("source_reference must not be empty")
-    return name
+    try:
+        return normalize_reference_name(reference)
+    except EchemQuantityError as exc:
+        raise LSVError("source_reference must not be empty") from exc
 
 
 def _same_reference(left: str, right: str) -> bool:
-    left_name = _normalize_reference_name(left).casefold()
-    right_name = _normalize_reference_name(right).casefold()
-    return left_name == right_name
+    try:
+        return same_reference(left, right)
+    except EchemQuantityError as exc:
+        raise LSVError(str(exc)) from exc
 
 
 def _history_has(series: Series, operation: str) -> bool:
@@ -83,30 +81,12 @@ def _history_has(series: Series, operation: str) -> bool:
     )
 
 
-def _require_real(values: np.ndarray, *, quantity: str, allow_nan: bool = True) -> np.ndarray:
-    array = np.asarray(values)
-    if np.iscomplexobj(array):
-        raise LSVError(f"{quantity} must be real-valued")
-    real = array.astype(np.float64, copy=False)
-    if np.isinf(real).any():
-        raise LSVError(f"{quantity} must not contain +/-inf")
-    if not allow_nan and np.isnan(real).any():
-        raise LSVError(f"{quantity} must not contain missing values")
-    return real
-
-
 def _positive_finite(value: float, *, name: str) -> float:
-    numeric = float(value)
-    if not isfinite(numeric) or numeric <= 0:
-        raise LSVError(f"{name} must be finite and greater than zero")
-    return numeric
+    return _translate_quantity_error(positive_finite, value, name=name)
 
 
 def _nonnegative_finite(value: float, *, name: str) -> float:
-    numeric = float(value)
-    if not isfinite(numeric) or numeric < 0:
-        raise LSVError(f"{name} must be finite and non-negative")
-    return numeric
+    return _translate_quantity_error(nonnegative_finite, value, name=name)
 
 
 def _axis_with(
@@ -149,31 +129,27 @@ def _transform(
 
 
 def _potential_in_v(series: Series) -> np.ndarray:
-    unit = _compact_unit(series.x_axis.unit)
     try:
-        factor = _POTENTIAL_TO_V[unit]
-    except KeyError as exc:
-        raise LSVError(
-            f"unsupported potential unit {series.x_axis.unit!r}; use V or mV"
-        ) from exc
-    potential = _require_real(series.x, quantity="potential", allow_nan=False)
-    return potential * factor
+        return potential_to_v(series.x, series.x_axis.unit, allow_nan=False)
+    except EchemQuantityError as exc:
+        message = str(exc)
+        if "unit is required" in message:
+            raise LSVError("electrochemical axis unit is required") from exc
+        raise LSVError(message) from exc
 
 
 def _current_in_a(series: Series) -> np.ndarray:
-    unit = _compact_unit(series.y_axis.unit)
-    try:
-        factor = _CURRENT_TO_A[unit]
-    except KeyError as exc:
-        if unit in _CURRENT_DENSITY_TO_A_CM2:
-            raise LSVError(
-                "current-density input requires electrode area to recover total current"
-            ) from exc
+    if is_current_density_unit(series.y_axis.unit):
         raise LSVError(
-            f"unsupported current unit {series.y_axis.unit!r}; use A, mA, or uA"
-        ) from exc
-    current = _require_real(series.y, quantity="current", allow_nan=True)
-    return current * factor
+            "current-density input requires electrode area to recover total current"
+        )
+    try:
+        return current_to_a(series.y, series.y_axis.unit, allow_nan=True)
+    except EchemQuantityError as exc:
+        message = str(exc)
+        if "unit is required" in message:
+            raise LSVError("electrochemical axis unit is required") from exc
+        raise LSVError(message) from exc
 
 
 def _density_area_basis(series: Series, supplied_area_cm2: float) -> str:
@@ -207,20 +183,32 @@ def _current_from_series_in_a(
     electrode_area_cm2: float | None,
     allow_nan: bool,
 ) -> tuple[np.ndarray, str, str | None]:
-    unit = _compact_unit(series.y_axis.unit)
-    values = _require_real(series.y, quantity="current", allow_nan=allow_nan)
-    if unit in _CURRENT_TO_A:
-        return values * _CURRENT_TO_A[unit], "current", None
-    if unit in _CURRENT_DENSITY_TO_A_CM2:
+    unit = series.y_axis.unit
+    if is_current_unit(unit):
+        try:
+            values = current_to_a(series.y, unit, allow_nan=allow_nan)
+        except EchemQuantityError as exc:
+            raise LSVError(str(exc)) from exc
+        return values, "current", None
+    if is_current_density_unit(unit):
         if electrode_area_cm2 is None:
             raise LSVError(
                 "electrode_area_cm2 is required for iR correction of current-density data"
             )
         area = _positive_finite(electrode_area_cm2, name="electrode_area_cm2")
         area_basis = _density_area_basis(series, area)
-        density_a_cm2 = values * _CURRENT_DENSITY_TO_A_CM2[unit]
+        try:
+            density_a_cm2 = current_density_to_a_cm2(
+                series.y,
+                unit,
+                allow_nan=allow_nan,
+            )
+        except EchemQuantityError as exc:
+            raise LSVError(str(exc)) from exc
         return density_a_cm2 * area, "current_density", area_basis
-    raise LSVError(f"unsupported current/current-density unit {series.y_axis.unit!r}")
+    if unit is None or not str(unit).strip():
+        raise LSVError("electrochemical axis unit is required")
+    raise LSVError(f"unsupported current/current-density unit {unit!r}")
 
 
 def rhe_offset_from_she(
@@ -236,7 +224,7 @@ def rhe_offset_from_she(
     if not isfinite(reference) or not isfinite(ph_value):
         raise LSVError("reference_potential_vs_she_v and ph must be finite")
     nernst_slope = (
-        2.303 * _GAS_CONSTANT_J_MOL_K * temperature / _FARADAY_CONSTANT_C_MOL
+        2.303 * GAS_CONSTANT_J_MOL_K * temperature / FARADAY_CONSTANT_C_MOL
     )
     return reference + nernst_slope * ph_value
 
@@ -356,24 +344,15 @@ def to_current_density(
 ) -> Series:
     """Normalize total current by geometric electrode area while preserving current sign."""
     area = _positive_finite(electrode_area_cm2, name="electrode_area_cm2")
-    input_unit = _compact_unit(series.y_axis.unit)
-    if input_unit in _CURRENT_DENSITY_TO_A_CM2:
+    if is_current_density_unit(series.y_axis.unit):
         raise LSVError("Series y data are already current density; refusing double normalization")
     current_a = _current_in_a(series)
 
-    output_key = _compact_unit(output_unit)
-    if output_key not in _CURRENT_DENSITY_TO_A_CM2:
-        raise LSVError("output_unit must be A/cm^2, mA/cm^2, or uA/cm^2")
-    factor = _CURRENT_DENSITY_TO_A_CM2[output_key]
-    density = current_a / area / factor
-    canonical_unit = _CANONICAL_DENSITY_UNITS.get(output_key)
-    if canonical_unit is None:
-        if output_key.startswith("ma"):
-            canonical_unit = "mA/cm^2"
-        elif output_key.startswith("ua"):
-            canonical_unit = "uA/cm^2"
-        else:
-            canonical_unit = "A/cm^2"
+    try:
+        canonical_unit = canonical_current_density_unit(output_unit)
+        density = current_density_from_a_cm2(current_a / area, output_unit)
+    except EchemQuantityError as exc:
+        raise LSVError(str(exc)) from exc
 
     y_axis = _axis_with(
         series.y_axis,
@@ -428,8 +407,12 @@ class LSVProcessingConfig:
             raise LSVError(
                 "electrode_area_cm2 is required when normalize_to_current_density=True"
             )
-        if _compact_unit(self.current_density_unit) not in _CURRENT_DENSITY_TO_A_CM2:
-            raise LSVError("current_density_unit must be A/cm^2, mA/cm^2, or uA/cm^2")
+        try:
+            canonical_current_density_unit(self.current_density_unit)
+        except EchemQuantityError as exc:
+            raise LSVError(
+                "current_density_unit must be A/cm^2, mA/cm^2, or uA/cm^2"
+            ) from exc
 
 
 def process_lsv(series: Series, config: LSVProcessingConfig) -> Series:

@@ -2,6 +2,18 @@
 
 All notable changes to CatalysisWorkbench are recorded here.
 
+## [Unreleased]
+
+### Added
+
+- Shared electrochemistry quantity/unit conversion helpers covering potential, current, current density, charge, time, scan rate, area, mass/loading, amount, molar rate, rotation rate, reference names, and explicit electron stoichiometry.
+- Reusable frozen electrochemistry provenance records for source-data identity, fit windows, input basis, units, and deterministic analysis parameters.
+
+### Changed
+
+- LSV/polarization processing now delegates common low-level quantity parsing and conversion to the shared electrochemistry foundation while preserving the reviewed v0.1 public API and numerical behavior.
+- Development version advanced to `0.2.0.dev0` after the tagged `v0.1.0` release.
+
 ## [0.1.0] - 2026-08-23
 
 The first usable release establishes the common one-dimensional catalysis-data workflow and publication rendering foundation.

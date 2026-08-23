@@ -14,6 +14,34 @@ from .lsv import (
     rhe_offset_from_she,
     to_current_density,
 )
+from .provenance import (
+    AnalysisProvenance,
+    FitWindow,
+    SourceDataRef,
+    make_analysis_provenance,
+    series_data_sha256,
+    source_data_ref,
+)
+from .quantities import (
+    FARADAY_CONSTANT_C_MOL,
+    GAS_CONSTANT_J_MOL_K,
+    EchemQuantityError,
+    amount_to_mol,
+    area_to_cm2,
+    charge_to_c,
+    current_density_to_a_cm2,
+    current_to_a,
+    electron_number,
+    loading_to_g_cm2,
+    mass_to_g,
+    molar_rate_to_mol_s,
+    normalize_reference_name,
+    potential_to_v,
+    rotation_rate_to_rad_s,
+    same_reference,
+    scan_rate_to_v_s,
+    time_to_s,
+)
 
 if TYPE_CHECKING:
     from matplotlib.axes import Axes
@@ -41,13 +69,37 @@ def plot_lsv(
 
 
 __all__ = [
+    "AnalysisProvenance",
+    "EchemQuantityError",
+    "FARADAY_CONSTANT_C_MOL",
+    "FitWindow",
+    "GAS_CONSTANT_J_MOL_K",
     "LSVError",
     "LSVProcessingConfig",
+    "SourceDataRef",
+    "amount_to_mol",
+    "area_to_cm2",
+    "charge_to_c",
     "convert_potential_to_rhe",
     "correct_ir_drop",
+    "current_density_to_a_cm2",
+    "current_to_a",
+    "electron_number",
+    "loading_to_g_cm2",
+    "make_analysis_provenance",
+    "mass_to_g",
+    "molar_rate_to_mol_s",
+    "normalize_reference_name",
     "plot_lsv",
+    "potential_to_v",
     "process_lsv",
     "process_lsv_dataset",
     "rhe_offset_from_she",
+    "rotation_rate_to_rad_s",
+    "same_reference",
+    "scan_rate_to_v_s",
+    "series_data_sha256",
+    "source_data_ref",
+    "time_to_s",
     "to_current_density",
 ]
