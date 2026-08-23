@@ -10,6 +10,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from math import isfinite
+from numbers import Real
 from typing import Literal
 
 import numpy as np
@@ -28,6 +29,17 @@ from .quantities import (
 
 TafelBranch = Literal["cathodic", "anodic"]
 CurrentSign = Literal["negative", "positive"]
+
+_TAFEL_INPUT_BASIS = "potential_vs_log10_absolute_current_density"
+_TAFEL_BRANCHES = frozenset({"cathodic", "anodic"})
+_CURRENT_SIGNS = frozenset({"negative", "positive"})
+_CANONICAL_TAFEL_UNITS = {
+    "current_density": "A/cm^2",
+    "intercept": "V",
+    "potential": "V",
+    "slope": "V/dec",
+    "slope_display": "mV/dec",
+}
 
 
 class TafelError(ValueError):
@@ -49,7 +61,32 @@ def _normalize_reference(value: object) -> str:
     try:
         return normalize_reference_name(value)
     except EchemQuantityError as exc:
-        raise TafelError("potential reference metadata must be a non-empty string") from exc
+        raise TafelError(
+            "potential reference metadata must be a non-empty string"
+        ) from exc
+
+
+def _required_choice(
+    value: object,
+    *,
+    name: str,
+    allowed: frozenset[str],
+) -> str:
+    choices = " or ".join(repr(item) for item in sorted(allowed))
+    if not isinstance(value, str):
+        raise TafelError(f"{name} must be {choices}")
+    normalized = value.strip()
+    if normalized not in allowed:
+        raise TafelError(f"{name} must be {choices}")
+    return normalized
+
+
+def _normalize_branch(value: object) -> str:
+    return _required_choice(value, name="branch", allowed=_TAFEL_BRANCHES)
+
+
+def _normalize_current_sign(value: object) -> str:
+    return _required_choice(value, name="current_sign", allowed=_CURRENT_SIGNS)
 
 
 def _immutable_float_array(values: ArrayLike, *, name: str) -> NDArray[np.float64]:
@@ -73,16 +110,156 @@ def _immutable_float_array(values: ArrayLike, *, name: str) -> NDArray[np.float6
 
 
 def _finite_scalar(value: object, *, name: str) -> float:
-    try:
-        numeric = float(value)
-    except (TypeError, ValueError) as exc:
-        raise TafelError(f"{name} must be a finite real value") from exc
+    if isinstance(value, (bool, np.bool_)) or not isinstance(value, Real):
+        raise TafelError(f"{name} must be a finite real numeric value")
+    numeric = float(value)
     if not isfinite(numeric):
-        raise TafelError(f"{name} must be a finite real value")
+        raise TafelError(f"{name} must be a finite real numeric value")
     return numeric
 
 
-@dataclass(frozen=True, slots=True)
+def _validate_source_semantics(provenance: AnalysisProvenance) -> None:
+    source = provenance.source
+    if source.x_name.casefold() != "potential":
+        raise TafelError("Tafel provenance source x axis must be 'potential'")
+    if source.y_name.casefold() != "current_density":
+        raise TafelError("Tafel provenance source y axis must be 'current_density'")
+    try:
+        potential_to_v([0.0], source.x_unit, allow_nan=False)
+    except EchemQuantityError as exc:
+        raise TafelError(
+            "Tafel provenance source must declare a supported potential unit"
+        ) from exc
+    try:
+        current_density_to_a_cm2([1.0], source.y_unit, allow_nan=False)
+    except EchemQuantityError as exc:
+        raise TafelError(
+            "Tafel provenance source must declare a supported current-density unit"
+        ) from exc
+
+
+def _validate_provenance_contract(
+    provenance: AnalysisProvenance,
+    *,
+    branch: str,
+    current_sign: str,
+    current_basis: str,
+    potential_reference: str,
+    n_points: int,
+) -> FitWindow:
+    if provenance.input_basis != _TAFEL_INPUT_BASIS:
+        raise TafelError(
+            f"Tafel provenance input_basis must be {_TAFEL_INPUT_BASIS!r}"
+        )
+    _validate_source_semantics(provenance)
+
+    fit_window = provenance.fit_window
+    if fit_window is None:
+        raise TafelError("Tafel provenance requires an explicit fit window")
+    if fit_window.unit != "V":
+        raise TafelError("Tafel provenance fit window must use canonical unit 'V'")
+    if fit_window.n_points != n_points:
+        raise TafelError(
+            "Tafel provenance fit-window point count must match result arrays"
+        )
+
+    units = dict(provenance.units)
+    for key, expected in _CANONICAL_TAFEL_UNITS.items():
+        if units.get(key) != expected:
+            raise TafelError(
+                f"Tafel provenance unit {key!r} must be canonical {expected!r}"
+            )
+    fit_window_input_unit = units.get("fit_window_input")
+    if fit_window_input_unit is None:
+        raise TafelError("Tafel provenance must record fit_window_input unit")
+    try:
+        potential_to_v([0.0], fit_window_input_unit, allow_nan=False)
+    except EchemQuantityError as exc:
+        raise TafelError(
+            "Tafel provenance fit_window_input must be a supported potential unit"
+        ) from exc
+
+    parameters = dict(provenance.parameters)
+    provenance_branch = _normalize_branch(parameters.get("branch"))
+    provenance_sign = _normalize_current_sign(parameters.get("current_sign"))
+    provenance_basis = _required_text(
+        parameters.get("current_density_basis"),
+        name="Tafel provenance current_density_basis",
+    )
+    provenance_reference = _normalize_reference(parameters.get("potential_reference"))
+
+    if provenance_branch != branch:
+        raise TafelError("Tafel provenance branch contradicts result branch")
+    if provenance_sign != current_sign:
+        raise TafelError("Tafel provenance current_sign contradicts result current_sign")
+    if provenance_basis.casefold() != current_basis.casefold():
+        raise TafelError(
+            "Tafel provenance current-density basis contradicts result current_basis"
+        )
+    if provenance_reference.casefold() != potential_reference.casefold():
+        raise TafelError(
+            "Tafel provenance potential reference contradicts result reference"
+        )
+    return fit_window
+
+
+def _validate_regression_consistency(
+    *,
+    log_current: NDArray[np.float64],
+    potential: NDArray[np.float64],
+    fitted: NDArray[np.float64],
+    slope: float,
+    intercept: float,
+    r_squared: float,
+    fit_window: FitWindow,
+) -> None:
+    if np.unique(log_current).size < 2:
+        raise TafelError(
+            "TafelFitResult requires at least two distinct log-current values"
+        )
+
+    tolerance = 1e-12 * max(
+        1.0,
+        abs(fit_window.lower),
+        abs(fit_window.upper),
+    )
+    if (
+        (potential < fit_window.lower - tolerance).any()
+        or (potential > fit_window.upper + tolerance).any()
+    ):
+        raise TafelError(
+            "Tafel result potentials must lie inside the provenance fit window"
+        )
+
+    expected_fitted = intercept + slope * log_current
+    if not np.allclose(
+        fitted,
+        expected_fitted,
+        rtol=1e-10,
+        atol=1e-12,
+    ):
+        raise TafelError(
+            "Tafel fitted-potential data contradict slope/intercept and log-current data"
+        )
+
+    regression = linregress(log_current, potential)
+    expected_slope = float(regression.slope)
+    expected_intercept = float(regression.intercept)
+    expected_r_squared = float(regression.rvalue**2)
+    if not all(
+        isfinite(value)
+        for value in (expected_slope, expected_intercept, expected_r_squared)
+    ):
+        raise TafelError("Tafel result arrays produce non-finite regression statistics")
+    if not np.isclose(slope, expected_slope, rtol=1e-10, atol=1e-12):
+        raise TafelError("Tafel slope contradicts the stored selected data")
+    if not np.isclose(intercept, expected_intercept, rtol=1e-10, atol=1e-12):
+        raise TafelError("Tafel intercept contradicts the stored selected data")
+    if not np.isclose(r_squared, expected_r_squared, rtol=1e-10, atol=1e-12):
+        raise TafelError("Tafel R^2 contradicts the stored selected data")
+
+
+@dataclass(frozen=True, slots=True, eq=False)
 class TafelFitResult:
     """Immutable result of one explicit Tafel linear regression.
 
@@ -110,17 +287,19 @@ class TafelFitResult:
         r_squared = _finite_scalar(self.r_squared, name="Tafel R^2")
         if not 0.0 <= r_squared <= 1.0:
             raise TafelError("Tafel R^2 must be between 0 and 1")
-        if self.branch not in {"cathodic", "anodic"}:
-            raise TafelError("branch must be 'cathodic' or 'anodic'")
-        if self.current_sign not in {"negative", "positive"}:
-            raise TafelError("current_sign must be 'negative' or 'positive'")
+        branch = _normalize_branch(self.branch)
+        current_sign = _normalize_current_sign(self.current_sign)
         basis = _required_text(self.current_basis, name="current_basis")
         reference = _normalize_reference(self.potential_reference)
+
         log_current = _immutable_float_array(
             self.log_current_density_a_cm2,
             name="Tafel log-current data",
         )
-        potential = _immutable_float_array(self.potential_v, name="Tafel potential data")
+        potential = _immutable_float_array(
+            self.potential_v,
+            name="Tafel potential data",
+        )
         fitted = _immutable_float_array(
             self.fitted_potential_v,
             name="Tafel fitted-potential data",
@@ -131,17 +310,30 @@ class TafelFitResult:
             raise TafelError("Tafel result arrays must have the same length")
         if not isinstance(self.provenance, AnalysisProvenance):
             raise TypeError("provenance must be an AnalysisProvenance")
-        fit_window = self.provenance.fit_window
-        if fit_window is None:
-            raise TafelError("Tafel provenance requires an explicit fit window")
-        if fit_window.n_points != len(log_current):
-            raise TafelError(
-                "Tafel provenance fit-window point count must match result arrays"
-            )
+
+        fit_window = _validate_provenance_contract(
+            self.provenance,
+            branch=branch,
+            current_sign=current_sign,
+            current_basis=basis,
+            potential_reference=reference,
+            n_points=len(log_current),
+        )
+        _validate_regression_consistency(
+            log_current=log_current,
+            potential=potential,
+            fitted=fitted,
+            slope=slope,
+            intercept=intercept,
+            r_squared=r_squared,
+            fit_window=fit_window,
+        )
 
         object.__setattr__(self, "slope_v_dec", slope)
         object.__setattr__(self, "intercept_v", intercept)
         object.__setattr__(self, "r_squared", r_squared)
+        object.__setattr__(self, "branch", branch)
+        object.__setattr__(self, "current_sign", current_sign)
         object.__setattr__(self, "current_basis", basis)
         object.__setattr__(self, "potential_reference", reference)
         object.__setattr__(self, "log_current_density_a_cm2", log_current)
@@ -242,10 +434,8 @@ def fit_tafel(
     ``log10(abs(j / (1 A cm^-2)))``. Both electrochemical branch and numeric current
     sign must be declared explicitly; no sign inversion or region selection is inferred.
     """
-    if branch not in {"cathodic", "anodic"}:
-        raise TafelError("branch must be 'cathodic' or 'anodic'")
-    if current_sign not in {"negative", "positive"}:
-        raise TafelError("current_sign must be 'negative' or 'positive'")
+    normalized_branch = _normalize_branch(branch)
+    normalized_sign = _normalize_current_sign(current_sign)
 
     potential_v, current_density, reference, basis = _validate_series_semantics(series)
     lower_v, upper_v = _canonical_fit_window(fit_window, fit_window_unit)
@@ -264,18 +454,20 @@ def fit_tafel(
         raise TafelError("selected Tafel current-density points must not contain NaN")
     if (selected_current == 0.0).any():
         raise TafelError("selected Tafel current-density points must be non-zero")
-    if current_sign == "positive" and (selected_current <= 0.0).any():
+    if normalized_sign == "positive" and (selected_current <= 0.0).any():
         raise TafelError(
             "selected Tafel currents contradict current_sign='positive'"
         )
-    if current_sign == "negative" and (selected_current >= 0.0).any():
+    if normalized_sign == "negative" and (selected_current >= 0.0).any():
         raise TafelError(
             "selected Tafel currents contradict current_sign='negative'"
         )
 
     log_current = np.log10(np.abs(selected_current))
     if np.unique(log_current).size < 2:
-        raise TafelError("selected Tafel points require at least two distinct current values")
+        raise TafelError(
+            "selected Tafel points require at least two distinct current values"
+        )
 
     regression = linregress(log_current, selected_potential)
     slope = float(regression.slope)
@@ -293,20 +485,16 @@ def fit_tafel(
     )
     provenance = make_analysis_provenance(
         series,
-        input_basis="potential_vs_log10_absolute_current_density",
+        input_basis=_TAFEL_INPUT_BASIS,
         fit_window=canonical_window,
         units={
-            "current_density": "A/cm^2",
+            **_CANONICAL_TAFEL_UNITS,
             "fit_window_input": fit_window_unit,
-            "intercept": "V",
-            "potential": "V",
-            "slope": "V/dec",
-            "slope_display": "mV/dec",
         },
         parameters={
-            "branch": branch,
+            "branch": normalized_branch,
             "current_density_basis": basis,
-            "current_sign": current_sign,
+            "current_sign": normalized_sign,
             "potential_reference": reference,
         },
     )
@@ -314,8 +502,8 @@ def fit_tafel(
         slope_v_dec=slope,
         intercept_v=intercept,
         r_squared=r_squared,
-        branch=branch,
-        current_sign=current_sign,
+        branch=normalized_branch,
+        current_sign=normalized_sign,
         current_basis=basis,
         potential_reference=reference,
         log_current_density_a_cm2=log_current,
