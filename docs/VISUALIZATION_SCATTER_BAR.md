@@ -38,7 +38,7 @@ Because the x axis is categorical, `render_bars(...)` requires a linear x scale.
 
 ## Shared rendering invariants
 
-All three generic renderers (`render_curves`, `render_scatter`, `render_bars`) must preserve these rules:
+All three generic renderers (`render_curves`, `render_scatter`, `render_bars`) preserve these rules:
 
 - return `(fig, ax)` and never call `show()`;
 - create a headless `Figure`/Agg canvas without `pyplot`;
@@ -49,6 +49,8 @@ All three generic renderers (`render_curves`, `render_scatter`, `render_bars`) m
 - preserve deterministic input order;
 - draw only explicitly supplied uncertainty;
 - keep vector text editable under the existing SVG/PDF export settings and preserve exact PNG/SVG/PDF canvas size.
+
+The implementation factors rc setup, physical figure/axes creation, scale/limit handling, typography, spines/ticks, legend logic, and annotations into one internal helper shared by the curve, scatter, and bar renderers. This remains an implementation detail rather than a second public styling API.
 
 ## Scope boundary
 
