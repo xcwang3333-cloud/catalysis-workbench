@@ -63,6 +63,8 @@ At least three selected points and at least two distinct log-current values are 
 
 The source digest hashes the original numerical `Series` arrays. The canonical fit window is stored in volts, while the caller's input fit-window unit is retained in provenance. Provenance also records the current-density basis, branch, sign convention, reference, and canonical calculation units.
 
+The public `TafelFitResult` constructor protects the same scientific invariants as `fit_tafel(...)`: numeric statistics must be real finite numerics rather than booleans or numeric strings; source axis semantics and units must remain Tafel-compatible; provenance branch/sign/reference/current-density basis must agree with the result fields; the fit window must remain canonical in volts; selected points must lie inside that window; and stored slope/intercept/R²/fitted values must remain consistent with the selected data. The ndarray-bearing result deliberately disables generated dataclass value equality so NumPy arrays cannot produce ambiguous truth-value errors; no semantic cross-result equality contract is implied.
+
 ## Dataset fitting
 
 `fit_tafel_dataset(...)` preserves Dataset order and requires every input `Series` to have a non-empty stable key. Fit windows are always supplied as a complete stable-key mapping. `fit_window_unit`, `branch`, and `current_sign` may be one common string or complete stable-key mappings.
@@ -78,7 +80,9 @@ Each result is converted into two temporary core `Series` objects:
 - selected raw points: marker-only;
 - fitted values: line-only.
 
-Both use the same color by default and are rendered by the shared `render_curves` / `FigureSpec` stack. Multi-result plots therefore inherit existing compatibility checks for the current-density normalization basis and potential reference. The default y label retains the explicit reference, for example `Potential (V vs RHE)`.
+Both use the same color by default and are rendered by the shared `render_curves` / `FigureSpec` stack. `FigureSpec.series_styles` remains addressed by each result's original source `Series.key`; the adapter deterministically maps source color/visibility/alpha/z-order/label plus marker settings onto the selected-point artist and source line settings onto the fitted-line artist. Unknown style keys fail explicitly. A source-level `visible=False` hides both components of that catalyst rather than leaving an orphan fit line.
+
+Multi-result plots inherit existing compatibility checks for the current-density normalization basis and potential reference. The default y label retains the explicit reference, for example `Potential (V vs RHE)`.
 
 ## Scope boundary
 
