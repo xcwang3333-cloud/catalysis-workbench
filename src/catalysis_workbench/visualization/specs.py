@@ -396,6 +396,10 @@ class FigureSpec:
             stable_key = str(key).strip()
             if not stable_key:
                 raise VisualizationError("series style keys must not be empty")
+            if stable_key in frozen_series_styles:
+                raise VisualizationError(
+                    "series style keys must be unique after normalization"
+                )
             if not isinstance(value, SeriesStyle):
                 raise TypeError("series_styles values must be SeriesStyle instances")
             frozen_series_styles[stable_key] = value
@@ -408,6 +412,10 @@ class FigureSpec:
             stable_key = str(key).strip()
             if not stable_key:
                 raise VisualizationError("category style keys must not be empty")
+            if stable_key in frozen_category_styles:
+                raise VisualizationError(
+                    "category style keys must be unique after normalization"
+                )
             if not isinstance(value, CategoryStyle):
                 raise TypeError("category_styles values must be CategoryStyle instances")
             frozen_category_styles[stable_key] = value
@@ -530,11 +538,11 @@ class FigureSpec:
             AnnotationSpec(**dict(item)) for item in values.pop("annotations", ())
         )
         series_styles = {
-            str(key): SeriesStyle(**dict(item))
+            key: SeriesStyle(**dict(item))
             for key, item in dict(values.pop("series_styles", {})).items()
         }
         category_styles = {
-            str(key): CategoryStyle(**dict(item))
+            key: CategoryStyle(**dict(item))
             for key, item in dict(values.pop("category_styles", {})).items()
         }
         return cls(
