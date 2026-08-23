@@ -28,10 +28,12 @@ def normalize_unit(unit: str | None) -> str:
         raise EchemQuantityError("electrochemical unit is required")
     compact = str(unit).strip().casefold()
     compact = compact.replace("µ", "u").replace("μ", "u")
+    compact = compact.replace("⁻²", "^-2").replace("⁻¹", "^-1")
     compact = compact.replace("−", "-").replace("⁻", "-")
     compact = compact.replace("²", "^2").replace("¹", "^1")
     compact = compact.replace("·", "").replace("*", "").replace(" ", "")
     compact = compact.replace("^-2", "-2").replace("^-1", "-1")
+    compact = compact.replace("^2", "2").replace("^1", "1")
     return compact
 
 
@@ -98,10 +100,14 @@ def normalize_reference_name(reference: str) -> str:
 
 def same_reference(left: str, right: str) -> bool:
     """Compare two explicit reference-electrode names case-insensitively."""
-    return normalize_reference_name(left).casefold() == normalize_reference_name(right).casefold()
+    left_name = normalize_reference_name(left).casefold()
+    right_name = normalize_reference_name(right).casefold()
+    return left_name == right_name
 
 
-def _expanded_units(entries: dict[str, tuple[float, str]]) -> dict[str, tuple[float, str]]:
+def _expanded_units(
+    entries: dict[str, tuple[float, str]],
+) -> dict[str, tuple[float, str]]:
     return {normalize_unit(unit): value for unit, value in entries.items()}
 
 
@@ -121,11 +127,17 @@ _CURRENT = _expanded_units(
 _CURRENT_DENSITY = _expanded_units(
     {
         "A/cm^2": (1.0, "A/cm^2"),
+        "A/cm2": (1.0, "A/cm^2"),
         "A cm^-2": (1.0, "A/cm^2"),
+        "A cm-2": (1.0, "A/cm^2"),
         "mA/cm^2": (1e-3, "mA/cm^2"),
+        "mA/cm2": (1e-3, "mA/cm^2"),
         "mA cm^-2": (1e-3, "mA/cm^2"),
+        "mA cm-2": (1e-3, "mA/cm^2"),
         "uA/cm^2": (1e-6, "uA/cm^2"),
+        "uA/cm2": (1e-6, "uA/cm^2"),
         "uA cm^-2": (1e-6, "uA/cm^2"),
+        "uA cm-2": (1e-6, "uA/cm^2"),
     }
 )
 _CHARGE = _expanded_units(
@@ -156,8 +168,11 @@ _SCAN_RATE = _expanded_units(
 _AREA = _expanded_units(
     {
         "cm^2": (1.0, "cm^2"),
+        "cm2": (1.0, "cm^2"),
         "mm^2": (1e-2, "mm^2"),
+        "mm2": (1e-2, "mm^2"),
         "m^2": (1e4, "m^2"),
+        "m2": (1e4, "m^2"),
     }
 )
 _MASS = _expanded_units(
@@ -171,10 +186,13 @@ _MASS = _expanded_units(
 _LOADING = _expanded_units(
     {
         "g/cm^2": (1.0, "g/cm^2"),
+        "g/cm2": (1.0, "g/cm^2"),
         "g cm^-2": (1.0, "g/cm^2"),
         "mg/cm^2": (1e-3, "mg/cm^2"),
+        "mg/cm2": (1e-3, "mg/cm^2"),
         "mg cm^-2": (1e-3, "mg/cm^2"),
         "ug/cm^2": (1e-6, "ug/cm^2"),
+        "ug/cm2": (1e-6, "ug/cm^2"),
         "ug cm^-2": (1e-6, "ug/cm^2"),
     }
 )
@@ -213,7 +231,6 @@ def _convert(
     table: dict[str, tuple[float, str]],
     *,
     quantity: str,
-    target_unit: str,
     allow_nan: bool,
 ) -> np.ndarray:
     token = normalize_unit(unit)
@@ -224,13 +241,15 @@ def _convert(
         raise EchemQuantityError(
             f"unsupported {quantity} unit {unit!r}; supported units: {supported}"
         ) from exc
-    converted = require_real(values, quantity=quantity, allow_nan=allow_nan) * factor
-    if not allow_nan and np.isnan(converted).any():
-        raise EchemQuantityError(f"{quantity} must not contain missing values")
-    return converted
+    return require_real(values, quantity=quantity, allow_nan=allow_nan) * factor
 
 
-def _canonical(unit: str | None, table: dict[str, tuple[float, str]], *, quantity: str) -> str:
+def _canonical(
+    unit: str | None,
+    table: dict[str, tuple[float, str]],
+    *,
+    quantity: str,
+) -> str:
     token = normalize_unit(unit)
     try:
         return table[token][1]
@@ -249,29 +268,46 @@ def _is_unit(unit: str | None, table: dict[str, tuple[float, str]]) -> bool:
     return token in table
 
 
-def potential_to_v(values: ArrayLike | float, unit: str | None, *, allow_nan: bool = False) -> np.ndarray:
+def potential_to_v(
+    values: ArrayLike | float,
+    unit: str | None,
+    *,
+    allow_nan: bool = False,
+) -> np.ndarray:
     """Convert explicit potential values to volts."""
-    return _convert(values, unit, _POTENTIAL, quantity="potential", target_unit="V", allow_nan=allow_nan)
+    return _convert(values, unit, _POTENTIAL, quantity="potential", allow_nan=allow_nan)
 
 
-def current_to_a(values: ArrayLike | float, unit: str | None, *, allow_nan: bool = True) -> np.ndarray:
+def current_to_a(
+    values: ArrayLike | float,
+    unit: str | None,
+    *,
+    allow_nan: bool = True,
+) -> np.ndarray:
     """Convert explicit total-current values to amperes."""
-    return _convert(values, unit, _CURRENT, quantity="current", target_unit="A", allow_nan=allow_nan)
+    return _convert(values, unit, _CURRENT, quantity="current", allow_nan=allow_nan)
 
 
-def current_density_to_a_cm2(values: ArrayLike | float, unit: str | None, *, allow_nan: bool = True) -> np.ndarray:
+def current_density_to_a_cm2(
+    values: ArrayLike | float,
+    unit: str | None,
+    *,
+    allow_nan: bool = True,
+) -> np.ndarray:
     """Convert explicit current-density values to A/cm^2."""
     return _convert(
         values,
         unit,
         _CURRENT_DENSITY,
         quantity="current density",
-        target_unit="A/cm^2",
         allow_nan=allow_nan,
     )
 
 
-def current_density_from_a_cm2(values: ArrayLike | float, output_unit: str) -> np.ndarray:
+def current_density_from_a_cm2(
+    values: ArrayLike | float,
+    output_unit: str,
+) -> np.ndarray:
     """Convert A/cm^2 values to one supported current-density display unit."""
     token = normalize_unit(output_unit)
     try:
@@ -298,53 +334,109 @@ def is_current_density_unit(unit: str | None) -> bool:
     return _is_unit(unit, _CURRENT_DENSITY)
 
 
-def charge_to_c(values: ArrayLike | float, unit: str | None, *, allow_nan: bool = False) -> np.ndarray:
+def charge_to_c(
+    values: ArrayLike | float,
+    unit: str | None,
+    *,
+    allow_nan: bool = False,
+) -> np.ndarray:
     """Convert charge to coulombs."""
-    return _convert(values, unit, _CHARGE, quantity="charge", target_unit="C", allow_nan=allow_nan)
+    return _convert(values, unit, _CHARGE, quantity="charge", allow_nan=allow_nan)
 
 
-def time_to_s(values: ArrayLike | float, unit: str | None, *, allow_nan: bool = False) -> np.ndarray:
+def time_to_s(
+    values: ArrayLike | float,
+    unit: str | None,
+    *,
+    allow_nan: bool = False,
+) -> np.ndarray:
     """Convert time to seconds."""
-    return _convert(values, unit, _TIME, quantity="time", target_unit="s", allow_nan=allow_nan)
+    return _convert(values, unit, _TIME, quantity="time", allow_nan=allow_nan)
 
 
-def scan_rate_to_v_s(values: ArrayLike | float, unit: str | None, *, allow_nan: bool = False) -> np.ndarray:
+def scan_rate_to_v_s(
+    values: ArrayLike | float,
+    unit: str | None,
+    *,
+    allow_nan: bool = False,
+) -> np.ndarray:
     """Convert potential scan rate to V/s."""
-    return _convert(values, unit, _SCAN_RATE, quantity="scan rate", target_unit="V/s", allow_nan=allow_nan)
+    return _convert(
+        values,
+        unit,
+        _SCAN_RATE,
+        quantity="scan rate",
+        allow_nan=allow_nan,
+    )
 
 
-def area_to_cm2(values: ArrayLike | float, unit: str | None, *, allow_nan: bool = False) -> np.ndarray:
+def area_to_cm2(
+    values: ArrayLike | float,
+    unit: str | None,
+    *,
+    allow_nan: bool = False,
+) -> np.ndarray:
     """Convert electrode/surface area to cm^2."""
-    return _convert(values, unit, _AREA, quantity="area", target_unit="cm^2", allow_nan=allow_nan)
+    return _convert(values, unit, _AREA, quantity="area", allow_nan=allow_nan)
 
 
-def mass_to_g(values: ArrayLike | float, unit: str | None, *, allow_nan: bool = False) -> np.ndarray:
+def mass_to_g(
+    values: ArrayLike | float,
+    unit: str | None,
+    *,
+    allow_nan: bool = False,
+) -> np.ndarray:
     """Convert catalyst/metal mass to grams."""
-    return _convert(values, unit, _MASS, quantity="mass", target_unit="g", allow_nan=allow_nan)
+    return _convert(values, unit, _MASS, quantity="mass", allow_nan=allow_nan)
 
 
-def loading_to_g_cm2(values: ArrayLike | float, unit: str | None, *, allow_nan: bool = False) -> np.ndarray:
+def loading_to_g_cm2(
+    values: ArrayLike | float,
+    unit: str | None,
+    *,
+    allow_nan: bool = False,
+) -> np.ndarray:
     """Convert catalyst/metal areal loading to g/cm^2."""
-    return _convert(values, unit, _LOADING, quantity="loading", target_unit="g/cm^2", allow_nan=allow_nan)
+    return _convert(values, unit, _LOADING, quantity="loading", allow_nan=allow_nan)
 
 
-def amount_to_mol(values: ArrayLike | float, unit: str | None, *, allow_nan: bool = False) -> np.ndarray:
+def amount_to_mol(
+    values: ArrayLike | float,
+    unit: str | None,
+    *,
+    allow_nan: bool = False,
+) -> np.ndarray:
     """Convert amount of substance to moles."""
-    return _convert(values, unit, _AMOUNT, quantity="amount", target_unit="mol", allow_nan=allow_nan)
+    return _convert(values, unit, _AMOUNT, quantity="amount", allow_nan=allow_nan)
 
 
-def molar_rate_to_mol_s(values: ArrayLike | float, unit: str | None, *, allow_nan: bool = False) -> np.ndarray:
+def molar_rate_to_mol_s(
+    values: ArrayLike | float,
+    unit: str | None,
+    *,
+    allow_nan: bool = False,
+) -> np.ndarray:
     """Convert molar production/consumption rate to mol/s."""
-    return _convert(values, unit, _MOLAR_RATE, quantity="molar rate", target_unit="mol/s", allow_nan=allow_nan)
+    return _convert(
+        values,
+        unit,
+        _MOLAR_RATE,
+        quantity="molar rate",
+        allow_nan=allow_nan,
+    )
 
 
-def rotation_rate_to_rad_s(values: ArrayLike | float, unit: str | None, *, allow_nan: bool = False) -> np.ndarray:
+def rotation_rate_to_rad_s(
+    values: ArrayLike | float,
+    unit: str | None,
+    *,
+    allow_nan: bool = False,
+) -> np.ndarray:
     """Convert rotation rate to angular velocity in rad/s."""
     return _convert(
         values,
         unit,
         _ROTATION_RATE,
         quantity="rotation rate",
-        target_unit="rad/s",
         allow_nan=allow_nan,
     )
