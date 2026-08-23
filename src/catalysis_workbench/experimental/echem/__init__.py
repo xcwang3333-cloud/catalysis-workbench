@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 from .lsv import (
@@ -42,6 +43,14 @@ from .quantities import (
     scan_rate_to_v_s,
     time_to_s,
 )
+from .tafel import (
+    CurrentSign,
+    TafelBranch,
+    TafelError,
+    TafelFitResult,
+    fit_tafel,
+    fit_tafel_dataset,
+)
 
 if TYPE_CHECKING:
     from matplotlib.axes import Axes
@@ -68,8 +77,21 @@ def plot_lsv(
     return _plot_lsv(data, spec, preset=preset)
 
 
+def plot_tafel(
+    results: TafelFitResult | Sequence[TafelFitResult],
+    spec: FigureSpec | None = None,
+    *,
+    preset: str = "publication",
+) -> tuple[Figure, Axes]:
+    """Lazily dispatch immutable Tafel fit results to the publication adapter."""
+    from .tafel_plotting import plot_tafel as _plot_tafel
+
+    return _plot_tafel(results, spec, preset=preset)
+
+
 __all__ = [
     "AnalysisProvenance",
+    "CurrentSign",
     "EchemQuantityError",
     "FARADAY_CONSTANT_C_MOL",
     "FitWindow",
@@ -77,6 +99,9 @@ __all__ = [
     "LSVError",
     "LSVProcessingConfig",
     "SourceDataRef",
+    "TafelBranch",
+    "TafelError",
+    "TafelFitResult",
     "amount_to_mol",
     "area_to_cm2",
     "charge_to_c",
@@ -85,12 +110,15 @@ __all__ = [
     "current_density_to_a_cm2",
     "current_to_a",
     "electron_number",
+    "fit_tafel",
+    "fit_tafel_dataset",
     "loading_to_g_cm2",
     "make_analysis_provenance",
     "mass_to_g",
     "molar_rate_to_mol_s",
     "normalize_reference_name",
     "plot_lsv",
+    "plot_tafel",
     "potential_to_v",
     "process_lsv",
     "process_lsv_dataset",
