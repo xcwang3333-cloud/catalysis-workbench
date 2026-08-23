@@ -250,7 +250,8 @@ def _convert(
         raise EchemQuantityError(
             f"unsupported {quantity} unit {unit!r}; supported units: {supported}"
         ) from exc
-    return require_real(values, quantity=quantity, allow_nan=allow_nan) * factor
+    converted = require_real(values, quantity=quantity, allow_nan=allow_nan) * factor
+    return np.asarray(converted, dtype=np.float64)
 
 
 def _canonical(
@@ -325,7 +326,8 @@ def current_density_from_a_cm2(
         raise EchemQuantityError(
             "output_unit must be A/cm^2, mA/cm^2, or uA/cm^2"
         ) from exc
-    return require_real(values, quantity="current density", allow_nan=True) / factor
+    converted = require_real(values, quantity="current density", allow_nan=True) / factor
+    return np.asarray(converted, dtype=np.float64)
 
 
 def canonical_current_density_unit(unit: str | None) -> str:
