@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import hashlib
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from math import isfinite
 from numbers import Real
-from typing import Any, Callable, TypeVar
+from typing import Any, TypeVar
 
 import numpy as np
 
