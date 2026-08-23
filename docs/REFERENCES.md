@@ -133,3 +133,27 @@ The reviewed v0.1 LSV contract is deliberately explicit:
 - publication rendering is a thin adapter over the shared visualization engine rather than a second electrochemistry-specific Matplotlib stack. `plot_lsv()` performs no numerical correction, smoothing, resampling, or sign inversion; it validates canonical LSV axis semantics, adds reference metadata such as RHE to automatic potential labels, and delegates artists/layout/export behavior to `FigureSpec` and `render_curves`;
 - importing the numerical `experimental.echem` API keeps visualization/Matplotlib lazy; the plotting dependency is imported only when `plot_lsv()` is actually called;
 - multi-catalyst LSV plots inherit the shared renderer's compatibility guards, so equal units are not enough to overlay incompatible electrochemical references or current-density normalization bases.
+
+## Shared electrochemistry quantity/provenance decision for v0.2
+
+Issue #19 establishes one reusable numerical and provenance foundation before Tafel, FE, partial-current, activity, TOF, CV/ECSA, stability, RRDE and Koutecky-Levich modules are added.
+
+Prior-art review for this layer:
+
+- `ixdat/ixdat` (MIT) remains the main electrochemistry architecture reference. Its object-oriented model combines numerical arrays with unit/axis context and explicit electrochemical calibration state. CatalysisWorkbench retains the useful principles—scientific values stay attached to explicit units/references and calibration quantities stay explicit—but does not adopt ixdat's relational database/persistence model for this lightweight post-processing layer.
+- `ECSHackWeek/impedance.py` (MIT) separates preprocessing, validation, model fitting and visualization behind a consistent scientific API. Its validation/fitting code is a useful reference for failing explicitly on invalid scientific inputs and for keeping fit choices visible. Issue #19 does not copy EIS algorithms or add `impedance.py` as a dependency.
+- `ScottSoren/EC_MS` (MIT) is prior art for broad electrochemistry plus mass-spectrometry analysis and explicitly identifies ixdat as its successor. It informs scope/history only; no implementation is copied and no dependency is added.
+- `echemdata/galvani` (GPL-3.0-or-later) is focused on reading proprietary electrochemical instrument formats. It is useful reader prior art but its copyleft license and reader-centric scope make it inappropriate as a shared quantity/provenance dependency here; no implementation is copied.
+
+The v0.2 foundation therefore uses the following reviewed direction:
+
+- units remain explicit strings; Pint/general dimensional algebra stays deferred until a concrete workflow justifies it;
+- one conservative conversion layer owns supported electrochemical unit aliases and converts into canonical calculation bases: V, A, A/cm^2, C, s, V/s, cm^2, g, g/cm^2, mol, mol/s and rad/s;
+- supported aliases are deliberately narrow and deterministic. Missing or unsupported units fail rather than being guessed, and numerical conversion never flips current sign;
+- reference-electrode names are explicit caller metadata. Only whitespace/case normalization for comparison is provided; there is no built-in Ag/AgCl/SCE/reference-potential lookup table;
+- electron stoichiometry is an explicit positive integer input. Product labels never imply an electron number;
+- reusable `SourceDataRef`, `FitWindow` and `AnalysisProvenance` frozen dataclasses define how later result objects retain source key/label, numerical SHA-256, axis names/units, explicit fit range/point count, input basis, units and deterministic scalar parameters;
+- the source digest hashes immutable numerical x/y data, while scientific axis semantics are retained separately in `SourceDataRef`; this makes data changes detectable without pretending that a byte digest itself represents electrochemical semantics;
+- provenance mappings are restricted to deterministic scalar values and sorted keys in this foundation. Larger arrays or nested analysis products belong in explicit result fields rather than opaque metadata blobs;
+- `Series`/`Dataset` remain the scientific data containers. Issue #19 does not introduce a global N-D/table/database core model;
+- the existing reviewed LSV public API remains source-compatible. Its low-level potential/current/current-density conversions are delegated to the new shared foundation while `LSVError` and the existing transform semantics remain intact.
