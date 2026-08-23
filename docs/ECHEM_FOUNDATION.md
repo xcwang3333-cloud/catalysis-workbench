@@ -4,7 +4,7 @@ Issue #19 defines the common quantity, unit, reference, and result-provenance la
 
 ## Unit policy
 
-Units are explicit strings. Missing or unsupported units fail rather than being guessed. Numerical conversion preserves sign and converts into one canonical calculation basis per quantity.
+Units are explicit strings. Missing, non-string, or unsupported units fail rather than being guessed. Numerical conversion preserves sign and converts into one canonical calculation basis per quantity.
 
 | Quantity | Accepted v0.2 foundation units | Canonical calculation basis |
 | --- | --- | --- |
@@ -23,23 +23,27 @@ Units are explicit strings. Missing or unsupported units fail rather than being 
 
 Bare `Hz` is not treated as a rotation-rate alias because the angular-versus-cyclic-frequency convention must stay explicit. Current/current-density conversions never take absolute values or reverse sign.
 
-`electron_number(...)` requires a positive integer. Product names, catalyst labels, and other strings never imply electron stoichiometry.
+The vectorized quantity converters always return float64 NumPy arrays and preserve the input shape. A scalar input therefore produces a zero-dimensional NumPy array; callers that specifically require a Python scalar should convert explicitly with `.item()`. This array-return contract is intentional so later electrochemistry modules can share one predictable low-level numerical API.
+
+`electron_number(...)` requires a positive integer-valued real numeric input. Integer-valued floats and NumPy integer scalars are accepted; booleans and strings, including numeric strings such as `"4"`, are rejected. Product names, catalyst labels, and other strings never imply electron stoichiometry.
 
 ## Reference-electrode policy
 
-`normalize_reference_name(...)` only normalizes whitespace; `same_reference(...)` adds case-insensitive comparison. There is no built-in Ag/AgCl, SCE, SHE, or other reference-electrode potential table. Conversion to RHE continues to require an explicit offset or explicit user-supplied reference potential versus SHE plus pH/temperature through the reviewed LSV API.
+Reference names are explicit strings. `normalize_reference_name(...)` only normalizes whitespace; `same_reference(...)` adds case-insensitive comparison. There is no built-in Ag/AgCl, SCE, SHE, or other reference-electrode potential table. Conversion to RHE continues to require an explicit offset or explicit user-supplied reference potential versus SHE plus pH/temperature through the reviewed LSV API.
 
 ## Result provenance
 
 Later fit/scalar-result dataclasses should compose the shared frozen records rather than inventing module-specific provenance shapes:
 
-- `SourceDataRef`: stable Series key/label, numerical x/y SHA-256, axis names, and original units;
-- `FitWindow`: explicit lower/upper physical bounds, unit, and selected point count;
-- `AnalysisProvenance`: source identity, explicit input basis, optional fit window, sorted scalar unit declarations, and sorted scalar analysis parameters.
+- `SourceDataRef`: stable Series key/label, validated numerical x/y SHA-256, axis names, and original units;
+- `FitWindow`: explicit finite lower/upper physical bounds, non-empty unit, and integer selected-point count of at least two;
+- `AnalysisProvenance`: validated source identity, explicit input basis, optional validated fit window, sorted unit declarations, and sorted scalar analysis parameters.
+
+The public dataclass constructors protect the same invariants as the factory path. `SourceDataRef` rejects malformed SHA-256 values and missing axis semantics. `AnalysisProvenance` requires a `SourceDataRef`, accepts only a `FitWindow` or `None`, canonicalizes direct tuple fields deterministically, rejects duplicate normalized keys, and rejects nested/non-scalar parameter values.
 
 `series_data_sha256(...)` hashes the numerical x/y arrays only. Axis names/units remain explicit neighboring fields in `SourceDataRef`; the digest is data identity, not a substitute for scientific semantics.
 
-Provenance mappings accept deterministic scalar values only. Arrays, curves, fit covariance matrices, and other structured scientific outputs should be explicit result fields rather than opaque nested metadata.
+Unit declarations are stricter than generic analysis parameters: every recorded unit value must be an explicit non-empty string. If a result has no applicable unit, omit that unit entry rather than storing a numeric, boolean, empty, or null placeholder. Analysis parameters may use deterministic scalar string/int/float/bool/None values. Arrays, curves, fit covariance matrices, and other structured scientific outputs should be explicit result fields rather than opaque nested metadata.
 
 ## LSV compatibility
 
@@ -53,7 +57,7 @@ The v0.1 public LSV entry points remain unchanged:
 - `process_lsv_dataset`
 - `plot_lsv`
 
-The refactor moves common potential/current/current-density parsing into the shared quantity layer while preserving `LSVError`, signed iR behavior, geometric-area reconstruction checks, deterministic processing history, and lazy Matplotlib imports.
+The refactor moves common potential/current/current-density parsing into the shared quantity layer while preserving `LSVError`, signed iR behavior, geometric-area reconstruction checks, deterministic processing history, missing-unit behavior, and lazy Matplotlib imports. Legacy current-density aliases accepted by the reviewed v0.1 LSV layer, including slash, compact, and reciprocal-centimeter spellings, remain supported.
 
 ## Scope boundary
 
