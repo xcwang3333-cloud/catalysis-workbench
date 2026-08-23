@@ -79,6 +79,15 @@ def _validate_real_scatter(series: Sequence[Series]) -> None:
             )
 
 
+def _validate_error_length(item: Series, error: ScatterError) -> None:
+    for name, values in (("xerr", error.xerr), ("yerr", error.yerr)):
+        if values is not None and len(values) != item.n_points:
+            raise VisualizationError(
+                f"scatter {name} for series {item.key or item.label!r} must "
+                f"contain {item.n_points} values"
+            )
+
+
 def _normalize_error_mapping(
     series: Sequence[Series],
     errors: ScatterError | Mapping[str, ScatterError] | None,
@@ -91,6 +100,7 @@ def _normalize_error_mapping(
                 "a single ScatterError can only be used with one Series; "
                 "use a stable-key mapping for Dataset input"
             )
+        _validate_error_length(series[0], errors)
         return {0: errors}
     if not isinstance(errors, Mapping):
         raise TypeError("errors must be a ScatterError, mapping, or None")
@@ -118,7 +128,9 @@ def _normalize_error_mapping(
     resolved: dict[int, ScatterError] = {}
     for index, item in enumerate(series):
         if item.key and item.key in normalized:
-            resolved[index] = normalized[item.key]
+            error = normalized[item.key]
+            _validate_error_length(item, error)
+            resolved[index] = error
     return resolved
 
 
@@ -127,7 +139,7 @@ def _scatter_kwargs(
     *,
     index: int,
     spec: FigureSpec,
-) -> tuple[dict[str, object], SeriesStyle | None, float, str]:
+) -> tuple[dict[str, object], SeriesStyle | None, float, str, float, float | None]:
     style = spec.style
     override = spec.series_styles.get(item.key) if item.key else None
     color = (
@@ -159,18 +171,23 @@ def _scatter_kwargs(
         if override is not None and override.line_width is not None
         else style.line_width
     )
+    alpha = override.alpha if override is not None else None
+    zorder = (
+        override.zorder
+        if override is not None and override.zorder is not None
+        else 1.0
+    )
     kwargs: dict[str, object] = {
         "color": color,
         "marker": marker,
         "s": marker_size**2,
         "linewidths": edge_width,
         "label": label if label else "_nolegend_",
+        "zorder": zorder,
     }
-    if override is not None and override.alpha is not None:
-        kwargs["alpha"] = override.alpha
-    if override is not None and override.zorder is not None:
-        kwargs["zorder"] = override.zorder
-    return kwargs, override, error_line_width, color
+    if alpha is not None:
+        kwargs["alpha"] = alpha
+    return kwargs, override, error_line_width, color, zorder, alpha
 
 
 def render_scatter(
@@ -200,7 +217,14 @@ def render_scatter(
     labeled_count = 0
     with figure_axes_context(resolved_spec) as (figure, ax):
         for index, item in enumerate(series):
-            kwargs, override, error_line_width, color = _scatter_kwargs(
+            (
+                kwargs,
+                override,
+                error_line_width,
+                color,
+                zorder,
+                alpha,
+            ) = _scatter_kwargs(
                 item,
                 index=index,
                 spec=resolved_spec,
@@ -210,22 +234,22 @@ def render_scatter(
 
             error = error_by_index.get(index)
             if error is not None:
-                for name, values in (("xerr", error.xerr), ("yerr", error.yerr)):
-                    if values is not None and len(values) != item.n_points:
-                        raise VisualizationError(
-                            f"scatter {name} for series {item.key or item.label!r} must "
-                            f"contain {item.n_points} values"
-                        )
+                error_kwargs: dict[str, object] = {
+                    "fmt": "none",
+                    "ecolor": color,
+                    "elinewidth": error_line_width,
+                    "capsize": resolved_spec.style.errorbar_capsize,
+                    "label": "_nolegend_",
+                    "zorder": zorder,
+                }
+                if alpha is not None:
+                    error_kwargs["alpha"] = alpha
                 ax.errorbar(
                     item.x,
                     item.y,
                     xerr=error.xerr,
                     yerr=error.yerr,
-                    fmt="none",
-                    ecolor=color,
-                    elinewidth=error_line_width,
-                    capsize=resolved_spec.style.errorbar_capsize,
-                    label="_nolegend_",
+                    **error_kwargs,
                 )
 
             ax.scatter(item.x, item.y, **kwargs)
