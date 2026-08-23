@@ -45,7 +45,7 @@ The result stores:
 
 `fraction`, `percent`, and `exceeds_unity` are derived properties. FE above 100% remains visible; nothing is clipped or renormalized.
 
-Scalar and array inputs follow NumPy broadcasting. Incompatible shapes, Boolean inputs, complex/non-numeric values, NaN/inf, negative product amount/rate, zero denominator, unsupported units, and invalid electron numbers fail explicitly.
+Scalar and array inputs follow NumPy broadcasting. Incompatible shapes, Boolean inputs, numeric strings/object coercion, complex/non-numeric values, NaN/inf, negative product amount/rate, zero denominator, unsupported units, and invalid electron numbers fail explicitly. The FE public boundary therefore accepts actual real numeric arrays/scalars only; it does not rely on permissive string-to-float coercion in lower-level unit helpers.
 
 ## Condition-resolved Series
 
@@ -86,7 +86,10 @@ No product name implies a stoichiometry. For example, CO being a two-electron pr
 - unmodified total FE fraction;
 - point-wise exceedance mask;
 - ordered product keys;
+- ordered `SourceDataRef` records for every FE Series included in the sum;
 - explicit limit and tolerance.
+
+The closure result is itself invariant-bearing: its exceedance mask must be genuinely boolean, must match the configured threshold exactly, and its source records must correspond in order to the summarized product keys and condition-axis semantics. This preserves deterministic source digests after the individual FE Series have been reduced to a total.
 
 Default behavior is report-only. The exceedance criterion is
 
@@ -107,4 +110,4 @@ The adapter performs no FE calculation, normalization, QA filtering, smoothing, 
 
 ## Scope boundary
 
-Issue #22 does not implement raw GC/HPLC/IC/NMR/MS peak integration, calibration curves, gas-flow conversion, liquid-volume/headspace corrections, online-MS calibration, time synchronization, FE uncertainty propagation, product selectivity ratios, carbon balance, carbon efficiency, or automatic stoichiometry lookup. Those require additional assumptions or product-analysis infrastructure and remain separate roadmap work.
+Issue #22 implements FE calculation plus multi-product FE closure/QA. It does not implement raw GC/HPLC/IC/NMR/MS peak integration, calibration curves, gas-flow conversion, liquid-volume/headspace corrections, online-MS calibration, time synchronization, FE uncertainty propagation, product selectivity ratios, carbon balance, carbon efficiency, or automatic stoichiometry lookup. Those require additional assumptions or product-analysis infrastructure and remain separate roadmap work.
