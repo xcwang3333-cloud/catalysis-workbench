@@ -9,7 +9,13 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
 from catalysis_workbench.core import Axis, Dataset, Series
-from catalysis_workbench.visualization import FigureSpec, get_preset, render_curves
+from catalysis_workbench.visualization import (
+    FigureSpec,
+    SeriesStyle,
+    VisualizationError,
+    get_preset,
+    render_curves,
+)
 
 from .tafel import TafelError, TafelFitResult
 
@@ -58,28 +64,72 @@ def _generated_keys(
     return f"{base}:tafel:selected", f"{base}:tafel:fit"
 
 
-def _apply_default_series_style(
+def _validate_source_style_keys(
+    results: Sequence[TafelFitResult],
     spec: FigureSpec,
+) -> None:
+    available = {
+        item.provenance.source.key
+        for item in results
+        if item.provenance.source.key
+    }
+    unknown = set(spec.series_styles) - available
+    if unknown:
+        raise VisualizationError(
+            "Tafel series style keys must match source Series.key values; "
+            f"unknown keys: {sorted(unknown)!r}"
+        )
+
+
+def _component_styles(
+    source_style: SeriesStyle | None,
     *,
-    key: str,
-    color: str,
-    raw_points: bool,
-) -> FigureSpec:
-    existing = spec.series_styles.get(key)
-    changes: dict[str, object] = {}
-    if existing is None or existing.color is None:
-        changes["color"] = color
-    if raw_points:
-        if existing is None or existing.line_style is None:
-            changes["line_style"] = "None"
-        if existing is None or existing.marker is None:
-            changes["marker"] = "o"
-    else:
-        if existing is None or existing.line_style is None:
-            changes["line_style"] = "-"
-        if existing is None or existing.marker is None:
-            changes["marker"] = ""
-    return spec.with_series_style(key, **changes) if changes else spec
+    default_color: str,
+) -> tuple[SeriesStyle, SeriesStyle]:
+    color = (
+        source_style.color
+        if source_style is not None and source_style.color is not None
+        else default_color
+    )
+    visible = True if source_style is None else source_style.visible
+    alpha = None if source_style is None else source_style.alpha
+    base_zorder = (
+        2.0
+        if source_style is None or source_style.zorder is None
+        else source_style.zorder
+    )
+
+    raw_style = SeriesStyle(
+        color=color,
+        line_style="None",
+        marker=(
+            "o"
+            if source_style is None or source_style.marker is None
+            else source_style.marker
+        ),
+        marker_size=None if source_style is None else source_style.marker_size,
+        marker_edge_width=(
+            None if source_style is None else source_style.marker_edge_width
+        ),
+        alpha=alpha,
+        zorder=base_zorder + 0.1,
+        label=None if source_style is None else source_style.label,
+        visible=visible,
+    )
+    fit_style = SeriesStyle(
+        color=color,
+        line_width=None if source_style is None else source_style.line_width,
+        line_style=(
+            "-"
+            if source_style is None or source_style.line_style is None
+            else source_style.line_style
+        ),
+        marker="",
+        alpha=alpha,
+        zorder=base_zorder,
+        visible=visible,
+    )
+    return raw_style, fit_style
 
 
 def plot_tafel(
@@ -91,17 +141,22 @@ def plot_tafel(
     """Render selected Tafel points and fitted lines through the shared renderer.
 
     The adapter performs no fitting, refitting, sign conversion, window selection, or
-    mechanism interpretation. Raw selected points and fitted lines are converted from
-    immutable :class:`TafelFitResult` objects into temporary core ``Series`` objects and
-    delegated to ``render_curves``.
+    mechanism interpretation. ``FigureSpec.series_styles`` remain addressed by each
+    result's original source ``Series.key``; the adapter deterministically maps one
+    source style onto marker-only selected points and a line-only fitted component.
     """
     normalized = _result_tuple(results)
     resolved_spec = get_preset(preset) if spec is None else spec
     if not isinstance(resolved_spec, FigureSpec):
         raise TypeError("spec must be a FigureSpec")
+    _validate_source_style_keys(normalized, resolved_spec)
+
+    source_styles = dict(resolved_spec.series_styles)
+    render_spec = resolved_spec
+    for key in tuple(source_styles):
+        render_spec = render_spec.without_series_style(key)
 
     generated: list[Series] = []
-    render_spec = resolved_spec
     generated_keys: set[str] = set()
     for index, result in enumerate(normalized):
         raw_key, fit_key = _generated_keys(result, index=index)
@@ -111,7 +166,7 @@ def plot_tafel(
 
         x_axis = Axis(
             "log_current_density",
-            label="log10(|j| / A cm^-2)",
+            label="log10(|j| / (1 A cm^-2))",
             metadata={"normalization": result.current_basis},
         )
         y_axis = Axis(
@@ -140,22 +195,22 @@ def plot_tafel(
         )
         generated.extend((raw, fit))
 
-        color = render_spec.style.color_cycle[index % len(render_spec.style.color_cycle)]
-        render_spec = _apply_default_series_style(
-            render_spec,
-            key=raw_key,
-            color=color,
-            raw_points=True,
+        source_key = result.provenance.source.key
+        source_style = source_styles.get(source_key) if source_key else None
+        default_color = render_spec.style.color_cycle[
+            index % len(render_spec.style.color_cycle)
+        ]
+        raw_style, fit_style = _component_styles(
+            source_style,
+            default_color=default_color,
         )
-        render_spec = _apply_default_series_style(
-            render_spec,
-            key=fit_key,
-            color=color,
-            raw_points=False,
-        )
+        render_spec = render_spec.with_series_style(raw_key, style=raw_style)
+        render_spec = render_spec.with_series_style(fit_key, style=fit_style)
 
     if render_spec.xlabel is None:
-        render_spec = render_spec.updated(xlabel="log10(|j| / A cm^-2)")
+        render_spec = render_spec.updated(
+            xlabel="log10(|j| / (1 A cm^-2))"
+        )
     if render_spec.ylabel is None:
         render_spec = render_spec.updated(
             ylabel=_potential_label(
