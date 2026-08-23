@@ -157,3 +157,14 @@ The v0.2 foundation therefore uses the following reviewed direction:
 - provenance mappings are restricted to deterministic scalar values and sorted keys in this foundation. Larger arrays or nested analysis products belong in explicit result fields rather than opaque metadata blobs;
 - `Series`/`Dataset` remain the scientific data containers. Issue #19 does not introduce a global N-D/table/database core model;
 - the existing reviewed LSV public API remains source-compatible. Its low-level potential/current/current-density conversions are delegated to the new shared foundation while `LSVError` and the existing transform semantics remain intact.
+
+## Tafel analysis decision for v0.2
+
+Issue #21 surveys focused Tafel implementations before adding its own electrochemical semantics and provenance contract.
+
+- `ixdat/ixdat` (MIT) remains the architectural reference for explicit electrochemical calibration/reference state. Tafel fitting in CatalysisWorkbench therefore requires an explicit potential reference and current-density normalization basis rather than treating axis numbers as context-free values.
+- `NordicEC/EC4py` (MIT) is practical electrochemistry post-processing prior art and includes Tafel-slope extraction in its analysis scope. It is used as workflow/API reference only; CatalysisWorkbench keeps its existing immutable `Series` and `AnalysisProvenance` contracts and copies no implementation code.
+- PyPI `tafel` by Koki Muraoka (MIT, experimental) is a dedicated tool for extracting Tafel slopes from xy/CSV/BioLogic inputs. It confirms the usefulness of a focused explicit Tafel workflow, but its file/CLI assumptions are not adopted and no implementation code is copied.
+- `scipy/scipy` (BSD-3-Clause) provides the mature `scipy.stats.linregress` kernel used for the actual linear regression. CatalysisWorkbench does not reimplement least squares/statistics; it owns the electrochemical validation, unit conversion, explicit fit-window/sign policy, provenance, immutable result object, Dataset orchestration, and publication adapter around SciPy.
+
+The resulting v0.2 Tafel policy is conservative: fit windows are caller-supplied, physical branch and numeric current sign are separate explicit declarations, the logarithm uses positive current-density magnitude after unit conversion, signed slope is retained, and no mechanism or rate-determining step is inferred automatically from a slope value. Full details are in `docs/TAFEL.md`.
