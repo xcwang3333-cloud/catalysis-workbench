@@ -166,7 +166,7 @@ def plot_tafel(
 
         x_axis = Axis(
             "log_current_density",
-            label="log10(|j| / (1 A cm^-2))",
+            label="log10(|j| / A cm^-2)",
             metadata={"normalization": result.current_basis},
         )
         y_axis = Axis(
@@ -208,9 +208,7 @@ def plot_tafel(
         render_spec = render_spec.with_series_style(fit_key, style=fit_style)
 
     if render_spec.xlabel is None:
-        render_spec = render_spec.updated(
-            xlabel="log10(|j| / (1 A cm^-2))"
-        )
+        render_spec = render_spec.updated(xlabel="log10(|j| / A cm^-2)")
     if render_spec.ylabel is None:
         render_spec = render_spec.updated(
             ylabel=_potential_label(
