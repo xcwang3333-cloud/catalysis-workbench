@@ -8,9 +8,9 @@ import pytest
 
 from catalysis_workbench.core import Axis, Series
 from catalysis_workbench.experimental.echem import (
+    FARADAY_CONSTANT_C_MOL,
     AnalysisProvenance,
     EchemQuantityError,
-    FARADAY_CONSTANT_C_MOL,
     FitWindow,
     SourceDataRef,
     amount_to_mol,
