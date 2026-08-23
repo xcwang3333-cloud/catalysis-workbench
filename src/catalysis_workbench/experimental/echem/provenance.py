@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import hashlib
+from collections.abc import Mapping
 from dataclasses import dataclass
 from math import isfinite
-from typing import Any, Mapping
+from typing import Any
 
 import numpy as np
 
@@ -78,7 +79,9 @@ class FitWindow:
         if not isfinite(lower) or not isfinite(upper):
             raise EchemQuantityError("fit-window bounds must be finite")
         if lower >= upper:
-            raise EchemQuantityError("fit-window lower bound must be smaller than upper bound")
+            raise EchemQuantityError(
+                "fit-window lower bound must be smaller than upper bound"
+            )
         unit = str(self.unit).strip()
         if not unit:
             raise EchemQuantityError("fit-window unit must not be empty")
@@ -128,7 +131,9 @@ def _freeze_mapping(
         )
     frozen.sort(key=lambda item: item[0])
     if len({key for key, _ in frozen}) != len(frozen):
-        raise EchemQuantityError(f"provenance {name} keys must be unique after normalization")
+        raise EchemQuantityError(
+            f"provenance {name} keys must be unique after normalization"
+        )
     return tuple(frozen)
 
 
