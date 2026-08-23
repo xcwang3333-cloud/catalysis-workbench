@@ -71,14 +71,12 @@ class SourceDataRef:
         if not isinstance(self.key, str) or not isinstance(self.label, str):
             raise EchemQuantityError("source key and label must be strings")
         sha256 = _required_text(self.sha256, name="source sha256").lower()
-        if len(sha256) != 64:
-            raise EchemQuantityError("source sha256 must contain exactly 64 hexadecimal characters")
-        try:
-            int(sha256, 16)
-        except ValueError as exc:
+        if len(sha256) != 64 or any(
+            character not in "0123456789abcdef" for character in sha256
+        ):
             raise EchemQuantityError(
                 "source sha256 must contain exactly 64 hexadecimal characters"
-            ) from exc
+            )
 
         object.__setattr__(self, "key", self.key.strip())
         object.__setattr__(self, "label", self.label.strip())
