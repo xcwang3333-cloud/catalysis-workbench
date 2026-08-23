@@ -2,7 +2,7 @@
 
 All notable changes to CatalysisWorkbench are recorded here.
 
-## [0.1.0] - unreleased
+## [0.1.0] - 2026-08-23
 
 The first usable release establishes the common one-dimensional catalysis-data workflow and publication rendering foundation.
 
@@ -24,6 +24,8 @@ The first usable release establishes the common one-dimensional catalysis-data w
 - Visualization is separated from scientific processing; domain plot adapters reuse the shared renderer instead of creating independent Matplotlib stacks.
 - v0.1 intentionally remains focused on one-dimensional XY workflows. CLI/GUI, N-D operando data, advanced electrochemistry, extended characterization, and DFT post-processing remain roadmap work.
 
-### Release gate
+### Release validation
 
-The source tree remains versioned `0.1.0.dev0` until Issue #18 is reviewed and all release-hardening checks pass. The final version bump/tag/release is a separate explicit action documented in `docs/RELEASING.md`.
+- Release hardening was completed before the version bump.
+- The release candidate is required to pass Ruff, the full pytest suite, wheel build/install, `pip check`, exact distribution/runtime version equality, installed public-API smoke checks, and all documented end-to-end examples before the `v0.1.0` tag is created.
+- Package-registry publication is not part of this release gate.
