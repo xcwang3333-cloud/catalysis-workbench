@@ -44,10 +44,17 @@ def finalize_axes(
     xlabel: str,
     ylabel: str,
     labeled_count: int,
+    apply_xscale: bool = True,
 ) -> None:
-    """Apply scales, physical-independent styling, legend, and annotations."""
+    """Apply scales, physical-independent styling, legend, and annotations.
+
+    ``apply_xscale=False`` is reserved for renderers that install a categorical
+    ``FixedLocator``/``FixedFormatter`` before finalization. Reapplying Matplotlib's
+    linear scale after those categorical ticks would replace them with numeric locators.
+    """
     style = spec.style
-    ax.set_xscale(spec.xscale)
+    if apply_xscale:
+        ax.set_xscale(spec.xscale)
     ax.set_yscale(spec.yscale)
     if spec.xlim is not None:
         ax.set_xlim(*spec.xlim)
