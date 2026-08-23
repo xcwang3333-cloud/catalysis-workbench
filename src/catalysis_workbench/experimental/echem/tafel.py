@@ -44,8 +44,10 @@ def _required_text(value: object, *, name: str) -> str:
 
 
 def _normalize_reference(value: object) -> str:
+    if not isinstance(value, str):
+        raise TafelError("potential reference metadata must be a non-empty string")
     try:
-        return normalize_reference_name(value)  # type: ignore[arg-type]
+        return normalize_reference_name(value)
     except EchemQuantityError as exc:
         raise TafelError("potential reference metadata must be a non-empty string") from exc
 
@@ -208,7 +210,9 @@ def _canonical_fit_window(
     fit_window: Sequence[float],
     fit_window_unit: str,
 ) -> tuple[float, float]:
-    if isinstance(fit_window, (str, bytes)) or len(fit_window) != 2:
+    if isinstance(fit_window, (str, bytes)) or not isinstance(fit_window, Sequence):
+        raise TafelError("fit_window must contain exactly two potential bounds")
+    if len(fit_window) != 2:
         raise TafelError("fit_window must contain exactly two potential bounds")
     try:
         converted = potential_to_v(
@@ -368,13 +372,12 @@ def _resolve_parameter(
     if isinstance(value, str):
         return {key: value for key in keys}
     resolved = _require_exact_keys(value, keys=keys, name=name)
-    return {key: item for key, item in resolved.items() if isinstance(item, str)} | {
-        key: _raise_parameter_type(name) for key, item in resolved.items() if not isinstance(item, str)
-    }
-
-
-def _raise_parameter_type(name: str) -> str:
-    raise TafelError(f"{name} values must be strings")
+    normalized: dict[str, str] = {}
+    for key, item in resolved.items():
+        if not isinstance(item, str):
+            raise TafelError(f"{name} values must be strings")
+        normalized[key] = item
+    return normalized
 
 
 def fit_tafel_dataset(
