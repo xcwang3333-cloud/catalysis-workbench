@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
+from matplotlib.ticker import NullLocator
 from numpy.typing import ArrayLike, NDArray
 
 from catalysis_workbench.core import Axis
@@ -308,5 +309,8 @@ def render_bars(
             labeled_count=labeled_count,
             apply_xscale=False,
         )
+        # Categorical positions have no meaningful subdivisions. Keep y-axis minor
+        # ticks controlled by PlotStyle while always suppressing categorical x minors.
+        ax.xaxis.set_minor_locator(NullLocator())
 
     return figure, ax
