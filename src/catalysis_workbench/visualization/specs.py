@@ -1,6 +1,6 @@
 """Serializable specifications for publication-quality figures.
 
-The specification layer intentionally contains no scientific analysis.  A later GUI can
+The specification layer intentionally contains no scientific analysis. A later GUI can
 bind controls to these dataclasses and request a redraw from the same renderer used by
 the Python API.
 """
@@ -47,13 +47,22 @@ def _optional_limit(
     return (lower, upper)
 
 
+def _optional_color(value: str | None, *, name: str) -> str | None:
+    if value is None:
+        return None
+    color = str(value).strip()
+    if not color:
+        raise VisualizationError(f"{name} must not be empty when supplied")
+    return color
+
+
 @dataclass(frozen=True, slots=True)
 class LayoutSpec:
     """Physical figure and axes geometry in inches.
 
-    Margins define the minimum space reserved around the axes.  When explicit axes
+    Margins define the minimum space reserved around the axes. When explicit axes
     dimensions or an aspect ratio produce a smaller axes rectangle, any remaining
-    horizontal/vertical space is left on the right/top side.  This makes the physical
+    horizontal/vertical space is left on the right/top side. This makes the physical
     left and bottom margins deterministic and keeps the geometry easy to reproduce.
     """
 
@@ -97,7 +106,6 @@ class LayoutSpec:
             object.__setattr__(
                 self, "axes_aspect", _positive(self.axes_aspect, name="axes_aspect")
             )
-        # Force geometry validation during construction so impossible specs fail early.
         self.resolved_axes_size_in()
 
     def available_axes_size_in(self) -> tuple[float, float]:
@@ -157,7 +165,7 @@ class LayoutSpec:
 
 @dataclass(frozen=True, slots=True)
 class PlotStyle:
-    """Global curve, typography, axes, tick, and legend defaults."""
+    """Global typography, axes, line/marker, bar, error-bar, and legend defaults."""
 
     font_family: str = "DejaVu Sans"
     font_size: float = 8.0
@@ -169,6 +177,12 @@ class PlotStyle:
     marker: str | None = None
     marker_size: float = 4.0
     marker_edge_width: float = 0.8
+    bar_group_width: float = 0.8
+    bar_edge_width: float = 0.8
+    bar_edge_color: str | None = None
+    errorbar_line_width: float = 0.8
+    errorbar_cap_size: float = 2.0
+    errorbar_color: str | None = None
     spine_width: float = 0.8
     tick_length: float = 3.0
     tick_width: float = 0.8
@@ -202,12 +216,22 @@ class PlotStyle:
             "line_width",
             "marker_size",
             "marker_edge_width",
+            "bar_edge_width",
+            "errorbar_line_width",
+            "errorbar_cap_size",
             "spine_width",
             "tick_length",
             "tick_width",
             "legend_font_size",
         ):
             object.__setattr__(self, name, _nonnegative(getattr(self, name), name=name))
+        object.__setattr__(
+            self,
+            "bar_group_width",
+            _positive(self.bar_group_width, name="bar_group_width"),
+        )
+        if self.bar_group_width > 1.0:
+            raise VisualizationError("bar_group_width must not exceed 1.0")
         if not str(self.line_style):
             raise VisualizationError("line_style must not be empty")
         if self.tick_direction not in {"in", "out", "inout"}:
@@ -218,6 +242,16 @@ class PlotStyle:
             raise VisualizationError(
                 "axis_unit_format must be 'parentheses', 'slash', or 'none'"
             )
+        object.__setattr__(
+            self,
+            "bar_edge_color",
+            _optional_color(self.bar_edge_color, name="bar_edge_color"),
+        )
+        object.__setattr__(
+            self,
+            "errorbar_color",
+            _optional_color(self.errorbar_color, name="errorbar_color"),
+        )
         colors = tuple(str(color).strip() for color in self.color_cycle)
         if not colors or any(not color for color in colors):
             raise VisualizationError("color_cycle must contain at least one non-empty color")
@@ -230,9 +264,11 @@ class PlotStyle:
 
 @dataclass(frozen=True, slots=True)
 class SeriesStyle:
-    """Per-Series visual overrides addressed by stable ``Series.key``."""
+    """Stable-key visual overrides shared by series and categorical renderers."""
 
     color: str | None = None
+    edge_color: str | None = None
+    hatch: str | None = None
     line_width: float | None = None
     line_style: str | None = None
     marker: str | None = None
@@ -258,10 +294,16 @@ class SeriesStyle:
             if not isfinite(zorder):
                 raise VisualizationError("zorder must be finite")
             object.__setattr__(self, "zorder", zorder)
-        if self.color is not None and not str(self.color).strip():
-            raise VisualizationError("color must not be empty when supplied")
+        object.__setattr__(self, "color", _optional_color(self.color, name="color"))
+        object.__setattr__(
+            self,
+            "edge_color",
+            _optional_color(self.edge_color, name="edge_color"),
+        )
         if self.line_style is not None and not str(self.line_style):
             raise VisualizationError("line_style must not be empty when supplied")
+        if self.hatch is not None and not str(self.hatch):
+            raise VisualizationError("hatch must not be empty when supplied")
 
     def updated(self, **changes: Any) -> SeriesStyle:
         """Return a validated copy with selected fields changed."""
@@ -339,6 +381,7 @@ class FigureSpec:
     show_legend: bool | None = None
     annotations: tuple[AnnotationSpec, ...] = ()
     series_styles: Mapping[str, SeriesStyle] = field(default_factory=dict, repr=False)
+    category_styles: Mapping[str, SeriesStyle] = field(default_factory=dict, repr=False)
 
     def __post_init__(self) -> None:
         if not isinstance(self.layout, LayoutSpec):
@@ -359,15 +402,32 @@ class FigureSpec:
             raise TypeError("annotations must contain AnnotationSpec instances")
         object.__setattr__(self, "annotations", annotations)
 
-        frozen_styles: dict[str, SeriesStyle] = {}
-        for key, value in dict(self.series_styles).items():
+        object.__setattr__(
+            self,
+            "series_styles",
+            MappingProxyType(self._validated_styles(self.series_styles, kind="series")),
+        )
+        object.__setattr__(
+            self,
+            "category_styles",
+            MappingProxyType(self._validated_styles(self.category_styles, kind="category")),
+        )
+
+    @staticmethod
+    def _validated_styles(
+        styles: Mapping[str, SeriesStyle],
+        *,
+        kind: str,
+    ) -> dict[str, SeriesStyle]:
+        frozen: dict[str, SeriesStyle] = {}
+        for key, value in dict(styles).items():
             stable_key = str(key).strip()
             if not stable_key:
-                raise VisualizationError("series style keys must not be empty")
+                raise VisualizationError(f"{kind} style keys must not be empty")
             if not isinstance(value, SeriesStyle):
-                raise TypeError("series_styles values must be SeriesStyle instances")
-            frozen_styles[stable_key] = value
-        object.__setattr__(self, "series_styles", MappingProxyType(frozen_styles))
+                raise TypeError(f"{kind}_styles values must be SeriesStyle instances")
+            frozen[stable_key] = value
+        return frozen
 
     def updated(self, **changes: Any) -> FigureSpec:
         """Return a validated copy with selected top-level fields changed."""
@@ -391,7 +451,7 @@ class FigureSpec:
         style: SeriesStyle | None = None,
         **changes: Any,
     ) -> FigureSpec:
-        """Return a copy with one stable-key-specific style added or updated."""
+        """Return a copy with one stable-key-specific series style added or updated."""
         stable_key = str(key).strip()
         if not stable_key:
             raise VisualizationError("series style key must not be empty")
@@ -405,10 +465,37 @@ class FigureSpec:
         return replace(self, series_styles=styles)
 
     def without_series_style(self, key: str) -> FigureSpec:
-        """Return a copy without the selected stable-key-specific override."""
+        """Return a copy without the selected stable-key-specific series override."""
         styles = dict(self.series_styles)
         styles.pop(str(key).strip(), None)
         return replace(self, series_styles=styles)
+
+    def with_category_style(
+        self,
+        key: str,
+        style: SeriesStyle | None = None,
+        **changes: Any,
+    ) -> FigureSpec:
+        """Return a copy with one stable-key-specific category style added or updated."""
+        stable_key = str(key).strip()
+        if not stable_key:
+            raise VisualizationError("category style key must not be empty")
+        current = (
+            self.category_styles.get(stable_key, SeriesStyle()) if style is None else style
+        )
+        if not isinstance(current, SeriesStyle):
+            raise TypeError("style must be a SeriesStyle")
+        if changes:
+            current = current.updated(**changes)
+        styles = dict(self.category_styles)
+        styles[stable_key] = current
+        return replace(self, category_styles=styles)
+
+    def without_category_style(self, key: str) -> FigureSpec:
+        """Return a copy without the selected stable-key-specific category override."""
+        styles = dict(self.category_styles)
+        styles.pop(str(key).strip(), None)
+        return replace(self, category_styles=styles)
 
     def with_annotation(self, annotation: AnnotationSpec) -> FigureSpec:
         """Return a copy with one annotation appended."""
@@ -436,6 +523,9 @@ class FigureSpec:
             "series_styles": {
                 key: asdict(value) for key, value in self.series_styles.items()
             },
+            "category_styles": {
+                key: asdict(value) for key, value in self.category_styles.items()
+            },
         }
 
     @classmethod
@@ -455,11 +545,16 @@ class FigureSpec:
             str(key): SeriesStyle(**dict(item))
             for key, item in dict(values.pop("series_styles", {})).items()
         }
+        category_styles = {
+            str(key): SeriesStyle(**dict(item))
+            for key, item in dict(values.pop("category_styles", {})).items()
+        }
         return cls(
             layout=layout,
             style=style,
             export=export,
             annotations=annotations,
             series_styles=series_styles,
+            category_styles=category_styles,
             **values,
         )
