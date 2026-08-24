@@ -11,8 +11,8 @@ import pytest
 
 from catalysis_workbench.core import Axis, Series
 from catalysis_workbench.experimental.echem import (
-    EISCapacitor,
     EISCPE,
+    EISCapacitor,
     EISError,
     EISParallelCircuit,
     EISParameterSpec,
@@ -285,7 +285,10 @@ def test_ascending_descending_frequency_fit_is_physically_equivalent() -> None:
     frequency = np.logspace(0, 5, 70)
     true = _randles_rc(rs=5.0, rct=18.0, cdl=9e-4, vary=False)
     impedance = evaluate_eis_circuit(true, frequency)
-    ascending = fit_eis(_series(frequency, impedance, key="up"), _randles_rc(rs=4, rct=15, cdl=1e-3))
+    ascending = fit_eis(
+        _series(frequency, impedance, key="up"),
+        _randles_rc(rs=4, rct=15, cdl=1e-3),
+    )
     descending = fit_eis(
         _series(frequency[::-1], impedance[::-1], key="down"),
         _randles_rc(rs=4, rct=15, cdl=1e-3),
@@ -392,7 +395,12 @@ import json
 import sys
 import catalysis_workbench.experimental.echem as echem
 loaded = any(name == "matplotlib" or name.startswith("matplotlib.") for name in sys.modules)
-print(json.dumps({"matplotlib": loaded, "eis": "fit_eis" in echem.__all__, "plot": "plot_eis_nyquist" in echem.__all__}))
+payload = {
+    "matplotlib": loaded,
+    "eis": "fit_eis" in echem.__all__,
+    "plot": "plot_eis_nyquist" in echem.__all__,
+}
+print(json.dumps(payload))
 """
     completed = subprocess.run(
         [sys.executable, "-c", code],
