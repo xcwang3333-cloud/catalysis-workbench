@@ -5,7 +5,6 @@ from __future__ import annotations
 from math import isfinite
 from typing import Literal, TypeAlias
 
-import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
