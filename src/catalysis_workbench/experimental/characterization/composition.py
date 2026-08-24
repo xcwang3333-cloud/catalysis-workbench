@@ -157,7 +157,7 @@ def _freeze_metadata(
     return MappingProxyType(dict(sorted(frozen.items())))
 
 
-def _measurement_digest(measurements: Sequence["CompositionMeasurement"]) -> str:
+def _measurement_digest(measurements: Sequence[CompositionMeasurement]) -> str:
     digest = hashlib.sha256()
     for item in measurements:
         fields = (
