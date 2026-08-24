@@ -8,14 +8,15 @@ For the project-wide execution model, merge gates, and long-range release map, s
 
 Checkpoint date: 2026-08-24.
 
-- Current released `main` checkpoint: `1f7f4057397c61ef2f771b96fceadc8a529b62d9`.
+- `v0.2.0` tagged release commit: `1f7f4057397c61ef2f771b96fceadc8a529b62d9`.
 - **All planned v0.2 implementation Issues #19-#28 are complete and merged.**
 - **Issue #43 / PR #44 Gate-A release hardening is complete.**
 - **Issue #45 / PR #46 Gate-B final-version validation is complete.**
 - **Issue #47 Gate C is complete: tag `v0.2.0` was explicitly authorized, created, and verified to resolve exactly to the reviewed Gate-B release commit.**
-- Distribution metadata and runtime `__version__` both report `0.2.0`.
+- Distribution metadata and runtime `__version__` at the tagged release both report `0.2.0`.
 - The changelog release date is `2026-08-24`.
 - There is no remaining open scientific feature or release-gate Issue in the defined v0.2 sequence.
+- Issue #48 / PR #49 is the post-release documentation synchronization that records this final state without changing the tagged release contents.
 - The historical [`RELEASING.md`](RELEASING.md) governs v0.1 only; [`V0_2_RELEASING.md`](V0_2_RELEASING.md) records the completed v0.2 Gate A/B/C sequence.
 - Package-registry publication remains a separate policy decision and was not part of the v0.2 Git release.
 
@@ -54,6 +55,7 @@ The reviewed LSV public API from v0.1 remains compatible and reuses the shared #
 - [x] #43 — v0.2 Gate-A release hardening, installed public-API smoke expansion, and release-policy definition.
 - [x] #45 — Gate-B final `0.2.0` version candidate and release validation.
 - [x] #47 — Gate-C explicit tag authorization, `v0.2.0` creation, and exact-target verification.
+- #48 / PR #49 — post-release documentation synchronization; no scientific/API/version/tag change.
 
 ## Final implemented v0.2 scientific scope
 
@@ -206,13 +208,13 @@ Gate B changed both version declarations together to `0.2.0` and independently r
 
 ## Completed tag contract — #47 / Gate C
 
-Gate C received explicit release authorization after Gate B merged. Current `main` and both version declarations were re-read, the changelog date was confirmed as 2026-08-24, tag `v0.2.0` was created, and GitHub comparison verified that the tag is identical to release commit `1f7f4057397c61ef2f771b96fceadc8a529b62d9` with ahead=0 and behind=0.
+Gate C received explicit release authorization after Gate B merged. Current `main` and both version declarations were re-read before tagging, the changelog date was confirmed as 2026-08-24, tag `v0.2.0` was created, and GitHub comparison verified that the tag is identical to release commit `1f7f4057397c61ef2f771b96fceadc8a529b62d9` with ahead=0 and behind=0.
 
 Package-registry publication remains a separate policy decision and is not implied by completing v0.2 features or Gate A/B/C.
 
 ## v0.3 transition boundary
 
-v0.2 is now closed as the released `v0.2.0` baseline. v0.3 planning and implementation should start from a reviewed post-release `main` state, use new Issues, and repeat the same prior-art/scientific-contract/API/CI/review discipline. Do not rewrite v0.2 release history when opening v0.3 work.
+v0.2 is now closed as the released `v0.2.0` baseline. v0.3 planning and implementation should start from a reviewed post-release `main` state after the documentation synchronization, use new Issues, and repeat the same prior-art/scientific-contract/API/CI/review discipline. Do not rewrite v0.2 release history when opening v0.3 work.
 
 ## Status synchronization
 
