@@ -4,6 +4,24 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from .ftir import (
+    FTIRBand,
+    FTIRBandMeasurement,
+    FTIRBaselineFit,
+    FTIRBaselineWindow,
+    FTIRError,
+    FTIRPeakAnnotation,
+    FTIRProcessingConfig,
+    fit_ftir_baseline,
+    measure_ftir_band,
+    process_ftir,
+    process_ftir_dataset,
+    stack_ftir_dataset,
+    subtract_ftir_baseline,
+    transmittance_to_absorbance,
+    validate_ftir_overlay,
+    validate_ftir_series,
+)
 from .raman import (
     RamanBand,
     RamanBandMeasurement,
@@ -92,7 +110,38 @@ def plot_raman(
     )
 
 
+def plot_ftir(
+    data: Series | Dataset,
+    spec: FigureSpec | None = None,
+    *,
+    preset: str = "publication",
+    stack_step: float | None = None,
+    stack_start: float = 0.0,
+    peak_annotations: Sequence[FTIRPeakAnnotation] = (),
+    wavenumber_direction: str = "descending",
+) -> tuple[Figure, Axes]:
+    """Lazily dispatch to the shared-renderer FTIR publication adapter."""
+    from .ftir_plotting import plot_ftir as _plot_ftir
+
+    return _plot_ftir(
+        data,
+        spec,
+        preset=preset,
+        stack_step=stack_step,
+        stack_start=stack_start,
+        peak_annotations=peak_annotations,
+        wavenumber_direction=wavenumber_direction,
+    )
+
+
 __all__ = [
+    "FTIRBand",
+    "FTIRBandMeasurement",
+    "FTIRBaselineFit",
+    "FTIRBaselineWindow",
+    "FTIRError",
+    "FTIRPeakAnnotation",
+    "FTIRProcessingConfig",
     "PeakAnnotation",
     "RamanBand",
     "RamanBandMeasurement",
@@ -103,17 +152,27 @@ __all__ = [
     "XRDError",
     "XRDProcessingConfig",
     "XRDReferencePattern",
+    "fit_ftir_baseline",
     "id_ig_ratio",
+    "measure_ftir_band",
     "measure_raman_band",
+    "plot_ftir",
     "plot_raman",
     "plot_xrd",
+    "process_ftir",
+    "process_ftir_dataset",
     "process_raman",
     "process_raman_dataset",
     "process_xrd",
     "process_xrd_dataset",
     "raman_ratio",
+    "stack_ftir_dataset",
     "stack_raman_dataset",
     "stack_xrd_dataset",
+    "subtract_ftir_baseline",
+    "transmittance_to_absorbance",
+    "validate_ftir_overlay",
+    "validate_ftir_series",
     "validate_raman_series",
     "validate_xrd_series",
 ]
