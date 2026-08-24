@@ -29,6 +29,29 @@ from .cv_cdl import (
     fit_cdl_groups,
     sample_cv_current,
 )
+from .eis import (
+    EISCPE,
+    EISCapacitor,
+    EISCircuit,
+    EISDirection,
+    EISError,
+    EISFitConfig,
+    EISFitDiagnostics,
+    EISFitResult,
+    EISFittedParameter,
+    EISParallelCircuit,
+    EISParameterSpec,
+    EISResistor,
+    EISSeriesCircuit,
+    EISWeightingMode,
+    eis_circuit_element_keys,
+    eis_circuit_parameter_keys,
+    evaluate_eis_circuit,
+    fit_eis,
+    summarize_eis_fit,
+    validate_eis_circuit,
+    validate_eis_series,
+)
 from .fe import (
     FaradaicEfficiencyClosure,
     FaradaicEfficiencyError,
@@ -351,6 +374,50 @@ def plot_koutecky_levich(
     return _plot_koutecky_levich(results, spec, preset=preset)
 
 
+def plot_eis_nyquist(
+    data: Series,
+    spec: FigureSpec | None = None,
+    *,
+    fit: EISFitResult | None = None,
+    imaginary_display: str = "negative",
+    equal_aspect: bool = False,
+    preset: str = "publication",
+) -> tuple[Figure, Axes]:
+    """Lazily render validated EIS data as a passive Nyquist view."""
+    from .eis_plotting import plot_eis_nyquist as _plot_eis_nyquist
+
+    return _plot_eis_nyquist(
+        data,
+        spec,
+        fit=fit,
+        imaginary_display=imaginary_display,  # type: ignore[arg-type]
+        equal_aspect=equal_aspect,
+        preset=preset,
+    )
+
+
+def plot_eis_bode(
+    data: Series,
+    spec: FigureSpec | None = None,
+    *,
+    fit: EISFitResult | None = None,
+    phase_height_fraction: float = 0.38,
+    panel_gap_fraction: float = 0.07,
+    preset: str = "publication",
+) -> tuple[Figure, tuple[Axes, Axes]]:
+    """Lazily render validated EIS magnitude/principal-phase Bode panels."""
+    from .eis_plotting import plot_eis_bode as _plot_eis_bode
+
+    return _plot_eis_bode(
+        data,
+        spec,
+        fit=fit,
+        phase_height_fraction=phase_height_fraction,
+        panel_gap_fraction=panel_gap_fraction,
+        preset=preset,
+    )
+
+
 __all__ = [
     "AVOGADRO_CONSTANT_MOL_INV",
     "ActivityBasis",
@@ -369,6 +436,20 @@ __all__ = [
     "ClosureComparisonMode",
     "CurrentSign",
     "ECSAResult",
+    "EISCPE",
+    "EISCapacitor",
+    "EISCircuit",
+    "EISDirection",
+    "EISError",
+    "EISFitConfig",
+    "EISFitDiagnostics",
+    "EISFitResult",
+    "EISFittedParameter",
+    "EISParallelCircuit",
+    "EISParameterSpec",
+    "EISResistor",
+    "EISSeriesCircuit",
+    "EISWeightingMode",
     "EchemQuantityError",
     "FARADAY_CONSTANT_C_MOL",
     "FaradaicEfficiencyClosure",
@@ -423,7 +504,10 @@ __all__ = [
     "current_density_to_a_cm2",
     "current_to_a",
     "ecsa_from_cdl",
+    "eis_circuit_element_keys",
+    "eis_circuit_parameter_keys",
     "electron_number",
+    "evaluate_eis_circuit",
     "faradaic_efficiency_closure",
     "faradaic_efficiency_dataset",
     "faradaic_efficiency_from_amount",
@@ -431,6 +515,7 @@ __all__ = [
     "faradaic_efficiency_series",
     "fit_cdl",
     "fit_cdl_groups",
+    "fit_eis",
     "fit_koutecky_levich",
     "fit_tafel",
     "fit_tafel_dataset",
@@ -451,6 +536,8 @@ __all__ = [
     "plot_activity",
     "plot_cdl_fit",
     "plot_cv",
+    "plot_eis_bode",
+    "plot_eis_nyquist",
     "plot_faradaic_efficiency",
     "plot_koutecky_levich",
     "plot_lsv",
@@ -472,6 +559,7 @@ __all__ = [
     "scan_rate_to_v_s",
     "series_data_sha256",
     "source_data_ref",
+    "summarize_eis_fit",
     "time_to_s",
     "to_current_density",
     "turnover_frequency_from_partial_current",
@@ -480,5 +568,7 @@ __all__ = [
     "turnover_frequency_from_rate",
     "turnover_frequency_from_rate_dataset",
     "turnover_frequency_from_rate_series",
+    "validate_eis_circuit",
+    "validate_eis_series",
     "validate_stability_series",
 ]

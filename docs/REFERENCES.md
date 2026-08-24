@@ -25,7 +25,8 @@ Before implementing a scientific or visualization module:
 | Labeled scientific arrays | `pydata/xarray` | General labeled N-D arrays and datasets. Xarray explicitly separates raw NumPy-like values from dimensions, coordinates and arbitrary attributes, and uses a Dataset as a container for labeled arrays. Apache-2.0 licensed. | Conceptual reference for labels/metadata and Dataset semantics. Do not add xarray as a v0.1 dependency; CatalysisWorkbench starts with a deliberately lightweight 1-D XY model and can add adapters later if N-D operando data justify it. |
 | Tabular I/O | `pandas-dev/pandas` | Mature CSV and Excel parsers with explicit sheet, header, selected-column, missing-value, delimiter, and dtype controls. BSD-3-Clause licensed. | Use pandas as the parsing backend rather than rebuilding CSV/Excel parsing. CatalysisWorkbench adds the catalysis-specific conversion into `Axis`/`Series`/`Dataset`, source metadata, validation, and deterministic keys. |
 | Scientific reader patterns | `ixdat/ixdat` readers | Dedicated format readers keep parsing separate from scientific objects; the CSV reader retains header/column/unit context, while the XRD XY reader performs conservative header/comment detection and leaves domain data in explicit series/fields. MIT licensed. | Follow the parser-adapter pattern: parse file structure first, then construct standard core objects. Avoid silently skipping malformed selected values; CatalysisWorkbench raises explicit validation errors for user-selected scientific columns. |
-| Electrochemical impedance | `ECSHackWeek/impedance.py` | Mature Python package for electrochemical impedance data and circuit fitting. | Reference/dependency candidate when EIS is implemented in v0.4. |
+| Electrochemical impedance | `ECSHackWeek/impedance.py` | Mature electrochemical-impedance workflow/circuit-fitting package; current GitHub repository metadata reports the MIT License. | v0.4 EIS workflow/API/test reference only; no implementation is copied and the package is not added as a dependency. |
+| Electrochemical impedance | `vyrjana/pyimpspec` | Rich impedance parsing, validation, circuit analysis/simulation, and plotting; current GitHub repository metadata reports GPL-3.0. | Architecture/validation reference only for v0.4 EIS. No GPL implementation is copied/adapted and no dependency is added. |
 | XAS | `xraypy/xraylarch` | Mature X-ray spectroscopy/XAS processing ecosystem. | Reference/dependency candidate for XANES/EXAFS algorithms; CatalysisWorkbench should emphasize comparison, result integration and publication figures rather than replace the mature XAS stack. |
 | Electronic structure | `romerogroup/pyprocar` | Electronic-structure parsing/visualization, including projected electronic data. | Reference for DOS/PDOS parsing and projection-selection concepts in v0.6. |
 | Chemical bonding | `JaGeo/LobsterPy` | Analysis of LOBSTER bonding output. | Reference/dependency candidate for COHP/ICOHP parsing and bonding analysis in v0.6. |
@@ -273,3 +274,27 @@ The resulting v0.4 architecture is deliberately layered:
 - version metadata remains `0.3.0` during architecture and ordinary v0.4 feature work until a later reviewed release gate explicitly changes it.
 
 No upstream implementation code is copied by Issue #73 and no new runtime dependency is introduced by the architecture checkpoint.
+
+## EIS semantics, basic circuit fitting, and plotting decision for v0.4
+
+Issue #91 implements the first EIS-specific consumer on top of the existing immutable complex-capable `Series` model and the already-installed NumPy/SciPy/Matplotlib stack.
+
+Fresh prior-art/license review:
+
+- `ECSHackWeek/impedance.py` — **MIT** according to current GitHub repository metadata. Useful high-level references include separation of preprocessing/fitting/visualization, explicit complex-impedance fitting, circuit-parameter workflows, and Nyquist/Bode presentation. Decision: workflow/API/test reference only. CatalysisWorkbench copies no circuit parser, element implementation, fitting code, or plotting implementation and does not add `impedance.py` as a dependency.
+- `vyrjana/pyimpspec` — **GPL-3.0** according to current GitHub repository metadata. Its rich circuit validation, impedance QA, simulation, and plotting concepts are useful architecture references. Decision: reference only; no GPL code is copied/adapted and no dependency is added.
+- `scipy/scipy` — **BSD-3-Clause**, already a reviewed runtime dependency. Issue #91 uses `scipy.optimize.least_squares` as the numerical optimizer behind CatalysisWorkbench-owned EIS scientific/API contracts rather than introducing another EIS package.
+
+The initial EIS direction is deliberately conservative:
+
+- one core `Series` stores explicit positive monotonic frequency in Hz and literal complex impedance in ohm as `Z = Z' + jZ''`; no sorting, resampling, sign conversion, phase unwrapping, or silent unit conversion occurs;
+- the project-owned typed circuit graph contains only ideal `R`, `C`, and `CPE` leaves plus explicit series/parallel composition; element keys and `element.parameter` names remain stable mathematical identities;
+- CPE uses the explicit convention `Z = 1 / [Q (j 2π f)^n]` with `Q > 0` and `0 < n <= 1`;
+- caller-visible parameter initial values, fixed/vary state, and bounds are validated against element physical domains;
+- fitting stacks the exact real and imaginary residual channels deterministically; optional weights are explicit positive per-frequency residual multipliers applied equally to both channels;
+- the public physical complex residual remains exactly `Z_observed - Z_best_fit` regardless of objective weighting, and the first stage does not fabricate covariance or standard errors;
+- Nyquist rendering derives `Re(Z)` and caller-selected raw `Im(Z)` or conventional `-Im(Z)` only at display time; Bode rendering derives exact `|Z|` and principal phase without unwrap/reordering;
+- EIS plotting remains Matplotlib-lazy and uses the existing `FigureSpec`/isolated rendering infrastructure rather than a parallel style system;
+- automatic topology/model selection, automatic initial guesses/weighting, circuit-string parsing, parameter-expression ties, Warburg/finite-diffusion/transmission-line elements, DRT, mechanism assignment, and proprietary vendor readers remain deferred.
+
+No upstream EIS implementation code is copied and no new runtime dependency is introduced by Issue #91.

@@ -60,6 +60,7 @@ jobs:
           .venv-smoke/bin/python tests/installed_xps_smoke.py
           .venv-smoke/bin/python tests/installed_xps_fitting_smoke.py
           .venv-smoke/bin/python tests/installed_xps_plotting_smoke.py
+          .venv-smoke/bin/python tests/installed_eis_smoke.py
           .venv-smoke/bin/python tests/installed_thermal_smoke.py
           .venv-smoke/bin/python tests/installed_sorption_smoke.py
           .venv-smoke/bin/python tests/installed_composition_smoke.py
