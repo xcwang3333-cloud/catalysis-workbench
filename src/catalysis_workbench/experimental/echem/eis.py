@@ -20,6 +20,7 @@ EISDirection: TypeAlias = Literal["ascending", "descending"]
 EISWeightingMode: TypeAlias = Literal["uniform", "explicit"]
 
 _KEY_PATTERN = re.compile(r"[A-Za-z][A-Za-z0-9_]*")
+_PARAMETER_KEY_PATTERN = re.compile(r"[A-Za-z][A-Za-z0-9_]*\.[A-Za-z][A-Za-z0-9_]*")
 _POSITIVE_FLOOR = np.nextafter(0.0, 1.0)
 
 
@@ -91,6 +92,27 @@ def _direction(frequency: NDArray[np.float64]) -> EISDirection:
     if np.all(delta < 0):
         return "descending"
     raise EISError("EIS frequency must be strictly monotonic")
+
+
+def _nonnegative_int(value: object, *, name: str) -> int:
+    if isinstance(value, (bool, np.bool_)):
+        raise TypeError(f"{name} must be a non-negative integer")
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError) as exc:
+        raise TypeError(f"{name} must be a non-negative integer") from exc
+    if not isfinite(numeric) or not numeric.is_integer() or numeric < 0:
+        raise EISError(f"{name} must be a non-negative integer")
+    return int(numeric)
+
+
+def _normalized_sha256(value: object) -> str:
+    if not isinstance(value, str):
+        raise EISError("EIS source_sha256 must be a 64-character hexadecimal string")
+    sha256 = value.strip().lower()
+    if len(sha256) != 64 or any(character not in "0123456789abcdef" for character in sha256):
+        raise EISError("EIS source_sha256 must be a 64-character hexadecimal string")
+    return sha256
 
 
 def validate_eis_series(series: Series) -> EISDirection:
@@ -440,6 +462,25 @@ class EISFittedParameter:
     lower: float | None
     upper: float | None
 
+    def __post_init__(self) -> None:
+        if not isinstance(self.key, str) or not _PARAMETER_KEY_PATTERN.fullmatch(self.key.strip()):
+            raise EISError("EIS fitted-parameter key must use element.parameter syntax")
+        key = self.key.strip()
+        value = _finite_float(self.value, name=f"fitted parameter {key}")
+        lower = None if self.lower is None else _finite_float(self.lower, name=f"{key} lower")
+        upper = None if self.upper is None else _finite_float(self.upper, name=f"{key} upper")
+        if lower is not None and upper is not None and lower >= upper:
+            raise EISError(f"fitted parameter {key} lower bound must be smaller than upper")
+        if lower is not None and value < lower:
+            raise EISError(f"fitted parameter {key} value is below its lower bound")
+        if upper is not None and value > upper:
+            raise EISError(f"fitted parameter {key} value is above its upper bound")
+        object.__setattr__(self, "key", key)
+        object.__setattr__(self, "value", value)
+        object.__setattr__(self, "vary", bool(self.vary))
+        object.__setattr__(self, "lower", lower)
+        object.__setattr__(self, "upper", upper)
+
 
 @dataclass(frozen=True, slots=True)
 class EISFitResult:
@@ -470,24 +511,124 @@ class EISFitResult:
     method: str = "trf"
 
     def __post_init__(self) -> None:
+        if not isinstance(self.source_key, str) or not isinstance(self.source_label, str):
+            raise EISError("EIS fit source key and label must be strings")
+        source_sha256 = _normalized_sha256(self.source_sha256)
+        if self.frequency_direction not in {"ascending", "descending"}:
+            raise EISError("EIS fit frequency_direction must be ascending or descending")
+        if self.frequency_unit != "Hz":
+            raise EISError("EIS fit frequency_unit must be canonical 'Hz'")
+        if self.impedance_unit != "ohm":
+            raise EISError("EIS fit impedance_unit must be canonical 'ohm'")
+        circuit = _require_circuit(self.circuit)
+        validate_eis_circuit(circuit)
+        if not isinstance(self.config, EISFitConfig):
+            raise TypeError("EIS fit config must be an EISFitConfig")
+        n_points = _nonnegative_int(self.n_points, name="EIS fit n_points")
+        if n_points < 2:
+            raise EISError("EIS fit n_points must be at least 2")
+
         frequency = _immutable_float_array(self.frequency_hz, name="fit frequency")
         observed = _immutable_complex_array(self.observed_impedance, name="observed impedance")
         best = _immutable_complex_array(self.best_fit_impedance, name="best-fit impedance")
         residual = _immutable_complex_array(self.residual_impedance, name="residual impedance")
-        if not (frequency.size == observed.size == best.size == residual.size == self.n_points):
+        if not (frequency.size == observed.size == best.size == residual.size == n_points):
             raise EISError("EIS fit-result arrays and n_points must align exactly")
+        if np.any(frequency <= 0):
+            raise EISError("EIS fit frequency must contain only positive values")
+        if _direction(frequency) != self.frequency_direction:
+            raise EISError("EIS fit frequency_direction contradicts retained frequency order")
         if not np.array_equal(residual, observed - best):
             raise EISError("EIS physical residual must equal observed - best_fit exactly")
+
+        definitions = _parameter_definitions(circuit)
+        expected_keys = tuple(definition.key for definition in definitions)
+        if not isinstance(self.parameters, Mapping):
+            raise TypeError("EIS fit parameters must be a mapping")
+        supplied = dict(self.parameters)
+        if set(supplied) != set(expected_keys):
+            raise EISError("EIS fit parameter keys must match the circuit exactly")
+        normalized_parameters: dict[str, EISFittedParameter] = {}
+        fitted_values: dict[str, float] = {}
+        for definition in definitions:
+            parameter = supplied[definition.key]
+            if not isinstance(parameter, EISFittedParameter):
+                raise TypeError("EIS fit parameter values must be EISFittedParameter instances")
+            if parameter.key != definition.key:
+                raise EISError("EIS fitted-parameter mapping key contradicts parameter.key")
+            if parameter.vary != definition.spec.vary:
+                raise EISError(f"EIS fitted parameter {definition.key} vary state contradicts circuit")
+            if parameter.lower != definition.spec.lower or parameter.upper != definition.spec.upper:
+                raise EISError(f"EIS fitted parameter {definition.key} bounds contradict circuit")
+            lower, upper = _effective_bounds(definition)
+            if not lower <= parameter.value <= upper:
+                raise EISError(
+                    f"EIS fitted parameter {definition.key} violates physical/caller bounds"
+                )
+            normalized_parameters[definition.key] = parameter
+            fitted_values[definition.key] = parameter.value
+
+        evaluated = _evaluate_node(circuit, frequency, fitted_values)
+        if not np.array_equal(best, evaluated):
+            raise EISError("EIS best-fit impedance contradicts circuit and fitted parameters")
+
+        weights: NDArray[np.float64] | None = None
+        if self.weights is not None:
+            weights = _immutable_float_array(self.weights, name="EIS fit weights")
+            if weights.size != n_points or np.any(weights <= 0):
+                raise EISError("EIS fit weights must be positive and align with all points")
+
+        objective_sum_squares = _finite_float(
+            self.objective_sum_squares,
+            name="EIS objective_sum_squares",
+        )
+        if objective_sum_squares < 0:
+            raise EISError("EIS objective_sum_squares must be non-negative")
+        objective = _objective_vector(observed, best, weights)
+        expected_objective_sum_squares = float(np.dot(objective, objective))
+        if not np.isclose(
+            objective_sum_squares,
+            expected_objective_sum_squares,
+            rtol=1e-12,
+            atol=1e-15,
+        ):
+            raise EISError("EIS objective_sum_squares contradicts retained fit arrays/weights")
+
+        n_varying_parameters = _nonnegative_int(
+            self.n_varying_parameters,
+            name="EIS n_varying_parameters",
+        )
+        expected_varying = sum(parameter.vary for parameter in normalized_parameters.values())
+        if n_varying_parameters != expected_varying:
+            raise EISError("EIS n_varying_parameters contradicts fitted parameter state")
+        status = _nonnegative_int(self.status, name="EIS fit status")
+        nfev = _nonnegative_int(self.nfev, name="EIS fit nfev")
+        if not isinstance(self.success, (bool, np.bool_)):
+            raise TypeError("EIS fit success must be boolean")
+        if not isinstance(self.message, str):
+            raise TypeError("EIS fit message must be a string")
+        if self.backend != "scipy.optimize.least_squares":
+            raise EISError("EIS fit backend must be scipy.optimize.least_squares")
+        if self.method != "trf":
+            raise EISError("EIS fit method must be 'trf'")
+
+        object.__setattr__(self, "source_key", self.source_key.strip())
+        object.__setattr__(self, "source_label", self.source_label.strip())
+        object.__setattr__(self, "source_sha256", source_sha256)
+        object.__setattr__(self, "circuit", circuit)
+        object.__setattr__(self, "n_points", n_points)
         object.__setattr__(self, "frequency_hz", frequency)
         object.__setattr__(self, "observed_impedance", observed)
         object.__setattr__(self, "best_fit_impedance", best)
         object.__setattr__(self, "residual_impedance", residual)
-        object.__setattr__(self, "parameters", MappingProxyType(dict(self.parameters)))
-        if self.weights is not None:
-            weights = _immutable_float_array(self.weights, name="EIS fit weights")
-            if weights.size != self.n_points or np.any(weights <= 0):
-                raise EISError("EIS fit weights must be positive and align with all points")
-            object.__setattr__(self, "weights", weights)
+        object.__setattr__(self, "parameters", MappingProxyType(normalized_parameters))
+        object.__setattr__(self, "weights", weights)
+        object.__setattr__(self, "success", bool(self.success))
+        object.__setattr__(self, "message", self.message.strip())
+        object.__setattr__(self, "status", status)
+        object.__setattr__(self, "nfev", nfev)
+        object.__setattr__(self, "objective_sum_squares", objective_sum_squares)
+        object.__setattr__(self, "n_varying_parameters", n_varying_parameters)
 
     @property
     def weighting_mode(self) -> EISWeightingMode:
