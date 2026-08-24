@@ -61,6 +61,9 @@ jobs:
           .venv-smoke/bin/python tests/installed_composition_smoke.py
           CATALYSIS_WORKBENCH_EXPECTED_VERSION=0.4.0 .venv-smoke/bin/python tests/installed_v04_release_smoke.py
 
+      - name: Audit installed v0.5 XAS/XANES surface
+        run: .venv-smoke/bin/python tests/installed_xas_smoke.py
+
       - name: Run documented LSV/XRD/Raman/FTIR/thermal/sorption/composition examples from installed wheel
         run: |
           .venv-smoke/bin/python examples/lsv_quickstart.py
