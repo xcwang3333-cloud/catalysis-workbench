@@ -16,7 +16,6 @@ from catalysis_workbench.experimental.characterization import (
     xanes_relative_energy,
 )
 
-
 source = Series(
     x=np.arange(0.0, 7.0),
     y=np.array([0.7, 0.8, 0.9, 3.0, 3.2, 3.4, 3.6]),
