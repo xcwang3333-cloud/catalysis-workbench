@@ -105,10 +105,9 @@ def _validate_condition_axis(disk: Series, ring: Series) -> None:
             raise RRDEError(
                 f"disk and ring condition axes must have matching {key!r} metadata"
             )
-    if disk.x_axis.name.casefold() == "potential": (
-        _require_potential_reference(disk),
-        _require_potential_reference(ring),
-    )
+    if disk.x_axis.name.casefold() == "potential":
+        _require_potential_reference(disk)
+        _require_potential_reference(ring)
 
 
 def _require_potential_reference(series: Series) -> str:
