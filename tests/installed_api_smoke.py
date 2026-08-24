@@ -39,6 +39,7 @@ from catalysis_workbench.experimental.echem import (
     fit_tafel,
     kl_electron_number,
     normalize_activity,
+    partial_current_density,
     plot_lsv,
     process_lsv,
     rhe_offset_from_she,
@@ -197,7 +198,7 @@ def _smoke_tafel() -> None:
     _assert_close(result.r_squared, 1.0)
 
 
-def _smoke_fe_activity_tof() -> None:
+def _smoke_fe_partial_activity_tof() -> None:
     fe = faradaic_efficiency_from_amount(
         1.0,
         "umol",
@@ -208,6 +209,15 @@ def _smoke_fe_activity_tof() -> None:
     expected_fe = 2.0 * FARADAY_CONSTANT_C_MOL * 1e-6 / 0.5
     _assert_close(fe.fraction.item(), expected_fe)
     _assert_close(fe.denominator_canonical.item(), -0.5)
+
+    partial = partial_current_density(
+        [-10.0],
+        [50.0],
+        fe_unit="%",
+        sign_mode="signed",
+    )
+    _assert_close(partial.values.item(), -5.0)
+    _assert_close(partial.fe_fraction.item(), 0.5)
 
     activity = normalize_activity(
         [-2.0],
@@ -376,7 +386,7 @@ def _smoke_koutecky_levich() -> None:
 
 def _smoke_v0_2_echem() -> None:
     _smoke_tafel()
-    _smoke_fe_activity_tof()
+    _smoke_fe_partial_activity_tof()
     _smoke_cdl_ecsa()
     _smoke_stability()
     _smoke_rrde()
