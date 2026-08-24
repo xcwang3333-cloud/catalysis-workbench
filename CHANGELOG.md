@@ -4,6 +4,10 @@ All notable changes to CatalysisWorkbench are recorded here.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-08-24
+
+The v0.2 release candidate extends the reviewed common-XY foundation into explicit, provenance-rich quantitative electrochemistry while preserving the v0.1 public behavior.
+
 ### Added
 
 - Shared electrochemistry quantity/unit conversion helpers covering potential, current, current density, charge, time, scan rate, area, mass/loading, amount, molar rate, rotation rate, reference names, and explicit electron stoichiometry.
@@ -19,13 +23,14 @@ All notable changes to CatalysisWorkbench are recorded here.
 - Electrochemical stability analysis with caller-declared analysis/baseline/final windows, signed or magnitude retention, missing-value policy, linear drift fitting, stable-key Dataset analysis, time-basis compatibility guards, and shared long-term/summary plotting.
 - RRDE analysis with explicit collection efficiency, exact disk/ring alignment, explicit current-mode handling, standard ORR-style apparent electron-number/peroxide metrics without hidden clipping, and shared publication plotting.
 - Koutecky-Levich analysis with rpm/rps/rad-s canonicalization to angular frequency, free-intercept reciprocal-current regression, explicit total-current versus geometric-current-density basis, transport-constant-explicit apparent electron-number derivation, fit-specific provenance, and shared transformed-data/fit plotting.
+- Gate-A installed-wheel smoke coverage for the reviewed v0.2 electrochemistry surface, including complete public `__all__` resolution and representative #21-#28 numerical paths from a fresh wheel installation.
 
 ### Changed
 
 - LSV/polarization processing now delegates common low-level quantity parsing and conversion to the shared electrochemistry foundation while preserving the reviewed v0.1 public API and numerical behavior.
 - Shared visualization specifications now include categorical style overrides, configurable bar-group width, and error-bar cap size while preserving existing curve-rendering behavior.
-- Development version advanced to `0.2.0.dev0` after the tagged `v0.1.0` release.
-- The planned v0.2 scientific feature sequence #19-#28 is implementation-complete on `main`; the project remains at `0.2.0.dev0` pending a separately defined v0.2 release-hardening/final-version gate.
+- Development version advanced to `0.2.0.dev0` after the tagged `v0.1.0` release and is finalized to `0.2.0` by the Gate-B candidate.
+- The planned v0.2 scientific feature sequence #19-#28 and Gate-A release hardening are complete; creation of a `v0.2.0` Git tag remains the separate Gate-C operation and is not implied by this candidate entry.
 
 ## [0.1.0] - 2026-08-23
 

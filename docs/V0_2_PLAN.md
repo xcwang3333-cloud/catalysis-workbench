@@ -8,12 +8,12 @@ For the project-wide execution model, merge gates, and long-range release map, s
 
 Checkpoint date: 2026-08-24.
 
-- Synchronized `main` checkpoint after the feature-completion documentation pass: `27f52d65a5c700f46163a0eb2a7481eeb2480f8c`.
+- Current `main` checkpoint after Gate-A merge: `8bfea97d0c3d2f68cf05d0da7cd8bc857a555fb7`.
 - **All planned v0.2 implementation Issues #19-#28 are complete and merged.**
-- The development version remains `0.2.0.dev0` in both distribution metadata and runtime version state.
+- **Issue #43 / PR #44 Gate-A release hardening is complete.**
 - There is no remaining open scientific feature Issue in the defined v0.2 sequence.
-- **Active release target: Issue #43 — release hardening, public API audit, and final-version gate definition.**
-- Issue #43 strengthens installed-wheel validation and release policy while deliberately retaining `0.2.0.dev0`.
+- **Active release target: Issue #45 — Gate-B final `0.2.0` version candidate and exact-wheel validation.**
+- The Gate-B branch changes distribution/runtime version together to `0.2.0`; no `v0.2.0` tag is created by this step.
 - The historical [`RELEASING.md`](RELEASING.md) governs v0.1 only; [`V0_2_RELEASING.md`](V0_2_RELEASING.md) defines the v0.2 Gate A/B/C sequence.
 
 GitHub Issues, Pull Requests, merged `main`, and exact-commit CI remain authoritative if this status block becomes stale.
@@ -48,7 +48,8 @@ The reviewed LSV public API from v0.1 remains compatible and reuses the shared #
 - [x] #26 — CV, Cdl, and ECSA.
 - [x] #27 — electrochemical stability analysis.
 - [x] #28 — RRDE and Koutecky-Levich basics.
-- [ ] **#43 — v0.2 release hardening, installed public-API smoke expansion, and final-version gate definition.**
+- [x] #43 — v0.2 Gate-A release hardening, installed public-API smoke expansion, and release-policy definition.
+- [ ] **#45 — Gate-B final `0.2.0` version candidate and release validation.**
 
 ## Final implemented v0.2 scientific scope
 
@@ -149,7 +150,7 @@ The complete implementation now enforces these shared expectations:
 10. [x] #27 — stability analysis.
 11. [x] #28 — RRDE/K-L basics.
 
-The scientific sequence is complete. Repository issue/PR numbering is shared, so do not fabricate a numerical continuation from #28; the next real contract is Issue #43.
+The scientific sequence is complete. Repository issue/PR numbering is shared; release work continues through actual GitHub Issues rather than fabricating a numerical scientific continuation from #28.
 
 ## Mandatory feature loop
 
@@ -173,32 +174,41 @@ prior-art scan
 
 Release-hardening/version-gate work uses the same exact-head discipline with release/API/packaging/version review in place of scientific-feature review.
 
-## Active release-hardening contract — #43 / Gate A
+## Completed release-hardening contract — #43 / Gate A
 
-Feature completion does **not** itself create a release. Issue #43 is the Gate-A hardening step and must leave the package at `0.2.0.dev0`.
-
-Gate A requires:
+Gate A completed at `0.2.0.dev0` and established:
 
 1. installed-wheel import provenance proving imports do not resolve from repository `src/`;
 2. exact installed distribution/runtime version equality;
 3. complete package-level `__all__` resolution with duplicate/empty export guards;
-4. representative installed-wheel v0.2 calculations for Tafel, FE, activity, TOF/TOFapp, Cdl/ECSA, stability, RRDE, and K-L using explicit scientific inputs/metadata;
-5. retained v0.1 LSV/XRD/Raman installed-wheel smoke and documented examples;
-6. Ruff, full pytest, wheel build, fresh environment installation, and `pip check`;
-7. release/API/packaging review of the exact head;
-8. no scientific algorithm changes, no final version bump, and no tag.
+4. representative installed-wheel v0.2 calculations for Tafel, FE, product partial current, activity, TOF/TOFapp, Cdl/ECSA, stability, RRDE, and K-L using explicit scientific inputs/metadata;
+5. retained LSV/XRD/Raman installed-wheel smoke and documented examples;
+6. Ruff, full pytest, wheel build, fresh-environment installation, and `pip check`;
+7. two-pass release/API/packaging review;
+8. a reviewed Gate-A/Gate-B/Gate-C release policy in [`V0_2_RELEASING.md`](V0_2_RELEASING.md).
 
-## Final version and tag handoff — Gate B / Gate C
+## Active final-version contract — #45 / Gate B
 
-Only after Issue #43/Gate A is completed may a separate Gate-B version candidate be considered. Gate B changes both version declarations together to `0.2.0`, reruns the complete final-version CI/wheel smoke, and receives formal release/API/packaging/version review.
+Gate B changes both version declarations together to `0.2.0` and must independently revalidate the final-version artifact. It requires:
 
-Gate C is the separate tag operation. `v0.2.0` may be created only from the reviewed Gate-B `main` commit after an explicit release authorization and changelog-date recheck.
+1. `[project].version == catalysis_workbench.__version__ == "0.2.0"`;
+2. a built `catalysis_workbench-0.2.0-*.whl`;
+3. fresh-venv wheel install plus `pip check`;
+4. complete installed public `__all__` resolution from the wheel, not repository `src/`;
+5. the unchanged representative #21-#28 installed numerical smoke and LSV/XRD/Raman installed examples;
+6. an explicit `[0.2.0] - 2026-08-24` changelog candidate entry and a fresh `[Unreleased]` section;
+7. two-pass release/API/packaging/version review on the exact final-version head;
+8. no scientific/API changes, no v0.3 feature work, no package publication, and no tag creation.
+
+## Tag handoff — Gate C
+
+Gate C is the separate tag operation. `v0.2.0` may be created only from the reviewed Gate-B `main` commit after explicit release authorization and changelog-date recheck. Merging Gate B is not itself tag authorization.
 
 Package-registry publication remains a separate policy decision and is not implied by completing v0.2 features, Gate A/B, or by creating a Git tag.
 
 ## v0.3 transition boundary
 
-Do not mix v0.3 feature implementation into Issue #43 or a v0.2 final-version branch. The repository should first record whether v0.2 is being finalized through Gate B/C or intentionally retained as a development checkpoint. Once that transition is explicit, v0.3 issues can be opened from the appropriate reviewed `main` state.
+Do not mix v0.3 feature implementation into the v0.2 final-version branch. The repository should complete the Gate-B transition and record the Gate-C decision before beginning v0.3 implementation from the reviewed `main` state.
 
 ## Status synchronization
 

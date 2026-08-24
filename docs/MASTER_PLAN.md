@@ -22,13 +22,13 @@ Checkpoint date: 2026-08-24.
 
 - Repository: `xcwang3333-cloud/catalysis-workbench`.
 - Stable integration branch: `main`.
-- Current synchronized `main` checkpoint: `27f52d65a5c700f46163a0eb2a7481eeb2480f8c` (`docs: synchronize completed v0.2 implementation state (#42)`).
+- Current synchronized `main` checkpoint: `8bfea97d0c3d2f68cf05d0da7cd8bc857a555fb7` (`release: harden v0.2 installed API and release gates (#44)`).
 - v0.1 scientific/common-XY foundation is released as v0.1.0.
 - **All planned v0.2 implementation Issues #19-#28 are complete and merged.**
-- The distribution/runtime development version remains intentionally `0.2.0.dev0`.
-- **Active target: Issue #43 — v0.2 release hardening, public API audit, and final-version gate definition.**
-- Issue #43 must complete while the package remains `0.2.0.dev0`; it does not authorize a final version bump or tag.
-- A final `0.2.0` version candidate and `v0.2.0` tag remain separate later gates governed by [`V0_2_RELEASING.md`](V0_2_RELEASING.md).
+- **Gate A / Issue #43 is complete and merged through PR #44.**
+- **Active target: Issue #45 — Gate-B final `0.2.0` version candidate and release validation.**
+- The Gate-B branch changes distribution/runtime version together from `0.2.0.dev0` to `0.2.0` and must rerun the complete exact-head package/public-API gate.
+- A `v0.2.0` Git tag remains a separate Gate-C operation after Gate B merges and requires explicit release authorization.
 
 Live GitHub issue/PR state remains authoritative if this checkpoint becomes stale.
 
@@ -39,7 +39,7 @@ The detailed release scope is maintained in [`ROADMAP.md`](ROADMAP.md). The inte
 | Release | Primary scope | Planning state |
 | --- | --- | --- |
 | v0.1.x | common XY core, tabular I/O, reusable processing, LSV, XRD, Raman, publication curve rendering/export | complete/released foundation |
-| v0.2.x | quantitative core electrochemistry and shared scatter/bar summaries | implementation complete; release hardening active |
+| v0.2.x | quantitative core electrochemistry and shared scatter/bar summaries | implementation + Gate A complete; Gate-B final-version candidate active |
 | v0.3.x | extended experimental processing | planned |
 | v0.4.x | advanced experimental analysis | planned |
 | v0.5.x | XAS, structures, basic DFT energetics | planned |
@@ -69,18 +69,20 @@ The detailed v0.2 scientific contract is maintained in [`V0_2_PLAN.md`](V0_2_PLA
 - #27 — explicit electrochemical stability analysis.
 - #28 — RRDE and Koutecky-Levich basics.
 - PR #42 — completion-state documentation synchronization.
+- #43 / PR #44 — Gate-A release hardening, full installed-wheel public-API audit, representative #21-#28 numerical smoke, and v0.2 Gate A/B/C release-policy definition.
 
-### Active release-hardening target — #43
+### Active final-version target — #45 / Gate B
 
-Issue #43 owns the transition from feature-complete development state to a release-ready `0.2.0.dev0` checkpoint. The work is intentionally non-scientific and non-versioning:
+Issue #45 owns the final-version candidate. Its scope is intentionally narrow:
 
-1. audit the complete installed public API for the full v0.2 surface;
-2. extend installed-wheel smoke beyond import/name resolution to representative v0.2 numerical calculations;
-3. rerun wheel build, fresh-environment install, `pip check`, Ruff, full pytest, public-API smoke, and documented examples;
-4. define the dedicated v0.2 Gate-A/Gate-B/Gate-C release procedure;
-5. keep both version declarations at `0.2.0.dev0` throughout release hardening.
+1. change both version declarations together from `0.2.0.dev0` to `0.2.0`;
+2. establish the `[0.2.0] - 2026-08-24` changelog candidate entry while retaining a fresh `[Unreleased]` section;
+3. rerun Ruff, full pytest, wheel build, fresh-environment install, `pip check`, installed public-API smoke, representative #21-#28 numerical smoke, and documented LSV/XRD/Raman examples against the final-version wheel;
+4. verify the built distribution and runtime version both report exactly `0.2.0`;
+5. perform two-pass release/API/packaging/version review on the exact head;
+6. keep scientific algorithms, public APIs, v0.3 work, package-registry publication, and Git tagging out of the Gate-B PR.
 
-Only after #43 is reviewed, merged, and closed may a separate final-version candidate be considered. No `0.2.0` bump or `v0.2.0` tag is implicit in completing #43.
+Only after Gate B is reviewed, merged, and rechecked on `main` may Gate C be considered. Merging Gate B does not itself create `v0.2.0`.
 
 ## Mandatory development loop
 
@@ -179,4 +181,4 @@ This lightweight resynchronization is the required checkpoint between feature/re
 
 ## Immediate next action
 
-Complete Issue #43 on a dedicated release-hardening branch from `main=27f52d65a5c700f46163a0eb2a7481eeb2480f8c`: strengthen installed-wheel smoke for representative v0.2 electrochemistry, validate the full package/public API in CI, and review [`V0_2_RELEASING.md`](V0_2_RELEASING.md). Keep both version declarations at `0.2.0.dev0`. Do not create a final-version PR or tag until #43 is completed and the separate Gate-B/Gate-C transition is explicitly authorized.
+Complete Issue #45 on `release/v0.2-final` created exactly from `main=8bfea97d0c3d2f68cf05d0da7cd8bc857a555fb7`: validate the synchronized `0.2.0` source/runtime version, build and smoke-test the final-version wheel in a fresh environment, perform two-pass release/API/packaging/version review, then use the exact-head Ready/merge gate. Do not create `v0.2.0` or publish a package during Gate B; Gate C remains separately authorized.
