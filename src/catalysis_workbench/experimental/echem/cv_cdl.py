@@ -66,6 +66,15 @@ def _positive_scalar(value: object, *, name: str) -> float:
     return numeric
 
 
+def _finite_scalar(value: object, *, name: str) -> float:
+    if isinstance(value, (bool, np.bool_)) or not isinstance(value, Real):
+        raise CdlError(f"{name} must be a real numeric scalar")
+    numeric = float(value)
+    if not isfinite(numeric):
+        raise CdlError(f"{name} must be finite")
+    return numeric
+
+
 def _required_text(value: object, *, name: str) -> str:
     if not isinstance(value, str):
         raise CdlError(f"{name} must be a string")
@@ -89,6 +98,16 @@ def _difference_mode(value: object) -> CdlDifferenceMode:
     if value == "magnitude":
         return "magnitude"
     raise CdlError("difference_mode must be 'signed' or 'magnitude'")
+
+
+def _cdl_current_basis(value: object) -> CdlCurrentBasis:
+    if value == "current":
+        return "current"
+    if value == "geometric_current_density":
+        return "geometric_current_density"
+    raise CdlError(
+        "current_basis must be 'current' or 'geometric_current_density'"
+    )
 
 
 def _reference(series: Series) -> str:
@@ -228,11 +247,10 @@ class CVSweepPair:
         if anodic_ref.casefold() != cathodic_ref.casefold():
             raise CdlError("anodic and cathodic potential references must match")
 
-        scan_rate = _scan_rate_v_s(self.scan_rate_value, self.scan_rate_unit)
+        _scan_rate_v_s(self.scan_rate_value, self.scan_rate_unit)
         object.__setattr__(self, "key", key)
         object.__setattr__(self, "scan_rate_value", float(self.scan_rate_value))
         object.__setattr__(self, "scan_rate_unit", self.scan_rate_unit.strip())
-        object.__setattr__(self, "_scan_rate_cache", scan_rate)
 
     @property
     def scan_rate_v_s(self) -> float:
@@ -291,7 +309,7 @@ def sample_cv_current(
     current = _canonical_current(series)
     try:
         target_array = potential_to_v(
-            _positive_or_finite(potential_value, name="potential_value"),
+            _finite_scalar(potential_value, name="potential_value"),
             potential_unit,
             allow_nan=False,
         )
@@ -330,15 +348,6 @@ def sample_cv_current(
     return y0 + fraction * (y1 - y0)
 
 
-def _positive_or_finite(value: object, *, name: str) -> float:
-    if isinstance(value, (bool, np.bool_)) or not isinstance(value, Real):
-        raise CdlError(f"{name} must be a real numeric scalar")
-    numeric = float(value)
-    if not isfinite(numeric):
-        raise CdlError(f"{name} must be finite")
-    return numeric
-
-
 @dataclass(frozen=True, slots=True, eq=False)
 class CdlFitResult:
     """Immutable free-intercept linear Cdl fit with full scan-rate provenance."""
@@ -371,20 +380,26 @@ class CdlFitResult:
         if np.any(scan_rate <= 0) or np.any(np.diff(scan_rate) <= 0):
             raise CdlError("canonical scan rates must be positive and strictly increasing")
 
-        if self.current_basis not in {"current", "geometric_current_density"}:
-            raise CdlError(
-                "current_basis must be 'current' or 'geometric_current_density'"
-            )
-        target = _positive_or_finite(self.target_potential_v, name="target_potential_v")
+        current_basis = _cdl_current_basis(self.current_basis)
+        target = _finite_scalar(self.target_potential_v, name="target_potential_v")
         reference = _required_text(self.reference, name="reference")
         sampling = _sampling_method(self.sampling_method)
         difference = _difference_mode(self.difference_mode)
         slope = _positive_scalar(self.slope, name="Cdl slope")
-        intercept = _positive_or_finite(self.intercept, name="fit intercept")
-        r_squared = _positive_or_finite(self.r_squared, name="r_squared")
+        intercept = _finite_scalar(self.intercept, name="fit intercept")
+        r_squared = _finite_scalar(self.r_squared, name="r_squared")
         if r_squared < -1e-12 or r_squared > 1.0 + 1e-12:
             raise CdlError("r_squared must lie between 0 and 1")
         r_squared = min(1.0, max(0.0, r_squared))
+
+        expected_delta = (anodic - cathodic) / 2.0
+        if difference == "magnitude":
+            expected_delta = np.abs(expected_delta)
+        if not np.allclose(delta, expected_delta, rtol=1e-12, atol=1e-15):
+            raise CdlError(
+                "delta_half is inconsistent with anodic/cathodic current and "
+                "difference_mode"
+            )
 
         provenance = tuple(self.pair_provenance)
         if len(provenance) != scan_rate.size:
@@ -398,10 +413,20 @@ class CdlFitResult:
         if not np.allclose(scan_rate, prov_rates, rtol=1e-12, atol=0.0):
             raise CdlError("pair provenance scan rates do not match fit scan rates")
 
+        fitted = slope * scan_rate + intercept
+        ss_res = float(np.sum((delta - fitted) ** 2))
+        ss_tot = float(np.sum((delta - np.mean(delta)) ** 2))
+        if ss_tot == 0.0:
+            raise CdlError("Cdl response has zero variance and cannot define R-squared")
+        expected_r2 = 1.0 - ss_res / ss_tot
+        if not np.isclose(r_squared, expected_r2, rtol=1e-10, atol=1e-12):
+            raise CdlError("r_squared is inconsistent with the supplied linear fit")
+
         object.__setattr__(self, "scan_rate_v_s", scan_rate)
         object.__setattr__(self, "anodic_current", anodic)
         object.__setattr__(self, "cathodic_current", cathodic)
         object.__setattr__(self, "delta_half", delta)
+        object.__setattr__(self, "current_basis", current_basis)
         object.__setattr__(self, "target_potential_v", target)
         object.__setattr__(self, "reference", reference)
         object.__setattr__(self, "sampling_method", sampling)
@@ -461,7 +486,7 @@ def fit_cdl(
         target = float(
             np.asarray(
                 potential_to_v(
-                    _positive_or_finite(potential_value, name="potential_value"),
+                    _finite_scalar(potential_value, name="potential_value"),
                     potential_unit,
                     allow_nan=False,
                 )
@@ -557,8 +582,12 @@ class CdlFitCollection:
     items: tuple[tuple[str, CdlFitResult], ...]
 
     def __post_init__(self) -> None:
+        raw_items = tuple(self.items)
         normalized: list[tuple[str, CdlFitResult]] = []
-        for key, result in tuple(self.items):
+        for item in raw_items:
+            if not isinstance(item, tuple) or len(item) != 2:
+                raise CdlError("CdlFitCollection items must be (key, result) pairs")
+            key, result = item
             stable_key = _required_text(key, name="CdlFitCollection key")
             if not isinstance(result, CdlFitResult):
                 raise TypeError("CdlFitCollection values must be CdlFitResult instances")
@@ -648,11 +677,8 @@ class ECSAResult:
 
     def __post_init__(self) -> None:
         cdl = _positive_scalar(self.cdl_value, name="cdl_value")
-        if self.cdl_current_basis not in {"current", "geometric_current_density"}:
-            raise CdlError("invalid cdl_current_basis")
-        expected_cdl_unit = (
-            "F" if self.cdl_current_basis == "current" else "F/cm^2"
-        )
+        current_basis = _cdl_current_basis(self.cdl_current_basis)
+        expected_cdl_unit = "F" if current_basis == "current" else "F/cm^2"
         if self.cdl_unit != expected_cdl_unit:
             raise CdlError("cdl_unit is inconsistent with cdl_current_basis")
         specific = _positive_scalar(
@@ -681,7 +707,7 @@ class ECSAResult:
         total = _positive_scalar(self.total_cdl_f, name="total_cdl_f")
         ecsa = _positive_scalar(self.ecsa_cm2, name="ecsa_cm2")
         area = self.geometric_area_cm2
-        if self.cdl_current_basis == "current":
+        if current_basis == "current":
             if area is not None:
                 raise CdlError(
                     "geometric_area_cm2 must be omitted for total-current-derived Cdl"
@@ -697,6 +723,7 @@ class ECSAResult:
             raise CdlError("ecsa_cm2 is inconsistent with Cdl and specific capacitance")
 
         object.__setattr__(self, "cdl_value", cdl)
+        object.__setattr__(self, "cdl_current_basis", current_basis)
         object.__setattr__(self, "specific_capacitance_value", specific)
         object.__setattr__(self, "specific_capacitance_unit", canonical_unit)
         object.__setattr__(self, "specific_capacitance_f_cm2", supplied_specific)
