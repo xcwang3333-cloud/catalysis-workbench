@@ -20,13 +20,11 @@ from .sorption import SorptionError, SorptionWindow, validate_sorption_series
 _CANONICAL_LOADING_UNITS = frozenset(
     {"mmol/g", "mol/kg", "mg/g", "cm^3(STP)/g"}
 )
-_FORBIDDEN_BET_PROCESSING_OPERATIONS = frozenset(
+_ALLOWED_BET_PROCESSING_OPERATIONS = frozenset(
     {
-        "offset",
-        "normalize",
-        "savgol",
-        "interpolate",
-        "subtract_baseline",
+        "sorption.prepare",
+        "crop",
+        "sorption.convert_relative_pressure",
     }
 )
 
@@ -108,18 +106,18 @@ def _validate_bet_processing_history(series: Series) -> None:
         return
     if not isinstance(history, (list, tuple)):
         raise BETError("BET processing_history metadata must be an ordered list/tuple")
-    forbidden: list[str] = []
+    unsupported: list[str] = []
     for entry in history:
         if not isinstance(entry, Mapping):
             raise BETError("BET processing_history entries must be mappings")
         operation = str(entry.get("operation", "")).strip()
-        if operation in _FORBIDDEN_BET_PROCESSING_OPERATIONS:
-            forbidden.append(operation)
-    if forbidden:
-        names = ", ".join(sorted(set(forbidden)))
+        if operation not in _ALLOWED_BET_PROCESSING_OPERATIONS:
+            unsupported.append(operation or "<missing operation>")
+    if unsupported:
+        names = ", ".join(sorted(set(unsupported)))
         raise BETError(
-            "quantitative BET requires physical measured loading without y/grid-altering "
-            f"processing; forbidden processing history: {names}"
+            "quantitative BET accepts only prepared measured data, explicit measured-point "
+            f"crop, and explicit relative-pressure conversion; unsupported processing: {names}"
         )
 
 
