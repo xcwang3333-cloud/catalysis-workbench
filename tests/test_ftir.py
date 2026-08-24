@@ -265,6 +265,12 @@ def test_band_measurement_interpolates_only_explicit_window_boundaries():
     assert result.integration_n_points == 5
 
 
+def test_band_measurement_rejects_nan_needed_for_boundary_interpolation():
+    source = _absorbance(y=(np.nan, 1.0, 2.0, 1.0, 0.0))
+    with pytest.raises(FTIRError, match="boundary interpolation"):
+        measure_ftir_band(source, FTIRBand(1050.0, 1350.0, "inner"))
+
+
 def test_band_measurement_keeps_net_sign_and_absolute_mode_explicit():
     negative = _absorbance(y=(0.0, -1.0, -2.0, -1.0, 0.0))
     band = FTIRBand(1000.0, 1400.0)
