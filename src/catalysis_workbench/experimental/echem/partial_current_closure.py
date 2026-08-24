@@ -28,7 +28,12 @@ class PartialCurrentClosureError(ValueError):
     """Raised when closure inputs violate the scientific contract."""
 
 
-def _immutable_float_array(values: ArrayLike, *, name: str) -> NDArray[np.float64]:
+def _immutable_float_array(
+    values: ArrayLike,
+    *,
+    name: str,
+    allow_inf: bool = False,
+) -> NDArray[np.float64]:
     try:
         source = np.asarray(values)
     except (TypeError, ValueError) as exc:
@@ -36,8 +41,9 @@ def _immutable_float_array(values: ArrayLike, *, name: str) -> NDArray[np.float6
     if source.size == 0 or np.iscomplexobj(source) or source.dtype.kind not in "iuf":
         raise PartialCurrentClosureError(f"{name} must contain real numeric values")
     normalized = np.ascontiguousarray(source, dtype=np.float64)
-    if not np.isfinite(normalized).all():
-        raise PartialCurrentClosureError(f"{name} must contain only finite values")
+    if np.isnan(normalized).any() or (not allow_inf and np.isinf(normalized).any()):
+        qualifier = "NaN" if allow_inf else "non-finite values"
+        raise PartialCurrentClosureError(f"{name} must not contain {qualifier}")
     buffer = normalized.tobytes(order="C")
     result = np.frombuffer(buffer, dtype=np.float64, count=normalized.size)
     result = result.reshape(normalized.shape)
@@ -97,21 +103,38 @@ class PartialCurrentClosureResult:
         )
         residual = _immutable_float_array(self.residual, name="closure residual")
         absolute = _immutable_float_array(self.absolute_error, name="closure absolute error")
-        relative = _immutable_float_array(self.relative_error, name="closure relative error")
+        relative = _immutable_float_array(
+            self.relative_error,
+            name="closure relative error",
+            allow_inf=True,
+        )
         passed = _immutable_bool_array(self.passed, name="closure pass mask")
-        shapes = {total.shape, summed.shape, residual.shape, absolute.shape, relative.shape, passed.shape}
+        shapes = {
+            total.shape,
+            summed.shape,
+            residual.shape,
+            absolute.shape,
+            relative.shape,
+            passed.shape,
+        }
         if len(shapes) != 1:
             raise PartialCurrentClosureError("closure result arrays must have matching shapes")
         mode = _normalize_mode(self.comparison_mode)
         tolerance = _normalize_tolerance(self.tolerance_fraction)
         expected_residual = summed - total
         if not np.allclose(residual, expected_residual, rtol=0.0, atol=0.0):
-            raise PartialCurrentClosureError("closure residual is inconsistent with summed and total current")
+            raise PartialCurrentClosureError(
+                "closure residual is inconsistent with summed and total current"
+            )
         if not np.allclose(absolute, np.abs(residual), rtol=0.0, atol=0.0):
-            raise PartialCurrentClosureError("closure absolute_error is inconsistent with residual")
+            raise PartialCurrentClosureError(
+                "closure absolute_error is inconsistent with residual"
+            )
         expected_passed = relative <= tolerance
         if not np.array_equal(passed, expected_passed):
-            raise PartialCurrentClosureError("closure pass mask is inconsistent with tolerance")
+            raise PartialCurrentClosureError(
+                "closure pass mask is inconsistent with tolerance"
+            )
         sources = tuple(self.partial_sources)
         if not all(isinstance(source, SourceDataRef) for source in sources):
             raise TypeError("partial_sources must contain only SourceDataRef instances")
