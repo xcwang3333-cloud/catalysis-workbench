@@ -26,7 +26,7 @@ The release-hardening PR must keep both version declarations at `0.2.0.dev0` and
 6. `tests/installed_api_smoke.py` proves imports resolve from the installed wheel rather than the repository `src/` tree.
 7. Installed distribution metadata and runtime `catalysis_workbench.__version__` agree exactly.
 8. Every documented package-level `__all__` surface is non-empty, contains no duplicate/invalid export names, and every exported name resolves.
-9. The installed-wheel smoke executes representative v0.2 electrochemistry calculations, not only import/name resolution. Compact synthetic checks cover Tafel, Faradaic efficiency, activity normalization, TOF/TOFapp, Cdl/ECSA, stability, RRDE, and Koutecky-Levich with explicit scientific metadata/inputs.
+9. The installed-wheel smoke executes representative v0.2 electrochemistry calculations, not only import/name resolution. Compact synthetic checks cover Tafel, Faradaic efficiency, product partial-current density, activity normalization, TOF/TOFapp, Cdl/ECSA, stability, RRDE, and Koutecky-Levich with explicit scientific metadata/inputs.
 10. The reviewed v0.1 LSV/XRD/Raman installed-wheel workflows and documented examples still run successfully.
 11. README, CHANGELOG, MASTER_PLAN, V0_2_PLAN, and module documentation do not claim a final `0.2.0` release while the package remains a development version.
 12. Formal release/API/packaging review has no unresolved blockers.
@@ -50,7 +50,7 @@ The final-version PR should contain no unrelated scientific feature work. Before
 5. All public `__all__` surfaces resolve from the installed wheel.
 6. The representative v0.2 installed-wheel smoke calculations pass unchanged with the final version.
 7. The documented LSV/XRD/Raman installed workflows/examples pass unchanged.
-8. CHANGELOG/README/release documents describe the candidate consistently and do not claim that a tag already exists.
+8. `CHANGELOG.md` converts the v0.2 work from `[Unreleased]` into an explicit `[0.2.0]` candidate section with the intended release date, while README/release documents describe the candidate consistently and do not claim that a tag already exists.
 9. Formal release/API/packaging/version review has no unresolved blockers.
 10. The PR head SHA used by the merge gate is exactly the head that passed CI and review, and it is not behind `main`.
 
