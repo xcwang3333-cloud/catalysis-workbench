@@ -76,7 +76,7 @@ def test_curve_plot_rejects_scatter_error_input():
             data,
             FigureSpec(),
             kind="curve",
-            errors=ScatterError(y=(1.0, 1.0, 1.0)),
+            errors=ScatterError(yerr=(1.0, 1.0, 1.0)),
         )
 
 
