@@ -308,7 +308,9 @@ class XPSBackgroundResult:
         object.__setattr__(self, "settings", _freeze_scalar_metadata(self.settings))
 
 
-def _complete_background_input(series: Series) -> tuple[Series, np.ndarray, np.ndarray, XPSDirection]:
+def _complete_background_input(
+    series: Series,
+) -> tuple[Series, np.ndarray, np.ndarray, XPSDirection]:
     canonical = _canonicalize_xps_series(series)
     x = np.asarray(canonical.x, dtype=np.float64)
     y = np.asarray(canonical.y, dtype=np.float64)
