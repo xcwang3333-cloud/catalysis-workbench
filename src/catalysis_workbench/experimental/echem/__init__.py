@@ -27,6 +27,24 @@ from .lsv import (
     rhe_offset_from_she,
     to_current_density,
 )
+from .partial_current import (
+    FaradaicEfficiencyInputUnit,
+    PartialCurrentDensityError,
+    PartialCurrentDensityResult,
+    SignMode,
+    partial_current_density,
+)
+from .partial_current_closure import (
+    ClosureComparisonMode,
+    PartialCurrentClosureError,
+    PartialCurrentClosureResult,
+    partial_current_closure,
+    partial_current_closure_dataset,
+)
+from .partial_current_series import (
+    partial_current_density_dataset,
+    partial_current_density_series,
+)
 from .provenance import (
     AnalysisProvenance,
     FitWindow,
@@ -78,12 +96,7 @@ def plot_lsv(
     *,
     preset: str = "publication",
 ) -> tuple[Figure, Axes]:
-    """Lazily dispatch to the publication LSV adapter.
-
-    Keeping the visualization import inside the call preserves the architecture rule
-    that numerical electrochemistry can be imported and used without importing
-    Matplotlib/the visualization package.
-    """
+    """Lazily dispatch to the publication LSV adapter."""
     from .plotting import plot_lsv as _plot_lsv
 
     return _plot_lsv(data, spec, preset=preset)
@@ -121,13 +134,37 @@ def plot_faradaic_efficiency(
     )
 
 
+def plot_partial_current_density(
+    data: Series | Dataset,
+    spec: FigureSpec | None = None,
+    *,
+    kind: str = "scatter",
+    errors: ScatterError | Mapping[str, ScatterError] | None = None,
+    preset: str = "publication",
+) -> tuple[Figure, Axes]:
+    """Lazily render already calculated product partial-current data."""
+    from .partial_current_plotting import (
+        plot_partial_current_density as _plot_partial_current_density,
+    )
+
+    return _plot_partial_current_density(
+        data,
+        spec,
+        kind=kind,  # type: ignore[arg-type]
+        errors=errors,
+        preset=preset,
+    )
+
+
 __all__ = [
     "AnalysisProvenance",
+    "ClosureComparisonMode",
     "CurrentSign",
     "EchemQuantityError",
     "FARADAY_CONSTANT_C_MOL",
     "FaradaicEfficiencyClosure",
     "FaradaicEfficiencyError",
+    "FaradaicEfficiencyInputUnit",
     "FaradaicEfficiencyMode",
     "FaradaicEfficiencyOutputUnit",
     "FaradaicEfficiencyResult",
@@ -135,6 +172,11 @@ __all__ = [
     "GAS_CONSTANT_J_MOL_K",
     "LSVError",
     "LSVProcessingConfig",
+    "PartialCurrentClosureError",
+    "PartialCurrentClosureResult",
+    "PartialCurrentDensityError",
+    "PartialCurrentDensityResult",
+    "SignMode",
     "SourceDataRef",
     "TafelBranch",
     "TafelError",
@@ -159,8 +201,14 @@ __all__ = [
     "mass_to_g",
     "molar_rate_to_mol_s",
     "normalize_reference_name",
+    "partial_current_closure",
+    "partial_current_closure_dataset",
+    "partial_current_density",
+    "partial_current_density_dataset",
+    "partial_current_density_series",
     "plot_faradaic_efficiency",
     "plot_lsv",
+    "plot_partial_current_density",
     "plot_tafel",
     "potential_to_v",
     "process_lsv",

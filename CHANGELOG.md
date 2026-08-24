@@ -12,6 +12,7 @@ All notable changes to CatalysisWorkbench are recorded here.
 - Generic single-series/grouped categorical bar rendering with stable category/series keys, optional explicit errors, category overrides, and shared exact-size figure/export behavior.
 - Explicit Tafel analysis with caller-supplied fit windows, physical branch plus numeric current-sign declarations, signed slope/intercept/R^2 reporting, immutable provenance-rich results, stable-key Dataset fitting, and shared publication plotting.
 - Explicit Faradaic-efficiency analysis for amount/charge and rate/current formulations, immutable signed-denominator results, stable-key multi-product Series/Dataset workflows, total-FE closure QA without clipping/renormalization, and shared scatter/curve publication plotting.
+- Product partial-current density analysis from explicit FE and total current density, including signed/magnitude conventions, exact condition-grid validation, stable-key multi-product Dataset workflows, deterministic source provenance, diagnostic closure QA without renormalization, and shared scatter/curve publication plotting.
 
 ### Changed
 
