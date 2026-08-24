@@ -25,11 +25,15 @@ Checkpoint date: 2026-08-24.
 - EIS final exact-head CI: run #285 / `32746265252` — success on `18d81a0029cc851c136420fc550ec3e823094862`.
 - EIS final-head review records: `5009748594`, `5009757335` (COMMENT because GitHub rejects self-APPROVE).
 - EIS reference/license boundary is recorded in `REFERENCES.md`: `ECSHackWeek/impedance.py` (MIT) and `vyrjana/pyimpspec` (GPL-3.0) are reference-only and neither is a dependency.
+- quantitative BET fitting and Rouquerol consistency checks: Issue #95 / PR #96 — complete at `c76a49d64e096d6db001c27c598356baa797f3a9`.
+- BET final exact-head CI: run #294 / `32752441329` — success on `47aee74a5a6b16dbf60bb95c2910ccd197205f2f`.
+- BET final-head review records: `5010325152`, `5010328048`.
+- BET prior-art/license boundary is recorded in `REFERENCES.md`: pyGAPS, BETSI, SESAMI_web, and BEaTmap are current MIT reference-only projects; no implementation was copied and no new dependency was added.
 - reviewed runtime dependency: `lmfit>=1.3.4` (BSD-3-Clause upstream).
 - project version remains `0.3.0`.
 - `v0.3.0` remains fixed on `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`.
 - no v0.4 tag, GitHub Release, or package-registry publication has been authorized or performed.
-- active scientific stage after the post-EIS docs checkpoint: **quantitative BET fitting**.
+- active scientific stage after the post-BET docs checkpoint: **product calibration / GC-HPLC-NMR-derived quantification**.
 
 ## v0.4 dependency order
 
@@ -38,8 +42,8 @@ Checkpoint date: 2026-08-24.
 3. **Constrained XPS components/doublets and shared-fit integration — complete (#83 / #84).**
 4. **XPS publication plotting and fit diagnostics/summary — complete (#87 / #88).**
 5. **EIS semantics, Nyquist/Bode plotting and basic equivalent-circuit fitting — complete (#91 / #92).**
-6. **Quantitative BET fitting — active next stage.**
-7. Product calibration and GC/HPLC/NMR-derived quantification.
+6. **Quantitative BET fitting — complete (#95 / #96).**
+7. **Product calibration and GC/HPLC/NMR-derived quantification — active next stage.**
 8. Completion-state synchronization and later release-hardening/version gates.
 
 Later consumers may refine an Issue boundary, but they must not force hidden scientific assumptions into shared numerical infrastructure.
@@ -284,44 +288,80 @@ Reviewed behavior includes:
 
 Full EIS behavior is documented in [`EIS.md`](EIS.md), with license decisions retained in [`REFERENCES.md`](REFERENCES.md).
 
-## Active quantitative BET stage
+## Completed quantitative BET stage
 
-The next scientific Issue must refresh adsorption/BET prior art and licenses, then freeze an explicit quantitative contract before implementation. The existing v0.3 gas-sorption module remains the measured-isotherm foundation; quantitative BET must build on it rather than introducing a second incompatible isotherm data model.
+Issue #95 / PR #96 delivered the sixth v0.4 scientific block as an explicit, fail-closed consumer of the existing measured gas-sorption foundation rather than a second isotherm hierarchy.
 
-### Initial quantitative BET scope
+### Quantitative BET scientific/API contract
 
-The first reviewed quantitative BET stage should cover:
+The reviewed implementation includes:
 
-- validation that input is an explicit adsorption isotherm on a supported relative-pressure and loading basis;
-- the explicit BET transform and a caller-visible candidate pressure/point region;
-- direction/order-safe handling without hidden sorting, interpolation or synthesized points;
-- explicit Rouquerol-style physical-consistency checks for candidate regions rather than choosing a region from linearity alone;
-- linear regression only on the explicit accepted BET transform region;
-- retained slope/intercept, BET constant `C`, monolayer capacity and surface area with equations and units documented;
-- explicit caller-visible adsorbate molecular cross-sectional area and required loading/molar conversion basis rather than an embedded gas-specific lookup unless separately reviewed;
-- fit/result diagnostics and deterministic source/region/provenance state;
-- passive plotting/summary integration using existing visualization contracts;
-- hand-verifiable synthetic/reference regressions and installed-wheel smoke.
+- explicit adsorption branch and relative-pressure fraction (`P/P0`, unit `1`) input semantics;
+- one caller-visible `SorptionWindow` candidate region containing measured points only, with ascending or descending source order retained;
+- no hidden sorting, interpolation, synthesized boundary points, resampling, smoothing, outlier deletion, or automatic branch inference;
+- exact BET transform `p/[n(1-p)]` and OLS on the exact selected arrays;
+- retained slope, intercept, correlation/`R²`, `C`, monolayer loading, and monolayer relative pressure;
+- three independent required physical checks: positive parameter state, strictly increasing `n(1-p)` with increasing pressure, and fitted monolayer loading strictly inside the selected measured loading span;
+- `evaluate_bet_region()` for auditable candidate/criterion state and `fit_bet()` for accepted fits only;
+- no hidden `R²` threshold or automatic/unique optimum-region claim;
+- explicit loading conversion for `mmol/g`, `mol/kg`, `cm^3(STP)/g`, and caller-molar-mass `mg/g` before area calculation;
+- explicit positive molecular cross-sectional area and no adsorbate-name property lookup;
+- immutable result state that revalidates transforms, regression, derived parameters, consistency, loading conversion, and surface area;
+- fail-closed preprocessing provenance: only reviewed sorption preparation, measured-point crop, and explicit relative-pressure conversion are accepted; unknown or y/grid-altering transformations are rejected;
+- lazy `plot_bet_fit()` draws exact retained BET points and retained OLS line through `FigureSpec` without refitting or recalculating criteria.
 
-### Quantitative BET scientific guardrails
+### Quantitative BET validation and license evidence
 
-- no automatic adsorption/desorption branch inference;
-- no silent pressure-mode or loading-basis conversion;
-- no hidden standard-state assumption for volumetric loading;
-- no silent adsorbate cross-sectional-area lookup;
-- no automatic BET region chosen solely by maximum R² or visual linearity;
-- no acceptance of a mathematically linear region that violates required physical-consistency criteria;
-- no hidden sorting, interpolation, resampling, smoothing or outlier deletion;
-- no pore-size distribution, t-plot, alpha-s, Dubinin, hysteresis classification or advanced adsorption-model fitting in this first quantitative-BET block;
-- numerical analysis and publication rendering remain separate responsibilities;
+- final exact PR head: `47aee74a5a6b16dbf60bb95c2910ccd197205f2f`;
+- CI #294 / run `32752441329` — success;
+- Ruff, full pytest, fresh-wheel install/`pip check`, installed BET fit/plot/export smoke, existing installed smokes and seven quickstarts — success;
+- final-head review records: `5010325152`, `5010328048`;
+- behind=0, mergeable=true and unresolved review threads=0 before merge;
+- expected-head squash merge / reviewed main checkpoint: `c76a49d64e096d6db001c27c598356baa797f3a9`;
+- pyGAPS, BETSI, SESAMI_web, and BEaTmap were directly rechecked as MIT reference-only projects; no implementation code was copied or adapted and no new runtime dependency was added.
+
+Review also hardened two fail-closed boundaries before the final gate: frozen metadata entries are accepted through generic mapping semantics, and the preprocessing guard uses a safe allowlist rather than a future-fragile blacklist.
+
+Full quantitative BET behavior is documented in [`BET.md`](BET.md), with license decisions retained in [`REFERENCES.md`](REFERENCES.md).
+
+## Active product calibration / GC-HPLC-NMR quantification stage
+
+The next scientific Issue must refresh product-calibration and analytical-chemistry prior art/licenses, then freeze an explicit calibration/quantification contract before implementation. This stage should extend the v0.2 FE/product foundation: calibration converts detector response into an explicit quantified amount/concentration state, while FE remains a separate downstream electrochemical calculation.
+
+### Initial product-calibration scope
+
+The first reviewed stage should cover:
+
+- explicit calibration-standard data with response and known amount/concentration units;
+- separation of calibration-model fitting from unknown-sample quantification;
+- caller-visible calibration model form, selected standard/fit range, intercept policy, and optional weighting;
+- retained exact calibration points, model coefficients, fit statistics, units, selected range, source identity and deterministic provenance;
+- an immutable calibration result that can be revalidated against its retained points/model state;
+- unknown-sample response conversion only through an explicit compatible calibration result;
+- caller-visible dilution, injection, aliquot, sample-volume/mass, internal-standard or other multiplicative conversion factors rather than hidden spreadsheet conventions;
+- explicit replicate aggregation and uncertainty availability/propagation state, with unavailable uncertainty left unavailable rather than fabricated as zero;
+- reusable publication plotting/summary adapters only after numerical quantification state is defined;
+- hand-verifiable synthetic/reference regressions and fresh-wheel public-surface smoke.
+
+### Product-calibration scientific guardrails
+
+- no product identity or detector peak assignment inferred from labels;
+- no hidden GC/HPLC/NMR response-factor or internal-standard library;
+- no automatic dilution, injection-volume, aliquot, density, sample-volume/mass, or stoichiometric correction;
+- no automatic model or fit-range choice based solely on maximum `R²`;
+- calibration model and sample quantification remain separate from Faradaic-efficiency/electron-stoichiometry calculation;
+- incompatible response/amount units, invalid calibration state, extrapolation policy violations, or unsupported transformations fail explicitly;
+- raw calibration points and exact transformation provenance remain auditable;
+- no vendor-binary parser, automatic product assignment, chromatographic peak integration, or NMR peak deconvolution in the first calibration block unless separately contracted;
+- numerical quantification and publication rendering remain separate responsibilities;
 - any new dependency requires explicit prior-art/license/packaging review before adoption.
 
 ## Later v0.4 stages
 
-After quantitative BET:
+After product calibration / GC-HPLC-NMR quantification:
 
-1. product calibration / GC-HPLC-NMR quantification;
-2. completion-state synchronization and later release-hardening/version gates.
+1. completion-state synchronization;
+2. later release-hardening/version gates.
 
 ## Prior-art / license decisions
 
@@ -335,11 +375,12 @@ The architecture record remains in [`REFERENCES.md`](REFERENCES.md). Key decisio
 - `Julian-Hochhaus/LG4X-V2` — mixed provenance including GPL-derived portions despite top-level MIT text; workflow/UX reference only;
 - `ECSHackWeek/impedance.py` — MIT; EIS workflow/API/test reference only, no dependency or code copy;
 - `vyrjana/pyimpspec` — GPL-3.0; EIS architecture/validation reference only, no dependency or code copy/adaptation;
-- `pauliacomi/pyGAPS` — MIT; existing gas-sorption architecture/scientific reference and a primary source to refresh before quantitative BET implementation;
-- `hjkgrp/SESAMI_web` — MIT; existing BET workflow/scope reference whose current equations/selection criteria must be rechecked before implementation;
-- `nakulrampal/betsi-gui` — previously reported as non-standard/NOASSERTION in GitHub metadata; reference-only unless current license verification establishes otherwise.
+- `pauliacomi/pyGAPS` — MIT; measured-isotherm and quantitative-BET scientific/API reference only;
+- `hjkgrp/SESAMI_web` — MIT; quantitative-BET candidate-region workflow reference only;
+- `nakulrampal/betsi-gui` — MIT, current `LICENSE.txt` directly verified during Issue #95; exhaustive candidate-region/reproducibility reference only;
+- `PMEAL/BEaTmap` — MIT; candidate-criteria/heatmap workflow reference only.
 
-Reference presence does not authorize code reuse. Quantitative BET must perform a fresh license/equation review in its own Issue before implementation.
+Reference presence does not authorize code reuse. Product calibration must perform a fresh prior-art/license/equation review in its own Issue before implementation.
 
 ## Compatibility and version policy
 
