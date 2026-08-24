@@ -39,8 +39,8 @@ from .raman import (
 )
 from .thermal import (
     DTGSignMode,
-    TGANormalization,
     TemperatureUnit,
+    TGANormalization,
     ThermalAnnotation,
     ThermalAreaMode,
     ThermalDirection,
