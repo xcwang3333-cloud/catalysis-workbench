@@ -8,7 +8,7 @@ For the project-wide execution model, merge gates, and long-range release map, s
 
 Checkpoint date: 2026-08-24.
 
-- Current reviewed `main` checkpoint: `ecdc033212d2f9b91dfb0505528f743df625524f`.
+- Feature checkpoint used for this synchronization: `ecdc033212d2f9b91dfb0505528f743df625524f`.
 - Completed: #18, #19, #20, #21, #22, #23.
 - Current implementation target: **#24 — mass and specific activity normalization**.
 - Remaining after #24: #25, #26, #27, #28.
