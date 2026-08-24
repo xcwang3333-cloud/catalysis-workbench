@@ -22,27 +22,24 @@ Checkpoint date: 2026-08-24.
 
 - Repository: `xcwang3333-cloud/catalysis-workbench`.
 - Stable integration branch: `main`.
-- Reviewed post-ICP documentation checkpoint on `main`: `bc485e8c96bcf7ed1f8d849e5339697dcca50c38` (`docs: sync ICP completion and next-stage decision (#65)`).
-- ICP/composition feature merge commit: `77074f5a03eb8e5012415672cbbca5fce29fdb25` (`feat: add explicit ICP/composition data integration (#63)`).
-- Gas-sorption feature merge commit: `de0352970f79ce37467907116c02a3d8bc15a178` (`feat: add explicit gas-sorption isotherm semantics and plotting (#59)`).
-- Thermal feature merge commit: `d06d4459955d50801ed7676326efcecdccb6df73` (`feat: add explicit TGA DTG TPR TPD thermal analysis (#55)`).
-- FTIR feature merge commit: `bf6e834b584943747b8dcb5278141e8ca0c5512f` (`feat: add explicit FTIR and ATR-FTIR processing (#51)`).
+- `v0.3.0` tagged release commit: `845ac4c15d399a8816c7ba66d61ea6ec4cc11293` (`release: finalize v0.3.0 candidate (#69)`).
 - `v0.2.0` tagged release commit: `1f7f4057397c61ef2f771b96fceadc8a529b62d9` (`release: finalize v0.2.0 candidate (#46)`).
 - v0.1 scientific/common-XY foundation is released as `v0.1.0`.
 - **All planned v0.2 implementation Issues #19-#28 are complete and merged.**
-- **Gate A / Issue #43 / PR #44 is complete.**
-- **Gate B / Issue #45 / PR #46 is complete.**
-- **Gate C / Issue #47 is complete: tag `v0.2.0` was explicitly authorized, created, and verified identical to the tagged release commit.**
-- Distribution metadata and runtime `__version__` at the tagged release both report `0.2.0`; changelog release date is 2026-08-24.
-- Package-registry publication remains a separate policy decision and was not part of the v0.2 Git release.
-- Issue #48 / PR #49 completed the post-v0.2-release documentation synchronization; it did not change the tagged release contents.
+- **v0.2 Gate A / Issue #43 / PR #44, Gate B / Issue #45 / PR #46, and Gate C / Issue #47 are complete.**
+- Issue #48 / PR #49 completed the post-v0.2-release documentation synchronization without changing the tagged release contents.
 - **The frozen v0.3 scientific scope is complete:** Issue #50 / PR #51 delivered FTIR / ATR-FTIR, Issue #54 / PR #55 delivered TGA / DTG / TPR / TPD, Issue #58 / PR #59 delivered basic gas sorption, and Issue #62 / PR #63 delivered ICP/elemental-composition integration.
 - Issue #52 / PR #53 synchronized the first v0.3 FTIR checkpoint.
 - Issue #56 / PR #57 synchronized the post-thermal checkpoint and selected gas sorption next.
 - Issue #60 / PR #61 synchronized the post-sorption checkpoint and selected ICP/composition next.
 - Issue #64 / PR #65 synchronized the post-ICP checkpoint without changing scientific code, API, tests, or version metadata.
-- **The explicit scope decision is complete:** shared peak-fitting is deferred to v0.4 and will be designed together with constrained XPS/spectroscopy consumers. v0.3 enters release hardening with the four completed experimental modules.
-- Issue #66 / PR #67 defines and audits v0.3 Gate A release hardening at package/runtime version `0.2.0`; Gate B and Gate C remain separate later authorization boundaries.
+- **The explicit scope decision is complete:** shared peak-fitting is deferred to v0.4 and will be designed together with constrained XPS/spectroscopy consumers.
+- **v0.3 Gate A / Issue #66 / PR #67 is complete** at merge commit `8a3ae75f43ffa7d808f2a431f6326912a5dff9c6`; it hardened the frozen scope while intentionally retaining package/runtime version `0.2.0`.
+- **v0.3 Gate B / Issue #68 / PR #69 is complete** at merge commit `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`; it synchronized distribution/runtime version to `0.3.0` and passed the exact-wheel release audit plus two-pass release review.
+- **v0.3 Gate C / Issue #70 is complete:** tag `v0.3.0` was explicitly authorized, created, and reverse-verified to resolve exactly to `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`.
+- Distribution metadata and runtime `__version__` at the tagged v0.3 release both report `0.3.0`; changelog release date is 2026-08-24.
+- Package-registry publication remains a separate policy decision and was not part of the v0.3 Git release.
+- Issue #71 is the post-v0.3-release documentation synchronization; it must not move or recreate the `v0.3.0` tag.
 
 Live GitHub issue/PR/tag state remains authoritative if this checkpoint becomes stale.
 
@@ -54,7 +51,7 @@ The detailed release scope is maintained in [`ROADMAP.md`](ROADMAP.md). The inte
 | --- | --- | --- |
 | v0.1.x | common XY core, tabular I/O, reusable processing, LSV, XRD, Raman, publication curve rendering/export | complete/released as v0.1.0 |
 | v0.2.x | quantitative core electrochemistry and shared scatter/bar summaries | complete/released as v0.2.0 on 2026-08-24 |
-| v0.3.x | extended experimental processing | scientific scope frozen — FTIR/ATR-FTIR, thermal analysis, basic gas sorption, and ICP/composition complete; Gate A release hardening through #66 / PR #67 |
+| v0.3.x | extended experimental processing | complete/released as v0.3.0 on 2026-08-24 |
 | v0.4.x | advanced experimental analysis | planned — shared constrained peak-fitting with XPS, XPS processing, EIS fitting, quantitative BET, product calibration |
 | v0.5.x | XAS, structures, basic DFT energetics | planned |
 | v0.6.x | electronic structure and catalysis thermodynamics | planned |
@@ -92,11 +89,11 @@ The detailed v0.2 scientific contract and completed issue sequence are maintaine
 
 `v0.2.0` is the reviewed baseline for the complete quantitative core electrochemistry scope. Gate-B CI built `catalysis_workbench-0.2.0-py3-none-any.whl`, installed it into a fresh virtual environment, passed `pip check`, complete public `__all__` resolution, representative #21-#28 numerical smoke, and the installed LSV/XRD/Raman examples. Gate C subsequently verified the tag is identical to the reviewed release commit.
 
-No scientific/API implementation change belongs in post-release documentation synchronization. v0.2 is operationally closed; new development proceeds on top of the reviewed post-release `main` baseline without moving the `v0.2.0` tag.
+No scientific/API implementation change belongs in post-release documentation synchronization. v0.2 is operationally closed; later development proceeds without moving the `v0.2.0` tag.
 
 ## v0.3 execution status
 
-v0.3 extends experimental characterization while retaining the same explicit scientific-contract and exact-head review discipline. The scientific scope is frozen. Package/runtime version remains `0.2.0` during Gate A and changes only through the separate reviewed Gate-B final-version candidate defined in [`V0_3_RELEASING.md`](V0_3_RELEASING.md).
+v0.3 extends experimental characterization while retaining the same explicit scientific-contract and exact-head review discipline. The scientific scope is frozen and the Git release is complete as `v0.3.0`. The completed release procedure and evidence are maintained in [`V0_3_RELEASING.md`](V0_3_RELEASING.md).
 
 ### Completed scientific modules
 
@@ -110,15 +107,18 @@ v0.3 extends experimental characterization while retaining the same explicit sci
 - #52 / PR #53 — docs-only synchronization after the merged FTIR module.
 - #56 / PR #57 — docs-only synchronization after the thermal merge plus gas-sorption priority decision.
 - #60 / PR #61 — docs-only synchronization after the gas-sorption merge plus ICP/composition priority decision.
-- #64 / PR #65 — docs-only synchronization after the ICP/composition merge and explicit handoff to the next architecture/release decision.
+- #64 / PR #65 — docs-only synchronization after the ICP/composition merge and explicit handoff to the release decision.
+- #71 — post-release documentation synchronization after the verified `v0.3.0` tag; no tagged contents are changed.
 
-### Scope freeze and release handoff
+### Released v0.3 baseline and v0.4 handoff
 
-- Shared peak-fitting is **not** part of the frozen v0.3 release. It moves to v0.4, where model families, baseline coupling, parameter constraints/ties, uncertainty/covariance semantics, and provenance can be designed with constrained XPS/spectroscopy as a concrete downstream consumer.
+- Shared peak-fitting is **not** part of v0.3. It moves to v0.4, where model families, baseline coupling, parameter constraints/ties, uncertainty/covariance semantics, and provenance can be designed with constrained XPS/spectroscopy as a concrete downstream consumer.
 - Quantitative BET fitting remains v0.4 scope.
-- v0.3 Gate A is defined and audited through Issue #66 / PR #67 plus [`V0_3_RELEASING.md`](V0_3_RELEASING.md): public-API audit, fresh-wheel validation, unified installed numerical smoke across the four v0.3 modules, existing v0.2 regression preservation, seven installed quickstarts, release-policy review, and exact-head merge discipline.
-- Gate A does **not** change version metadata. Gate B is the only stage authorized to propose `0.2.0 -> 0.3.0`. Gate C requires separate explicit authorization before tag creation.
+- Gate A / Issue #66 / PR #67 completed installed-wheel/API hardening on the frozen scope while version remained `0.2.0`.
+- Gate B / Issue #68 / PR #69 finalized distribution/runtime version `0.3.0`, built and installed the exact wheel, passed the unified v0.3 numerical smoke and all seven quickstarts, and completed two-pass release review.
+- Gate C / Issue #70 separately authorized and verified tag `v0.3.0` exactly on `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`.
 - Package-registry publication remains outside the Git release gate.
+- After post-release documentation synchronization, the next scientific planning boundary is v0.4 architecture, beginning with the shared constrained peak-fitting/XPS contract rather than immediately adding an implementation.
 
 ## Mandatory development loop
 
@@ -194,7 +194,7 @@ To reduce status drift, each document has a narrow responsibility:
 - [`ROADMAP.md`](ROADMAP.md): long-range release scope from v0.1 through v1.0; it is not a per-issue progress tracker.
 - [`V0_2_PLAN.md`](V0_2_PLAN.md): v0.2 dependency graph, issue-level status, scientific scope, and completed release handoff.
 - [`V0_2_RELEASING.md`](V0_2_RELEASING.md): completed v0.2 release-hardening, final-version, tag, and package-distribution boundaries.
-- [`V0_3_RELEASING.md`](V0_3_RELEASING.md): frozen v0.3 scope plus Gate A hardening, Gate B final-version, Gate C tag-authorization, and package-distribution boundaries.
+- [`V0_3_RELEASING.md`](V0_3_RELEASING.md): completed v0.3 frozen-scope hardening, final-version, tag verification, and package-distribution boundary record.
 - [`RELEASING.md`](RELEASING.md): historical v0.1 release policy.
 - [`REFERENCES.md`](REFERENCES.md): prior-art projects, useful ideas, and license decisions.
 - module-specific documents: exact scientific/API contracts for implemented modules.
@@ -218,4 +218,4 @@ This lightweight resynchronization is the required checkpoint between feature/re
 
 ## Release sequence from this checkpoint
 
-Gate A is defined and audited through Issue #66 / PR #67 and must leave both version declarations at `0.2.0`. Once that PR is squash-merged and `main` is rechecked, the next release stage is a separate Gate-B final-version candidate for `0.3.0`. Gate C tag creation remains separately authorization-gated, and package-registry publication remains outside the Git release gate.
+The v0.3 Git release is complete as `v0.3.0` on release commit `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`. Issue #71 performs the post-release documentation synchronization without moving the tag. After that docs-only checkpoint is merged and `main` is rechecked, the next project-level decision boundary is v0.4 architecture: define the shared constrained peak-fitting/XPS contract and issue decomposition before scientific implementation begins. Package-registry publication remains a separate explicit policy decision and is not implied by proceeding to v0.4.
