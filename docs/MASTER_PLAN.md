@@ -39,7 +39,7 @@ Checkpoint date: 2026-08-24.
 - Issue #52 / PR #53 synchronized the first v0.3 FTIR checkpoint.
 - Issue #56 / PR #57 synchronized the post-thermal checkpoint and selected gas sorption next.
 - Issue #60 / PR #61 synchronized the post-sorption checkpoint and selected ICP/composition next.
-- Issue #64 is the docs-only post-ICP synchronization checkpoint; it changes no scientific implementation, public API, tests, or version metadata.
+- Issue #64 / PR #65 is the docs-only post-ICP synchronization checkpoint; it changes no scientific implementation, public API, tests, or version metadata.
 - **The next v0.3 execution step is an explicit planning decision:** either implement the remaining shared peak-fitting foundation or defer that cross-cutting abstraction and enter v0.3 release hardening. Neither path is authorized by this documentation synchronization alone.
 
 Live GitHub issue/PR/tag state remains authoritative if this checkpoint becomes stale.
@@ -108,7 +108,7 @@ v0.3 extends experimental characterization while retaining the same explicit sci
 - #52 / PR #53 — docs-only synchronization after the merged FTIR module.
 - #56 / PR #57 — docs-only synchronization after the thermal merge plus gas-sorption priority decision.
 - #60 / PR #61 — docs-only synchronization after the gas-sorption merge plus ICP/composition priority decision.
-- #64 — docs-only synchronization after the ICP/composition merge. It records completion state only and deliberately does not authorize either shared peak fitting or release hardening.
+- #64 / PR #65 — docs-only synchronization after the ICP/composition merge. It records completion state only and deliberately does not authorize either shared peak fitting or release hardening.
 
 ### Remaining roadmap scope and next-stage decision
 
@@ -215,4 +215,4 @@ This lightweight resynchronization is the required checkpoint between feature/re
 
 ## Immediate next action
 
-Complete Issue #64 as a docs-only status synchronization through exact-head CI, two-pass docs/status review, Ready, expected-head squash merge, `main` verification, and issue closure. After #64 is closed, make an explicit planning decision between **shared peak-fitting foundation now** and **defer shared peak fitting to later advanced-analysis work and enter v0.3 release hardening**. Do not change package/runtime version, create a v0.3 tag, or start release publication without the corresponding reviewed release/version authorization.
+The next product decision after the post-ICP synchronization (#64 / PR #65) is to choose between **shared peak-fitting foundation now** and **defer shared peak fitting to later advanced-analysis work and enter v0.3 release hardening**. This decision must be explicit because it changes either the remaining v0.3 architecture or the release scope. Do not change package/runtime version, create a v0.3 tag, or start release publication without the corresponding reviewed release/version authorization.
