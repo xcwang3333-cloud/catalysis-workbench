@@ -110,6 +110,7 @@ from .xps import (
     shirley_xps_background,
     validate_xps_series,
 )
+from .xps_diagnostics import XPSFitDiagnostics, summarize_xps_fit
 from .xps_fitting import (
     XPSDoubletSpec,
     XPSPeakFitResult,
@@ -263,6 +264,34 @@ def plot_composition(
     return _plot_composition(data, spec, error=error, preset=preset)
 
 
+def plot_xps_fit(
+    result: XPSPeakFitResult,
+    spec: FigureSpec | None = None,
+    *,
+    preset: str = "publication",
+    show_background: bool = True,
+    show_components: bool = True,
+    show_residual: bool = False,
+    binding_energy_display: str = "descending",
+    residual_height_fraction: float = 0.22,
+    residual_gap_fraction: float = 0.05,
+) -> tuple[Figure, tuple[Axes, ...]]:
+    """Lazily render an already-computed constrained XPS fit."""
+    from .xps_plotting import plot_xps_fit as _plot_xps_fit
+
+    return _plot_xps_fit(
+        result,
+        spec,
+        preset=preset,
+        show_background=show_background,
+        show_components=show_components,
+        show_residual=show_residual,
+        binding_energy_display=binding_energy_display,
+        residual_height_fraction=residual_height_fraction,
+        residual_gap_fraction=residual_gap_fraction,
+    )
+
+
 __all__ = [
     "BulkMassFractionUnit",
     "CompositionBasis",
@@ -313,6 +342,7 @@ __all__ = [
     "XPSDirection",
     "XPSDoubletSpec",
     "XPSError",
+    "XPSFitDiagnostics",
     "XPSPeakFitResult",
     "XPSProcessingStep",
     "XRDError",
@@ -336,6 +366,7 @@ __all__ = [
     "plot_raman",
     "plot_sorption",
     "plot_thermal",
+    "plot_xps_fit",
     "plot_xrd",
     "prepare_sorption_series",
     "prepare_xps_region",
@@ -364,6 +395,7 @@ __all__ = [
     "subtract_ftir_baseline",
     "summarize_composition_replicates",
     "summarize_sorption_window",
+    "summarize_xps_fit",
     "transmittance_to_absorbance",
     "validate_dtg_series",
     "validate_ftir_overlay",
