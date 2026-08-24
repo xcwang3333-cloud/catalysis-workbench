@@ -6,6 +6,7 @@ experimental current densities.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from math import isfinite
 from numbers import Real
@@ -80,6 +81,37 @@ def _normalize_tolerance(value: object) -> float:
     return numeric
 
 
+def _semantic_metadata_value(series: Series, key: str) -> object:
+    value = series.y_axis.metadata.get(key)
+    if isinstance(value, str):
+        return value.strip().casefold()
+    return value
+
+
+def _validate_current_density_normalization(total: Series, partial: Series) -> None:
+    total_normalization = _semantic_metadata_value(total, "normalization")
+    partial_normalization = _semantic_metadata_value(partial, "normalization")
+    if total_normalization != partial_normalization:
+        raise PartialCurrentClosureError(
+            "partial and total current-density normalization metadata differ"
+        )
+
+
+def _validate_current_source_provenance(total_source: SourceDataRef, partial: Series) -> None:
+    current_source = partial.metadata.get("current_source")
+    if current_source is None:
+        return
+    if not isinstance(current_source, Mapping):
+        raise PartialCurrentClosureError(
+            "partial-current current_source provenance must be a mapping"
+        )
+    source_sha = current_source.get("sha256")
+    if not isinstance(source_sha, str) or source_sha.casefold() != total_source.sha256:
+        raise PartialCurrentClosureError(
+            "partial-current current_source provenance does not match total current density"
+        )
+
+
 @dataclass(frozen=True, slots=True, eq=False)
 class PartialCurrentClosureResult:
     """Immutable report comparing summed product current with measured total current."""
@@ -129,6 +161,19 @@ class PartialCurrentClosureResult:
         if not np.allclose(absolute, np.abs(residual), rtol=0.0, atol=0.0):
             raise PartialCurrentClosureError(
                 "closure absolute_error is inconsistent with residual"
+            )
+        denominator = np.abs(total)
+        expected_relative = np.empty_like(absolute, dtype=np.float64)
+        nonzero = denominator > 0.0
+        np.divide(absolute, denominator, out=expected_relative, where=nonzero)
+        expected_relative[~nonzero] = np.where(
+            absolute[~nonzero] == 0.0,
+            0.0,
+            np.inf,
+        )
+        if not np.allclose(relative, expected_relative, rtol=0.0, atol=0.0):
+            raise PartialCurrentClosureError(
+                "closure relative_error is inconsistent with absolute error and total current"
             )
         expected_passed = relative <= tolerance
         if not np.array_equal(passed, expected_passed):
@@ -249,6 +294,7 @@ def partial_current_closure_dataset(
     except EchemQuantityError as exc:
         raise PartialCurrentClosureError(str(exc)) from exc
 
+    total_source = source_data_ref(total_current_density)
     partial_values = []
     partial_sources = []
     for item in partial_currents:
@@ -260,6 +306,8 @@ def partial_current_closure_dataset(
             raise PartialCurrentClosureError(
                 "partial and total current-density units must match exactly for closure"
             )
+        _validate_current_density_normalization(total_current_density, item)
+        _validate_current_source_provenance(total_source, item)
         try:
             _validate_condition_compatibility(total_current_density, item)
         except PartialCurrentDensityError as exc:
@@ -272,7 +320,7 @@ def partial_current_closure_dataset(
         np.stack(partial_values, axis=0),
         tolerance_fraction=tolerance_fraction,
         comparison_mode=comparison_mode,
-        total_source=source_data_ref(total_current_density),
+        total_source=total_source,
         partial_sources=tuple(partial_sources),
     )
 
