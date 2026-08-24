@@ -229,7 +229,7 @@ Issue #58 adds a conservative measured-isotherm foundation before any BET surfac
 - `pauliacomi/pyGAPS` (MIT) is the primary adsorption architecture/scientific reference. Its explicit pressure mode/unit, loading basis/unit, material basis/unit, adsorbate, temperature, point-isotherm representation, and adsorption/desorption-aware plotting are useful design prior art. CatalysisWorkbench keeps its existing `Series`/`Dataset` model instead of introducing a second isotherm hierarchy. pyGAPS can infer branch from pressure direction; Issue #58 deliberately rejects that behavior and requires caller-declared branch metadata.
 - `hjkgrp/SESAMI_web` (MIT) is workflow/scope prior art demonstrating that BET region selection and surface-area determination require nontrivial consistency/linearity criteria and are a separate quantitative analysis problem. Issue #58 therefore does not hide BET fitting inside plotting or basic data preparation.
 - `AIF-development-team/adsorptioninformationformat` (MIT) is interoperability/metadata prior art. It reinforces the need for explicit adsorbate, measurement conditions, pressure representation, and loading units. AIF and vendor-specific parser expansion are deferred.
-- `nakulrampal/betsi-gui` reports a non-standard/`NOASSERTION` license in GitHub repository metadata. Its dedicated Rouquerol/BET workflow is useful scope reference only; no implementation is copied or adapted.
+- `nakulrampal/betsi-gui` — **MIT, directly re-verified from current upstream `LICENSE.txt` for Issue #95**. This corrects the stale historical `NOASSERTION` note recorded during Issue #58. Its dedicated Rouquerol/BET workflow remains useful scope prior art; no implementation is copied or adapted.
 
 The reviewed v0.3 direction keeps `P/P0` explicit as fraction or percent, rejects the inverse `P0/P` as an alias, preserves ascending or descending measured branch order without branch inference, requires explicit loading units and standard-gas temperature/pressure for `cm^3(STP)/g`, addresses Dataset operations by stable `Series.key`, and permits only model-free measured-point summaries plus shared-renderer publication plotting. There is no hidden sorting, interpolation, alignment, clipping, smoothing, normalization, or unit conversion. BET linear-region selection, Rouquerol criteria, monolayer capacity, surface area, pore volume, pore-size distributions, t-plot/alpha-s/Dubinin/model fitting, hysteresis classification, and parser expansion remain outside Issue #58.
 
@@ -298,3 +298,29 @@ The initial EIS direction is deliberately conservative:
 - automatic topology/model selection, automatic initial guesses/weighting, circuit-string parsing, parameter-expression ties, Warburg/finite-diffusion/transmission-line elements, DRT, mechanism assignment, and proprietary vendor readers remain deferred.
 
 No upstream EIS implementation code is copied and no new runtime dependency is introduced by Issue #91.
+
+## Quantitative BET fitting decision for v0.4
+
+Issue #95 implements the first quantitative BET consumer on top of the reviewed v0.3 gas-sorption state. A fresh license/scientific review was completed before implementation.
+
+- `pauliacomi/pyGAPS` — **MIT, directly verified from current upstream `LICENSE`**. Useful references include the BET linear transform, explicit pressure limits, slope/intercept/C/monolayer/surface-area outputs, and core Rouquerol-style consistency checks. pyGAPS also supports automatic range behavior when limits are omitted; CatalysisWorkbench does not adopt hidden automatic range selection in this first stage.
+- `nakulrampal/betsi-gui` — **MIT, directly verified from current upstream `LICENSE.txt`**. BETSI is important workflow/scientific prior art for exhaustive candidate-region evaluation, expanded Rouquerol filtering, regression diagnostics, and manual selection among permitted regions. Its automatic optimum logic, fixed minimum-point policy, R² filtering, and interpolation-based monolayer reconstruction are not silently adopted as universal BET rules.
+- `hjkgrp/SESAMI_web` — **MIT, directly verified from current upstream `LICENSE`**. It is reference-only prior art for reproducible candidate-region search and for keeping physical acceptance criteria distinct from ordinary regression quality.
+- `PMEAL/BEaTmap` — **MIT, directly verified from current upstream `LICENSE`**. Its all-region result matrices, individual criteria masks, and heatmap presentation are useful future visualization references. Candidate-region enumeration/heatmaps are deferred from Issue #95.
+- `scipy/scipy` — **BSD-3-Clause**, already a reviewed runtime dependency. `scipy.stats.linregress` supplies the OLS kernel, while `scipy.constants` supplies the physical constants used in explicit loading-to-area conversion. No new runtime dependency is introduced.
+
+The reviewed Issue #95 direction is deliberately fail-closed:
+
+- quantitative BET reuses the existing immutable `Series`, `SorptionCondition`, and `SorptionWindow`; no second isotherm hierarchy is introduced;
+- the caller supplies one explicit measured adsorption-region window, and only retained measured points are fitted;
+- relative pressure must already be explicit fraction `P/P0`; no branch, percent-to-fraction conversion, adsorbate property, standard state, or region is inferred inside the fit;
+- the retained BET transform is `p / [n(1-p)]`, OLS state is explicit, and R² is diagnostic rather than an acceptance rule;
+- first-stage physical acceptance exposes positive parameter state, increasing `n(1-p)` with increasing pressure, and fitted monolayer loading inside the selected measured loading span as independent checks;
+- `mmol/g`, `mol/kg`, explicit-STP `cm^3(STP)/g`, and caller-molar-mass `mg/g` are converted to mol/g transparently before area calculation;
+- molecular cross-sectional area is always an explicit caller input; no N2/Ar lookup table is embedded;
+- quantitative BET rejects processing history that changes loading or synthesizes a grid (`offset`, normalization, smoothing, interpolation, or baseline subtraction) while permitting explicit measured-point cropping;
+- result arrays and provenance are immutable and reconstructed state is cross-checked against retained transforms/regression/derived quantities;
+- plotting is a passive Matplotlib-lazy adapter over retained BET points and fit arrays using the existing `FigureSpec` state;
+- automatic unique range selection, BETSI-style PCHIP/optimum rules, hidden R² thresholds, pore-size distributions, t-plot/alpha-s/Dubinin methods, hysteresis classification, and GUI workflows remain deferred.
+
+No upstream BET implementation code is copied or adapted. Full scientific/API/test details are in `docs/BET.md`.
