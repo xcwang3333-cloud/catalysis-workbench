@@ -63,12 +63,17 @@ The architecture-first dependency order is maintained in [`V0_4_PLAN.md`](V0_4_P
    - independently implemented Shirley fixed-point integral background with explicit convergence/failure state;
    - Tougaard remains deferred unless separately contracted;
    - exact-head CI #261 and two formal reviews passed before merge commit `a13dbd541b299f79d83e47f079c4638b082a8061`.
-3. **Constrained XPS peak fitting — active next stage.**
-   - shared-fitter consumer;
-   - prepared XPS region/background consumed on the exact aligned grid;
-   - caller-supplied doublet separation/ratio/width constraints;
-   - no hidden chemistry assignment or literature lookup.
-4. XPS publication plotting and fit diagnostics through the shared `FigureSpec` model.
+3. **Constrained XPS peak fitting — complete through Issue #83 / PR #84.**
+   - thin shared-fitter consumer with no second optimizer;
+   - explicit signed doublet separation, amplitude ratio and model-specific shape/width relations;
+   - prepared XPS background accepted only on the exact matching source/grid/unit/direction state;
+   - no hidden p/d/f ratios, chemistry assignment, charge correction or literature lookup;
+   - exact-head CI #267 and two formal reviews passed before merge commit `7897393e1e1e9e4d23fad774b4eeecdd70e2a90b`.
+4. **XPS publication plotting and fit diagnostics — active next stage.**
+   - lazy adapter over the shared `FigureSpec` / visualization stack;
+   - render measured spectrum, retained background, stable-key component curves, total fit and optional physical residual diagnostics;
+   - descending binding-energy display is a rendering convention only and must not reorder numerical results;
+   - no fitting, background calculation, energy correction, smoothing, normalization, hidden resampling or chemistry assignment during plotting.
 5. EIS plotting and basic equivalent-circuit fitting.
 6. BET quantitative fitting with explicit region-selection/Rouquerol contracts.
 7. Product quantification from calibration data and GC/HPLC/NMR-derived values.
