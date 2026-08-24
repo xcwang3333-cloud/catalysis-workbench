@@ -9,6 +9,7 @@ from catalysis_workbench.core import Axis, Dataset, Series
 from catalysis_workbench.visualization import FigureSpec, render_curves
 
 from .cv_cdl import CdlError, CdlFitResult
+from .plotting import plot_lsv as _plot_potential_current_curves
 
 _GEOMETRIC = {"geometric", "geometric_area", "geometric_area_cm2"}
 
@@ -57,9 +58,16 @@ def plot_cv(
     *,
     preset: str = "publication",
 ) -> tuple[Figure, Axes]:
-    """Render already prepared CV sweeps without scientific processing."""
+    """Render prepared CV sweeps with electrochemical unit/reference guards.
+
+    The adapter performs no correction, normalization, interpolation, pairing, or
+    Cdl calculation. It adds the CV-specific normalization/reference requirements,
+    then reuses the established LSV potential-current rendering gate so unsupported
+    electrochemical units cannot be plotted as if they were valid CV quantities and
+    the potential reference remains visible in automatic axis labels.
+    """
     _validate_cv(data)
-    return render_curves(data, spec, preset=preset)
+    return _plot_potential_current_curves(data, spec, preset=preset)
 
 
 def _cdl_plot_dataset(result: CdlFitResult) -> Dataset:
@@ -112,6 +120,8 @@ def _cdl_plot_dataset(result: CdlFitResult) -> Dataset:
             "analysis": "cdl_fit",
             "cdl_value": result.slope,
             "cdl_unit": result.cdl_unit,
+            "reference": result.reference,
+            "target_potential_v": result.target_potential_v,
         },
     )
 
