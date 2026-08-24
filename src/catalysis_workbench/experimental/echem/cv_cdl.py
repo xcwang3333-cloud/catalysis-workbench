@@ -85,26 +85,29 @@ def _required_text(value: object, *, name: str) -> str:
 
 
 def _sampling_method(value: object) -> CVSamplingMethod:
-    if value == "exact":
-        return "exact"
-    if value == "linear":
-        return "linear"
+    if isinstance(value, str):
+        if value == "exact":
+            return "exact"
+        if value == "linear":
+            return "linear"
     raise CdlError("sampling_method must be 'exact' or 'linear'")
 
 
 def _difference_mode(value: object) -> CdlDifferenceMode:
-    if value == "signed":
-        return "signed"
-    if value == "magnitude":
-        return "magnitude"
+    if isinstance(value, str):
+        if value == "signed":
+            return "signed"
+        if value == "magnitude":
+            return "magnitude"
     raise CdlError("difference_mode must be 'signed' or 'magnitude'")
 
 
 def _cdl_current_basis(value: object) -> CdlCurrentBasis:
-    if value == "current":
-        return "current"
-    if value == "geometric_current_density":
-        return "geometric_current_density"
+    if isinstance(value, str):
+        if value == "current":
+            return "current"
+        if value == "geometric_current_density":
+            return "geometric_current_density"
     raise CdlError(
         "current_basis must be 'current' or 'geometric_current_density'"
     )
@@ -217,6 +220,10 @@ class CVSweepPair:
         key = _required_text(self.key, name="CVSweepPair.key")
         if not isinstance(self.anodic, Series) or not isinstance(self.cathodic, Series):
             raise TypeError("anodic and cathodic must both be Series instances")
+        if not self.anodic.key or not self.cathodic.key:
+            raise CdlError(
+                "CVSweepPair source sweeps require non-empty stable Series.key values"
+            )
 
         anodic_v = _potential_values_v(self.anodic)
         cathodic_v = _potential_values_v(self.cathodic)
@@ -287,6 +294,8 @@ class CdlPairProvenance:
             SourceDataRef,
         ):
             raise TypeError("pair provenance sources must be SourceDataRef instances")
+        if not self.anodic_source.key or not self.cathodic_source.key:
+            raise CdlError("pair provenance sources require non-empty stable keys")
         object.__setattr__(self, "key", key)
         object.__setattr__(self, "scan_rate_value", float(self.scan_rate_value))
         object.__setattr__(self, "scan_rate_unit", self.scan_rate_unit.strip())
@@ -662,11 +671,9 @@ def _specific_capacitance_f_cm2(value: object, unit: object) -> tuple[float, str
 
 @dataclass(frozen=True, slots=True)
 class ECSAResult:
-    """Traceable ECSA obtained from Cdl and an explicit specific capacitance."""
+    """Traceable ECSA obtained from an immutable Cdl fit and explicit Cs."""
 
-    cdl_value: float
-    cdl_unit: str
-    cdl_current_basis: CdlCurrentBasis
+    source_fit: CdlFitResult
     specific_capacitance_value: float
     specific_capacitance_unit: str
     specific_capacitance_f_cm2: float
@@ -676,19 +683,17 @@ class ECSAResult:
     geometric_area_cm2: float | None = None
 
     def __post_init__(self) -> None:
-        cdl = _positive_scalar(self.cdl_value, name="cdl_value")
-        current_basis = _cdl_current_basis(self.cdl_current_basis)
-        expected_cdl_unit = "F" if current_basis == "current" else "F/cm^2"
-        if self.cdl_unit != expected_cdl_unit:
-            raise CdlError("cdl_unit is inconsistent with cdl_current_basis")
+        if not isinstance(self.source_fit, CdlFitResult):
+            raise TypeError("source_fit must be a CdlFitResult")
         specific = _positive_scalar(
             self.specific_capacitance_value,
             name="specific_capacitance_value",
         )
-        canonical_specific, canonical_unit = _specific_capacitance_f_cm2(
-            specific,
+        input_unit = _required_text(
             self.specific_capacitance_unit,
+            name="specific_capacitance_unit",
         )
+        canonical_specific, _ = _specific_capacitance_f_cm2(specific, input_unit)
         supplied_specific = _positive_scalar(
             self.specific_capacitance_f_cm2,
             name="specific_capacitance_f_cm2",
@@ -707,30 +712,48 @@ class ECSAResult:
         total = _positive_scalar(self.total_cdl_f, name="total_cdl_f")
         ecsa = _positive_scalar(self.ecsa_cm2, name="ecsa_cm2")
         area = self.geometric_area_cm2
-        if current_basis == "current":
+        if self.source_fit.current_basis == "current":
             if area is not None:
                 raise CdlError(
                     "geometric_area_cm2 must be omitted for total-current-derived Cdl"
                 )
-            expected_total = cdl
+            expected_total = self.source_fit.slope
         else:
             area = _positive_scalar(area, name="geometric_area_cm2")
-            expected_total = cdl * area
+            expected_total = self.source_fit.slope * area
         if not np.isclose(total, expected_total, rtol=1e-12, atol=0.0):
-            raise CdlError("total_cdl_f is inconsistent with Cdl current basis")
+            raise CdlError("total_cdl_f is inconsistent with source Cdl fit")
         expected_ecsa = total / supplied_specific
         if not np.isclose(ecsa, expected_ecsa, rtol=1e-12, atol=0.0):
             raise CdlError("ecsa_cm2 is inconsistent with Cdl and specific capacitance")
 
-        object.__setattr__(self, "cdl_value", cdl)
-        object.__setattr__(self, "cdl_current_basis", current_basis)
         object.__setattr__(self, "specific_capacitance_value", specific)
-        object.__setattr__(self, "specific_capacitance_unit", canonical_unit)
+        object.__setattr__(self, "specific_capacitance_unit", input_unit)
         object.__setattr__(self, "specific_capacitance_f_cm2", supplied_specific)
         object.__setattr__(self, "specific_capacitance_basis", basis)
         object.__setattr__(self, "total_cdl_f", total)
         object.__setattr__(self, "ecsa_cm2", ecsa)
         object.__setattr__(self, "geometric_area_cm2", area)
+
+    @property
+    def cdl_value(self) -> float:
+        return self.source_fit.slope
+
+    @property
+    def cdl_unit(self) -> str:
+        return self.source_fit.cdl_unit
+
+    @property
+    def cdl_current_basis(self) -> CdlCurrentBasis:
+        return self.source_fit.current_basis
+
+    @property
+    def ecsa_unit(self) -> str:
+        return "cm^2"
+
+    @property
+    def specific_capacitance_canonical_unit(self) -> str:
+        return "F/cm^2"
 
     @property
     def roughness_factor(self) -> float | None:
@@ -751,7 +774,7 @@ def ecsa_from_cdl(
     """Convert Cdl to ECSA without any universal Cs or hidden geometric area."""
     if not isinstance(result, CdlFitResult):
         raise TypeError("result must be a CdlFitResult")
-    cs_f_cm2, canonical_cs_unit = _specific_capacitance_f_cm2(
+    cs_f_cm2, _ = _specific_capacitance_f_cm2(
         specific_capacitance_value,
         specific_capacitance_unit,
     )
@@ -793,11 +816,9 @@ def ecsa_from_cdl(
 
     ecsa_cm2 = total_cdl_f / cs_f_cm2
     return ECSAResult(
-        cdl_value=result.slope,
-        cdl_unit=result.cdl_unit,
-        cdl_current_basis=result.current_basis,
+        source_fit=result,
         specific_capacitance_value=specific_capacitance_value,
-        specific_capacitance_unit=canonical_cs_unit,
+        specific_capacitance_unit=specific_capacitance_unit,
         specific_capacitance_f_cm2=cs_f_cm2,
         specific_capacitance_basis=basis,
         total_cdl_f=total_cdl_f,
