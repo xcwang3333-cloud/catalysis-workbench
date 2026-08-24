@@ -69,12 +69,18 @@ The architecture-first dependency order is maintained in [`V0_4_PLAN.md`](V0_4_P
    - prepared XPS background accepted only on the exact matching source/grid/unit/direction state;
    - no hidden p/d/f ratios, chemistry assignment, charge correction or literature lookup;
    - exact-head CI #267 and two formal reviews passed before merge commit `7897393e1e1e9e4d23fad774b4eeecdd70e2a90b`.
-4. **XPS publication plotting and fit diagnostics — active next stage.**
-   - lazy adapter over the shared `FigureSpec` / visualization stack;
-   - render measured spectrum, retained background, stable-key component curves, total fit and optional physical residual diagnostics;
-   - descending binding-energy display is a rendering convention only and must not reorder numerical results;
-   - no fitting, background calculation, energy correction, smoothing, normalization, hidden resampling or chemistry assignment during plotting.
-5. EIS plotting and basic equivalent-circuit fitting.
+4. **XPS publication plotting and fit diagnostics — complete through Issue #87 / PR #88.**
+   - passive lazy adapter over retained `XPSPeakFitResult` arrays and the shared `FigureSpec` / visualization stack;
+   - measured spectrum, retained background, stable-key component curves, total fit and optional physical residual diagnostics;
+   - binding-energy direction is a rendering-only choice and does not reorder/mutate numerical results;
+   - `XPSFitDiagnostics` mirrors already-computed statistics and uncertainty availability without fabrication;
+   - no fitting, background calculation, energy correction, smoothing, normalization, resampling or chemistry assignment during plotting;
+   - exact-head CI #274 / run `32741710370` and final-head reviews passed before merge commit `3eab8c8e936cf1897081b7a396306288e517a3bb`.
+5. **EIS plotting and basic equivalent-circuit fitting — active next stage.**
+   - explicit frequency/complex-impedance semantics and sign convention;
+   - Nyquist/Bode plotting through `FigureSpec`;
+   - caller-visible circuit topology, initial values, bounds/fixed state and weighting;
+   - no automatic topology selection, hidden unit inference, frequency sorting, weighting or initial-guess heuristic in the initial stage.
 6. BET quantitative fitting with explicit region-selection/Rouquerol contracts.
 7. Product quantification from calibration data and GC/HPLC/NMR-derived values.
 
