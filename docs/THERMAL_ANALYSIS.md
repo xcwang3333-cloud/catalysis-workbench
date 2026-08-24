@@ -77,6 +77,8 @@ w_i = 100 f_i.
 
 `reference="first_point"` means the first measured point in the stored source order. A positive explicit numeric reference may be supplied instead and is interpreted in the same mass unit as the source curve. The reference basis, numerical value, unit, and source digest are recorded in provenance.
 
+The sample-specific numerical reference value is provenance, not an overlay-compatibility discriminator. Two samples normalized independently by their own first measured point therefore share the same normalization basis even when their starting masses differ. By contrast, `reference="first_point"` and an explicitly supplied reference mass are distinct normalization bases and are not treated as interchangeable.
+
 Already normalized TGA data are rejected by `normalize_tga_mass()` to prevent accidental double normalization.
 
 ## DTG derivation
@@ -112,6 +114,8 @@ or `+0.01 mg/°C` in `mass_loss_positive` mode.
 
 The same physical curve stored in descending temperature order yields the same derivative at matching temperatures. Source direction is retained in provenance.
 
+DTG derived from normalized TGA retains the source mass semantic and normalization provenance. For example, a percent-normalized source produces `%/°C`; it is not reinterpreted as raw mass during validation or plotting.
+
 ## TPR / TPD signal semantics
 
 TPR and TPD initially represent measured temperature versus detector response. The caller explicitly declares the technique when validating, processing, measuring, or plotting a curve:
@@ -146,7 +150,9 @@ result = measure_thermal_window(
 )
 ```
 
-The window must be fully contained in the measured temperature range. The result reports:
+The window must be fully contained in the measured temperature range and must contain at least one actual measured temperature point. Boundary interpolation alone is not accepted as sufficient support for a quantitative window.
+
+The result reports:
 
 - explicit technique and window;
 - maximum or minimum temperature/value selected by `extremum_mode`;
@@ -154,7 +160,7 @@ The window must be fully contained in the measured temperature range. The result
 - measured and integration point counts;
 - source storage direction;
 - source and window SHA-256 digests;
-- temperature and signal units;
+- temperature, signal, and explicit area-unit strings;
 - boundary handling mode.
 
 Only the two requested window boundaries may be linearly interpolated. Interior source points are not resampled. If an interpolated boundary would require a missing bracketing y value, the operation fails.
@@ -171,7 +177,7 @@ while absolute area is
 A_{\mathrm{abs}} = \int_{T_1}^{T_2} |y(T)|\,dT.
 \]
 
-Integration is always evaluated from lower to higher temperature, independent of source storage direction. The area unit is the product of the reported `signal_unit` and `temperature_unit` (for example `a.u.·°C` or, for a DTG curve, `%`).
+Integration is always evaluated from lower to higher temperature, independent of source storage direction. `area_unit` records the explicit product of the reported `signal_unit` and `temperature_unit` (for example `a.u.·°C`). For a DTG curve the string may be `%/°C·°C`, which is dimensionally equivalent to `%`; the initial string-based unit model does not perform general symbolic unit cancellation.
 
 The initial window helper does not assign chemical species, infer an onset temperature, decide how many peaks exist, or fit Gaussian/Lorentzian/Voigt components.
 
