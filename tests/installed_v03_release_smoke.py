@@ -61,8 +61,8 @@ def _assert_gate_version() -> None:
     installed = distribution_version("catalysis-workbench")
     assert runtime == installed, (runtime, installed)
     expected = os.environ.get("CATALYSIS_WORKBENCH_EXPECTED_VERSION")
-    if expected:
-        assert runtime == expected, (runtime, expected)
+    assert expected, "CATALYSIS_WORKBENCH_EXPECTED_VERSION must be set by the release gate"
+    assert runtime == expected, (runtime, expected)
 
 
 def _assert_characterization_import_is_matplotlib_lazy() -> None:
