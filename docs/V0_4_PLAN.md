@@ -1,12 +1,12 @@
 # CatalysisWorkbench v0.4 Plan
 
-v0.4 is the advanced-experimental-analysis release. It builds on the released `v0.3.0` tag at `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`; that tag remains immutable. Scientific implementation of the planned v0.4 scope is complete, but v0.4 is **not released**. Distribution/runtime version remains `0.3.0` until a separately authorized release gate changes it.
+v0.4 is the advanced-experimental-analysis release. It builds on the released `v0.3.0` tag at `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`; that tag remains immutable. Scientific implementation of the planned v0.4 scope and Gate A release hardening are complete. Gate B is the authorized final-version candidate and reports distribution/runtime version `0.4.0`; v0.4 is **not yet tagged or released**.
 
-GitHub remains the operational source of truth. This document records reviewed dependency order and scientific/API boundaries; it does not replace exact-head CI, review, merge, version, or tag evidence.
+GitHub remains the operational source of truth. This document records reviewed dependency order and scientific/API boundaries; exact release-gate evidence is maintained in [`V0_4_RELEASING.md`](V0_4_RELEASING.md).
 
 ## Current checkpoint
 
-Checkpoint date: 2026-08-24.
+Checkpoint date: 2026-08-25.
 
 - architecture checkpoint: Issue #73 / PR #74 — complete at `a7fb245bd39f8aa3dc18141c2ecf6f005f02ebd1`;
 - shared constrained peak fitting: Issue #75 / PR #76 — complete at `b6f428d96df9950373c17e5de487ac4113a2aacc`; CI #255; reviews `5008457897`, `5008470806`;
@@ -16,13 +16,15 @@ Checkpoint date: 2026-08-24.
 - EIS: Issue #91 / PR #92 — complete at `cd8dd171a16576067934a13ad3ac41d0fb18d55a`; final CI #285 / run `32746265252`; reviews `5009748594`, `5009757335`;
 - quantitative BET: Issue #95 / PR #96 — complete at `c76a49d64e096d6db001c27c598356baa797f3a9`; final CI #294 / run `32752441329`; reviews `5010325152`, `5010328048`;
 - product calibration / inverse sample quantification: Issue #99 / PR #100 — complete at `adc0f50178d899b4f257842da6e7bac553a25254`; final head `967d495bba8c8f0102b8b37a6f880f566d776206`; CI #298 / run `32755942830`; reviews `5010636300`, `5010639945`;
-- completion-state documentation checkpoint: Issue #101 — active;
+- completion-state documentation checkpoint: Issue #101 / PR #102 — complete at `a02df77d078671e24b07b37f6196204e312c9146`;
+- Gate A / Issue #103 / PR #104 — complete at `ce06abc11559fa7679869fc83a59356735ce6824`; final head `9d79845d6fae253b01a46794c3c055e4966c6e55`; CI #302 / run `32758548117`; reviews `5010905065`, `5010908809`;
 - all planned v0.4 scientific blocks: **complete**;
 - reviewed runtime dependency: `lmfit>=1.3.4` (BSD-3-Clause upstream);
-- project version: `0.3.0`;
-- immutable release tag: `v0.3.0 -> 845ac4c15d399a8816c7ba66d61ea6ec4cc11293`;
-- no v0.4 tag, GitHub Release, or package-registry publication has been authorized or performed;
-- next decision boundary after Issue #101: **v0.4 Gate A release hardening**, requiring separate explicit authorization.
+- active Gate-B branch project version: `0.4.0`;
+- immutable prior release tag: `v0.3.0 -> 845ac4c15d399a8816c7ba66d61ea6ec4cc11293`;
+- active release stage: **Gate B / Issue #105 — final `0.4.0` exact-wheel candidate**;
+- no `v0.4.0` tag, GitHub Release, or package-registry publication has been performed;
+- next boundary after Gate B: **Gate C tag creation**, requiring separate explicit authorization.
 
 ## v0.4 dependency order — completed
 
@@ -33,8 +35,10 @@ Checkpoint date: 2026-08-24.
 5. **EIS semantics, Nyquist/Bode plotting and basic equivalent-circuit fitting — complete (#91 / #92).**
 6. **Quantitative BET fitting — complete (#95 / #96).**
 7. **Product calibration and sample quantification — complete (#99 / #100).**
-8. **Completion-state synchronization — Issue #101.**
-9. **Release hardening/version/tag gates — not started; separate authorization required.**
+8. **Completion-state synchronization — complete (#101 / #102).**
+9. **Gate A frozen-scope release hardening — complete (#103 / #104).**
+10. **Gate B final-version candidate — active (#105).**
+11. **Gate C tag creation — not authorized; separate boundary.**
 
 ## Shared constrained fitting foundation
 
@@ -173,20 +177,19 @@ No upstream implementation was copied/adapted and no new runtime dependency was 
 
 Validation evidence: final feature head `967d495bba8c8f0102b8b37a6f880f566d776206`; CI #298 / run `32755942830` success; final-head reviews `5010636300`, `5010639945`; behind=0, mergeable=true, review threads=0; squash merge/current scientific baseline `adc0f50178d899b4f257842da6e7bac553a25254`.
 
-## v0.4 scientific completion state
+## v0.4 release state
 
-All seven planned scientific blocks are complete. Issue #101 synchronizes this state into central documentation only.
+All seven planned scientific blocks and the completion-state synchronization are complete.
 
-Scientific completion does **not** imply release completion. The next possible phase is v0.4 release hardening / Gate A and requires an explicit authorization decision before any release branch/Issue work begins.
+Gate A / Issue #103 / PR #104 is complete. It froze the scientific scope, added the unified installed-wheel/public-API audit, retained version `0.3.0`, passed exact-head CI #302 / run `32758548117` and formal reviews `5010905065`, `5010908809`, and squash-merged as `ce06abc11559fa7679869fc83a59356735ce6824`.
 
-A future authorized release sequence should preserve the established separation used in v0.2/v0.3:
+Gate B / Issue #105 is separately authorized and active. It changes both version declarations to `0.4.0`, changes only the expected release version in the existing unified wheel audit, stages the `[0.4.0]` changelog candidate, and reruns the complete frozen-scope audit on the final exact head. It does not authorize a tag.
 
-1. **Gate A — frozen-scope release hardening / installed-wheel public-API audit.** Keep the current development version unless the gate explicitly requires otherwise; do not tag.
-2. **Gate B — final-version candidate / exact-wheel release audit.** Only after Gate A passes and version change is separately authorized.
-3. **Gate C — tag creation and reverse verification.** Only after the final release commit is fixed.
-4. **Package registry publication — separate policy/action.** Never inferred from a Git tag or GitHub Release.
+The remaining release boundaries are:
 
-The exact v0.4 release procedure must itself be recorded/reviewed when Gate A is authorized; this section is only the boundary model, not authorization to execute it.
+1. **Gate C — tag creation and reverse verification.** Only after Gate B has merged and explicit authorization is given.
+2. **GitHub Release creation — separate action.** Not inferred from a tag.
+3. **Package registry publication — separate policy/action.** Not inferred from either a tag or GitHub Release.
 
 ## Prior-art / license decisions
 
@@ -210,9 +213,9 @@ Important v0.4 decisions:
 - scientific incompatibilities fail explicitly rather than being silently corrected/aligned;
 - numerical analysis and rendering remain separate responsibilities;
 - runtime dependencies are added only when a concrete Issue justifies them and packaging/license review passes;
-- `[project].version` and runtime `__version__` remain `0.3.0` until an explicit release-version gate changes them;
+- Gate B synchronizes `[project].version` and runtime `__version__` to `0.4.0` together;
 - `v0.3.0` remains fixed on its reviewed release commit;
-- v0.4 Gate A, version change, tag creation, GitHub Release and package-registry publication are distinct authorization boundaries.
+- Gate B does not create `v0.4.0`; Gate C, GitHub Release creation and package-registry publication remain distinct authorization boundaries.
 
 ## Required quality loop
 
@@ -234,6 +237,6 @@ prior-art/license refresh
     -> close Issue
 ```
 
-Docs-only state checkpoints use exact-head CI plus one formal docs/scientific-state review. CI or review evidence from an older head is never reused after the head changes.
+Release gates use the same exact-head discipline with release/API/packaging/version review. CI or review evidence from an older head is never reused after the head changes.
 
-After Issue #101 completes, execution must stop at the v0.4 release-boundary decision until Gate A is explicitly authorized.
+After Gate B / Issue #105 merges and `main` is reverified at `0.4.0`, execution must stop before Gate C until explicit authorization is given to create tag `v0.4.0`.

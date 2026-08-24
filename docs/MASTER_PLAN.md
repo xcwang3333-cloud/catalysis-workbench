@@ -18,11 +18,11 @@ Planning documents must be corrected when they drift from merged reality. They d
 
 ## Current checkpoint
 
-Checkpoint date: 2026-08-24.
+Checkpoint date: 2026-08-25.
 
 - Repository: `xcwang3333-cloud/catalysis-workbench`.
 - Stable integration branch: `main`.
-- Current scientific `main` baseline: `adc0f50178d899b4f257842da6e7bac553a25254` (`feat: add explicit product calibration and quantification (#100)`).
+- Reviewed Gate-A `main` baseline: `ce06abc11559fa7679869fc83a59356735ce6824` (`release: harden frozen v0.4 installed-wheel and public API (#104)`).
 - v0.4 architecture checkpoint: Issue #73 / PR #74 — complete at `a7fb245bd39f8aa3dc18141c2ecf6f005f02ebd1`.
 - shared constrained peak-fitting: Issue #75 / PR #76 — complete at `b6f428d96df9950373c17e5de487ac4113a2aacc`; CI #255; reviews `5008457897`, `5008470806`.
 - XPS preparation: Issue #79 / PR #80 — complete at `a13dbd541b299f79d83e47f079c4638b082a8061`; CI #261; reviews `5008700786`, `5008706395`.
@@ -31,13 +31,15 @@ Checkpoint date: 2026-08-24.
 - EIS: Issue #91 / PR #92 — complete at `cd8dd171a16576067934a13ad3ac41d0fb18d55a`; final CI #285 / run `32746265252`; reviews `5009748594`, `5009757335`.
 - quantitative BET: Issue #95 / PR #96 — complete at `c76a49d64e096d6db001c27c598356baa797f3a9`; final CI #294 / run `32752441329`; reviews `5010325152`, `5010328048`.
 - product calibration / inverse sample quantification: Issue #99 / PR #100 — complete at `adc0f50178d899b4f257842da6e7bac553a25254`; final head `967d495bba8c8f0102b8b37a6f880f566d776206`; CI #298 / run `32755942830`; reviews `5010636300`, `5010639945`.
-- Active documentation checkpoint: Issue #101 — synchronize the completed v0.4 scientific scope before any release gate.
+- completion-state documentation checkpoint: Issue #101 / PR #102 — complete at `a02df77d078671e24b07b37f6196204e312c9146`.
 - v0.4 scientific implementation: **complete**.
+- v0.4 Gate A / Issue #103 / PR #104 — complete at `ce06abc11559fa7679869fc83a59356735ce6824`; final head `9d79845d6fae253b01a46794c3c055e4966c6e55`; CI #302 / run `32758548117`; reviews `5010905065`, `5010908809`.
+- Active release stage: **v0.4 Gate B / Issue #105 — final `0.4.0` version candidate and exact-wheel audit**.
 - Reviewed runtime fitting dependency: `lmfit>=1.3.4`.
-- Distribution/runtime version remains `0.3.0`.
+- Gate-B branch distribution/runtime version is `0.4.0`; `main` remains the reviewed Gate-A baseline until Gate B merges.
 - `v0.3.0` remains fixed on release commit `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`.
-- No v0.4 tag, GitHub Release, or package-registry publication has been authorized or performed.
-- Next decision boundary after Issue #101: **v0.4 release hardening / Gate A**, requiring separate explicit authorization.
+- No `v0.4.0` tag, GitHub Release, or package-registry publication has been performed.
+- Next boundary after Gate B: **Gate C creation of tag `v0.4.0`**, requiring separate explicit authorization.
 
 Live GitHub Issue/PR/tag state remains authoritative if this checkpoint becomes stale.
 
@@ -50,7 +52,7 @@ Detailed long-range scope is maintained in [`ROADMAP.md`](ROADMAP.md).
 | v0.1.x | common XY core, tabular I/O, reusable processing, LSV, XRD, Raman, shared publication rendering/export | complete/released |
 | v0.2.x | quantitative core electrochemistry and shared scatter/bar summaries | complete/released as v0.2.0 |
 | v0.3.x | FTIR, thermal analysis, basic gas sorption, ICP/composition | complete/released as v0.3.0 |
-| v0.4.x | shared fitting, XPS, EIS, quantitative BET, product calibration | scientific implementation complete; release gate pending authorization |
+| v0.4.x | shared fitting, XPS, EIS, quantitative BET, product calibration | scientific scope + Gate A complete; Gate B `0.4.0` candidate active; tag pending |
 | v0.5.x | XAS, structures, basic DFT energetics | planned |
 | v0.6.x | electronic structure and catalysis thermodynamics | planned |
 | v0.7.x | advanced computational visualization | planned |
@@ -85,7 +87,7 @@ The reviewed release tag is `v0.3.0 -> 845ac4c15d399a8816c7ba66d61ea6ec4cc11293`
 
 ## v0.4 execution status
 
-The detailed scientific contracts and dependency order are maintained in [`V0_4_PLAN.md`](V0_4_PLAN.md).
+The detailed scientific contracts and dependency order are maintained in [`V0_4_PLAN.md`](V0_4_PLAN.md). The release procedure and evidence are maintained in [`V0_4_RELEASING.md`](V0_4_RELEASING.md).
 
 ### Architecture checkpoint — complete
 
@@ -163,20 +165,21 @@ Prior-art/license decisions are recorded in Issue #99 and [`PRODUCT_CALIBRATION.
 
 Final evidence: exact head `967d495bba8c8f0102b8b37a6f880f566d776206`; CI #298 / run `32755942830` success; reviews `5010636300` and `5010639945`; behind=0 / mergeable=true / threads=0; expected-head squash merge `adc0f50178d899b4f257842da6e7bac553a25254`.
 
-## v0.4 completion and release boundary
+## v0.4 release gates
 
-All planned v0.4 scientific blocks are merged. Issue #101 is the final documentation/status synchronization before any release gate.
+All planned v0.4 scientific blocks and the completion-state synchronization are merged.
 
-After Issue #101 is completed, the next possible action is **v0.4 Gate A release hardening**. This is a release boundary and requires separate explicit authorization. Gate A should, if authorized, freeze the merged scientific scope and audit installed-wheel/public-API behavior without changing the final release version prematurely, following the established v0.2/v0.3 release discipline.
+Gate A / Issue #103 / PR #104 is complete. It froze the v0.4 scientific scope, added the unified installed-wheel/public-API audit, retained version `0.3.0`, passed exact-head CI #302 / run `32758548117` and two formal release reviews, and squash-merged as `ce06abc11559fa7679869fc83a59356735ce6824`.
 
-The following actions are **not** authorized merely by scientific completion:
+Gate B / Issue #105 is separately authorized and active. It changes distribution/runtime version together to `0.4.0`, updates the expected exact-wheel version, stages the v0.4 changelog candidate, and reruns the complete Gate-A audit on the final `0.4.0` artifact. It must not add scientific functionality.
 
-- changing distribution/runtime version from `0.3.0`;
-- creating or moving a `v0.4.0` tag;
+The following actions remain separate after Gate B:
+
+- creating or moving tag `v0.4.0` — Gate C, explicit authorization required;
 - creating a GitHub Release;
 - publishing to PyPI or another package registry.
 
-Each later release boundary must be explicit and exact-head reviewed.
+Each release boundary must be explicit and exact-head reviewed.
 
 ## Mandatory development loop
 
@@ -250,6 +253,7 @@ After squash merge, re-read `main`. When connector visibility does not expose a 
 - [`MASTER_PLAN.md`](MASTER_PLAN.md): project-wide execution order, checkpoint summary, governance and quality gates.
 - [`ROADMAP.md`](ROADMAP.md): long-range release scope; not a per-commit log.
 - [`V0_4_PLAN.md`](V0_4_PLAN.md): v0.4 dependency order, scientific/API boundaries and release handoff.
+- [`V0_4_RELEASING.md`](V0_4_RELEASING.md): v0.4 Gate A/B/C procedure and release evidence.
 - [`PEAK_FITTING.md`](PEAK_FITTING.md): reviewed shared-fitting contract.
 - [`XPS.md`](XPS.md): reviewed XPS contract.
 - [`EIS.md`](EIS.md): reviewed EIS contract.
@@ -270,4 +274,4 @@ After each merged scientific Issue, update only documentation whose statements b
 - preceding Issue closure/completion;
 - version/tag/publication boundaries.
 
-Issue #101 is the v0.4 scientific-completion documentation checkpoint. After it merges, no further v0.4 implementation or release action should start automatically: the next boundary is an explicit authorization decision for v0.4 Gate A release hardening.
+Gate B / Issue #105 is the active v0.4 release stage. After Gate B merges and `main` is verified at `0.4.0`, execution must stop before Gate C until explicit authorization is given to create tag `v0.4.0`.

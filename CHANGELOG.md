@@ -4,6 +4,26 @@ All notable changes to CatalysisWorkbench are recorded here.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-08-25
+
+The v0.4 final-version candidate freezes the reviewed advanced experimental-analysis scope after Gate A release hardening. Gate B validates distribution/runtime version `0.4.0` through the exact installed-wheel audit. Tag `v0.4.0` has not yet been created; GitHub Release creation and package-registry publication remain separate authorization boundaries.
+
+### Added
+
+- Shared constrained peak-fitting foundation with explicit component/parameter identities, caller-visible fixed/bounded/tied state, Gaussian/Lorentzian/Voigt/pseudo-Voigt/Doniach model families, explicit fit regions/background/weights, physical residuals, deterministic provenance, and optional uncertainty/covariance state backed by reviewed `lmfit>=1.3.4`.
+- XPS preparation with explicit binding-energy/eV semantics, additive energy-reference correction, measured-point-only region selection, direction-safe linear background, independently implemented Shirley fixed-point background, explicit convergence/failure state, and deterministic preparation provenance.
+- Constrained XPS fitting as a thin shared-fitter consumer with caller-supplied signed doublet separation, amplitude and model-specific shape/width relations, fail-closed prepared-background alignment, immutable XPS fit state, passive publication plotting, physical-residual diagnostics, display-only binding-energy direction, and stable `FigureSpec` visual keys.
+- EIS analysis with explicit complex-impedance semantics, ideal R/C/CPE series/parallel circuits, caller-visible parameter/bounds/fixed state, deterministic real+imag SciPy least-squares fitting, fail-closed immutable fit reconstruction, diagnostics, and passive Nyquist/Bode publication plotting.
+- Quantitative BET fitting with caller-selected measured regions, exact BET/Rouquerol transforms, independent physical-consistency checks, explicit loading-to-area conversion inputs, fail-closed preprocessing provenance, diagnostics, and passive retained-array publication plotting.
+- Technique-agnostic product calibration and inverse sample quantification with explicit linear free/fixed-zero-intercept models, measured-point calibration ranges, retained regression/residual state, exact response-unit matching, default extrapolation rejection, explicit ordered positive dimensionless quantification factors, replicate mean/sample-SD/RSD summaries, and passive calibration plotting.
+- Unified v0.4 fresh-wheel Gate-A audit covering installed-source verification, distribution/runtime version agreement, all documented package-level `__all__` surfaces including product analysis, Matplotlib-lazy numerical imports, the retained v0.3 numerical audit, and reviewed installed smokes for shared fitting, XPS, EIS, quantitative BET, and product calibration.
+
+### Changed
+
+- Gate A / Issue #103 / PR #104 hardened the frozen v0.4 scope while intentionally retaining version `0.3.0`; exact-head CI #302 / run `32758548117` and two formal release reviews passed before squash merge `ce06abc11559fa7679869fc83a59356735ce6824`.
+- Gate B synchronizes `[project].version` and runtime `__version__` to `0.4.0` and requires the same fresh-wheel/public-API/scientific audit to pass on the final exact `0.4.0` artifact.
+- `v0.3.0` remains immutable at `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`; Gate B does not create `v0.4.0`, a GitHub Release, or any package-registry publication.
+
 ## [0.3.0] - 2026-08-24
 
 The v0.3 release freezes the reviewed extended-characterization scope after Gate A release hardening and Gate B final-version validation. Tag `v0.3.0` was created on 2026-08-24 and reverse-verified to resolve exactly to release commit `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`; package-registry publication remains a separate policy decision.

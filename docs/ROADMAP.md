@@ -42,9 +42,9 @@ Before implementing each major scientific or visualization module, comparable op
 
 Shared peak fitting was deliberately deferred from v0.3 so its constraints, uncertainty semantics, provenance, and concrete XPS consumer could be designed together in v0.4.
 
-## v0.4.x — Advanced experimental analysis — scientific implementation complete
+## v0.4.0 — Advanced experimental analysis — Gate B final-version candidate
 
-The architecture-first dependency order is maintained in [`V0_4_PLAN.md`](V0_4_PLAN.md). The scientific scope below is merged to `main`; v0.4 has **not** yet entered its separately authorized release-hardening/version/tag gates.
+The architecture-first dependency order is maintained in [`V0_4_PLAN.md`](V0_4_PLAN.md), with release evidence in [`V0_4_RELEASING.md`](V0_4_RELEASING.md). All scientific scope is merged; Gate A release hardening is complete; the current Gate-B candidate reports distribution/runtime version `0.4.0`. Tag `v0.4.0` has not yet been authorized or created.
 
 1. **Shared constrained peak-fitting foundation — complete through Issue #75 / PR #76.**
    - `lmfit>=1.3.4` reviewed as the BSD-3-Clause runtime fitting backend;
@@ -83,7 +83,9 @@ The architecture-first dependency order is maintained in [`V0_4_PLAN.md`](V0_4_P
    - raw GC/HPLC/NMR parsing, peak integration/assignment, internal-standard identification and automatic response-factor/model/range inference remain out of scope;
    - final exact head `967d495bba8c8f0102b8b37a6f880f566d776206`, CI #298 / run `32755942830`, reviews `5010636300` and `5010639945`, squash merge `adc0f50178d899b4f257842da6e7bac553a25254`.
 
-All planned v0.4 scientific blocks are therefore complete on `main`. Runtime/distribution version remains `0.3.0`. The next boundary is **v0.4 release hardening / Gate A**, which requires separate explicit authorization. Scientific completion alone does not authorize a version bump, `v0.4.0` tag, GitHub Release, or package-registry publication.
+Gate A / Issue #103 / PR #104 completed frozen-scope release hardening on exact head `9d79845d6fae253b01a46794c3c055e4966c6e55`, CI #302 / run `32758548117`, reviews `5010905065` and `5010908809`, and squash merge `ce06abc11559fa7679869fc83a59356735ce6824`, while retaining version `0.3.0`.
+
+Gate B / Issue #105 is the active final-version candidate and synchronizes distribution/runtime version to `0.4.0` before rerunning the same exact-wheel/public-API/scientific audit. The remaining boundaries are Gate C tag creation, GitHub Release creation, and package-registry publication; each is separate and requires its own authorization/policy decision.
 
 ## v0.5.x — XAS and structures
 
