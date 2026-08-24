@@ -4,15 +4,27 @@ v0.2 release work is deliberately separated from scientific feature implementati
 
 This document applies to the v0.2 release line. The historical [`RELEASING.md`](RELEASING.md) remains the reviewed v0.1 release policy.
 
-## Current release state
+## Completed release state
+
+The v0.2 release sequence is complete as of 2026-08-24:
+
+- Gate A / Issue #43 / PR #44 completed release hardening at `0.2.0.dev0`;
+- Gate B / Issue #45 / PR #46 finalized and validated distribution/runtime version `0.2.0`;
+- Gate C / Issue #47 received explicit release authorization, created tag `v0.2.0`, and independently verified that the tag resolves exactly to reviewed release commit `1f7f4057397c61ef2f771b96fceadc8a529b62d9`;
+- the changelog release date is `2026-08-24`;
+- package-registry publication remains outside this release policy and is not authorized by the Git tag.
+
+The Gate A/B/C sections below are retained as the reviewed procedure and audit record for how v0.2 was released.
+
+## Historical starting state
 
 At the start of Issue #43:
 
-- the planned v0.2 feature sequence #19-#28 is complete on `main`;
-- distribution metadata and runtime `__version__` both remain `0.2.0.dev0`;
-- README, master plan, v0.2 plan, and changelog have been synchronized to the merged feature state;
-- no `v0.2.0` tag exists as a consequence of feature completion;
-- package-registry publication is not part of this gate.
+- the planned v0.2 feature sequence #19-#28 was complete on `main`;
+- distribution metadata and runtime `__version__` both remained `0.2.0.dev0`;
+- README, master plan, v0.2 plan, and changelog had been synchronized to the merged feature state;
+- no `v0.2.0` tag existed as a consequence of feature completion;
+- package-registry publication was not part of the gate.
 
 ## Gate A — release hardening at `0.2.0.dev0`
 
