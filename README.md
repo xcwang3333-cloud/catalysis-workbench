@@ -2,7 +2,7 @@
 
 **CatalysisWorkbench** is a Python workbench for quantitative post-processing, comparative analysis, and publication-quality visualization of catalysis experimental, characterization, and computational data.
 
-The reviewed v0.1 scientific foundation covers common one-dimensional XY workflows: tabular import, reusable processing, LSV/polarization curves, XRD, Raman, and exact-size PNG/SVG/PDF export. The v0.2 quantitative-electrochemistry release is complete: shared electrochemistry quantity/provenance conventions, scatter/bar rendering, Tafel analysis, Faradaic efficiency, product partial-current density, activity normalization, TOF/TOFapp, CV/Cdl/ECSA, stability analysis, and RRDE/Koutecky-Levich basics are released as `v0.2.0`. v0.3 development has now started with reviewed FTIR / ATR-FTIR processing, quantitative band measurement, explicit baseline fitting, and publication plotting merged through Issue #50 / PR #51.
+The reviewed v0.1 scientific foundation covers common one-dimensional XY workflows: tabular import, reusable processing, LSV/polarization curves, XRD, Raman, and exact-size PNG/SVG/PDF export. The v0.2 quantitative-electrochemistry release is complete: shared electrochemistry quantity/provenance conventions, scatter/bar rendering, Tafel analysis, Faradaic efficiency, product partial-current density, activity normalization, TOF/TOFapp, CV/Cdl/ECSA, stability analysis, and RRDE/Koutecky-Levich basics are released as `v0.2.0`. v0.3 development is active on top of that stable release: reviewed FTIR / ATR-FTIR and TGA / DTG / TPR / TPD thermal-analysis workflows are now merged, while the package/runtime version intentionally remains `0.2.0` until a separate v0.3 release gate is reviewed.
 
 ## Install from a source checkout
 
@@ -73,13 +73,14 @@ export_figure(fig, "lsv.png", spec=spec)
 
 The processing API does not silently guess a reference electrode, pH, reference potential, current sign, or electrode area. Those choices remain explicit and are stored in provenance.
 
-Four complete compact examples are available in [`examples/`](examples/):
+Five complete compact examples are available in [`examples/`](examples/):
 
 ```bash
 python examples/lsv_quickstart.py
 python examples/xrd_quickstart.py
 python examples/raman_quickstart.py
 python examples/ftir_quickstart.py
+python examples/thermal_quickstart.py
 ```
 
 ## Public API map
@@ -90,7 +91,7 @@ The supported import surfaces are intentionally organized by responsibility rath
 - `catalysis_workbench.io`: `read_csv`, `read_txt`, `read_excel`, `read_tabular`, `TabularReadError`.
 - `catalysis_workbench.processing`: crop, normalization, offset, Savitzky-Golay smoothing, interpolation, integration, explicit baseline subtraction, Dataset mapping, and processing errors/results.
 - `catalysis_workbench.experimental.echem`: reviewed LSV processing/configuration; explicit electrochemistry quantity/reference/provenance helpers; Tafel fitting; Faradaic-efficiency analysis and closure QA; product partial-current density and closure QA; catalyst-/metal-mass and ECSA activity normalization; TOF/TOFapp; CV/Cdl/ECSA; stability analysis; RRDE metrics; Koutecky-Levich fitting/apparent electron-number helpers; plus lazy publication plotting adapters.
-- `catalysis_workbench.experimental.characterization`: XRD, Raman, and FTIR/ATR-FTIR validation/processing; quantitative Raman/FTIR band helpers; explicit FTIR transmittance conversion and baseline fitting; annotations/reference sticks; and lazy `plot_xrd` / `plot_raman` / `plot_ftir` adapters.
+- `catalysis_workbench.experimental.characterization`: XRD, Raman, FTIR/ATR-FTIR, and TGA/DTG/TPR/TPD validation/processing; quantitative Raman/FTIR band helpers; explicit FTIR transmittance conversion and baseline fitting; explicit TGA mass normalization and DTG derivation/sign semantics; direct thermal-window extrema/area measurement; annotations/reference sticks; and lazy `plot_xrd` / `plot_raman` / `plot_ftir` / `plot_thermal` adapters.
 - `catalysis_workbench.visualization`: `FigureSpec`, `LayoutSpec`, `PlotStyle`, `SeriesStyle`, annotations/export settings, presets, shared curve/scatter/bar renderers, and `export_figure`.
 
 Objects or functions in implementation modules that are not exported by these package-level `__all__` surfaces should be treated as internal and may change during development.
@@ -102,7 +103,7 @@ CatalysisWorkbench focuses on data that require secondary processing before they
 ### Experimental data
 
 - Electrochemistry: the v0.2 core is released — LSV/polarization processing, shared quantity/provenance conventions, Tafel, Faradaic efficiency, partial current density, mass/ECSA activity normalization, TOF/TOFapp, CV/Cdl/ECSA, stability, and RRDE/K-L basics. Advanced EIS and product-calibration workflows remain later roadmap work.
-- Characterization: XRD, Raman, and the first reviewed FTIR/ATR-FTIR workflow are implemented. BET/sorption, ICP/composition integration, thermal-analysis curves, XPS, and XAS remain staged in the roadmap.
+- Characterization: XRD, Raman, FTIR/ATR-FTIR, and the reviewed TGA/DTG/TPR/TPD thermal-analysis foundation are implemented. Basic BET/gas-sorption plotting is selected as the next v0.3 scientific module; ICP/composition integration, shared peak-fitting, XPS, and XAS remain staged in the roadmap.
 - Product analysis: v0.2 Faradaic efficiency starts from already quantified product amounts or rates. Raw calibration and GC/HPLC/NMR-derived quantification workflows remain staged after the core electrochemistry foundation.
 
 ### Computational data
@@ -143,16 +144,16 @@ A catalyst or sample name remains lightweight metadata on a data series; Catalys
 
 The v0.1 scientific/common-XY feature set is released as v0.1.0. The complete v0.2 implementation sequence #19-#28 plus Gate A/B/C release validation is released as `v0.2.0` on 2026-08-24. The tag resolves exactly to reviewed release commit `1f7f4057397c61ef2f771b96fceadc8a529b62d9`. Package-registry publication is not implied by the Git tag and remains out of scope until a separate distribution policy is reviewed.
 
-Post-release v0.3 development is active on `main`: Issue #50 / PR #51 added the first reviewed FTIR/ATR-FTIR workflow while intentionally leaving the package version at `0.2.0`. No `v0.3.0` release or tag is implied by this development state.
+Post-release v0.3 development is active on `main`: Issue #50 / PR #51 added the reviewed FTIR/ATR-FTIR workflow, and Issue #54 / PR #55 added the reviewed TGA/DTG/TPR/TPD thermal-analysis foundation at merge commit `d06d4459955d50801ed7676326efcecdccb6df73`. Both intentionally leave the package/runtime version at `0.2.0`; no `v0.3.0` release or tag is implied by this development state.
 
-New functionality follows a strict feature loop: prior-art scan with license recording, implementation/regression tests, CI, Draft PR, scientific/API/compatibility review, fixes, CI, second review, Ready/merge gate, squash merge, `main` CI verification when visible, then issue closure. Release/version work uses the same exact-head discipline with release/API/packaging/version review.
+New functionality follows a strict feature loop: prior-art scan with license recording, implementation/regression tests, CI, Draft PR, scientific/API/compatibility review, fixes, CI, second review, Ready/merge gate, squash merge, `main` verification when visible, then issue closure. Release/version work uses the same exact-head discipline with release/API/packaging/version review.
 
-See [`docs/MASTER_PLAN.md`](docs/MASTER_PLAN.md) for the project-wide execution model and current checkpoint, [`docs/V0_2_PLAN.md`](docs/V0_2_PLAN.md) for the completed v0.2 feature/release record, [`docs/V0_2_RELEASING.md`](docs/V0_2_RELEASING.md) for the completed v0.2 release gates and reusable release-policy record, [`docs/FTIR.md`](docs/FTIR.md) for the reviewed FTIR/ATR-FTIR scientific/API contract, and [`docs/ROADMAP.md`](docs/ROADMAP.md) for the long-range release scope.
+See [`docs/MASTER_PLAN.md`](docs/MASTER_PLAN.md) for the project-wide execution model and current checkpoint, [`docs/V0_2_PLAN.md`](docs/V0_2_PLAN.md) for the completed v0.2 feature/release record, [`docs/V0_2_RELEASING.md`](docs/V0_2_RELEASING.md) for the completed v0.2 release gates and reusable release-policy record, [`docs/FTIR.md`](docs/FTIR.md) for the reviewed FTIR/ATR-FTIR scientific/API contract, [`docs/THERMAL_ANALYSIS.md`](docs/THERMAL_ANALYSIS.md) for the reviewed TGA/DTG/TPR/TPD scientific/API contract, and [`docs/ROADMAP.md`](docs/ROADMAP.md) for the long-range release scope.
 
 ## Roadmap
 
 - **v0.2:** released as `v0.2.0` on 2026-08-24 after reviewed scientific implementation and Gate A/B/C release validation.
-- **v0.3:** development started; FTIR/ATR-FTIR is complete, while the remaining extended-experimental modules are still to be prioritized and implemented.
+- **v0.3:** development active; FTIR/ATR-FTIR and TGA/DTG/TPR/TPD are complete, and basic BET/gas-sorption plotting is selected next before ICP/composition integration and shared peak-fitting primitives.
 - **v0.4-v0.6:** advanced experimental analysis, XAS, structures, and major DFT post-processing.
 - **v0.7-v1.0:** advanced volumetric visualization, operando/time-resolved analysis, reproducible batch workflows, and a local GUI.
 
