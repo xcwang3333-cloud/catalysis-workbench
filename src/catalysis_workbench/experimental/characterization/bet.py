@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+from collections.abc import Mapping
 from dataclasses import dataclass
 from math import isfinite, sqrt
 from numbers import Real
@@ -109,7 +110,7 @@ def _validate_bet_processing_history(series: Series) -> None:
         raise BETError("BET processing_history metadata must be an ordered list/tuple")
     forbidden: list[str] = []
     for entry in history:
-        if not isinstance(entry, dict):
+        if not isinstance(entry, Mapping):
             raise BETError("BET processing_history entries must be mappings")
         operation = str(entry.get("operation", "")).strip()
         if operation in _FORBIDDEN_BET_PROCESSING_OPERATIONS:
@@ -536,7 +537,9 @@ class BETFitResult:
         supplied_n = _positive_float(self.n_monolayer_mol_g, name="n_monolayer_mol_g")
         supplied_area = _positive_float(self.surface_area_m2_g, name="surface_area_m2_g")
         if not _same_float(supplied_n, expected_n):
-            raise BETError("BET retained molar monolayer loading contradicts source-unit conversion")
+            raise BETError(
+                "BET retained molar monolayer loading contradicts source-unit conversion"
+            )
         if not _same_float(supplied_area, expected_area):
             raise BETError("BET retained surface area contradicts monolayer loading/cross-section")
         object.__setattr__(self, "cross_section_nm2", cross_section)
