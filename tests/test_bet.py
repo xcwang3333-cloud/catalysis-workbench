@@ -335,7 +335,12 @@ import json
 import sys
 import catalysis_workbench.experimental.characterization as characterization
 loaded = any(name == "matplotlib" or name.startswith("matplotlib.") for name in sys.modules)
-print(json.dumps({"matplotlib": loaded, "fit": "fit_bet" in characterization.__all__, "plot": "plot_bet_fit" in characterization.__all__}))
+payload = {
+    "matplotlib": loaded,
+    "fit": "fit_bet" in characterization.__all__,
+    "plot": "plot_bet_fit" in characterization.__all__,
+}
+print(json.dumps(payload))
 """
     completed = subprocess.run(
         [sys.executable, "-c", code],
