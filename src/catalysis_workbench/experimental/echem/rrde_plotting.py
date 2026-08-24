@@ -31,6 +31,12 @@ def _result_tuple(
     )
     if len(keys) != len(set(keys)):
         raise RRDEError("multi-result RRDE plotting requires unique disk/ring source pairs")
+    first = normalized[0]
+    for result in normalized[1:]:
+        if result.current_mode != first.current_mode:
+            raise RRDEError(
+                "RRDE overlay requires matching current_mode conventions"
+            )
     return normalized
 
 
