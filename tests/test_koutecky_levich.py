@@ -229,7 +229,13 @@ def test_kl_rejects_zero_current_and_nonpositive_selected_rotation():
             current_mode="nonnegative",
         )
 
-    bad_rotation = _kl_series(rotation=(0.0, 400.0, 900.0, 1600.0), key="rot")
+    bad_rotation = Series(
+        x=[0.0, 400.0, 900.0, 1600.0],
+        y=[0.1, 0.2, 0.3, 0.4],
+        key="rot",
+        x_axis=Axis("rotation_rate", unit="rpm"),
+        y_axis=series.y_axis,
+    )
     with pytest.raises(KouteckyLevichError, match="greater than zero"):
         fit_koutecky_levich(
             bad_rotation,
