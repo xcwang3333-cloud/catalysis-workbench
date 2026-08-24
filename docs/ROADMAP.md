@@ -26,21 +26,22 @@ Before implementing each major scientific or visualization module, comparable op
 - TOF / TOFapp.
 - CV / Cdl / ECSA.
 - Stability analysis.
-- RRDE / Koutecky–Levich basics.
+- RRDE / Koutecký–Levich basics.
 - Installed-wheel public-API and representative numerical smoke coverage for the reviewed v0.2 electrochemistry surface.
 
-## v0.3.x — Extended experimental processing — in progress
+## v0.3.x — Extended experimental processing — scope frozen / release hardening
 
 - FTIR / ATR-FTIR — implemented and merged through Issue #50 / PR #51.
 - TGA / DTG / TPR / TPD — implemented and merged through Issue #54 / PR #55.
 - Basic BET / gas-sorption plotting — implemented and merged through Issue #58 / PR #59; quantitative BET fitting remains v0.4.
 - ICP/composition data integration — implemented and merged through Issue #62 / PR #63.
-- Shared peak-fitting primitives — still planned v0.3 scope, but execution timing is intentionally pending an explicit planning decision.
+- Gate A release hardening — selected after the post-ICP checkpoint; no additional v0.3 scientific feature is added during the frozen release scope.
 
-After Issue #62 / PR #63, the bounded experimental-data modules planned for v0.3 are implemented. The remaining shared peak-fitting item is cross-cutting infrastructure rather than another independent characterization workflow. Before more implementation begins, explicitly decide whether to build that foundation in v0.3 or defer it to later advanced-analysis work and enter v0.3 release hardening. This roadmap does not itself authorize either choice.
+Shared peak-fitting has been deliberately deferred from v0.3 to v0.4. Its model families, baseline coupling, parameter constraints/ties, uncertainty/covariance semantics, and provenance will be designed with concrete constrained XPS/spectroscopy consumers rather than as a speculative standalone abstraction.
 
 ## v0.4.x — Advanced experimental analysis
 
+- Shared constrained peak-fitting foundation designed jointly with XPS/spectroscopy consumers.
 - XPS processing and constrained peak fitting.
 - EIS plotting and basic equivalent-circuit fitting.
 - BET quantitative fitting.
