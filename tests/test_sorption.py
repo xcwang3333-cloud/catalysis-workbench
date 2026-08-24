@@ -190,9 +190,9 @@ def test_dataset_processing_uses_stable_keys_and_rejects_unknown_keys() -> None:
         },
     )
     assert processed.keys == ("ads", "des")
-    np.testing.assert_allclose(processed["ads"].y, (0.2, 1.0, 3.0, 5.0))
-    np.testing.assert_allclose(processed["des"].x, (0.10, 0.50, 0.90))
-    np.testing.assert_allclose(processed["des"].y, (3.0, 5.0, 7.0))
+    np.testing.assert_allclose(processed[0].y, (0.2, 1.0, 3.0, 5.0))
+    np.testing.assert_allclose(processed[1].x, (0.10, 0.50, 0.90))
+    np.testing.assert_allclose(processed[1].y, (3.0, 5.0, 7.0))
 
     with pytest.raises(SorptionError, match="not present"):
         process_sorption_dataset(
@@ -212,7 +212,7 @@ def test_select_branch_filters_declared_metadata_only() -> None:
     selected = select_sorption_branch(dataset, branch="desorption")
     assert isinstance(selected, Dataset)
     assert selected.keys == ("des",)
-    assert selected["des"].metadata["sorption_source_direction"] == "ascending"
+    assert selected[0].metadata["sorption_source_direction"] == "ascending"
 
 
 def test_window_summary_uses_only_measured_points_without_interpolation() -> None:
