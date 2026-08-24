@@ -4,12 +4,21 @@ All notable changes to CatalysisWorkbench are recorded here.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-08-24
+
+The v0.3 final-version candidate freezes the reviewed extended-characterization scope after Gate A release hardening. The Git tag and any package-registry publication remain separately authorized operations.
+
 ### Added
 
 - First v0.3 FTIR/ATR-FTIR workflow with explicit wavenumber and absorbance/transmittance semantics, explicit `A = -log10(T)` conversion, caller-window polynomial baseline fitting, direction-independent direct-window band integration, stable-key Dataset processing, shared publication plotting, deterministic provenance, installed-wheel smoke, and compact quickstart documentation.
 - Reviewed TGA / DTG / TPR / TPD thermal-analysis foundation with explicit °C/K temperature semantics and conversion, raw-mass versus normalized TGA bases, explicit reference-mass normalization, measured-grid `numpy.gradient` DTG with caller-selected sign convention, TPR/TPD detector-signal semantics, measured-point-supported direct thermal-window extrema/integration, stable-key Dataset processing, compatibility guards, deterministic provenance, lazy shared publication plotting, installed-wheel thermal smoke, and compact quickstart documentation.
 - Reviewed basic gas-sorption isotherm foundation with explicit `P/P0` fraction/percent semantics, explicit adsorbed-quantity units, caller-declared adsorbate/measurement temperature/adsorption-desorption branch, explicit standard-gas conditions for `cm^3(STP)/g`, branch-direction independence, stable-key Dataset processing, measured-point-only pressure-window summaries, strict overlay compatibility, lazy shared publication plotting, installed-wheel smoke, and compact quickstart documentation; quantitative BET/Rouquerol/pore-size fitting remains deferred.
 - Reviewed ICP/elemental-composition integration foundation with immutable scalar measurement/summary tables, explicit bulk-mass-fraction versus solution-concentration bases and units, explicit digestion/dilution solution-to-bulk mass balance, deterministic tidy CSV/Excel import and stable source keys, arithmetic mean/sample-SD/RSD replicate summaries, strict no-closure/no-hidden-conversion behavior, lazy shared grouped-bar publication plotting, installed-wheel smoke, and compact quickstart documentation.
+
+### Changed
+
+- Gate B synchronizes distribution metadata and runtime `__version__` at `0.3.0` and requires a freshly built exact wheel to pass the unified v0.3 installed numerical audit, existing installed API/module smokes, all seven quickstarts, public `__all__` resolution, `pip check`, installed-source verification, and Matplotlib-lazy characterization import.
+- Shared peak-fitting remains intentionally deferred to v0.4 for joint design with constrained XPS/spectroscopy consumers; no new scientific algorithms are introduced by the v0.3 release gates.
 
 ## [0.2.0] - 2026-08-24
 
@@ -47,7 +56,7 @@ The first usable release establishes the common one-dimensional catalysis-data w
 
 - Immutable-style `Axis`, `Series`, and ordered `Dataset` scientific data models with stable non-display Series keys and deterministic metadata handling.
 - Excel, CSV, TXT/TSV/DAT tabular readers with explicit column selection, conservative unit inference, source provenance, and multi-series handling.
-- Shared XY processing primitives for crop, offset, normalization, Savitzky-Golay smoothing, interpolation, integration, explicit baseline subtraction, and Dataset mapping.
+- Shared XY processing primitives for crop, offset, normalization, Savitzky-Golay smoothing, interpolation, integration, explicit baseline subtraction, Dataset mapping.
 - LSV/polarization processing with explicit RHE conversion, signed iR correction, geometric current-density normalization, provenance, and publication plotting.
 - XRD validation/processing, multi-pattern overlay/stacking, normalization compatibility, peak annotations, reference sticks, and publication plotting.
 - Raman validation/processing, multi-spectrum overlay/stacking, direct-window band measurements, explicit ID/IG-style ratios, provenance, and publication plotting.
