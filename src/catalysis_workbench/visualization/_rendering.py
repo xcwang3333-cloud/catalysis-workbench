@@ -14,8 +14,8 @@ from .specs import FigureSpec
 
 
 @contextmanager
-def figure_axes_context(spec: FigureSpec) -> Iterator[tuple[Figure, Axes]]:
-    """Create a headless figure/axes pair inside an isolated Matplotlib rc context."""
+def figure_context(spec: FigureSpec) -> Iterator[Figure]:
+    """Create a headless figure inside an isolated Matplotlib rc context."""
     if not isinstance(spec, FigureSpec):
         raise TypeError("spec must be a FigureSpec")
     layout = spec.layout
@@ -33,7 +33,14 @@ def figure_axes_context(spec: FigureSpec) -> Iterator[tuple[Figure, Axes]]:
             dpi=100,
         )
         FigureCanvasAgg(figure)
-        ax = figure.add_axes(layout.axes_bounds_fraction())
+        yield figure
+
+
+@contextmanager
+def figure_axes_context(spec: FigureSpec) -> Iterator[tuple[Figure, Axes]]:
+    """Create a headless figure/axes pair inside an isolated Matplotlib rc context."""
+    with figure_context(spec) as figure:
+        ax = figure.add_axes(spec.layout.axes_bounds_fraction())
         yield figure, ax
 
 
