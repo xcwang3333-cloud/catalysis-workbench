@@ -41,6 +41,15 @@ from .fe import (
     faradaic_efficiency_from_rate,
     faradaic_efficiency_series,
 )
+from .koutecky_levich import (
+    KLCurrentBasis,
+    KLCurrentMode,
+    KLElectronNumberResult,
+    KouteckyLevichError,
+    KouteckyLevichFitResult,
+    fit_koutecky_levich,
+    kl_electron_number,
+)
 from .lsv import (
     LSVError,
     LSVProcessingConfig,
@@ -96,6 +105,14 @@ from .quantities import (
     same_reference,
     scan_rate_to_v_s,
     time_to_s,
+)
+from .rrde import (
+    RRDECurrentMode,
+    RRDEError,
+    RRDEMetric,
+    RRDEResult,
+    rrde_metrics,
+    rrde_result_series,
 )
 from .stability import (
     StabilityAnalysisConfig,
@@ -302,6 +319,38 @@ def plot_stability_summary(
     )
 
 
+def plot_rrde_metric(
+    results: RRDEResult | Sequence[RRDEResult],
+    spec: FigureSpec | None = None,
+    *,
+    metric: str = "electron_number",
+    preset: str = "publication",
+) -> tuple[Figure, Axes]:
+    """Lazily render one already-calculated RRDE metric."""
+    from .rrde_plotting import plot_rrde_metric as _plot_rrde_metric
+
+    return _plot_rrde_metric(
+        results,
+        spec,
+        metric=metric,  # type: ignore[arg-type]
+        preset=preset,
+    )
+
+
+def plot_koutecky_levich(
+    results: KouteckyLevichFitResult | Sequence[KouteckyLevichFitResult],
+    spec: FigureSpec | None = None,
+    *,
+    preset: str = "publication",
+) -> tuple[Figure, Axes]:
+    """Lazily render stored K-L transformed points and fitted lines."""
+    from .koutecky_levich_plotting import (
+        plot_koutecky_levich as _plot_koutecky_levich,
+    )
+
+    return _plot_koutecky_levich(results, spec, preset=preset)
+
+
 __all__ = [
     "AVOGADRO_CONSTANT_MOL_INV",
     "ActivityBasis",
@@ -330,12 +379,21 @@ __all__ = [
     "FaradaicEfficiencyResult",
     "FitWindow",
     "GAS_CONSTANT_J_MOL_K",
+    "KLCurrentBasis",
+    "KLCurrentMode",
+    "KLElectronNumberResult",
+    "KouteckyLevichError",
+    "KouteckyLevichFitResult",
     "LSVError",
     "LSVProcessingConfig",
     "PartialCurrentClosureError",
     "PartialCurrentClosureResult",
     "PartialCurrentDensityError",
     "PartialCurrentDensityResult",
+    "RRDECurrentMode",
+    "RRDEError",
+    "RRDEMetric",
+    "RRDEResult",
     "SignMode",
     "SourceDataRef",
     "StabilityAnalysisConfig",
@@ -373,8 +431,10 @@ __all__ = [
     "faradaic_efficiency_series",
     "fit_cdl",
     "fit_cdl_groups",
+    "fit_koutecky_levich",
     "fit_tafel",
     "fit_tafel_dataset",
+    "kl_electron_number",
     "loading_to_g_cm2",
     "make_analysis_provenance",
     "mass_to_g",
@@ -392,8 +452,10 @@ __all__ = [
     "plot_cdl_fit",
     "plot_cv",
     "plot_faradaic_efficiency",
+    "plot_koutecky_levich",
     "plot_lsv",
     "plot_partial_current_density",
+    "plot_rrde_metric",
     "plot_stability",
     "plot_stability_summary",
     "plot_tafel",
@@ -403,6 +465,8 @@ __all__ = [
     "process_lsv_dataset",
     "rhe_offset_from_she",
     "rotation_rate_to_rad_s",
+    "rrde_metrics",
+    "rrde_result_series",
     "same_reference",
     "sample_cv_current",
     "scan_rate_to_v_s",
