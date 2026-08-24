@@ -12,21 +12,23 @@ Checkpoint date: 2026-08-24.
 - shared constrained peak-fitting foundation: Issue #75 / PR #76 — complete at `b6f428d96df9950373c17e5de487ac4113a2aacc`.
 - shared-fitting exact-head CI: run #255 / `32733891934` — success.
 - shared-fitting formal review ids: `5008457897`, `5008470806`.
-- XPS semantics, explicit energy correction, measured-point region preparation, and linear/Shirley background: Issue #79 / PR #80 — complete.
-- XPS preparation merge commit / current scientific baseline: `a13dbd541b299f79d83e47f079c4638b082a8061`.
-- XPS exact-head CI: run #261 / `32736488212` — success.
-- XPS formal review ids: `5008700786`, `5008706395`.
+- XPS semantics, explicit energy correction, measured-point region preparation, and linear/Shirley background: Issue #79 / PR #80 — complete at `a13dbd541b299f79d83e47f079c4638b082a8061`.
+- XPS preparation exact-head CI: run #261 / `32736488212` — success.
+- XPS preparation formal review ids: `5008700786`, `5008706395`.
+- constrained XPS components/doublets and shared-fit integration: Issue #83 / PR #84 — complete at `7897393e1e1e9e4d23fad774b4eeecdd70e2a90b`.
+- constrained-XPS final exact-head CI: run #267 / `32739584536` — success on `02d2800ec6e87cb41dca041d2734cc09c5da9235`.
+- constrained-XPS formal review ids: `5009021201`, `5009026855`.
 - reviewed runtime dependency: `lmfit>=1.3.4` (BSD-3-Clause upstream).
 - project version remains `0.3.0`.
 - no v0.4 tag, GitHub Release, or package-registry publication has been authorized or performed.
-- active scientific stage after the docs checkpoint: **constrained XPS components/doublets and shared-fit integration**.
+- active scientific stage after the docs checkpoint: **XPS publication plotting and fit diagnostics/summary**.
 
 ## v0.4 dependency order
 
 1. **Shared constrained peak-fitting foundation — complete (#75 / #76).**
 2. **XPS semantics, energy correction, and background preparation — complete (#79 / #80).**
-3. **Constrained XPS components/doublets and shared-fit integration — active next stage.**
-4. XPS publication plotting and fit diagnostics/summary.
+3. **Constrained XPS components/doublets and shared-fit integration — complete (#83 / #84).**
+4. **XPS publication plotting and fit diagnostics/summary — active next stage.**
 5. EIS plotting and basic equivalent-circuit fitting.
 6. Quantitative BET fitting.
 7. Product calibration and GC/HPLC/NMR-derived quantification.
@@ -121,69 +123,113 @@ Issue #79 / PR #80 established the XPS-specific scientific state required before
 - `Julian-Hochhaus/lmfitxps` has top-level MIT text, but its LICENSE records GPL-3.0-derived inspiration for its Shirley implementation; that Shirley implementation is reference-only and was not copied/adapted;
 - CatalysisWorkbench's Shirley implementation is project-owned from the explicit documented equation and regression-tested independently.
 
-### Explicit non-goals retained after stage B
+## Completed XPS stage C — constrained fitting integration
 
-The XPS preparation layer does not automatically:
-
-- detect peaks or choose component count;
-- fit peak components;
-- create spin-orbit doublets;
-- look up literature binding energies, splittings, or branching ratios;
-- assign oxidation states/species;
-- apply charge correction from chemical labels;
-- smooth or normalize intensity;
-- choose a background family;
-- run global/sequential multi-spectrum analysis;
-- render publication figures.
-
-## XPS stage C — constrained fitting boundary
-
-The active next scientific stage consumes both completed layers: prepared XPS state from stage B and the generic shared fitter from stage A.
+Issue #83 / PR #84 added the XPS domain consumer of the reviewed shared fitter without introducing a second optimizer or hidden chemistry defaults.
 
 ### Domain adapter responsibility
 
-The XPS layer may provide value-oriented component/doublet specifications that translate into `PeakComponentSpec` / `PeakFitSpec`, but it must not expose mutable backend `lmfit` state as the scientific API.
+The reviewed stage-C public state includes:
 
-A constrained XPS fitting request must:
+- `XPSDoubletSpec` — a value-oriented primary/secondary linkage that generates two stable shared `PeakComponentSpec` objects;
+- `XPSProcessingStep` — deterministic retained XPS preparation-history state;
+- `XPSPeakFitResult` — composition of XPS source/preparation/background/doublet provenance with the backend-independent shared `PeakFitResult`;
+- `fit_xps_peaks()` — the XPS-level fit entry point delegating optimization to shared `fit_peaks()`.
 
-- accept a validated/prepared XPS region;
-- consume either explicit zero background or an `XPSBackgroundResult` aligned exactly to that region;
-- verify background/source grid alignment and source numerical identity before fitting;
-- translate XPS domain constraints into the existing public `{component.parameter}` tie syntax;
-- call the shared `fit_peaks()` path rather than implementing a second optimizer;
-- retain enough XPS preparation + shared-fit provenance to audit the complete analysis chain.
+No mutable `lmfit.ModelResult` becomes XPS public state.
 
-### Spin-orbit doublets
+### Explicit doublet physics
 
-- doublets are represented as linked shared-fitting components;
-- separation is caller supplied in eV;
-- amplitude/area ratio is caller supplied;
-- width tie policy is caller supplied and explicit;
-- no element/orbital label silently selects textbook separation, branching ratio, peak shape, or width rule;
-- component/assignment labels are descriptive metadata, not evidence that a chemical state has been proven.
+- separation is caller supplied and signed: `secondary.center = primary.center + separation_ev`;
+- amplitude ratio is caller supplied and strictly positive;
+- every remaining model-specific shape/width parameter relation is caller supplied explicitly through positive ratios;
+- Gaussian/Lorentzian sigma relations therefore have no hidden equality default;
+- Voigt gamma, pseudo-Voigt fraction, and Doniach gamma relations must also be present explicitly when required by the shared model family;
+- generated ties use the reviewed public `{component.parameter}` expression syntax rather than backend names;
+- duplicate/colliding stable keys fail before optimization;
+- zero separation is rejected in the reviewed first implementation as a degenerate doublet definition;
+- component labels/assignment text are descriptive metadata and do not alter fitting mathematics;
+- no p/d/f textbook branching ratio or literature splitting is hard-coded.
 
-### Stage-C non-goals
+### Prepared-background fail-closed alignment
 
-- no automatic peak detection or component count;
-- no literature lookup of binding energies/splittings/ratios;
-- no automatic charge correction;
-- no hidden background recomputation/selection;
-- no smoothing/normalization;
-- no oxidation-state/species inference;
-- no publication plotting yet;
-- no global/sequential multi-spectrum fitting unless separately contracted.
+When an `XPSBackgroundResult` is used, stage C verifies before fitting:
 
-## Visualization boundary
+- source key;
+- deterministic source numerical SHA-256;
+- binding-energy unit (`eV`);
+- intensity unit;
+- declared source direction;
+- exact x grid values and order;
+- exact observed-y values;
+- background length and finiteness;
+- that the explicit fit window includes the exact prepared background region.
 
-XPS plotting remains a later lazy adapter over the existing `FigureSpec`/shared visualization system. Rendering may show measured spectrum, explicit background, component curves, total fit, and residual diagnostics, but it must not perform fitting, background calculation, energy correction, smoothing, normalization, or assignment.
+A background from another shifted spectrum, different region, relabeled intensity basis, opposite direction declaration, reordered grid, or modified intensity cannot be silently cropped/interpolated/reversed into compatibility.
+
+### Fit/result behavior
+
+- XPS semantic validation runs before fitting;
+- explicit single shared components and/or explicit XPS doublets may be supplied;
+- optional residual-multiplier weights retain the existing shared semantics;
+- optimization always delegates to `fit_peaks()`;
+- source storage direction is preserved;
+- XPS preparation history, background method/state, doublet recipe, source digest/direction, component identities and shared fit outputs remain auditable;
+- importing the numerical XPS-fitting module remains Matplotlib-lazy until shared fitting is actually invoked.
+
+### Stage-C validation evidence
+
+- final exact PR head: `02d2800ec6e87cb41dca041d2734cc09c5da9235`;
+- CI #267 / run `32739584536` — success;
+- installed-wheel constrained-XPS smoke — success;
+- existing shared-fitting, XPS-preparation, v0.1-v0.3 regression/smoke/quickstart paths — success;
+- formal final-head review ids: `5009021201`, `5009026855`;
+- expected-head squash merge commit: `7897393e1e1e9e4d23fad774b4eeecdd70e2a90b`.
+
+## Active XPS stage D — publication plotting and diagnostics
+
+The next scientific Issue may add a lazy XPS publication adapter over the existing `FigureSpec` / shared visualization infrastructure.
+
+### Rendering scope
+
+A reviewed stage-D adapter may render, without recomputation:
+
+- measured XPS spectrum from the exact fit/result grid;
+- explicit retained background;
+- stable-key component curves;
+- total best-fit curve;
+- optional physical residual diagnostics;
+- caller-visible labels/legend entries and publication annotations;
+- standard exact-size PNG/SVG/PDF export through the existing visualization layer.
+
+### Visualization invariants
+
+- XPS binding energy is commonly displayed descending, but any axis inversion must be a rendering choice only; numerical arrays/results are not reordered or mutated;
+- plotting must consume already prepared/fitted state and must not call fitting/background/energy-correction functions;
+- no smoothing, normalization, baseline/background selection, peak detection, chemistry assignment, or hidden resampling may occur during rendering;
+- stable component keys, not display labels, should control per-component styling;
+- existing `FigureSpec` typography, line/marker, axes-geometry, legend, limit, annotation and export controls remain the style contract rather than creating an XPS-specific parallel style system;
+- residual presentation must use the already reviewed physical residual `observed - best_fit`, not an optimizer-weighted objective residual;
+- plotting imports remain lazy for numerical characterization consumers.
+
+Fit diagnostics/summary may expose already-computed shared fit statistics and uncertainty availability, but stage D must not fabricate missing covariance/standard errors or reinterpret chemical state.
+
+## Later v0.4 stages
+
+After XPS plotting/diagnostics:
+
+1. EIS plotting and basic equivalent-circuit fitting;
+2. quantitative BET fitting;
+3. product calibration / GC-HPLC-NMR quantification;
+4. completion-state synchronization and later release gates.
 
 ## Prior-art / license decisions
 
-The architecture record remains in [`REFERENCES.md`](REFERENCES.md). Key decisions relevant to the next stages are:
+The architecture record remains in [`REFERENCES.md`](REFERENCES.md). Key decisions relevant to current XPS work are:
 
 - `lmfit/lmfit-py` — BSD-3-Clause; implemented runtime backend for shared fitting;
 - `derb12/pybaselines` — BSD-3-Clause; potential general-spectroscopy baseline adapter, not assumed to supply XPS Shirley/Tougaard semantics;
-- `jacobdben/XPyS` — MIT; XPS scientific/workflow reference only;
+- `jacobdben/XPyS` — MIT; XPS scientific/workflow reference only; its code-level p/d doublet ratios are not adopted as hidden defaults;
 - `JulioAzcarate/pyFitXPS` — non-standard/NOASSERTION repository license metadata; reference only;
 - `Julian-Hochhaus/lmfitxps` — Shirley implementation has mixed/GPL provenance recorded in its LICENSE; reference only for that implementation;
 - `Julian-Hochhaus/LG4X-V2` — mixed provenance including GPL-derived portions despite top-level MIT text; workflow/UX reference only.
