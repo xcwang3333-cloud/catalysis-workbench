@@ -149,7 +149,9 @@ def partial_current_density_dataset(
     if not isinstance(fe_dataset, Dataset):
         raise TypeError("fe_dataset must be a Dataset")
     if len(fe_dataset) == 0:
-        raise PartialCurrentDensityError("cannot calculate partial currents for an empty FE Dataset")
+        raise PartialCurrentDensityError(
+            "cannot calculate partial currents for an empty FE Dataset"
+        )
     keys = tuple(item.key for item in fe_dataset)
     if any(not key for key in keys):
         raise PartialCurrentDensityError(
