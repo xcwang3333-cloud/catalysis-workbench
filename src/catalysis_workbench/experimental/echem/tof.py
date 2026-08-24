@@ -24,9 +24,7 @@ from .quantities import (
     molar_rate_to_mol_s,
     normalize_unit,
 )
-from .quantities import (
-    electron_number as validate_electron_number,
-)
+from .quantities import electron_number as validate_electron_number
 
 AVOGADRO_CONSTANT_MOL_INV = 6.02214076e23
 
@@ -47,10 +45,23 @@ _FREQUENCY_OUTPUT = {
     normalize_unit("min^-1"): (60.0, "min^-1"),
     normalize_unit("h^-1"): (3600.0, "h^-1"),
 }
+_VALID_UPSTREAM_SIGN_MODES = {"signed", "magnitude"}
+_HEX = set("0123456789abcdef")
 
 
 class TurnoverFrequencyError(ValueError):
     """Raised when TOF/TOFapp inputs violate the scientific contract."""
+
+
+def _source_kind(value: object) -> TurnoverSourceKind:
+    if isinstance(value, str):
+        if value == "molar_rate":
+            return "molar_rate"
+        if value == "partial_current":
+            return "partial_current"
+    raise TurnoverFrequencyError(
+        "source_kind must be 'molar_rate' or 'partial_current'"
+    )
 
 
 def _basis(value: object) -> TurnoverInventoryBasis:
@@ -117,7 +128,10 @@ def _inventory_to_mol(value: object, unit: object) -> tuple[float, str]:
             "inventory_unit must be an amount unit (mol/mmol/umol/nmol) "
             "or an explicit count unit (count/site/sites/atom/atoms)"
         ) from exc
-    return _positive_scalar(float(np.asarray(converted).item()), name="inventory_mol"), requested
+    return (
+        _positive_scalar(float(np.asarray(converted).item()), name="inventory_mol"),
+        requested,
+    )
 
 
 def _output_unit(value: object) -> str:
@@ -133,7 +147,10 @@ def _output_unit(value: object) -> str:
 
 def _frequency_from_s(values: ArrayLike, output_unit: str) -> NDArray[np.float64]:
     factor, _ = _FREQUENCY_OUTPUT[normalize_unit(output_unit)]
-    return _immutable(np.asarray(values, dtype=np.float64) * factor, name="turnover frequency")
+    return _immutable(
+        np.asarray(values, dtype=np.float64) * factor,
+        name="turnover frequency",
+    )
 
 
 def _nonnegative(values: ArrayLike, *, name: str) -> NDArray[np.float64]:
@@ -143,6 +160,90 @@ def _nonnegative(values: ArrayLike, *, name: str) -> NDArray[np.float64]:
             f"{name} must be non-negative; no absolute-value conversion is implicit"
         )
     return resolved
+
+
+def _normalization(series: Series) -> str | None:
+    value = series.y_axis.metadata.get("normalization")
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise TurnoverFrequencyError(
+            "current-density normalization metadata must be a string"
+        )
+    return value.strip().casefold().replace(" ", "_") or None
+
+
+def _source_ref_is_valid(value: object) -> bool:
+    if not isinstance(value, Mapping):
+        return False
+    sha = value.get("sha256")
+    if not isinstance(sha, str):
+        return False
+    normalized = sha.strip().casefold()
+    if len(normalized) != 64 or any(character not in _HEX for character in normalized):
+        return False
+    for key in ("x_name", "y_name"):
+        field = value.get(key)
+        if not isinstance(field, str) or not field.strip():
+            return False
+    for key in ("key", "label"):
+        field = value.get(key)
+        if not isinstance(field, str):
+            return False
+    for key in ("x_unit", "y_unit"):
+        field = value.get(key)
+        if field is not None and not isinstance(field, str):
+            return False
+    return True
+
+
+def _partial_current_provenance(series: Series) -> str:
+    if series.metadata.get("analysis") != "partial_current_density":
+        raise TurnoverFrequencyError(
+            "partial-current density must carry compatible Issue #23 provenance"
+        )
+    sign_mode = series.metadata.get("sign_mode")
+    if not isinstance(sign_mode, str) or sign_mode not in _VALID_UPSTREAM_SIGN_MODES:
+        raise TurnoverFrequencyError(
+            "Issue #23 partial-current provenance requires sign_mode='signed' "
+            "or 'magnitude'"
+        )
+    if not _source_ref_is_valid(series.metadata.get("current_source")):
+        raise TurnoverFrequencyError(
+            "Issue #23 partial-current provenance has an invalid current_source"
+        )
+    if not _source_ref_is_valid(series.metadata.get("fe_source")):
+        raise TurnoverFrequencyError(
+            "Issue #23 partial-current provenance has an invalid fe_source"
+        )
+    return sign_mode
+
+
+def _geometric_area_cm2(value: object, unit: object) -> float:
+    numeric = _positive_scalar(value, name="geometric_area_value")
+    if not isinstance(unit, str) or not unit.strip():
+        raise TurnoverFrequencyError("geometric_area_unit must be a non-empty string")
+    try:
+        converted = area_to_cm2(numeric, unit, allow_nan=False)
+    except EchemQuantityError as exc:
+        raise TurnoverFrequencyError(str(exc)) from exc
+    return _positive_scalar(
+        float(np.asarray(converted).item()),
+        name="geometric_area_cm2",
+    )
+
+
+def _source_dict(series: Series) -> dict[str, object]:
+    source = source_data_ref(series)
+    return {
+        "key": source.key,
+        "label": source.label,
+        "sha256": source.sha256,
+        "x_name": source.x_name,
+        "x_unit": source.x_unit,
+        "y_name": source.y_name,
+        "y_unit": source.y_unit,
+    }
 
 
 @dataclass(frozen=True, slots=True, eq=False)
@@ -160,10 +261,7 @@ class TurnoverFrequencyResult:
     current_mode: TurnoverCurrentMode | None = None
 
     def __post_init__(self) -> None:
-        if self.source_kind not in {"molar_rate", "partial_current"}:
-            raise TurnoverFrequencyError(
-                "source_kind must be 'molar_rate' or 'partial_current'"
-            )
+        source_kind = _source_kind(self.source_kind)
         rate = _nonnegative(self.product_rate_mol_s, name="product_rate_mol_s")
         basis = _basis(self.inventory_basis)
         inventory_value = _positive_scalar(self.inventory_value, name="inventory_value")
@@ -178,7 +276,7 @@ class TurnoverFrequencyResult:
             )
         output_unit = _output_unit(self.output_unit)
 
-        if self.source_kind == "molar_rate":
+        if source_kind == "molar_rate":
             if self.electron_number is not None or self.current_mode is not None:
                 raise TurnoverFrequencyError(
                     "rate-based result must not declare electron_number or current_mode"
@@ -200,6 +298,7 @@ class TurnoverFrequencyResult:
                 )
             mode = _current_mode(self.current_mode)
 
+        object.__setattr__(self, "source_kind", source_kind)
         object.__setattr__(self, "product_rate_mol_s", rate)
         object.__setattr__(self, "inventory_basis", basis)
         object.__setattr__(self, "inventory_value", inventory_value)
@@ -279,7 +378,10 @@ def turnover_frequency_from_partial_current(
     if mode == "nonnegative":
         current_for_rate = _nonnegative(current_a, name="partial current")
     else:
-        current_for_rate = _immutable(np.abs(current_a), name="partial-current magnitude")
+        current_for_rate = _immutable(
+            np.abs(current_a),
+            name="partial-current magnitude",
+        )
     rate = current_for_rate / (electron_count * FARADAY_CONSTANT_C_MOL)
     inventory_mol, resolved_inventory_unit = _inventory_to_mol(
         inventory_value,
@@ -296,37 +398,6 @@ def turnover_frequency_from_partial_current(
         electron_number=electron_count,
         current_mode=mode,
     )
-
-
-def _normalization(series: Series) -> str | None:
-    value = series.y_axis.metadata.get("normalization")
-    if value is None:
-        return None
-    return str(value).strip().casefold().replace(" ", "_") or None
-
-
-def _geometric_area_cm2(value: object, unit: object) -> float:
-    numeric = _positive_scalar(value, name="geometric_area_value")
-    if not isinstance(unit, str) or not unit.strip():
-        raise TurnoverFrequencyError("geometric_area_unit must be a non-empty string")
-    try:
-        converted = area_to_cm2(numeric, unit, allow_nan=False)
-    except EchemQuantityError as exc:
-        raise TurnoverFrequencyError(str(exc)) from exc
-    return _positive_scalar(float(np.asarray(converted).item()), name="geometric_area_cm2")
-
-
-def _source_dict(series: Series) -> dict[str, object]:
-    source = source_data_ref(series)
-    return {
-        "key": source.key,
-        "label": source.label,
-        "sha256": source.sha256,
-        "x_name": source.x_name,
-        "x_unit": source.x_unit,
-        "y_name": source.y_name,
-        "y_unit": source.y_unit,
-    }
 
 
 def _result_series(
@@ -406,7 +477,11 @@ def turnover_frequency_from_rate_series(
             "inventory_mol": result.inventory_mol,
         },
     )
-    return _result_series(series, result, extra_metadata={"provenance": provenance})
+    return _result_series(
+        series,
+        result,
+        extra_metadata={"provenance": provenance},
+    )
 
 
 def turnover_frequency_from_partial_current_series(
@@ -432,14 +507,7 @@ def turnover_frequency_from_partial_current_series(
         raise TurnoverFrequencyError(
             "partial-current density must explicitly declare geometric-area normalization"
         )
-    if (
-        series.metadata.get("analysis") != "partial_current_density"
-        or "current_source" not in series.metadata
-        or "fe_source" not in series.metadata
-    ):
-        raise TurnoverFrequencyError(
-            "partial-current density must carry compatible Issue #23 provenance"
-        )
+    upstream_sign_mode = _partial_current_provenance(series)
 
     area_cm2 = _geometric_area_cm2(geometric_area_value, geometric_area_unit)
     stored_area = series.y_axis.metadata.get("electrode_area_cm2")
@@ -489,7 +557,7 @@ def turnover_frequency_from_partial_current_series(
             "electron_number": result.electron_number,
             "current_mode": result.current_mode,
             "geometric_area_cm2": area_cm2,
-            "upstream_sign_mode": series.metadata.get("sign_mode"),
+            "upstream_sign_mode": upstream_sign_mode,
         },
     )
     return _result_series(
@@ -497,7 +565,7 @@ def turnover_frequency_from_partial_current_series(
         result,
         extra_metadata={
             "geometric_area_cm2": area_cm2,
-            "upstream_sign_mode": series.metadata.get("sign_mode"),
+            "upstream_sign_mode": upstream_sign_mode,
             "provenance": provenance,
         },
     )
@@ -583,6 +651,10 @@ def turnover_frequency_from_partial_current_dataset(
             )
         )
     basis = _basis(inventory_basis)
+    try:
+        electron_count = validate_electron_number(electron_number)
+    except EchemQuantityError as exc:
+        raise TurnoverFrequencyError(str(exc)) from exc
     return Dataset(
         series=tuple(output),
         name=dataset.name or ("TOF" if basis == "active_sites" else "TOFapp"),
@@ -590,7 +662,7 @@ def turnover_frequency_from_partial_current_dataset(
             "analysis": "turnover_frequency",
             "metric": "TOF" if basis == "active_sites" else "TOFapp",
             "inventory_basis": basis,
-            "electron_number": validate_electron_number(electron_number),
+            "electron_number": electron_count,
             "current_mode": _current_mode(current_mode),
             "output_unit": _output_unit(output_unit),
             "series_keys": keys,
