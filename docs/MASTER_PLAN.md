@@ -22,7 +22,7 @@ Checkpoint date: 2026-08-24.
 
 - Repository: `xcwang3333-cloud/catalysis-workbench`.
 - Stable integration branch: `main`.
-- Current scientific `main` baseline: `7897393e1e1e9e4d23fad774b4eeecdd70e2a90b` (`feat: add constrained XPS fitting integration (#84)`).
+- Current scientific `main` baseline: `3eab8c8e936cf1897081b7a396306288e517a3bb` (`feat: add XPS publication plotting and diagnostics (#88)`).
 - v0.4 architecture checkpoint: Issue #73 / PR #74 — complete at `a7fb245bd39f8aa3dc18141c2ecf6f005f02ebd1`.
 - v0.4 shared constrained peak-fitting foundation: Issue #75 / PR #76 — complete at `b6f428d96df9950373c17e5de487ac4113a2aacc`.
 - shared-fitting exact-head CI #255 / run `32733891934` — success.
@@ -33,12 +33,15 @@ Checkpoint date: 2026-08-24.
 - constrained XPS components/doublets and shared-fit integration: Issue #83 / PR #84 — complete at `7897393e1e1e9e4d23fad774b4eeecdd70e2a90b`.
 - constrained-XPS final exact-head CI #267 / run `32739584536` — success on `02d2800ec6e87cb41dca041d2734cc09c5da9235`.
 - constrained-XPS formal reviews: `5009021201`, `5009026855`.
+- XPS publication plotting and fit diagnostics: Issue #87 / PR #88 — complete at `3eab8c8e936cf1897081b7a396306288e517a3bb`.
+- XPS plotting final exact-head CI #274 / run `32741710370` — success on `15288b21be118a450614445d6bbf82d80d459271`.
+- XPS plotting final-head review records: `5009266827`, `5009270492` (COMMENT because GitHub rejects self-APPROVE).
 - Reviewed runtime fitting dependency: `lmfit>=1.3.4`.
 - Distribution/runtime version remains `0.3.0`.
 - `v0.3.0` remains fixed on release commit `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`.
 - Package-registry publication has not been performed and remains a separate policy decision.
-- Active status checkpoint: Issue #85 — post-constrained-XPS docs sync and plotting handoff.
-- Next scientific stage after #85: XPS publication plotting and fit diagnostics/summary.
+- Active status checkpoint: Issue #89 — post-XPS-plotting docs sync and EIS handoff.
+- Next scientific stage after #89: EIS plotting and basic equivalent-circuit fitting.
 
 Live GitHub Issue/PR/tag state remains authoritative if this checkpoint becomes stale.
 
@@ -95,10 +98,9 @@ Issue #73 / PR #74 established the v0.4 architecture before implementation.
 
 Key decisions:
 
-- generic constrained fitting and XPS-specific scientific state are separate layers;
+- generic constrained fitting and technique-specific scientific state are separate layers;
 - mature nonlinear optimization is wrapped rather than reimplemented;
 - XPS owns binding-energy semantics, explicit energy-reference correction, XPS backgrounds, and spin-orbit constraints;
-- general spectroscopy baseline algorithms are not treated as automatically interchangeable with XPS Shirley/Tougaard backgrounds;
 - caller-supplied physical constraints remain visible and auditable;
 - plotting remains separate from numerical processing/fitting.
 
@@ -157,48 +159,66 @@ Reviewed public behavior includes:
 - duplicate/colliding component keys fail before optimization;
 - XPS fitting delegates optimization to shared `fit_peaks()` rather than adding a second backend;
 - prepared `XPSBackgroundResult` alignment is fail-closed on source key/digest, binding-energy and intensity units, source direction, exact x grid/order, exact observed y, background length/finiteness, and exact fit-region coverage;
-- background from a differently shifted/reordered/relabeled/modified spectrum cannot be silently repaired or reused;
 - XPS source/preparation history, background state, doublet recipe, source digest/direction and shared fit result remain auditable in `XPSPeakFitResult`;
 - assignment/display labels do not alter mathematics;
-- numerical XPS-fitting imports remain Matplotlib-lazy until fitting is invoked;
 - installed-wheel constrained-XPS smoke and all prior smokes/quickstarts pass.
 
 One fail-closed review finding was fixed before the final gate: intensity-unit and declared source-direction compatibility were added to background alignment with dedicated regressions. Final evidence is CI #267 / run `32739584536`, reviews `5009021201` and `5009026855`, and merge commit `7897393e1e1e9e4d23fad774b4eeecdd70e2a90b`.
 
-Full XPS preparation and constrained-fitting behavior is documented in [`XPS.md`](XPS.md).
+### XPS publication plotting and diagnostics — complete
 
-### Active next scientific block — XPS publication plotting and diagnostics
+Issue #87 / PR #88 delivered the fourth v0.4 scientific block as a passive rendering/diagnostic consumer of reviewed XPS fit state.
 
-After the docs-only #85 checkpoint, implementation proceeds to a lazy XPS plotting/diagnostics adapter over the existing shared visualization stack.
+Reviewed behavior includes:
 
-Required boundary:
+- lazy `plot_xps_fit()` public dispatch through `catalysis_workbench.experimental.characterization`;
+- measured/background/component/best-fit curves rendered directly from retained `XPSPeakFitResult.fit` arrays with no model reevaluation;
+- optional residual panel using the exact reviewed physical residual `observed - best_fit`;
+- display-only `descending`, `ascending`, or source-order binding-energy orientation without reversing/mutating numerical arrays;
+- deterministic stable visual keys `xps_observed`, `xps_background`, `xps_best_fit`, `xps_residual`, while fitted components retain their actual mathematical keys;
+- collision/unknown-style-key failure rather than silent style aliasing;
+- existing `FigureSpec` typography, line/marker, axes geometry, legend, limit, annotation and export state remains authoritative;
+- a small internal multi-axes figure-context refactor preserving the existing single-axes renderer path;
+- `XPSFitDiagnostics` / `summarize_xps_fit()` mirror existing success/method/backend/statistics/covariance/stderr availability without fabrication or chemical interpretation;
+- root numerical characterization imports remain Matplotlib-lazy;
+- installed-wheel plotting/diagnostics/SVG export smoke plus all existing smokes/quickstarts pass.
 
-- consume already computed `XPSPeakFitResult` / reviewed XPS state rather than recomputing scientific results;
-- render measured spectrum, retained background, stable-key component curves, total best fit, and optional physical residual diagnostics;
-- display descending binding energy by rendering convention without mutating/reversing the stored numerical result;
-- route figure geometry, typography, line widths/styles, ticks, legends, limits, annotations and exact-size export through the existing `FigureSpec` / shared visualization system;
-- preserve stable component keys for style addressing even when display labels repeat;
-- diagnostics may report already-computed shared fit statistics and uncertainty availability, but must not fabricate covariance/stderr or infer chemistry;
-- plotting imports remain lazy for numerical characterization consumers.
+The first CI attempt exposed only two Ruff defects (unused import and one overlong smoke line); these were corrected without scientific changes. Final evidence is exact-head CI #274 / run `32741710370`, final-head review records `5009266827` and `5009270492`, and expected-head squash merge `3eab8c8e936cf1897081b7a396306288e517a3bb`.
 
-Explicit non-goals of the active block:
+Full XPS preparation/fitting/plotting/diagnostics behavior is documented in [`XPS.md`](XPS.md).
 
-- no fitting or parameter optimization;
-- no background calculation/reselection;
-- no energy correction;
-- no smoothing, normalization, interpolation or hidden resampling;
-- no peak detection/component selection;
-- no chemical assignment or literature lookup;
-- no global/sequential multi-spectrum fitting;
-- no new plotting framework parallel to `FigureSpec`.
+### Active next scientific block — EIS plotting and basic equivalent-circuit fitting
+
+After the docs-only #89 checkpoint, implementation proceeds to an explicit EIS domain layer.
+
+Required initial boundary:
+
+- define frequency and complex-impedance semantics/units explicitly;
+- preserve measured frequency order unless a specific operation documents a transformed view; no hidden sort/interpolation/resampling;
+- make Nyquist sign/display convention explicit rather than silently switching between `Z''` and `-Z''`;
+- add Nyquist and Bode publication plotting through the existing `FigureSpec` system;
+- equivalent-circuit topology must be caller-visible and limited to a reviewed initial set;
+- initial values, fixed/vary state, bounds and weighting must be explicit;
+- no automatic topology selection or hidden initial-guess heuristic in the first stage;
+- fitting results must be backend-independent, auditable and retain source/circuit/weighting provenance;
+- numerical fitting and rendering remain separate responsibilities;
+- any new runtime fitting/circuit dependency requires prior-art/license/packaging review before adoption.
+
+Explicit non-goals of the initial EIS block:
+
+- no automatic circuit discovery/model selection;
+- no unit inference from display labels alone;
+- no silent frequency sorting or interpolation;
+- no hidden residual weighting;
+- no electrochemical interpretation inferred solely from a circuit label;
+- no GUI or new visualization framework parallel to `FigureSpec`.
 
 ### Later v0.4 dependency order
 
-1. XPS publication plotting and diagnostics;
-2. EIS plotting and basic equivalent-circuit fitting;
-3. quantitative BET fitting;
-4. product calibration / GC-HPLC-NMR quantification;
-5. completion-state synchronization and later release gates.
+1. EIS plotting and basic equivalent-circuit fitting;
+2. quantitative BET fitting;
+3. product calibration / GC-HPLC-NMR quantification;
+4. completion-state synchronization and later release gates.
 
 ## Mandatory development loop
 
@@ -273,7 +293,7 @@ After squash merge, re-read `main`. When connector visibility does not expose a 
 - [`ROADMAP.md`](ROADMAP.md): long-range release scope; not a per-commit log.
 - [`V0_4_PLAN.md`](V0_4_PLAN.md): active v0.4 dependency order and scientific/API boundaries.
 - [`PEAK_FITTING.md`](PEAK_FITTING.md): reviewed shared-fitting contract.
-- [`XPS.md`](XPS.md): reviewed XPS semantics, preparation, background and constrained-fitting contract.
+- [`XPS.md`](XPS.md): reviewed XPS semantics, preparation, fitting, plotting and diagnostics contract.
 - [`REFERENCES.md`](REFERENCES.md): prior-art projects, useful ideas, licenses, and dependency/reference-only decisions.
 - module-specific documents: exact scientific/API contracts for implemented modules.
 - GitHub Issues: active acceptance criteria.
@@ -290,4 +310,4 @@ After each merged scientific Issue, update only documentation whose statements b
 - whether the preceding Issue is actually closed/completed;
 - version/tag/publication boundaries.
 
-The post-constrained-XPS checkpoint is Issue #85. After it merges, the next active scientific Issue should implement XPS publication plotting/diagnostics without reopening or duplicating the completed shared-fitting, XPS-preparation, or constrained-fitting numerical layers.
+The post-XPS-plotting checkpoint is Issue #89. After it merges, the next active scientific Issue should implement EIS plotting/basic equivalent-circuit fitting without reopening or duplicating the completed XPS numerical/rendering stack.
