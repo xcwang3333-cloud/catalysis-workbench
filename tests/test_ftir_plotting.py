@@ -56,6 +56,25 @@ def test_plot_ftir_preserves_explicit_empty_axis_label_contract():
     fig.canvas.draw()
 
 
+def test_plot_ftir_preserves_explicit_xlim_while_applying_display_direction():
+    spec = get_preset("publication").updated(xlim=(1050.0, 1350.0))
+    fig_desc, ax_desc = plot_ftir(
+        _spectrum(),
+        spec,
+        wavenumber_direction="descending",
+    )
+    assert ax_desc.get_xlim() == pytest.approx((1350.0, 1050.0))
+    fig_desc.canvas.draw()
+
+    fig_asc, ax_asc = plot_ftir(
+        _spectrum(descending=True),
+        spec,
+        wavenumber_direction="ascending",
+    )
+    assert ax_asc.get_xlim() == pytest.approx((1050.0, 1350.0))
+    fig_asc.canvas.draw()
+
+
 def test_plot_ftir_can_follow_source_or_force_ascending_direction():
     descending = _spectrum(descending=True)
     fig_source, ax_source = plot_ftir(descending, wavenumber_direction="source")
