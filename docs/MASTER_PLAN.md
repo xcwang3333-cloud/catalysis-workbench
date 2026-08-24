@@ -22,17 +22,20 @@ Checkpoint date: 2026-08-24.
 
 - Repository: `xcwang3333-cloud/catalysis-workbench`.
 - Stable integration branch: `main`.
-- Current scientific `main` baseline after shared fitting: `b6f428d96df9950373c17e5de487ac4113a2aacc` (`feat: add shared constrained peak-fitting foundation (#76)`).
+- Current scientific `main` baseline: `a13dbd541b299f79d83e47f079c4638b082a8061` (`feat: add XPS semantics and background preparation (#80)`).
 - v0.4 architecture checkpoint: Issue #73 / PR #74 — complete at `a7fb245bd39f8aa3dc18141c2ecf6f005f02ebd1`.
 - v0.4 shared constrained peak-fitting foundation: Issue #75 / PR #76 — complete at `b6f428d96df9950373c17e5de487ac4113a2aacc`.
-- Shared-fitting exact-head CI #255 / run `32733891934` — success.
-- Shared-fitting formal reviews: `5008457897`, `5008470806`.
+- shared-fitting exact-head CI #255 / run `32733891934` — success.
+- shared-fitting formal reviews: `5008457897`, `5008470806`.
+- XPS semantics/energy correction/region/background preparation: Issue #79 / PR #80 — complete at `a13dbd541b299f79d83e47f079c4638b082a8061`.
+- XPS exact-head CI #261 / run `32736488212` — success.
+- XPS formal reviews: `5008700786`, `5008706395`.
 - Reviewed runtime fitting dependency: `lmfit>=1.3.4`.
 - Distribution/runtime version remains `0.3.0`.
 - `v0.3.0` remains fixed on release commit `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`.
 - Package-registry publication has not been performed and remains a separate policy decision.
-- Active status checkpoint: Issue #77 — post-peak-fitting docs sync and XPS handoff.
-- Next scientific stage after #77: XPS binding-energy semantics, explicit energy correction, and explicit linear/Shirley background preparation.
+- Active status checkpoint: Issue #81 — post-XPS-preparation docs sync and constrained-fitting handoff.
+- Next scientific stage after #81: constrained XPS components/doublets and shared-fit integration.
 
 Live GitHub Issue/PR/tag state remains authoritative if this checkpoint becomes stale.
 
@@ -120,44 +123,62 @@ Reviewed public behavior includes:
 
 Full behavior is documented in [`PEAK_FITTING.md`](PEAK_FITTING.md).
 
-### Next scientific block — XPS semantics and preparation
+### XPS semantics and preparation — complete
 
-After the docs-only #77 checkpoint, implementation proceeds to XPS data semantics and preparation.
+Issue #79 / PR #80 delivered the second v0.4 scientific block.
 
-Required first-stage XPS contract:
+Reviewed public behavior under `catalysis_workbench.experimental.characterization` includes:
 
-- canonical x semantic: binding energy;
-- explicit eV unit validation;
-- strictly monotonic ascending or descending stored energy order;
-- source order preserved;
-- explicit additive energy correction `E_corrected = E_source + shift_eV`;
-- correction rationale/reference and deterministic provenance retained;
-- repeated/contradictory correction detected rather than silently accumulated;
-- caller-supplied fit/preparation region;
-- explicit linear background implementation;
-- explicit Shirley background implementation with documented equation, convergence criterion, iteration limit, and direction handling;
-- retained background numerical state for later shared-fit consumption;
-- no hidden sorting/interpolation/smoothing/normalization/background selection.
+- `validate_xps_series` with explicit `binding_energy`/eV and `intensity` semantics;
+- strictly monotonic ascending or descending source storage with source-order preservation;
+- `shift_xps_binding_energy` using the literal additive convention `E_corrected = E_source + shift_ev`, deterministic provenance, and repeated-correction rejection;
+- `prepare_xps_region` using inclusive measured-point-only numerical bounds without interpolation or synthesized endpoints;
+- immutable `XPSBackgroundResult` state with exact source/grid/endpoint/method/convergence provenance;
+- `linear_xps_background` using measured numerical low/high-energy endpoint intensities;
+- `shirley_xps_background` independently implemented from the explicit fixed-point integral equation using measured-grid trapezoids, deterministic linear initialization, explicit tolerances/max iterations, exact endpoints, and explicit zero-integral/non-convergence failure;
+- direction-equivalent linear/Shirley physical behavior with output restored to source storage order;
+- numerical XPS imports remaining Matplotlib-lazy;
+- fresh installed-wheel XPS smoke while all existing installed smokes and seven quickstarts remain green.
 
-Explicit non-goals of this next block:
+Fresh prior-art review retained XPyS and pyFitXPS as reference-only sources. `lmfitxps` was also treated as reference-only for Shirley because its LICENSE records GPL-derived inspiration for that implementation; no such implementation code was copied or adapted.
 
-- no peak optimization;
-- no XPS doublet helper yet;
+Tougaard, peak fitting, doublet helpers, automatic charge correction, literature lookup, chemistry assignment, smoothing/normalization, plotting, and global/sequential XPS analysis remain outside stage B.
+
+Full behavior is documented in [`XPS.md`](XPS.md).
+
+### Active next scientific block — constrained XPS fitting
+
+After the docs-only #81 checkpoint, implementation proceeds to constrained XPS components/doublets as a domain consumer of the existing shared fitter.
+
+Required contract:
+
+- input is an explicitly validated/prepared XPS region;
+- background is explicit zero or an `XPSBackgroundResult` aligned to the exact source region grid and numerical identity;
+- XPS component state translates into the shared `PeakComponentSpec` / `PeakFitSpec` contracts rather than introducing a second optimizer;
+- spin-orbit doublets use linked components with caller-supplied separation, amplitude/area ratio, and width tie policy;
+- shared public `{component.parameter}` constraints remain the underlying tie mechanism;
+- XPS fitting results retain enough preparation and fit provenance to audit the complete chain;
+- assignment labels are metadata only and do not prove oxidation state/speciation.
+
+Explicit non-goals of the active block:
+
+- no automatic peak detection or component-count choice;
+- no hidden textbook/literature lookup of binding energies, doublet separation, branching ratio, peak shape, or width relation;
 - no automatic charge correction;
-- no literature binding-energy/splitting lookup;
-- no peak count selection or chemical-state inference;
-- no Tougaard background without a separate scientific contract;
-- no publication plotting.
+- no hidden background selection/recomputation;
+- no smoothing or normalization;
+- no chemical-state inference;
+- no publication plotting yet;
+- no global/sequential multi-spectrum fitting unless separately contracted.
 
 ### Later v0.4 dependency order
 
-1. XPS semantics, energy correction, and linear/Shirley background preparation;
-2. constrained XPS components/doublets and shared-fit integration;
-3. XPS publication plotting and diagnostics;
-4. EIS plotting and basic equivalent-circuit fitting;
-5. quantitative BET fitting;
-6. product calibration / GC-HPLC-NMR quantification;
-7. completion-state synchronization and later release gates.
+1. constrained XPS components/doublets and shared-fit integration;
+2. XPS publication plotting and diagnostics;
+3. EIS plotting and basic equivalent-circuit fitting;
+4. quantitative BET fitting;
+5. product calibration / GC-HPLC-NMR quantification;
+6. completion-state synchronization and later release gates.
 
 ## Mandatory development loop
 
@@ -232,6 +253,7 @@ After squash merge, re-read `main`. When connector visibility does not expose a 
 - [`ROADMAP.md`](ROADMAP.md): long-range release scope; not a per-commit log.
 - [`V0_4_PLAN.md`](V0_4_PLAN.md): active v0.4 dependency order and scientific/API boundaries.
 - [`PEAK_FITTING.md`](PEAK_FITTING.md): reviewed shared-fitting contract.
+- [`XPS.md`](XPS.md): reviewed XPS semantics, energy-correction, region, and background-preparation contract.
 - [`REFERENCES.md`](REFERENCES.md): prior-art projects, useful ideas, licenses, and dependency/reference-only decisions.
 - module-specific documents: exact scientific/API contracts for implemented modules.
 - GitHub Issues: active acceptance criteria.
@@ -248,4 +270,4 @@ After each merged scientific Issue, update only documentation whose statements b
 - whether the preceding Issue is actually closed/completed;
 - version/tag/publication boundaries.
 
-The post-peak-fitting checkpoint is Issue #77. After it merges, the next active scientific Issue should implement XPS semantics/energy correction/background preparation without reopening the completed shared-fitting architecture.
+The post-XPS-preparation checkpoint is Issue #81. After it merges, the next active scientific Issue should implement constrained XPS fitting without reopening the completed shared-fitting or XPS-preparation architecture.
