@@ -17,6 +17,7 @@ from catalysis_workbench.visualization import (
 )
 
 from .partial_current import PartialCurrentDensityError
+from .quantities import EchemQuantityError, current_density_to_a_cm2
 
 PartialCurrentPlotKind = Literal["scatter", "curve"]
 
@@ -40,10 +41,14 @@ def _validate_partial_current_series(data: Series | Dataset) -> None:
                 "partial-current plotting requires "
                 "y_axis.name='partial_current_density'"
             )
-        if item.y_axis.unit is None:
-            raise PartialCurrentDensityError(
-                "partial-current plotting requires an explicit current-density unit"
+        try:
+            current_density_to_a_cm2(
+                item.y,
+                item.y_axis.unit,
+                allow_nan=False,
             )
+        except EchemQuantityError as exc:
+            raise PartialCurrentDensityError(str(exc)) from exc
 
 
 def plot_partial_current_density(
