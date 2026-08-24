@@ -15,8 +15,8 @@ from catalysis_workbench.experimental.echem import (
 from catalysis_workbench.visualization import VisualizationError
 
 
-def _axis(reference: str = "RHE") -> Axis:
-    return Axis("potential", unit="V", metadata={"reference": reference})
+def _axis(reference: str = "RHE", unit: str = "V") -> Axis:
+    return Axis("potential", unit=unit, metadata={"reference": reference})
 
 
 def _sweep(key: str, *, density: bool = False, reference: str = "RHE") -> Series:
@@ -58,11 +58,12 @@ def _pair(rate: float) -> CVSweepPair:
     return CVSweepPair(f"{rate}", anodic, cathodic, rate, "mV/s")
 
 
-def test_plot_cv_reuses_shared_curve_renderer():
+def test_plot_cv_reuses_shared_curve_renderer_and_shows_reference():
     data = Dataset([_sweep("a"), _sweep("b")])
     fig, ax = plot_cv(data)
     assert fig is ax.figure
     assert len(ax.lines) == 2
+    assert "RHE" in ax.get_xlabel()
 
 
 def test_plot_cv_inherits_reference_compatibility_guard():
@@ -86,6 +87,28 @@ def test_plot_cv_rejects_non_geometric_density_semantics():
     )
     with pytest.raises(CdlError, match="geometric-area normalization"):
         plot_cv(bad)
+
+
+def test_plot_cv_rejects_unsupported_potential_and_current_units():
+    bad_potential = Series(
+        x=(0.4, 0.5, 0.6),
+        y=(1.0, 2.0, 3.0),
+        key="bad-potential",
+        x_axis=_axis(unit="eV"),
+        y_axis=Axis("current", unit="mA"),
+    )
+    with pytest.raises(CdlError, match="potential units"):
+        plot_cv(bad_potential)
+
+    bad_current = Series(
+        x=(0.4, 0.5, 0.6),
+        y=(1.0, 2.0, 3.0),
+        key="bad-current",
+        x_axis=_axis(),
+        y_axis=Axis("current", unit="mA/cm^2"),
+    )
+    with pytest.raises(CdlError, match="supported current unit"):
+        plot_cv(bad_current)
 
 
 def test_plot_cdl_fit_renders_measured_and_fitted_series():
