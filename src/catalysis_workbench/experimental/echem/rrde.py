@@ -13,7 +13,7 @@ from numpy.typing import ArrayLike, NDArray
 from catalysis_workbench.core import Axis, Series
 
 from .provenance import SourceDataRef, source_data_ref
-from .quantities import EchemQuantityError, current_to_a
+from .quantities import EchemQuantityError, current_to_a, potential_to_v
 
 RRDECurrentMode = Literal["nonnegative", "magnitude"]
 RRDEMetric = Literal["electron_number", "peroxide_percent"]
@@ -95,6 +95,15 @@ def _semantic_metadata(axis: Axis, key: str) -> object:
     return value
 
 
+def _validate_potential_condition_unit(unit: str | None) -> None:
+    try:
+        potential_to_v([0.0], unit, allow_nan=False)
+    except EchemQuantityError as exc:
+        raise RRDEError(
+            "potential-aligned RRDE data require a supported potential unit"
+        ) from exc
+
+
 def _validate_condition_axis(disk: Series, ring: Series) -> None:
     if disk.x_axis.name != ring.x_axis.name or disk.x_axis.unit != ring.x_axis.unit:
         raise RRDEError(
@@ -108,6 +117,7 @@ def _validate_condition_axis(disk: Series, ring: Series) -> None:
     if disk.x_axis.name.casefold() == "potential":
         _require_potential_reference(disk)
         _require_potential_reference(ring)
+        _validate_potential_condition_unit(disk.x_axis.unit)
 
 
 def _require_potential_reference(series: Series) -> str:
@@ -122,7 +132,8 @@ def _condition_values(disk: Series, ring: Series) -> NDArray[np.float64]:
     ring_x = _immutable_float_array(ring.x, name="ring condition values")
     if disk_x.shape != ring_x.shape or not np.array_equal(disk_x, ring_x):
         raise RRDEError(
-            "disk and ring condition values must be exactly aligned; interpolation is not performed"
+            "disk and ring condition values must be exactly aligned; "
+            "interpolation is not performed"
         )
     return disk_x
 
@@ -193,8 +204,10 @@ class RRDEResult:
                 normalization,
                 name="condition_normalization",
             )
-        if condition_name.casefold() == "potential" and reference is None:
-            raise RRDEError("potential RRDE result requires condition_reference")
+        if condition_name.casefold() == "potential":
+            if reference is None:
+                raise RRDEError("potential RRDE result requires condition_reference")
+            _validate_potential_condition_unit(condition_unit)
 
         condition = _immutable_float_array(
             self.condition_values,
