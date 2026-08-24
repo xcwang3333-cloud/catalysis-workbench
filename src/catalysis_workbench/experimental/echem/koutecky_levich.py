@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from math import isfinite
 from numbers import Real
@@ -95,11 +95,44 @@ def _current_mode(value: object) -> KLCurrentMode:
     )
 
 
+def _current_basis(value: object) -> KLCurrentBasis:
+    if isinstance(value, str):
+        if value == "current":
+            return "current"
+        if value == "current_density":
+            return "current_density"
+    raise KouteckyLevichError(
+        "current_basis must be 'current' or 'current_density'"
+    )
+
+
 def _normalization(series: Series) -> str | None:
     value = series.y_axis.metadata.get("normalization")
     if value is None:
         return None
     return _required_text(value, name="current normalization metadata")
+
+
+def _normalize_basis_metadata(
+    basis: KLCurrentBasis,
+    normalization: object,
+) -> str | None:
+    if basis == "current":
+        if normalization is not None:
+            raise KouteckyLevichError(
+                "total-current K-L data must not declare normalization metadata"
+            )
+        return None
+    text = _required_text(
+        normalization,
+        name="K-L current-density normalization",
+    )
+    token = text.casefold().replace(" ", "_")
+    if token not in _GEOMETRIC_NORMALIZATION_NAMES:
+        raise KouteckyLevichError(
+            "current-density K-L input must use geometric-area normalization"
+        )
+    return "geometric_area"
 
 
 def _validate_series_semantics(
@@ -120,44 +153,21 @@ def _validate_series_semantics(
     except EchemQuantityError as exc:
         raise KouteckyLevichError(str(exc)) from exc
 
-    y_name = series.y_axis.name.casefold()
-    normalization = _normalization(series)
-    if y_name == "current":
-        if normalization is not None:
-            raise KouteckyLevichError(
-                "total-current K-L input must not declare normalization metadata"
-            )
-        try:
+    basis = _current_basis(series.y_axis.name.casefold())
+    normalization = _normalize_basis_metadata(basis, _normalization(series))
+    try:
+        if basis == "current":
             current = current_to_a(series.y, series.y_axis.unit, allow_nan=True)
-        except EchemQuantityError as exc:
-            raise KouteckyLevichError(str(exc)) from exc
-        basis: KLCurrentBasis = "current"
-        canonical_unit = "A"
-    elif y_name == "current_density":
-        if normalization is None:
-            raise KouteckyLevichError(
-                "current-density K-L input requires explicit geometric normalization"
-            )
-        normalized_basis = normalization.casefold().replace(" ", "_")
-        if normalized_basis not in _GEOMETRIC_NORMALIZATION_NAMES:
-            raise KouteckyLevichError(
-                "current-density K-L input must use geometric-area normalization"
-            )
-        normalization = "geometric_area"
-        try:
+            canonical_unit = "A"
+        else:
             current = current_density_to_a_cm2(
                 series.y,
                 series.y_axis.unit,
                 allow_nan=True,
             )
-        except EchemQuantityError as exc:
-            raise KouteckyLevichError(str(exc)) from exc
-        basis = "current_density"
-        canonical_unit = "A/cm^2"
-    else:
-        raise KouteckyLevichError(
-            "K-L y_axis.name must be 'current' or 'current_density'"
-        )
+            canonical_unit = "A/cm^2"
+    except EchemQuantityError as exc:
+        raise KouteckyLevichError(str(exc)) from exc
 
     return (
         np.asarray(rotation, dtype=np.float64),
@@ -226,6 +236,111 @@ def _slope_unit(current_basis: KLCurrentBasis) -> str:
     return f"{_reciprocal_unit(current_basis)} (rad/s)^1/2"
 
 
+def _canonical_current_unit(current_basis: KLCurrentBasis) -> str:
+    return "A" if current_basis == "current" else "A/cm^2"
+
+
+def _validate_source_unit_contract(
+    provenance: AnalysisProvenance,
+    *,
+    basis: KLCurrentBasis,
+) -> None:
+    source = provenance.source
+    if source.x_name.casefold() != "rotation_rate":
+        raise KouteckyLevichError("K-L provenance source x semantic is invalid")
+    if source.y_name.casefold() != basis:
+        raise KouteckyLevichError("K-L provenance source y semantic is invalid")
+    try:
+        rotation_rate_to_rad_s([1.0], source.x_unit, allow_nan=False)
+        if basis == "current":
+            current_to_a([1.0], source.y_unit, allow_nan=False)
+        else:
+            current_density_to_a_cm2([1.0], source.y_unit, allow_nan=False)
+    except EchemQuantityError as exc:
+        raise KouteckyLevichError(
+            "K-L provenance source units are not supported by the quantity layer"
+        ) from exc
+
+
+def _validate_provenance_units(
+    provenance: AnalysisProvenance,
+    *,
+    basis: KLCurrentBasis,
+) -> None:
+    units: Mapping[str, str] = provenance.units
+    expected = {
+        "rotation_source": provenance.source.x_unit,
+        "rotation": "rad/s",
+        "current_source": provenance.source.y_unit,
+        "current": _canonical_current_unit(basis),
+        "reciprocal_current": _reciprocal_unit(basis),
+        "slope": _slope_unit(basis),
+    }
+    for key, value in expected.items():
+        if units.get(key) != value:
+            raise KouteckyLevichError(
+                f"K-L provenance unit {key!r} contradicts the result/source contract"
+            )
+    fit_input = units.get("fit_window_input")
+    try:
+        rotation_rate_to_rad_s([1.0], fit_input, allow_nan=False)
+    except EchemQuantityError as exc:
+        raise KouteckyLevichError(
+            "K-L provenance fit_window_input must be a supported rotation unit"
+        ) from exc
+
+
+def _validate_provenance_contract(
+    provenance: AnalysisProvenance,
+    *,
+    basis: KLCurrentBasis,
+    mode: KLCurrentMode,
+    normalization: str | None,
+    rotation: NDArray[np.float64],
+) -> FitWindow:
+    if not isinstance(provenance, AnalysisProvenance):
+        raise TypeError("provenance must be an AnalysisProvenance")
+    if provenance.input_basis != _KL_INPUT_BASIS:
+        raise KouteckyLevichError("K-L provenance input basis is invalid")
+    _validate_source_unit_contract(provenance, basis=basis)
+    _validate_provenance_units(provenance, basis=basis)
+
+    fit_window = provenance.fit_window
+    if fit_window is None:
+        raise KouteckyLevichError("K-L provenance requires an explicit fit window")
+    if fit_window.unit != "rad/s" or fit_window.n_points != len(rotation):
+        raise KouteckyLevichError(
+            "K-L provenance fit window must use rad/s and match point count"
+        )
+    if fit_window.lower <= 0.0:
+        raise KouteckyLevichError(
+            "K-L provenance fit-window lower bound must be greater than zero"
+        )
+    tolerance = 1e-12 * max(1.0, abs(fit_window.lower), abs(fit_window.upper))
+    if (
+        (rotation < fit_window.lower - tolerance).any()
+        or (rotation > fit_window.upper + tolerance).any()
+    ):
+        raise KouteckyLevichError(
+            "K-L selected rotation rates lie outside the provenance fit window"
+        )
+
+    parameters = provenance.parameters
+    if parameters.get("current_mode") != mode:
+        raise KouteckyLevichError(
+            "K-L provenance current_mode contradicts result current_mode"
+        )
+    if parameters.get("current_basis") != basis:
+        raise KouteckyLevichError(
+            "K-L provenance current_basis contradicts result current_basis"
+        )
+    if parameters.get("normalization") != normalization:
+        raise KouteckyLevichError(
+            "K-L provenance normalization contradicts result normalization"
+        )
+    return fit_window
+
+
 @dataclass(frozen=True, slots=True, eq=False)
 class KouteckyLevichFitResult:
     """Immutable free-intercept K-L regression with deterministic provenance."""
@@ -249,39 +364,9 @@ class KouteckyLevichFitResult:
         r_squared = _finite_scalar(self.r_squared, name="K-L R^2")
         if r_squared < 0.0 or r_squared > 1.0:
             raise KouteckyLevichError("K-L R^2 must lie between 0 and 1")
-        if not isinstance(self.current_basis, str):
-            raise KouteckyLevichError(
-                "current_basis must be 'current' or 'current_density'"
-            )
-        if self.current_basis == "current":
-            basis: KLCurrentBasis = "current"
-        elif self.current_basis == "current_density":
-            basis = "current_density"
-        else:
-            raise KouteckyLevichError(
-                "current_basis must be 'current' or 'current_density'"
-            )
+        basis = _current_basis(self.current_basis)
         mode = _current_mode(self.current_mode)
-        normalization = self.normalization
-        if basis == "current":
-            if normalization is not None:
-                raise KouteckyLevichError(
-                    "total-current K-L result must not declare normalization"
-                )
-        else:
-            normalized = _required_text(
-                normalization,
-                name="K-L current-density normalization",
-            )
-            if normalized.casefold().replace(" ", "_") not in {
-                "geometric",
-                "geometric_area",
-                "geometric_area_cm2",
-            }:
-                raise KouteckyLevichError(
-                    "K-L current-density normalization must be geometric area"
-                )
-            normalization = "geometric_area"
+        normalization = _normalize_basis_metadata(basis, self.normalization)
 
         rotation = _immutable_float_array(
             self.rotation_rad_s,
@@ -348,43 +433,13 @@ class KouteckyLevichFitResult:
         if not np.isclose(r_squared, expected_r_squared, rtol=1e-10, atol=1e-12):
             raise KouteckyLevichError("K-L R^2 contradicts stored selected data")
 
-        if not isinstance(self.provenance, AnalysisProvenance):
-            raise TypeError("provenance must be an AnalysisProvenance")
-        if self.provenance.input_basis != _KL_INPUT_BASIS:
-            raise KouteckyLevichError("K-L provenance input basis is invalid")
-        fit_window = self.provenance.fit_window
-        if fit_window is None:
-            raise KouteckyLevichError("K-L provenance requires an explicit fit window")
-        if fit_window.unit != "rad/s" or fit_window.n_points != len(rotation):
-            raise KouteckyLevichError(
-                "K-L provenance fit window must use rad/s and match point count"
-            )
-        tolerance = 1e-12 * max(1.0, abs(fit_window.lower), abs(fit_window.upper))
-        if (
-            (rotation < fit_window.lower - tolerance).any()
-            or (rotation > fit_window.upper + tolerance).any()
-        ):
-            raise KouteckyLevichError(
-                "K-L selected rotation rates lie outside the provenance fit window"
-            )
-        source = self.provenance.source
-        if source.x_name.casefold() != "rotation_rate":
-            raise KouteckyLevichError("K-L provenance source x semantic is invalid")
-        if source.y_name.casefold() != basis:
-            raise KouteckyLevichError("K-L provenance source y semantic is invalid")
-        parameters = dict(self.provenance.parameters)
-        if parameters.get("current_mode") != mode:
-            raise KouteckyLevichError(
-                "K-L provenance current_mode contradicts result current_mode"
-            )
-        if parameters.get("current_basis") != basis:
-            raise KouteckyLevichError(
-                "K-L provenance current_basis contradicts result current_basis"
-            )
-        if parameters.get("normalization") != normalization:
-            raise KouteckyLevichError(
-                "K-L provenance normalization contradicts result normalization"
-            )
+        _validate_provenance_contract(
+            self.provenance,
+            basis=basis,
+            mode=mode,
+            normalization=normalization,
+            rotation=rotation,
+        )
 
         object.__setattr__(self, "slope", slope)
         object.__setattr__(self, "intercept", intercept)
@@ -411,7 +466,7 @@ class KouteckyLevichFitResult:
 
     @property
     def canonical_current_unit(self) -> str:
-        return "A" if self.current_basis == "current" else "A/cm^2"
+        return _canonical_current_unit(self.current_basis)
 
     @property
     def reciprocal_current_unit(self) -> str:
@@ -453,22 +508,19 @@ class KLElectronNumberResult:
             self.faraday_constant_c_mol,
             name="faraday_constant_c_mol",
         )
-        if self.current_basis == "current":
-            basis: KLCurrentBasis = "current"
+        basis = _current_basis(self.current_basis)
+        if basis == "current":
             area = _positive_scalar(self.electrode_area_cm2, name="electrode_area_cm2")
-        elif self.current_basis == "current_density":
-            basis = "current_density"
+        else:
             if self.electrode_area_cm2 is not None:
                 raise KouteckyLevichError(
                     "current-density K-L electron number must not use electrode area"
                 )
             area = None
-        else:
-            raise KouteckyLevichError(
-                "current_basis must be 'current' or 'current_density'"
-            )
         sha = _required_text(self.fit_source_sha256, name="fit_source_sha256").lower()
-        if len(sha) != 64 or any(character not in "0123456789abcdef" for character in sha):
+        if len(sha) != 64 or any(
+            character not in "0123456789abcdef" for character in sha
+        ):
             raise KouteckyLevichError(
                 "fit_source_sha256 must contain exactly 64 hexadecimal characters"
             )
@@ -544,7 +596,10 @@ def fit_koutecky_levich(
             "current": canonical_unit,
             "reciprocal_current": _reciprocal_unit(basis),
             "slope": _slope_unit(basis),
-            "fit_window_input": fit_window_unit,
+            "fit_window_input": _required_text(
+                fit_window_unit,
+                name="fit_window_unit",
+            ),
         },
         parameters={
             "current_basis": basis,
@@ -622,7 +677,9 @@ def kl_electron_number(
         area = None
     electron_number = 1.0 / (result.slope * transport)
     if not isfinite(electron_number) or electron_number <= 0.0:
-        raise KouteckyLevichError("derived K-L electron number is not positive and finite")
+        raise KouteckyLevichError(
+            "derived K-L electron number is not positive and finite"
+        )
     return KLElectronNumberResult(
         electron_number=electron_number,
         diffusion_coefficient_cm2_s=diffusion,
