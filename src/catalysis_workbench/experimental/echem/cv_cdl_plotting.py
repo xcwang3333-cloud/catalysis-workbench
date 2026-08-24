@@ -9,6 +9,7 @@ from catalysis_workbench.core import Axis, Dataset, Series
 from catalysis_workbench.visualization import FigureSpec, render_curves
 
 from .cv_cdl import CdlError, CdlFitResult
+from .lsv import LSVError
 from .plotting import plot_lsv as _plot_potential_current_curves
 
 _GEOMETRIC = {"geometric", "geometric_area", "geometric_area_cm2"}
@@ -67,7 +68,10 @@ def plot_cv(
     the potential reference remains visible in automatic axis labels.
     """
     _validate_cv(data)
-    return _plot_potential_current_curves(data, spec, preset=preset)
+    try:
+        return _plot_potential_current_curves(data, spec, preset=preset)
+    except LSVError as exc:
+        raise CdlError(str(exc)) from exc
 
 
 def _cdl_plot_dataset(result: CdlFitResult) -> Dataset:
