@@ -168,3 +168,27 @@ Issue #21 surveys focused Tafel implementations before adding its own electroche
 - `scipy/scipy` (BSD-3-Clause) provides the mature `scipy.stats.linregress` kernel used for the actual linear regression. CatalysisWorkbench does not reimplement least squares/statistics; it owns the electrochemical validation, unit conversion, explicit fit-window/sign policy, provenance, immutable result object, Dataset orchestration, and publication adapter around SciPy.
 
 The resulting v0.2 Tafel policy is conservative: fit windows are caller-supplied, physical branch and numeric current sign are separate explicit declarations, the logarithm uses positive current-density magnitude after unit conversion, signed slope is retained, and no mechanism or rate-determining step is inferred automatically from a slope value. Full details are in `docs/TAFEL.md`.
+
+## Activity-normalization decision for v0.2
+
+Issue #24 surveys both reusable electrochemistry architectures and practical laboratory scripts before defining mass- and ECSA-normalized activity semantics.
+
+- `ixdat/ixdat` (MIT) is the principal architecture reference for explicit electrochemical calibration state. The useful principle is that area and other calibration quantities are explicit state attached to a scientific transformation rather than inferred from labels. Issue #24 adopts that principle without adding ixdat as a dependency.
+- `MyPyDavid/elchempy` (MIT) is useful architecture prior art because ORR analysis, RDE/RRDE submodules, plotting, and tests are separated. CatalysisWorkbench similarly keeps numerical normalization independent from publication rendering and does not infer denominator state from workflow conventions.
+- `gcarrascohuertas/electrochemical_ORR_procesing_autolab` (GPL-3.0) is practical ORR reference-only prior art. Its script-level geometric electrode-area constant illustrates an approach CatalysisWorkbench deliberately avoids: scientific denominators and reconstruction areas must be caller-visible validated inputs, not hard-coded globals. No GPL code is copied or adapted.
+- `gcarrascohuertas/electrochemical_ECSA_processing_autolab` (GPL-3.0) treats ECSA determination as a dedicated workflow. This supports the Issue #24/#26 boundary: #24 consumes an explicitly supplied ECSA denominator; CV/Cdl/ECSA derivation remains #26. No GPL code is copied or adapted.
+- `emmo-repo/domain-sofc` (CC-BY-4.0) is terminology prior art showing that "specific activity" can be defined against different denominator bases. CatalysisWorkbench therefore treats bare `specific_activity` terminology as scientifically insufficient and records denominator basis explicitly.
+
+The resulting Issue #24 direction is:
+
+- built-in denominator bases are limited to `catalyst_mass`, `metal_mass`, and `ecsa`;
+- catalyst mass and metal mass remain distinct semantic bases even though both have mass dimensions and may share output units;
+- total current is the canonical numerator; geometric current density must be reconstructed with an explicit compatible geometric area before mass/ECSA normalization;
+- signed current is preserved unless magnitude mode is explicitly requested;
+- already mass-, metal-mass-, ECSA-, or otherwise non-geometrically normalized current is rejected before division;
+- Dataset denominator mappings use stable `Series.key` values only;
+- denominator basis is compatibility-critical metadata, while denominator numerical value remains provenance rather than an overlay incompatibility by itself;
+- BET-specific-surface-area and arbitrary composite denominator units are deferred until their physical dimensions and conversion semantics are explicitly designed;
+- plotting receives already normalized data and performs no denominator lookup, condition selection, interpolation, or aggregation.
+
+Full scientific/API/test details are in `docs/ACTIVITY_NORMALIZATION.md`.

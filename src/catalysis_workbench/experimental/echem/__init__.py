@@ -5,6 +5,15 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING
 
+from .activity import (
+    ActivityBasis,
+    ActivityCurrentBasis,
+    ActivityNormalizationError,
+    ActivityNormalizationResult,
+    normalize_activity,
+    normalize_activity_dataset,
+    normalize_activity_series,
+)
 from .fe import (
     FaradaicEfficiencyClosure,
     FaradaicEfficiencyError,
@@ -156,7 +165,31 @@ def plot_partial_current_density(
     )
 
 
+def plot_activity(
+    data: Series | Dataset,
+    spec: FigureSpec | None = None,
+    *,
+    kind: str = "scatter",
+    errors: ScatterError | Mapping[str, ScatterError] | None = None,
+    preset: str = "publication",
+) -> tuple[Figure, Axes]:
+    """Lazily render already normalized activity data."""
+    from .activity_plotting import plot_activity as _plot_activity
+
+    return _plot_activity(
+        data,
+        spec,
+        kind=kind,  # type: ignore[arg-type]
+        errors=errors,
+        preset=preset,
+    )
+
+
 __all__ = [
+    "ActivityBasis",
+    "ActivityCurrentBasis",
+    "ActivityNormalizationError",
+    "ActivityNormalizationResult",
     "AnalysisProvenance",
     "ClosureComparisonMode",
     "CurrentSign",
@@ -200,12 +233,16 @@ __all__ = [
     "make_analysis_provenance",
     "mass_to_g",
     "molar_rate_to_mol_s",
+    "normalize_activity",
+    "normalize_activity_dataset",
+    "normalize_activity_series",
     "normalize_reference_name",
     "partial_current_closure",
     "partial_current_closure_dataset",
     "partial_current_density",
     "partial_current_density_dataset",
     "partial_current_density_series",
+    "plot_activity",
     "plot_faradaic_efficiency",
     "plot_lsv",
     "plot_partial_current_density",
