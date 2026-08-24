@@ -29,13 +29,15 @@ Before implementing each major scientific or visualization module, comparable op
 - RRDE / Koutecky–Levich basics.
 - Installed-wheel public-API and representative numerical smoke coverage for the reviewed v0.2 electrochemistry surface.
 
-## v0.3.x — Extended experimental processing
+## v0.3.x — Extended experimental processing — in progress
 
-- FTIR / ATR-FTIR.
-- Basic BET/sorption plotting.
-- ICP/composition data integration.
-- TGA / DTG / TPR / TPD.
-- Shared peak-fitting primitives.
+- FTIR / ATR-FTIR — implemented and merged through Issue #50 / PR #51.
+- Basic BET/sorption plotting — planned.
+- ICP/composition data integration — planned.
+- TGA / DTG / TPR / TPD — planned.
+- Shared peak-fitting primitives — planned.
+
+The remaining v0.3 modules are roadmap scope, not an implied execution order; their priority is chosen explicitly before the next scientific Issue is opened.
 
 ## v0.4.x — Advanced experimental analysis
 
