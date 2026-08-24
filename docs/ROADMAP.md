@@ -40,15 +40,33 @@ Before implementing each major scientific or visualization module, comparable op
 - Gate C / Issue #70 created and reverse-verified tag `v0.3.0` on release commit `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`.
 - Package-registry publication was not part of the Git release and remains a separate policy decision.
 
-Shared peak-fitting was deliberately deferred from v0.3 to v0.4. Its model families, baseline coupling, parameter constraints/ties, uncertainty/covariance semantics, and provenance will be designed with concrete constrained XPS/spectroscopy consumers rather than as a speculative standalone abstraction.
+Shared peak-fitting was deliberately deferred from v0.3 to v0.4. Its model families, baseline coupling, parameter constraints/ties, uncertainty/covariance semantics, and provenance are now being designed with concrete constrained XPS/spectroscopy consumers rather than as a speculative standalone abstraction.
 
-## v0.4.x — Advanced experimental analysis
+## v0.4.x — Advanced experimental analysis — architecture active
 
-- Shared constrained peak-fitting foundation designed jointly with XPS/spectroscopy consumers.
-- XPS processing and constrained peak fitting.
-- EIS plotting and basic equivalent-circuit fitting.
-- BET quantitative fitting.
-- Product quantification from calibration data and GC/HPLC/NMR-derived values.
+The architecture-first dependency order is defined in [`V0_4_PLAN.md`](V0_4_PLAN.md). The first block deliberately separates generic fitting mechanics from XPS-specific scientific semantics.
+
+1. Shared constrained peak-fitting foundation and mature nonlinear-fit backend integration.
+   - stable parameter/component keys;
+   - explicit initial/fixed/bounded/tied parameters;
+   - bounded initial spectroscopy line-shape set;
+   - deterministic fit provenance, residuals, fit statistics and uncertainty/covariance state;
+   - no automatic peak detection, component-count selection, smoothing, normalization or baseline choice.
+2. XPS data semantics and preparation.
+   - explicit binding-energy/eV semantics;
+   - explicit energy calibration/reference correction;
+   - explicit fit regions;
+   - XPS-specific linear/Shirley background preparation with Tougaard deferred unless separately contracted.
+3. Constrained XPS peak fitting.
+   - shared-fitter consumer;
+   - caller-supplied doublet separation/ratio/width constraints;
+   - no hidden chemistry assignment or literature lookup.
+4. XPS publication plotting and fit diagnostics through the shared `FigureSpec` model.
+5. EIS plotting and basic equivalent-circuit fitting.
+6. BET quantitative fitting with explicit region-selection/Rouquerol contracts.
+7. Product quantification from calibration data and GC/HPLC/NMR-derived values.
+
+Architecture Issue #73 introduces no scientific implementation, dependency, version change, tag or package publication. Ordinary v0.4 development continues from runtime/distribution version `0.3.0` until a later reviewed release gate explicitly changes it.
 
 ## v0.5.x — XAS and structures
 
