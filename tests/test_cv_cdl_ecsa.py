@@ -10,8 +10,8 @@ import pytest
 
 from catalysis_workbench.core import Axis, Series
 from catalysis_workbench.experimental.echem import (
-    CVSweepPair,
     CdlError,
+    CVSweepPair,
     ecsa_from_cdl,
     fit_cdl,
     fit_cdl_groups,
