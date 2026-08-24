@@ -30,8 +30,8 @@ from .cv_cdl import (
     sample_cv_current,
 )
 from .eis import (
-    EISCapacitor,
     EISCPE,
+    EISCapacitor,
     EISCircuit,
     EISDirection,
     EISError,
