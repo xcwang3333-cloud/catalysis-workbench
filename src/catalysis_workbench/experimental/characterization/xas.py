@@ -59,19 +59,17 @@ def _immutable_float_array(values: Any, *, name: str) -> NDArray[np.float64]:
     return frozen
 
 
-def _series_digest(series: Series) -> str:
+def _source_digest(
+    source_key: str,
+    energy: NDArray[np.float64],
+    mu: NDArray[np.float64],
+) -> str:
+    """Return a digest independently reconstructible from retained XAS source state."""
     digest = hashlib.sha256()
-    digest.update(np.ascontiguousarray(series.x).tobytes())
-    digest.update(np.ascontiguousarray(series.y).tobytes())
-    for value in (
-        series.key,
-        series.x_axis.name,
-        series.x_axis.unit or "",
-        series.y_axis.name,
-        series.y_axis.unit or "",
-    ):
-        digest.update(value.encode("utf-8"))
-        digest.update(b"\0")
+    digest.update(str(source_key).encode("utf-8"))
+    digest.update(b"\0")
+    digest.update(np.ascontiguousarray(energy, dtype=np.float64).tobytes())
+    digest.update(np.ascontiguousarray(mu, dtype=np.float64).tobytes())
     return digest.hexdigest()
 
 
@@ -229,8 +227,14 @@ class XANESNormalizationResult:
     normalized: Series
 
     def __post_init__(self) -> None:
+        source_key = str(self.source_key)
+        source_digest = str(self.source_digest)
         energy = _immutable_float_array(self.source_energy_ev, name="source_energy_ev")
         mu = _immutable_float_array(self.source_mu, name="source_mu")
+        expected_digest = _source_digest(source_key, energy, mu)
+        if source_digest != expected_digest:
+            raise XASError("source_digest contradicts retained XANES source data")
+
         pre_coeff = _immutable_float_array(
             self.pre_edge_coefficients,
             name="pre_edge_coefficients",
@@ -276,7 +280,7 @@ class XANESNormalizationResult:
 
         expected_norm = (mu - pre_curve) / edge_step
         validate_xas_series(self.normalized)
-        if self.normalized.key != str(self.source_key):
+        if self.normalized.key != source_key:
             raise XASError("normalized XANES key contradicts source_key")
         if not np.array_equal(np.asarray(self.normalized.x), energy):
             raise XASError("normalized XANES energy contradicts retained source energy")
@@ -289,11 +293,11 @@ class XANESNormalizationResult:
             raise XASError("normalized XANES values contradict retained fit state")
         if _semantic_token(self.normalized.y_axis.name) not in _NORMALIZED_MU_NAMES:
             raise XASError("normalized result must use normalized_mu semantics")
-        if self.normalized.metadata.get("xas_source_digest") != str(self.source_digest):
+        if self.normalized.metadata.get("xas_source_digest") != source_digest:
             raise XASError("normalized XANES provenance contradicts source_digest")
 
-        object.__setattr__(self, "source_key", str(self.source_key))
-        object.__setattr__(self, "source_digest", str(self.source_digest))
+        object.__setattr__(self, "source_key", source_key)
+        object.__setattr__(self, "source_digest", source_digest)
         object.__setattr__(self, "source_energy_ev", energy)
         object.__setattr__(self, "source_mu", mu)
         object.__setattr__(self, "e0_ev", spec.e0_ev)
@@ -419,7 +423,7 @@ def normalize_xanes(
     if not np.isfinite(normalized_y).all():
         raise XASError("XANES normalization produced non-finite values")
 
-    source_digest = _series_digest(series)
+    source_digest = _source_digest(series.key, energy, mu)
     metadata = series.metadata_dict()
     history = _processing_history(metadata)
     history.append(
