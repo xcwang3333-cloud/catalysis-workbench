@@ -18,7 +18,7 @@ For development and tests:
 python -m pip install -e ".[dev]"
 ```
 
-The tagged v0.1.0 release used a separate release-hardening gate followed by a final-version gate; see [`docs/RELEASING.md`](docs/RELEASING.md). The completed v0.2 feature set currently remains at development version `0.2.0.dev0`. v0.2 release hardening is tracked by Issue #43 and [`docs/V0_2_RELEASING.md`](docs/V0_2_RELEASING.md); a final `0.2.0` version bump or `v0.2.0` tag remains a separate gate and is not implied by feature completion or release-hardening CI.
+The tagged v0.1.0 release used a separate release-hardening gate followed by a final-version gate; see [`docs/RELEASING.md`](docs/RELEASING.md). v0.2 Gate-A release hardening is complete through Issue #43 / PR #44. **Issue #45 is the active Gate-B final-version candidate**: source distribution metadata and runtime version are being validated at `0.2.0` under [`docs/V0_2_RELEASING.md`](docs/V0_2_RELEASING.md). No `v0.2.0` tag exists merely because the final version candidate is under review; tag creation remains the separate Gate-C operation.
 
 ## Quickstart: CSV -> LSV processing -> publication export
 
@@ -140,7 +140,7 @@ A catalyst or sample name remains lightweight metadata on a data series; Catalys
 
 ## Release and development status
 
-The v0.1 scientific/common-XY feature set is released as v0.1.0. The planned v0.2 implementation sequence #19-#28 is complete on `main`. **Issue #43 is the active release-hardening gate**: installed-wheel smoke is being expanded to execute representative v0.2 electrochemistry calculations and a v0.2-specific release/final-version/tag policy is being reviewed while the package remains `0.2.0.dev0`.
+The v0.1 scientific/common-XY feature set is released as v0.1.0. The planned v0.2 implementation sequence #19-#28 and Gate-A release hardening are complete on `main`. **Issue #45 is the active Gate-B final-version candidate**: both version declarations are `0.2.0` on the release branch and must pass the complete exact-head wheel/public-API/release review before merge. A `v0.2.0` tag has not been created and requires separate Gate-C authorization after the Gate-B merge is rechecked on `main`.
 
 New functionality follows a strict feature loop: prior-art scan with license recording, implementation/regression tests, CI, Draft PR, scientific/API/compatibility review, fixes, CI, second review, Ready/merge gate, squash merge, `main` CI verification when visible, then issue closure. Release/version work uses the same exact-head discipline with release/API/packaging/version review.
 
@@ -148,7 +148,7 @@ See [`docs/MASTER_PLAN.md`](docs/MASTER_PLAN.md) for the project-wide execution 
 
 ## Roadmap
 
-- **v0.2:** quantitative core electrochemistry feature implementation complete; release hardening active under Issue #43 while version remains `0.2.0.dev0`.
+- **v0.2:** quantitative core electrochemistry and Gate-A hardening complete; Gate-B `0.2.0` final-version candidate active under Issue #45; tag not yet created.
 - **v0.3-v0.6:** extended experimental characterization, advanced electrochemistry, XAS, structures, and major DFT post-processing.
 - **v0.7-v1.0:** advanced volumetric visualization, operando/time-resolved analysis, reproducible batch workflows, and a local GUI.
 
