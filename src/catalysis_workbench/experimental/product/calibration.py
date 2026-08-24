@@ -69,7 +69,7 @@ def _immutable_bool_array(values: object, *, name: str) -> NDArray[np.bool_]:
         raise ProductCalibrationError(f"{name} must not be empty")
     if source.dtype.kind != "b":
         raise ProductCalibrationError(f"{name} must contain boolean values")
-    normalized = np.ascontiguousarray(source, dtype=np.bool_)
+    normalized = np.array(source, dtype=np.bool_, copy=True, order="C")
     buffer = normalized.tobytes(order="C")
     result = np.frombuffer(buffer, dtype=np.bool_, count=normalized.size)
     result = result.reshape(normalized.shape)
