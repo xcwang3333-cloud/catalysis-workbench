@@ -20,7 +20,14 @@ from .provenance import (
     SourceDataRef,
     make_analysis_provenance,
 )
-from .quantities import EchemQuantityError, time_to_s
+from .quantities import (
+    EchemQuantityError,
+    current_density_to_a_cm2,
+    current_to_a,
+    normalize_unit,
+    potential_to_v,
+    time_to_s,
+)
 
 StabilityYKind = Literal[
     "current",
@@ -41,6 +48,12 @@ _ALLOWED_Y_KINDS = {
 }
 _ACTIVITY_BASES = {"catalyst_mass", "metal_mass", "ecsa"}
 _FE_UNITS = {"fraction", "%"}
+_MASS_ACTIVITY_UNITS = {
+    normalize_unit(unit) for unit in ("A/g", "mA/g", "A/mg", "mA/mg")
+}
+_ECSA_ACTIVITY_UNITS = {
+    normalize_unit(unit) for unit in ("A/cm^2", "mA/cm^2", "uA/cm^2")
+}
 
 
 class StabilityError(ValueError):
@@ -125,6 +138,18 @@ def _metadata_text(series: Series, key: str) -> str | None:
     return text or None
 
 
+def _time_basis(series: Series) -> str | None:
+    value = series.x_axis.metadata.get("time_basis")
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise StabilityError("time-axis time_basis metadata must be a string when present")
+    text = " ".join(value.split())
+    if not text:
+        raise StabilityError("time-axis time_basis metadata must not be empty")
+    return text
+
+
 def _y_kind(series: Series) -> StabilityYKind:
     name = series.y_axis.name.strip().casefold()
     if name not in _ALLOWED_Y_KINDS:
@@ -135,7 +160,38 @@ def _y_kind(series: Series) -> StabilityYKind:
     return name  # type: ignore[return-value]
 
 
-def _validate_y_semantics(series: Series) -> tuple[StabilityYKind, str, str | None, str | None]:
+def _validate_supported_y_unit(kind: StabilityYKind, unit: str, normalization: str | None) -> None:
+    try:
+        if kind == "current":
+            current_to_a([0.0], unit, allow_nan=False)
+        elif kind == "current_density":
+            current_density_to_a_cm2([0.0], unit, allow_nan=False)
+        elif kind == "potential":
+            potential_to_v([0.0], unit, allow_nan=False)
+        elif kind == "faradaic_efficiency":
+            if unit not in _FE_UNITS:
+                raise StabilityError(
+                    "faradaic-efficiency stability unit must be 'fraction' or '%'"
+                )
+        elif kind == "activity":
+            normalized_unit = normalize_unit(unit)
+            allowed = (
+                _ECSA_ACTIVITY_UNITS
+                if normalization == "ecsa"
+                else _MASS_ACTIVITY_UNITS
+            )
+            if normalized_unit not in allowed:
+                raise StabilityError(
+                    "activity stability source uses an unsupported unit for its "
+                    "normalization basis"
+                )
+    except EchemQuantityError as exc:
+        raise StabilityError(str(exc)) from exc
+
+
+def _validate_y_semantics(
+    series: Series,
+) -> tuple[StabilityYKind, str, str | None, str | None]:
     kind = _y_kind(series)
     unit = _required_text(series.y_axis.unit, name="stability y-axis unit")
     reference = _metadata_text(series, "reference")
@@ -151,10 +207,6 @@ def _validate_y_semantics(series: Series) -> tuple[StabilityYKind, str, str | No
         raise StabilityError(
             "potential stability source requires explicit reference metadata"
         )
-    if kind == "faradaic_efficiency" and unit not in _FE_UNITS:
-        raise StabilityError(
-            "faradaic-efficiency stability unit must be 'fraction' or '%'"
-        )
     if kind == "activity":
         normalized = normalization.casefold().replace(" ", "_") if normalization else None
         if normalized not in _ACTIVITY_BASES:
@@ -163,6 +215,7 @@ def _validate_y_semantics(series: Series) -> tuple[StabilityYKind, str, str | No
                 "metal_mass, or ecsa"
             )
         normalization = normalized
+    _validate_supported_y_unit(kind, unit, normalization)
     return kind, unit, reference, normalization
 
 
@@ -198,7 +251,9 @@ def _y_values(series: Series) -> NDArray[np.float64]:
     return values
 
 
-def validate_stability_series(series: Series) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
+def validate_stability_series(
+    series: Series,
+) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
     """Validate one stability source without changing its numerical data."""
     if not isinstance(series, Series):
         raise TypeError("series must be a Series")
@@ -208,6 +263,7 @@ def validate_stability_series(series: Series) -> tuple[NDArray[np.float64], NDAr
     values = _y_values(series)
     if values.shape != time_s.shape:
         raise StabilityError("stability time and y arrays must have matching shapes")
+    _time_basis(series)
     _validate_y_semantics(series)
     return time_s, values
 
@@ -284,12 +340,20 @@ class StabilityAnalysisConfig:
         tolerance = 1e-12
         if analysis.lower_s >= analysis.upper_s:
             raise StabilityError("analysis_window must have positive duration")
-        if baseline.lower_s < analysis.lower_s - tolerance or baseline.upper_s > analysis.upper_s + tolerance:
+        if (
+            baseline.lower_s < analysis.lower_s - tolerance
+            or baseline.upper_s > analysis.upper_s + tolerance
+        ):
             raise StabilityError("baseline_window must lie inside analysis_window")
-        if final.lower_s < analysis.lower_s - tolerance or final.upper_s > analysis.upper_s + tolerance:
+        if (
+            final.lower_s < analysis.lower_s - tolerance
+            or final.upper_s > analysis.upper_s + tolerance
+        ):
             raise StabilityError("final_window must lie inside analysis_window")
         if baseline.upper_s > final.lower_s + tolerance:
-            raise StabilityError("baseline_window must not overlap or occur after final_window")
+            raise StabilityError(
+                "baseline_window must end no later than final_window starts"
+            )
         object.__setattr__(self, "retention_mode", mode)
         object.__setattr__(self, "missing_policy", policy)
 
@@ -341,7 +405,7 @@ class StabilityResult:
             raise StabilityError("analysis window requires at least two usable points")
 
         kind = self.y_kind
-        if kind not in _ALLOWED_Y_KINDS:
+        if not isinstance(kind, str) or kind not in _ALLOWED_Y_KINDS:
             raise StabilityError("invalid stability y_kind")
         unit = _required_text(self.y_unit, name="stability y_unit")
         reference = self.reference
@@ -354,6 +418,7 @@ class StabilityResult:
             raise StabilityError("potential StabilityResult requires reference")
         if kind in {"current_density", "activity"} and normalization is None:
             raise StabilityError(f"{kind} StabilityResult requires normalization")
+        _validate_supported_y_unit(kind, unit, normalization)
 
         initial = _finite_scalar(self.initial_value, name="initial_value")
         final = _finite_scalar(self.final_value, name="final_value")
@@ -361,9 +426,18 @@ class StabilityResult:
         final_mean = _finite_scalar(self.final_mean, name="final_mean")
         change = _finite_scalar(self.absolute_change, name="absolute_change")
         retention = _finite_scalar(self.retention_fraction, name="retention_fraction")
-        retention_percent = _finite_scalar(self.retention_percent, name="retention_percent")
-        relative = _finite_scalar(self.relative_change_fraction, name="relative_change_fraction")
-        relative_percent = _finite_scalar(self.relative_change_percent, name="relative_change_percent")
+        retention_percent = _finite_scalar(
+            self.retention_percent,
+            name="retention_percent",
+        )
+        relative = _finite_scalar(
+            self.relative_change_fraction,
+            name="relative_change_fraction",
+        )
+        relative_percent = _finite_scalar(
+            self.relative_change_percent,
+            name="relative_change_percent",
+        )
         slope = _finite_scalar(self.drift_slope_per_s, name="drift_slope_per_s")
         intercept = _finite_scalar(self.drift_intercept, name="drift_intercept")
         r_squared = _finite_scalar(self.drift_r_squared, name="drift_r_squared")
@@ -374,25 +448,71 @@ class StabilityResult:
 
         if not np.isclose(change, final_mean - baseline, rtol=1e-12, atol=1e-15):
             raise StabilityError("absolute_change is inconsistent with window means")
-        denominator = baseline if self.config.retention_mode == "signed" else abs(baseline)
-        numerator = final_mean if self.config.retention_mode == "signed" else abs(final_mean)
+        denominator = (
+            baseline if self.config.retention_mode == "signed" else abs(baseline)
+        )
+        numerator = (
+            final_mean if self.config.retention_mode == "signed" else abs(final_mean)
+        )
         if denominator == 0.0:
             raise StabilityError("retention baseline denominator must be non-zero")
         expected_retention = numerator / denominator
         if not np.isclose(retention, expected_retention, rtol=1e-12, atol=1e-15):
             raise StabilityError("retention_fraction is inconsistent with window means")
-        if not np.isclose(retention_percent, retention * 100.0, rtol=1e-12, atol=1e-12):
-            raise StabilityError("retention_percent is inconsistent with retention_fraction")
+        if not np.isclose(
+            retention_percent,
+            retention * 100.0,
+            rtol=1e-12,
+            atol=1e-12,
+        ):
+            raise StabilityError(
+                "retention_percent is inconsistent with retention_fraction"
+            )
         if not np.isclose(relative, retention - 1.0, rtol=1e-12, atol=1e-15):
             raise StabilityError("relative_change_fraction is inconsistent with retention")
-        if not np.isclose(relative_percent, relative * 100.0, rtol=1e-12, atol=1e-12):
-            raise StabilityError("relative_change_percent is inconsistent with retention")
+        if not np.isclose(
+            relative_percent,
+            relative * 100.0,
+            rtol=1e-12,
+            atol=1e-12,
+        ):
+            raise StabilityError(
+                "relative_change_percent is inconsistent with retention"
+            )
         if not isinstance(self.provenance, AnalysisProvenance):
             raise TypeError("provenance must be AnalysisProvenance")
-        if self.provenance.fit_window is None:
+        fit_window = self.provenance.fit_window
+        if fit_window is None:
             raise StabilityError("stability provenance requires the analysis fit window")
-        if self.provenance.fit_window.n_points != self.analysis_window.n_points:
+        if fit_window.n_points != self.analysis_window.n_points:
             raise StabilityError("provenance point count does not match analysis window")
+        if fit_window.unit != "s" or not np.isclose(
+            fit_window.lower,
+            self.config.analysis_window.lower_s,
+            rtol=1e-12,
+            atol=1e-12,
+        ) or not np.isclose(
+            fit_window.upper,
+            self.config.analysis_window.upper_s,
+            rtol=1e-12,
+            atol=1e-12,
+        ):
+            raise StabilityError("provenance fit window does not match analysis window")
+        if self.provenance.input_basis != kind:
+            raise StabilityError("provenance input basis does not match stability y_kind")
+        if self.provenance.source.y_name.casefold() != kind:
+            raise StabilityError("provenance source y semantic does not match stability result")
+        if self.provenance.source.y_unit != unit:
+            raise StabilityError("provenance source y unit does not match stability result")
+        expected_omitted = (
+            self.analysis_window.n_missing
+            if self.config.missing_policy == "omit"
+            else 0
+        )
+        if omitted != expected_omitted:
+            raise StabilityError(
+                "n_missing_omitted is inconsistent with analysis window and policy"
+            )
 
         object.__setattr__(self, "y_kind", kind)
         object.__setattr__(self, "y_unit", unit)
@@ -470,9 +590,14 @@ def _select_window(
     tolerance = 1e-12
     measured_min = float(time_s[0])
     measured_max = float(time_s[-1])
-    if spec.lower_s < measured_min - tolerance or spec.upper_s > measured_max + tolerance:
+    if (
+        spec.lower_s < measured_min - tolerance
+        or spec.upper_s > measured_max + tolerance
+    ):
         raise StabilityError(f"{name} lies outside the measured time range")
-    interval = (time_s >= spec.lower_s - tolerance) & (time_s <= spec.upper_s + tolerance)
+    interval = (time_s >= spec.lower_s - tolerance) & (
+        time_s <= spec.upper_s + tolerance
+    )
     selected = interval & usable
     points = int(np.count_nonzero(selected))
     if points < 1:
@@ -493,11 +618,15 @@ def analyze_stability(series: Series, config: StabilityAnalysisConfig) -> Stabil
 
     time_s, values = validate_stability_series(series)
     kind, y_unit, reference, normalization = _validate_y_semantics(series)
+    time_basis = _time_basis(series)
     tolerance = 1e-12
     analysis_spec = config.analysis_window
     measured_min = float(time_s[0])
     measured_max = float(time_s[-1])
-    if analysis_spec.lower_s < measured_min - tolerance or analysis_spec.upper_s > measured_max + tolerance:
+    if (
+        analysis_spec.lower_s < measured_min - tolerance
+        or analysis_spec.upper_s > measured_max + tolerance
+    ):
         raise StabilityError("analysis_window lies outside the measured time range")
     analysis_membership = (
         (time_s >= analysis_spec.lower_s - tolerance)
@@ -569,7 +698,11 @@ def analyze_stability(series: Series, config: StabilityAnalysisConfig) -> Stabil
     ss_res = float(np.sum((y_fit - fitted) ** 2))
     ss_tot = float(np.sum((y_fit - np.mean(y_fit)) ** 2))
     if ss_tot == 0.0:
-        r_squared = 1.0 if np.allclose(y_fit, fitted, rtol=1e-12, atol=1e-15) else 0.0
+        r_squared = (
+            1.0
+            if np.allclose(y_fit, fitted, rtol=1e-12, atol=1e-15)
+            else 0.0
+        )
     else:
         r_squared = 1.0 - ss_res / ss_tot
 
@@ -600,6 +733,7 @@ def analyze_stability(series: Series, config: StabilityAnalysisConfig) -> Stabil
             "n_missing_omitted": n_missing if config.missing_policy == "omit" else 0,
             "reference": reference,
             "normalization": normalization,
+            "time_basis": time_basis,
         },
     )
 
