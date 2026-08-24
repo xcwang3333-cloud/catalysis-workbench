@@ -19,6 +19,15 @@ from .sorption import SorptionError, SorptionWindow, validate_sorption_series
 _CANONICAL_LOADING_UNITS = frozenset(
     {"mmol/g", "mol/kg", "mg/g", "cm^3(STP)/g"}
 )
+_FORBIDDEN_BET_PROCESSING_OPERATIONS = frozenset(
+    {
+        "offset",
+        "normalize",
+        "savgol",
+        "interpolate",
+        "subtract_baseline",
+    }
+)
 
 
 class BETError(SorptionError):
@@ -90,6 +99,27 @@ def _direction(values: np.ndarray) -> str:
     if np.all(delta < 0.0):
         return "descending"
     raise BETError("BET relative-pressure values must remain strictly monotonic")
+
+
+def _validate_bet_processing_history(series: Series) -> None:
+    history = series.metadata.get("processing_history", ())
+    if history is None:
+        return
+    if not isinstance(history, (list, tuple)):
+        raise BETError("BET processing_history metadata must be an ordered list/tuple")
+    forbidden: list[str] = []
+    for entry in history:
+        if not isinstance(entry, dict):
+            raise BETError("BET processing_history entries must be mappings")
+        operation = str(entry.get("operation", "")).strip()
+        if operation in _FORBIDDEN_BET_PROCESSING_OPERATIONS:
+            forbidden.append(operation)
+    if forbidden:
+        names = ", ".join(sorted(set(forbidden)))
+        raise BETError(
+            "quantitative BET requires physical measured loading without y/grid-altering "
+            f"processing; forbidden processing history: {names}"
+        )
 
 
 def _same_float(actual: float, expected: float) -> bool:
@@ -358,6 +388,7 @@ def evaluate_bet_region(series: Series, window: SorptionWindow) -> BETRegionEval
     if not isinstance(window, SorptionWindow):
         raise TypeError("window must be a SorptionWindow")
     validate_sorption_series(series)
+    _validate_bet_processing_history(series)
     if str(series.metadata.get("sorption_branch", "")) != "adsorption":
         raise BETError("quantitative BET requires an explicitly declared adsorption branch")
     if str(series.x_axis.unit).strip() != "1":
