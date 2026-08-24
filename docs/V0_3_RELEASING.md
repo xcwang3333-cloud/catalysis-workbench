@@ -17,18 +17,11 @@ The explicit scope decision after Issue #64 / PR #65 is to **defer shared peak-f
 
 Quantitative BET fitting, XPS fitting, EIS fitting, product-calibration workflows, XAS, and other later-roadmap algorithms are not part of v0.3 release hardening.
 
-## Starting state for Gate A
+## Gate A completed state
 
-At the start of Issue #66:
+Gate A / Issue #66 / PR #67 was squash-merged to `main` at `8a3ae75f43ffa7d808f2a431f6326912a5dff9c6` after exact-head CI and two-pass release/API/packaging/compatibility review. It hardened the complete frozen v0.3 scope while intentionally keeping distribution metadata and runtime `__version__` at `0.2.0`.
 
-- reviewed `main` is `bc485e8c96bcf7ed1f8d849e5339697dcca50c38`;
-- all four frozen v0.3 scientific modules are merged and their implementation Issues are closed;
-- distribution metadata and runtime `__version__` both remain `0.2.0` intentionally;
-- README / MASTER_PLAN / ROADMAP / CHANGELOG are synchronized to the merged feature state;
-- no `v0.3.0` tag exists as a consequence of feature completion;
-- package-registry publication is not authorized.
-
-The fact that v0.3 functionality is present while package metadata still reports `0.2.0` is an intentional pre-release state. Gate B, not Gate A, performs the final version transition.
+Gate A added and audited the unified installed-wheel v0.3 numerical smoke, the existing v0.2 electrochemistry installed API audit, module-specific thermal/sorption/composition installed smokes, all seven quickstarts, installed-source verification, `pip check`, complete documented `__all__` resolution, and Matplotlib-lazy numerical characterization imports. It did not create a `v0.3.0` tag or publish a package.
 
 ## Gate A — release hardening while version remains `0.2.0`
 
@@ -67,14 +60,14 @@ The smoke intentionally does not perform hidden interpolation, smoothing, closur
 
 ## Gate B — final `0.3.0` version candidate
 
-Only after Gate A is squash-merged and the reviewed Gate-A `main` state is rechecked may a separate Gate-B PR be created.
+Gate B is active through Issue #68 / PR #69 on branch `release/v0.3-gate-b`, created directly from the reviewed Gate-A `main` commit `8a3ae75f43ffa7d808f2a431f6326912a5dff9c6` after explicit user authorization.
 
 Gate B changes both version declarations together:
 
 - `[project].version`: `0.2.0` -> `0.3.0`;
 - `catalysis_workbench.__version__`: `0.2.0` -> `0.3.0`.
 
-The Gate-B PR should contain no new scientific feature work. Before it may merge:
+The Gate-B PR contains no new scientific feature work. Before it may merge:
 
 1. Ruff and the complete pytest suite pass again with the final version in the source tree.
 2. The built artifact is a `catalysis_workbench-0.3.0-*.whl` wheel.
@@ -86,7 +79,8 @@ The Gate-B PR should contain no new scientific feature work. Before it may merge
 8. `CHANGELOG.md` converts the current v0.3 `[Unreleased]` work into an explicit `[0.3.0]` candidate section with the intended release date.
 9. README and release documents describe a final-version candidate consistently and do not claim that a tag already exists.
 10. Formal release/API/packaging/version review has no unresolved blockers.
-11. The PR head SHA used by the merge gate is exactly the head that passed CI and review, and it is not behind `main`.
+11. A second independent review is performed on the final exact head after any Gate-B fix; prior review evidence is stale if the head changes.
+12. The PR head SHA used by the merge gate is exactly the head that passed CI and both review passes, it is not behind `main`, and no review threads remain unresolved.
 
 Merging Gate B establishes a reviewed `main` commit that reports `0.3.0`; it still does not create a Git tag.
 
