@@ -22,7 +22,7 @@ Checkpoint date: 2026-08-24.
 
 - Repository: `xcwang3333-cloud/catalysis-workbench`.
 - Stable integration branch: `main`.
-- Current scientific `main` baseline: `cd8dd171a16576067934a13ad3ac41d0fb18d55a` (`feat: add explicit EIS analysis and plotting (#92)`).
+- Current scientific `main` baseline: `c76a49d64e096d6db001c27c598356baa797f3a9` (`feat: add explicit quantitative BET fitting (#96)`).
 - v0.4 architecture checkpoint: Issue #73 / PR #74 — complete at `a7fb245bd39f8aa3dc18141c2ecf6f005f02ebd1`.
 - v0.4 shared constrained peak-fitting foundation: Issue #75 / PR #76 — complete at `b6f428d96df9950373c17e5de487ac4113a2aacc`.
 - shared-fitting exact-head CI #255 / run `32733891934` — success.
@@ -39,12 +39,15 @@ Checkpoint date: 2026-08-24.
 - EIS semantics, R/C/CPE circuit fitting, Nyquist/Bode plotting, and diagnostics: Issue #91 / PR #92 — complete at `cd8dd171a16576067934a13ad3ac41d0fb18d55a`.
 - EIS final exact-head CI #285 / run `32746265252` — success on `18d81a0029cc851c136420fc550ec3e823094862`.
 - EIS final-head review records: `5009748594`, `5009757335`.
+- quantitative BET fitting and Rouquerol consistency checks: Issue #95 / PR #96 — complete at `c76a49d64e096d6db001c27c598356baa797f3a9`.
+- BET final exact-head CI #294 / run `32752441329` — success on `47aee74a5a6b16dbf60bb95c2910ccd197205f2f`.
+- BET final-head review records: `5010325152`, `5010328048`.
 - Reviewed runtime fitting dependency: `lmfit>=1.3.4`.
 - Distribution/runtime version remains `0.3.0`.
 - `v0.3.0` remains fixed on release commit `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`.
 - Package-registry publication has not been performed and remains a separate policy decision.
-- Active status checkpoint: Issue #93 — post-EIS docs sync and quantitative-BET handoff.
-- Next scientific stage after #93: quantitative BET fitting.
+- Active status checkpoint: Issue #97 — post-BET docs synchronization and product-calibration handoff.
+- Next scientific stage after #97: product calibration / GC-HPLC-NMR-derived quantification.
 
 Live GitHub Issue/PR/tag state remains authoritative if this checkpoint becomes stale.
 
@@ -89,7 +92,7 @@ The extended experimental-processing release is complete as `v0.3.0`.
 - Gate C tag verification — #70.
 - post-release docs synchronization — #71 / #72.
 
-The reviewed release tag is `v0.3.0 -> 845ac4c15d399a8816c7ba66d61ea6ec4cc11293`. Quantitative BET fitting and shared peak fitting were intentionally excluded from the v0.3 scientific gate.
+The reviewed release tag is `v0.3.0 -> 845ac4c15d399a8816c7ba66d61ea6ec4cc11293`. Quantitative BET fitting and shared peak fitting were intentionally excluded from the v0.3 scientific gate and were implemented later in v0.4.
 
 ## v0.4 execution status
 
@@ -217,36 +220,57 @@ Formal review found one real fail-closed issue before the final gate: a manually
 
 Full EIS scientific/fitting/plotting behavior is documented in [`EIS.md`](EIS.md).
 
-### Active next scientific block — quantitative BET fitting
+### Quantitative BET fitting — complete
 
-After the docs-only #93 checkpoint, implementation proceeds to a quantitative BET consumer of the already reviewed measured gas-sorption foundation.
+Issue #95 / PR #96 delivered the sixth v0.4 scientific block as a fail-closed quantitative consumer of the reviewed v0.3 measured gas-sorption foundation.
+
+Reviewed behavior includes:
+
+- explicit adsorption-branch input and canonical relative-pressure fraction semantics;
+- one caller-supplied measured-point `SorptionWindow` candidate region with source order preserved and no synthesized endpoints;
+- exact BET transform `p / [n(1-p)]`, exact OLS regression and retained `R²` diagnostic state without a hidden linearity threshold;
+- independent physical-consistency checks for positive intercept/`C`/monolayer state, increasing `n(1-p)` with increasing pressure, and fitted monolayer loading inside the selected measured loading span;
+- `evaluate_bet_region()` exposes candidate/criterion state while `fit_bet()` returns only an accepted region and fails with the failed criteria otherwise;
+- explicit conversion from `mmol/g`, `mol/kg`, `cm^3(STP)/g`, or caller-molar-mass `mg/g` to mol/g before area calculation;
+- caller-supplied molecular cross-sectional area with no adsorbate-name lookup table;
+- immutable candidate/result arrays and reconstruction checks for transforms, regression state, derived parameters, loading conversion, area and consistency state;
+- preprocessing provenance is fail-closed: reviewed `sorption.prepare`, measured-point `crop`, and explicit `sorption.convert_relative_pressure` are accepted, while unknown or y/grid-altering processing is rejected;
+- lazy `plot_bet_fit()` renders only exact retained candidate points and retained OLS line through the existing `FigureSpec` stack and performs no refit/region search/conversion/sorting/smoothing/resampling;
+- current pyGAPS, BETSI, SESAMI_web, and BEaTmap repositories were directly verified as MIT references; no implementation code was copied and no new runtime dependency was added.
+
+Review found and fixed two real fail-closed issues before the final gate: frozen metadata entries required generic mapping support, and the initial preprocessing blacklist was replaced by an explicit safe allowlist so unknown processing cannot silently enter quantitative BET. Final evidence is exact-head CI #294 / run `32752441329` on `47aee74a5a6b16dbf60bb95c2910ccd197205f2f`, reviews `5010325152` and `5010328048`, and expected-head squash merge `c76a49d64e096d6db001c27c598356baa797f3a9`.
+
+Full quantitative BET behavior is documented in [`BET.md`](BET.md).
+
+### Active next scientific block — product calibration / GC-HPLC-NMR quantification
+
+After the docs-only #97 checkpoint, implementation proceeds to an explicit product-calibration and sample-quantification layer. It must extend the existing v0.2 FE/product-analysis foundation without making detector- or chemistry-specific assumptions from labels.
 
 Required initial boundary:
 
-- preserve explicit adsorbate, adsorption/desorption branch, relative-pressure representation, loading basis/unit, temperature and standard-state metadata from the measured-isotherm layer;
-- define the BET transform and all transformed quantities explicitly rather than hiding them in plotting;
-- make the candidate BET region caller-visible and measured-point based;
-- apply reviewed Rouquerol consistency checks as physical acceptance criteria in addition to ordinary linear-regression diagnostics;
-- expose accepted/rejected criteria rather than silently selecting the visually straightest region;
-- calculate slope/intercept, BET constant, monolayer capacity and specific surface area only from an accepted region;
-- require explicit adsorbate molecular cross-sectional area and any standard-state quantity needed for loading-to-moles conversion; no hidden lookup table in the first stage;
-- retain deterministic source identity, selected measured points, transformed arrays, fit statistics, physical-consistency results, units and calculation inputs in immutable result state;
-- publication plotting/summary remains a passive consumer of reviewed quantitative state and the existing `FigureSpec` system.
+- separate calibration-standard model fitting from unknown-sample quantification;
+- calibration response and known-amount/concentration units remain explicit and compatible;
+- caller chooses the calibration model form, fit range/selected standards, intercept policy and any weighting rather than the library silently selecting them;
+- retain exact calibration x/y points, model coefficients/fit statistics, units, selected range, source identity and deterministic provenance in immutable result state;
+- sample quantification must consume an explicit reviewed calibration result and expose every dilution, injection, aliquot, sample-volume/mass, internal-standard or other multiplicative conversion factor it applies;
+- replicate aggregation and uncertainty propagation/reporting must have explicit state; unavailable uncertainty must not be fabricated as zero;
+- GC/HPLC/NMR detector response and internal-standard response factors are caller-supplied or separately calibrated, not inferred from product labels;
+- product identity, electron stoichiometry and Faradaic-efficiency inputs remain separate downstream scientific state rather than consequences of a calibration label;
+- numerical quantification and publication plotting remain separate responsibilities and reuse existing `Series`/result/`FigureSpec` conventions where appropriate.
 
-Explicit non-goals of the initial quantitative-BET block:
+Explicit non-goals of the first product-calibration block:
 
-- no automatic branch inference;
-- no silent pressure/loading/standard-state conversion;
-- no automatic BET-region choice without explicit reviewed criteria and caller-visible state;
-- no pore-size distribution, BJH/DFT/NLDFT, t-plot, alpha-s, Dubinin, hysteresis classification, or arbitrary adsorption-model fitting;
-- no adsorbate-property lookup inferred solely from a display label;
-- no GUI or new visualization framework parallel to `FigureSpec`.
+- no automatic product identification or peak assignment;
+- no instrument-vendor binary parsing unless separately contracted;
+- no hidden response-factor library, dilution factor, injection volume, standard density, stoichiometry or internal-standard relation;
+- no automatic model/fit-range selection solely from maximum `R²`;
+- no direct FE calculation hidden inside calibration fitting;
+- no GUI or new plotting framework parallel to `FigureSpec`.
 
 ### Later v0.4 dependency order
 
-1. quantitative BET fitting;
-2. product calibration / GC-HPLC-NMR quantification;
-3. completion-state synchronization and later release gates.
+1. product calibration / GC-HPLC-NMR quantification;
+2. completion-state synchronization and later release gates.
 
 ## Mandatory development loop
 
@@ -323,6 +347,7 @@ After squash merge, re-read `main`. When connector visibility does not expose a 
 - [`PEAK_FITTING.md`](PEAK_FITTING.md): reviewed shared-fitting contract.
 - [`XPS.md`](XPS.md): reviewed XPS semantics, preparation, fitting, plotting and diagnostics contract.
 - [`EIS.md`](EIS.md): reviewed EIS semantics, circuit fitting, Nyquist/Bode plotting and diagnostics contract.
+- [`BET.md`](BET.md): reviewed quantitative BET equations, consistency, conversion, provenance and plotting contract.
 - [`REFERENCES.md`](REFERENCES.md): prior-art projects, useful ideas, licenses, and dependency/reference-only decisions.
 - module-specific documents: exact scientific/API contracts for implemented modules.
 - GitHub Issues: active acceptance criteria.
@@ -339,4 +364,4 @@ After each merged scientific Issue, update only documentation whose statements b
 - whether the preceding Issue is actually closed/completed;
 - version/tag/publication boundaries.
 
-The post-EIS checkpoint is Issue #93. After it merges, the next active scientific Issue should implement quantitative BET fitting without reopening or duplicating the completed measured-isotherm, XPS, or EIS foundations.
+The post-BET checkpoint is Issue #97. After it merges, the next active scientific Issue should implement explicit product calibration / GC-HPLC-NMR-derived quantification without reopening or duplicating the completed measured-isotherm, quantitative BET, XPS, EIS, or shared-fitting foundations.
