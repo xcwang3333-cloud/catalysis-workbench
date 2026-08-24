@@ -33,7 +33,7 @@ Before implementing each major scientific or visualization module, comparable op
 
 - FTIR / ATR-FTIR — implemented and merged through Issue #50 / PR #51.
 - TGA / DTG / TPR / TPD — implemented and merged through Issue #54 / PR #55.
-- Basic BET / gas-sorption plotting — implemented and merged through Issue #58 / PR #59; quantitative BET fitting remains v0.4.
+- Basic BET / gas-sorption plotting — implemented and merged through Issue #58 / PR #59; quantitative BET fitting was intentionally deferred to v0.4 and is now implemented there.
 - ICP/composition data integration — implemented and merged through Issue #62 / PR #63.
 - Gate A / Issue #66 / PR #67 completed frozen-scope release hardening while retaining version `0.2.0`.
 - Gate B / Issue #68 / PR #69 finalized and exact-wheel validated distribution/runtime version `0.3.0`.
@@ -85,14 +85,22 @@ The architecture-first dependency order is maintained in [`V0_4_PLAN.md`](V0_4_P
    - passive Nyquist raw/`-Im(Z)` and principal-phase Bode plotting through the existing `FigureSpec` stack;
    - no automatic topology/model selection, unit/sign/order correction, hidden weighting or initial-guess heuristic;
    - final exact-head CI #285 / run `32746265252` and reviews `5009748594`, `5009757335` passed before merge commit `cd8dd171a16576067934a13ad3ac41d0fb18d55a`.
-6. **BET quantitative fitting — active next stage.**
-   - explicit measured-isotherm compatibility and BET transform;
-   - caller-visible measured-point candidate region;
-   - Rouquerol physical-consistency checks in addition to ordinary regression diagnostics;
-   - slope/intercept, BET constant, monolayer capacity and specific surface area only from an accepted region;
-   - explicit adsorbate cross-sectional area and standard-state/unit inputs rather than hidden lookup;
-   - no silent branch/pressure/loading conversion or automatic visually straight region selection.
-7. Product quantification from calibration data and GC/HPLC/NMR-derived values.
+6. **Quantitative BET fitting — complete through Issue #95 / PR #96.**
+   - explicit adsorption-branch and relative-pressure-fraction compatibility on the reviewed measured-isotherm foundation;
+   - caller-visible measured-point `SorptionWindow` candidate region with source order retained and no synthesized endpoints;
+   - exact BET transform and OLS diagnostics plus independent positive-parameter, Rouquerol-transform monotonicity, and monolayer-loading-inside-region checks;
+   - accepted fits retain slope/intercept, `R²`, BET constant, monolayer loading, monolayer pressure, explicit loading-to-mol/g conversion and specific surface area;
+   - explicit adsorbate cross-sectional area, molar-mass/STP conversion inputs and no hidden adsorbate lookup;
+   - preprocessing is fail-closed: only reviewed sorption preparation, measured-point crop and explicit relative-pressure conversion provenance are accepted; unknown or y/grid-altering processing is rejected;
+   - passive retained-array BET plotting uses the existing `FigureSpec` stack and performs no refitting or region search;
+   - final exact-head CI #294 / run `32752441329` succeeded on `47aee74a5a6b16dbf60bb95c2910ccd197205f2f`; final-head reviews `5010325152` and `5010328048` passed before squash merge `c76a49d64e096d6db001c27c598356baa797f3a9`.
+7. **Product calibration / GC-HPLC-NMR-derived quantification — active next stage.**
+   - separate calibration-standard fitting from sample quantification;
+   - keep response and amount units, calibration model form, fit range, intercept policy, dilution/injection/sample-volume factors, replicate handling and uncertainty state caller-visible;
+   - retain raw calibration points, exact fit/model state and deterministic provenance;
+   - fail explicitly on incompatible units, insufficient calibration state or unsupported transformations;
+   - do not infer product identity, detector/internal-standard response factors, dilution, stoichiometry, or Faradaic-efficiency inputs from labels;
+   - perform a fresh prior-art/license review and freeze the scientific/API contract before implementation.
 
 Ordinary v0.4 development continues with runtime/distribution version `0.3.0` until a later reviewed release gate explicitly changes it. No v0.4 tag, GitHub Release, or package-registry publication is implied by feature development.
 
