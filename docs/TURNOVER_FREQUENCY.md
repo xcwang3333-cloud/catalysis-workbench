@@ -14,7 +14,7 @@ Open-source architecture was also surveyed before coding:
 
 - `samueldy/mkmcxx-tof-demo` is MIT licensed. It is a compact microkinetic TOF plotting example and is useful only as a terminology/visualization reference; it does not supply the experimental electrochemical current-to-rate contract required here.
 - `SUNCAT-Center/catmap` is GPLv3. CatMAP is mature microkinetic-modeling prior art for site-based catalytic rates, but its copyleft license and modeling scope make it reference-only for this issue. No code is copied or adapted.
-- `mosp-catalysis/MOSP` was inspected as kinetic Monte Carlo / site-specific TOF prior art. It is not used as a dependency and no code is copied.
+- `mosp-catalysis/MOSP` is GPLv3. It was inspected as kinetic Monte Carlo / site-specific TOF prior art and is reference-only for this issue; it is not used as a dependency and no code is copied or adapted.
 
 The scientific equations are standard and implemented independently around CatalysisWorkbench's existing quantity/provenance layer.
 
