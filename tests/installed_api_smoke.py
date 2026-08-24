@@ -16,14 +16,21 @@ import numpy as np
 import catalysis_workbench
 from catalysis_workbench.core import Axis, Series
 from catalysis_workbench.experimental.characterization import (
+    FTIRBand,
+    FTIRProcessingConfig,
     RamanBand,
     RamanProcessingConfig,
     XRDProcessingConfig,
+    fit_ftir_baseline,
     id_ig_ratio,
+    measure_ftir_band,
+    plot_ftir,
     plot_raman,
     plot_xrd,
+    process_ftir,
     process_raman,
     process_xrd,
+    transmittance_to_absorbance,
 )
 from catalysis_workbench.experimental.echem import (
     FARADAY_CONSTANT_C_MOL,
@@ -169,6 +176,50 @@ def _smoke_raman(output: Path) -> None:
     spec = get_preset("publication")
     fig, _ = plot_raman(processed, spec)
     path = export_figure(fig, output / "raman.pdf", spec=spec)
+    assert path.is_file() and path.stat().st_size > 0
+
+
+def _smoke_ftir(output: Path) -> None:
+    transmittance = Series(
+        x=(1200.0, 1100.0, 1000.0),
+        y=(100.0, 50.0, 10.0),
+        key="smoke-ftir-transmittance",
+        x_axis=Axis("wavenumber", unit="cm^-1"),
+        y_axis=Axis("transmittance", unit="%"),
+    )
+    converted = transmittance_to_absorbance(transmittance, input_scale="percent")
+    _assert_close(converted.y[1], np.log10(2.0))
+    _assert_close(converted.y[2], 1.0)
+
+    wavenumber = np.array([2000.0, 1800.0, 1600.0, 1400.0, 1200.0, 1000.0])
+    linear_baseline = 0.001 * wavenumber + 0.2
+    source = Series(
+        x=wavenumber,
+        y=linear_baseline + np.array([0.0, 0.0, 2.0, 1.0, 0.0, 0.0]),
+        label="Installed FTIR smoke",
+        key="smoke-ftir",
+        x_axis=Axis("wavenumber", unit="cm^-1"),
+        y_axis=Axis("absorbance"),
+    )
+    baseline = fit_ftir_baseline(
+        source,
+        ((1000.0, 1200.0), (1800.0, 2000.0)),
+        degree=1,
+    )
+    corrected = process_ftir(
+        source,
+        FTIRProcessingConfig(wavenumber_min_cm1=1200.0, wavenumber_max_cm1=1800.0),
+        baseline=baseline,
+    )
+    measurement = measure_ftir_band(corrected, FTIRBand(1200.0, 1800.0, "smoke"))
+    _assert_close(measurement.area, 600.0)
+    assert measurement.source_direction == "descending"
+    assert measurement.integration_direction == "low_to_high_wavenumber"
+
+    spec = get_preset("publication")
+    fig, ax = plot_ftir(corrected, spec)
+    assert ax.get_xlim()[0] > ax.get_xlim()[1]
+    path = export_figure(fig, output / "ftir.svg", spec=spec)
     assert path.is_file() and path.stat().st_size > 0
 
 
@@ -424,6 +475,7 @@ def main() -> None:
         _smoke_lsv(output)
         _smoke_xrd(output)
         _smoke_raman(output)
+        _smoke_ftir(output)
 
 
 if __name__ == "__main__":
