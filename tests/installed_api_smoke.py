@@ -39,7 +39,7 @@ from catalysis_workbench.experimental.echem import (
     fit_tafel,
     kl_electron_number,
     normalize_activity,
-    partial_current_density,
+    partial_current_density_series,
     plot_lsv,
     process_lsv,
     rhe_offset_from_she,
@@ -210,14 +210,35 @@ def _smoke_fe_partial_activity_tof() -> None:
     _assert_close(fe.fraction.item(), expected_fe)
     _assert_close(fe.denominator_canonical.item(), -0.5)
 
-    partial = partial_current_density(
-        [-10.0],
-        [50.0],
-        fe_unit="%",
+    condition_axis = Axis("potential", unit="V", metadata={"reference": "RHE"})
+    total_current = Series(
+        x=(-0.7,),
+        y=(-10.0,),
+        key="smoke-total-current",
+        x_axis=condition_axis,
+        y_axis=Axis(
+            "current_density",
+            unit="mA/cm^2",
+            metadata={"normalization": "geometric_area"},
+        ),
+    )
+    product_fe = Series(
+        x=(-0.7,),
+        y=(50.0,),
+        key="smoke-CO",
+        label="CO",
+        x_axis=condition_axis,
+        y_axis=Axis("faradaic_efficiency", unit="%"),
+    )
+    partial = partial_current_density_series(
+        total_current,
+        product_fe,
         sign_mode="signed",
     )
-    _assert_close(partial.values.item(), -5.0)
-    _assert_close(partial.fe_fraction.item(), 0.5)
+    _assert_close(partial.y.item(), -5.0)
+    assert partial.y_axis.unit == "mA/cm^2"
+    assert partial.y_axis.metadata["normalization"] == "geometric_area"
+    assert partial.x_axis.metadata["reference"] == "RHE"
 
     activity = normalize_activity(
         [-2.0],
