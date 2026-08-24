@@ -46,14 +46,33 @@ def test_bet_rejects_display_offset_recorded_in_processing_history() -> None:
         _prepared(),
         config=SorptionProcessingConfig(vertical_offset=0.25),
     )
-    with pytest.raises(BETError, match="forbidden processing history: offset"):
+    with pytest.raises(BETError, match="unsupported processing: offset"):
         evaluate_bet_region(shifted, SorptionWindow(0.01, 0.18))
 
 
 def test_bet_rejects_normalized_loading_even_when_units_remain_sorption_compatible() -> None:
     normalized = normalize(_prepared(), method="max")
-    with pytest.raises(BETError, match="forbidden processing history: normalize"):
+    with pytest.raises(BETError, match="unsupported processing: normalize"):
         evaluate_bet_region(normalized, SorptionWindow(0.01, 0.18))
+
+
+def test_bet_rejects_unknown_processing_instead_of_defaulting_to_trust() -> None:
+    source = _prepared()
+    metadata = source.metadata_dict()
+    history = list(metadata["processing_history"])
+    history.append({"operation": "custom.quantitative_transform", "parameters": {}})
+    metadata["processing_history"] = history
+    altered_provenance = Series(
+        x=source.x,
+        y=source.y,
+        key=source.key,
+        label=source.label,
+        x_axis=source.x_axis,
+        y_axis=source.y_axis,
+        metadata=metadata,
+    )
+    with pytest.raises(BETError, match="custom.quantitative_transform"):
+        evaluate_bet_region(altered_provenance, SorptionWindow(0.01, 0.18))
 
 
 def test_explicit_measured_point_crop_remains_compatible_with_bet() -> None:
