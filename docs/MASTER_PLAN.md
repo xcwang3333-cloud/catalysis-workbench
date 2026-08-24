@@ -42,7 +42,7 @@ Checkpoint date: 2026-08-24.
 - Issue #60 / PR #61 synchronized the post-sorption checkpoint and selected ICP/composition next.
 - Issue #64 / PR #65 synchronized the post-ICP checkpoint without changing scientific code, API, tests, or version metadata.
 - **The explicit scope decision is complete:** shared peak-fitting is deferred to v0.4 and will be designed together with constrained XPS/spectroscopy consumers. v0.3 enters release hardening with the four completed experimental modules.
-- Issue #66 governs v0.3 Gate A release hardening and must keep package/runtime version at `0.2.0`; Gate B and Gate C remain separate later authorization boundaries.
+- Issue #66 / PR #67 defines and audits v0.3 Gate A release hardening at package/runtime version `0.2.0`; Gate B and Gate C remain separate later authorization boundaries.
 
 Live GitHub issue/PR/tag state remains authoritative if this checkpoint becomes stale.
 
@@ -54,7 +54,7 @@ The detailed release scope is maintained in [`ROADMAP.md`](ROADMAP.md). The inte
 | --- | --- | --- |
 | v0.1.x | common XY core, tabular I/O, reusable processing, LSV, XRD, Raman, publication curve rendering/export | complete/released as v0.1.0 |
 | v0.2.x | quantitative core electrochemistry and shared scatter/bar summaries | complete/released as v0.2.0 on 2026-08-24 |
-| v0.3.x | extended experimental processing | scientific scope frozen — FTIR/ATR-FTIR, thermal analysis, basic gas sorption, and ICP/composition complete; Gate A release hardening |
+| v0.3.x | extended experimental processing | scientific scope frozen — FTIR/ATR-FTIR, thermal analysis, basic gas sorption, and ICP/composition complete; Gate A release hardening through #66 / PR #67 |
 | v0.4.x | advanced experimental analysis | planned — shared constrained peak-fitting with XPS, XPS processing, EIS fitting, quantitative BET, product calibration |
 | v0.5.x | XAS, structures, basic DFT energetics | planned |
 | v0.6.x | electronic structure and catalysis thermodynamics | planned |
@@ -116,7 +116,7 @@ v0.3 extends experimental characterization while retaining the same explicit sci
 
 - Shared peak-fitting is **not** part of the frozen v0.3 release. It moves to v0.4, where model families, baseline coupling, parameter constraints/ties, uncertainty/covariance semantics, and provenance can be designed with constrained XPS/spectroscopy as a concrete downstream consumer.
 - Quantitative BET fitting remains v0.4 scope.
-- v0.3 Gate A is defined by Issue #66 and [`V0_3_RELEASING.md`](V0_3_RELEASING.md): public-API audit, fresh-wheel validation, unified installed numerical smoke across the four v0.3 modules, existing v0.2 regression preservation, seven installed quickstarts, release-policy review, and exact-head merge discipline.
+- v0.3 Gate A is defined and audited through Issue #66 / PR #67 plus [`V0_3_RELEASING.md`](V0_3_RELEASING.md): public-API audit, fresh-wheel validation, unified installed numerical smoke across the four v0.3 modules, existing v0.2 regression preservation, seven installed quickstarts, release-policy review, and exact-head merge discipline.
 - Gate A does **not** change version metadata. Gate B is the only stage authorized to propose `0.2.0 -> 0.3.0`. Gate C requires separate explicit authorization before tag creation.
 - Package-registry publication remains outside the Git release gate.
 
@@ -216,6 +216,6 @@ At a minimum, before starting the next feature or release stage, verify:
 
 This lightweight resynchronization is the required checkpoint between feature/release loops.
 
-## Immediate next action
+## Release sequence from this checkpoint
 
-Complete v0.3 Gate A through Issue #66 using the exact-head release/API/packaging/compatibility gate defined in [`V0_3_RELEASING.md`](V0_3_RELEASING.md). Gate A must leave both version declarations at `0.2.0`. After Gate A is squash-merged and `main` is rechecked, Gate B may be opened as a separate final-version candidate for `0.3.0`; Gate C tag creation remains separately authorization-gated.
+Gate A is defined and audited through Issue #66 / PR #67 and must leave both version declarations at `0.2.0`. Once that PR is squash-merged and `main` is rechecked, the next release stage is a separate Gate-B final-version candidate for `0.3.0`. Gate C tag creation remains separately authorization-gated, and package-registry publication remains outside the Git release gate.
