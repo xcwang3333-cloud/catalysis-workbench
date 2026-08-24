@@ -45,6 +45,27 @@ def _series_tuple(data: Series | Dataset) -> tuple[Series, ...]:
     raise TypeError("data must be a Series or Dataset")
 
 
+def _axis_time_basis(series: Series) -> str | None:
+    value = series.x_axis.metadata.get("time_basis")
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise StabilityError("time-axis time_basis metadata must be a string when present")
+    text = " ".join(value.split())
+    if not text:
+        raise StabilityError("time-axis time_basis metadata must not be empty")
+    return text.casefold()
+
+
+def _validate_time_basis_overlay(series: tuple[Series, ...]) -> None:
+    first = _axis_time_basis(series[0])
+    for item in series[1:]:
+        if _axis_time_basis(item) != first:
+            raise StabilityError(
+                "stability overlays require matching time_basis metadata"
+            )
+
+
 def plot_stability(
     data: Series | Dataset,
     spec: FigureSpec | None = None,
@@ -52,8 +73,10 @@ def plot_stability(
     preset: str = "publication",
 ) -> tuple[Figure, Axes]:
     """Render validated stability traces without calculating stability metrics."""
-    for series in _series_tuple(data):
-        validate_stability_series(series)
+    series = _series_tuple(data)
+    for item in series:
+        validate_stability_series(item)
+    _validate_time_basis_overlay(series)
     return render_curves(data, spec, preset=preset)
 
 
@@ -97,11 +120,21 @@ def _summary_metric(value: object) -> StabilitySummaryMetric:
     )
 
 
+def _result_time_basis(result: StabilityResult) -> str | None:
+    value = dict(result.provenance.parameters).get("time_basis")
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise StabilityError("stability provenance time_basis must be a string or None")
+    return " ".join(value.split()).casefold()
+
+
 def _validate_summary_compatibility(
     results: tuple[StabilityResult, ...],
     metric: StabilitySummaryMetric,
 ) -> None:
     first = results[0]
+    first_time_basis = _result_time_basis(first)
     for result in results[1:]:
         if result.y_kind != first.y_kind:
             raise StabilityError("stability summary requires matching y semantics")
@@ -111,16 +144,19 @@ def _validate_summary_compatibility(
             raise StabilityError(
                 "stability summary requires matching normalization metadata"
             )
+        if _result_time_basis(result) != first_time_basis:
+            raise StabilityError(
+                "stability summary requires matching time_basis provenance"
+            )
         if metric not in {"retention_percent", "relative_change_percent"}:
             if result.y_unit != first.y_unit:
                 raise StabilityError(
                     "stability summary requires matching y units for this metric"
                 )
-        else:
-            if result.config.retention_mode != first.config.retention_mode:
-                raise StabilityError(
-                    "retention summaries require matching signed/magnitude modes"
-                )
+        elif result.config.retention_mode != first.config.retention_mode:
+            raise StabilityError(
+                "retention summaries require matching signed/magnitude modes"
+            )
 
 
 def _metric_unit(result: StabilityResult, metric: StabilitySummaryMetric) -> str:
@@ -173,6 +209,7 @@ def plot_stability_summary(
             metadata={
                 "reference": resolved[0].reference,
                 "normalization": resolved[0].normalization,
+                "time_basis": _result_time_basis(resolved[0]),
             },
         ),
     )
