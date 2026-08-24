@@ -18,7 +18,7 @@ For development and tests:
 python -m pip install -e ".[dev]"
 ```
 
-The tagged v0.1.0 release used a separate release-hardening gate followed by a final-version gate; see [`docs/RELEASING.md`](docs/RELEASING.md). The completed v0.2 feature set currently remains at development version `0.2.0.dev0`. A final `0.2.0` version bump or `v0.2.0` tag requires a separately defined/reviewed v0.2 release gate and is not implied by feature completion.
+The tagged v0.1.0 release used a separate release-hardening gate followed by a final-version gate; see [`docs/RELEASING.md`](docs/RELEASING.md). The completed v0.2 feature set currently remains at development version `0.2.0.dev0`. v0.2 release hardening is tracked by Issue #43 and [`docs/V0_2_RELEASING.md`](docs/V0_2_RELEASING.md); a final `0.2.0` version bump or `v0.2.0` tag remains a separate gate and is not implied by feature completion or release-hardening CI.
 
 ## Quickstart: CSV -> LSV processing -> publication export
 
@@ -140,15 +140,15 @@ A catalyst or sample name remains lightweight metadata on a data series; Catalys
 
 ## Release and development status
 
-The v0.1 scientific/common-XY feature set is released as v0.1.0. The planned v0.2 implementation sequence #19-#28 is complete on `main`; the package remains `0.2.0.dev0` while documentation/public-API/package state is synchronized and a dedicated v0.2 release-hardening/final-version policy is defined.
+The v0.1 scientific/common-XY feature set is released as v0.1.0. The planned v0.2 implementation sequence #19-#28 is complete on `main`. **Issue #43 is the active release-hardening gate**: installed-wheel smoke is being expanded to execute representative v0.2 electrochemistry calculations and a v0.2-specific release/final-version/tag policy is being reviewed while the package remains `0.2.0.dev0`.
 
 New functionality follows a strict feature loop: prior-art scan with license recording, implementation/regression tests, CI, Draft PR, scientific/API/compatibility review, fixes, CI, second review, Ready/merge gate, squash merge, `main` CI verification when visible, then issue closure. Release/version work uses the same exact-head discipline with release/API/packaging/version review.
 
-See [`docs/MASTER_PLAN.md`](docs/MASTER_PLAN.md) for the project-wide execution model and current checkpoint, [`docs/V0_2_PLAN.md`](docs/V0_2_PLAN.md) for the completed v0.2 feature plan and release handoff, and [`docs/ROADMAP.md`](docs/ROADMAP.md) for the long-range release scope.
+See [`docs/MASTER_PLAN.md`](docs/MASTER_PLAN.md) for the project-wide execution model and current checkpoint, [`docs/V0_2_PLAN.md`](docs/V0_2_PLAN.md) for the completed v0.2 feature plan and release handoff, [`docs/V0_2_RELEASING.md`](docs/V0_2_RELEASING.md) for the active v0.2 release gates, and [`docs/ROADMAP.md`](docs/ROADMAP.md) for the long-range release scope.
 
 ## Roadmap
 
-- **v0.2:** quantitative core electrochemistry feature implementation complete; release gate pending while version remains `0.2.0.dev0`.
+- **v0.2:** quantitative core electrochemistry feature implementation complete; release hardening active under Issue #43 while version remains `0.2.0.dev0`.
 - **v0.3-v0.6:** extended experimental characterization, advanced electrochemistry, XAS, structures, and major DFT post-processing.
 - **v0.7-v1.0:** advanced volumetric visualization, operando/time-resolved analysis, reproducible batch workflows, and a local GUI.
 
