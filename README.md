@@ -2,7 +2,7 @@
 
 **CatalysisWorkbench** is a Python workbench for quantitative post-processing, comparative analysis, and publication-quality visualization of catalysis experimental, characterization, and computational data.
 
-The reviewed v0.1 scientific foundation covers common one-dimensional XY workflows: tabular import, reusable processing, LSV/polarization curves, XRD, Raman, and exact-size PNG/SVG/PDF export. v0.2 development is extending that foundation into quantitative electrochemistry; shared electrochemistry quantity/provenance conventions, scatter/bar rendering, Tafel analysis, Faradaic efficiency, and product partial-current density are already merged on `main`.
+The reviewed v0.1 scientific foundation covers common one-dimensional XY workflows: tabular import, reusable processing, LSV/polarization curves, XRD, Raman, and exact-size PNG/SVG/PDF export. The planned v0.2 quantitative-electrochemistry implementation is now complete on `main`: shared electrochemistry quantity/provenance conventions, scatter/bar rendering, Tafel analysis, Faradaic efficiency, product partial-current density, activity normalization, TOF/TOFapp, CV/Cdl/ECSA, stability analysis, and RRDE/Koutecky-Levich basics are merged and reviewed.
 
 ## Install from a source checkout
 
@@ -18,7 +18,7 @@ For development and tests:
 python -m pip install -e ".[dev]"
 ```
 
-The v0.1.0 release process uses a separate release-hardening gate followed by a final-version gate. A `v0.1.0` tag must point to reviewed `main` only after the final-version CI/review passes and explicit release authorization is given; see [`docs/RELEASING.md`](docs/RELEASING.md).
+The tagged v0.1.0 release used a separate release-hardening gate followed by a final-version gate; see [`docs/RELEASING.md`](docs/RELEASING.md). The completed v0.2 feature set currently remains at development version `0.2.0.dev0`. A final `0.2.0` version bump or `v0.2.0` tag requires a separately defined/reviewed v0.2 release gate and is not implied by feature completion.
 
 ## Quickstart: CSV -> LSV processing -> publication export
 
@@ -88,7 +88,7 @@ The supported import surfaces are intentionally organized by responsibility rath
 - `catalysis_workbench.core`: `Axis`, `Series`, `Dataset`.
 - `catalysis_workbench.io`: `read_csv`, `read_txt`, `read_excel`, `read_tabular`, `TabularReadError`.
 - `catalysis_workbench.processing`: crop, normalization, offset, Savitzky-Golay smoothing, interpolation, integration, explicit baseline subtraction, Dataset mapping, and processing errors/results.
-- `catalysis_workbench.experimental.echem`: reviewed LSV processing/configuration; explicit electrochemistry quantity/reference/provenance helpers; Tafel fitting; Faradaic-efficiency analysis and closure QA; product partial-current density and closure QA; plus lazy publication plotting adapters.
+- `catalysis_workbench.experimental.echem`: reviewed LSV processing/configuration; explicit electrochemistry quantity/reference/provenance helpers; Tafel fitting; Faradaic-efficiency analysis and closure QA; product partial-current density and closure QA; catalyst-/metal-mass and ECSA activity normalization; TOF/TOFapp; CV/Cdl/ECSA; stability analysis; RRDE metrics; Koutecky-Levich fitting/apparent electron-number helpers; plus lazy publication plotting adapters.
 - `catalysis_workbench.experimental.characterization`: XRD and Raman validation, processing, quantitative Raman-band helpers, annotations/reference sticks, and `plot_xrd` / `plot_raman`.
 - `catalysis_workbench.visualization`: `FigureSpec`, `LayoutSpec`, `PlotStyle`, `SeriesStyle`, annotations/export settings, presets, shared curve/scatter/bar renderers, and `export_figure`.
 
@@ -100,7 +100,7 @@ CatalysisWorkbench focuses on data that require secondary processing before they
 
 ### Experimental data
 
-- Electrochemistry: LSV/polarization processing, shared quantity/provenance conventions, Tafel analysis, Faradaic efficiency, and product partial-current density are implemented. Mass/specific activity, TOF/TOFapp, CV/Cdl/ECSA, stability, and RRDE/K-L are the remaining planned v0.2 sequence.
+- Electrochemistry: the planned v0.2 core is implemented — LSV/polarization processing, shared quantity/provenance conventions, Tafel, Faradaic efficiency, partial current density, mass/ECSA activity normalization, TOF/TOFapp, CV/Cdl/ECSA, stability, and RRDE/K-L basics. Advanced EIS and product-calibration workflows remain later roadmap work.
 - Characterization: XRD and Raman are implemented; FTIR/ATR-FTIR, XPS, BET/sorption, XAS, composition, and thermal-analysis curves are staged later.
 - Product analysis: v0.2 Faradaic efficiency starts from already quantified product amounts or rates. Raw calibration and GC/HPLC/NMR-derived quantification workflows remain staged after the core electrochemistry foundation.
 
@@ -140,15 +140,15 @@ A catalyst or sample name remains lightweight metadata on a data series; Catalys
 
 ## Release and development status
 
-The v0.1 scientific/common-XY feature set and release-hardening gate are complete. v0.2 development has completed the shared electrochemistry foundation (#19), scatter/bar rendering (#20), Tafel (#21), Faradaic efficiency (#22), and product partial-current density (#23). The next implementation target is **Issue #24: mass and specific activity normalization**.
+The v0.1 scientific/common-XY feature set is released as v0.1.0. The planned v0.2 implementation sequence #19-#28 is complete on `main`; the package remains `0.2.0.dev0` while documentation/public-API/package state is synchronized and a dedicated v0.2 release-hardening/final-version policy is defined.
 
-New functionality follows a strict feature loop: prior-art scan with license recording, implementation/regression tests, CI, Draft PR, scientific/API/compatibility review, fixes, CI, second review, Ready/merge gate, squash merge, `main` CI verification, then issue closure.
+New functionality follows a strict feature loop: prior-art scan with license recording, implementation/regression tests, CI, Draft PR, scientific/API/compatibility review, fixes, CI, second review, Ready/merge gate, squash merge, `main` CI verification when visible, then issue closure. Release/version work uses the same exact-head discipline with release/API/packaging/version review.
 
-See [`docs/MASTER_PLAN.md`](docs/MASTER_PLAN.md) for the project-wide execution model and current checkpoint, [`docs/V0_2_PLAN.md`](docs/V0_2_PLAN.md) for the active v0.2 dependency/order plan, and [`docs/ROADMAP.md`](docs/ROADMAP.md) for the long-range release scope.
+See [`docs/MASTER_PLAN.md`](docs/MASTER_PLAN.md) for the project-wide execution model and current checkpoint, [`docs/V0_2_PLAN.md`](docs/V0_2_PLAN.md) for the completed v0.2 feature plan and release handoff, and [`docs/ROADMAP.md`](docs/ROADMAP.md) for the long-range release scope.
 
 ## Roadmap
 
-- **v0.2:** quantitative core electrochemistry, with #19-#23 complete and #24-#28 remaining in the planned sequence.
+- **v0.2:** quantitative core electrochemistry feature implementation complete; release gate pending while version remains `0.2.0.dev0`.
 - **v0.3-v0.6:** extended experimental characterization, advanced electrochemistry, XAS, structures, and major DFT post-processing.
 - **v0.7-v1.0:** advanced volumetric visualization, operando/time-resolved analysis, reproducible batch workflows, and a local GUI.
 

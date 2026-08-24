@@ -13,12 +13,19 @@ All notable changes to CatalysisWorkbench are recorded here.
 - Explicit Tafel analysis with caller-supplied fit windows, physical branch plus numeric current-sign declarations, signed slope/intercept/R^2 reporting, immutable provenance-rich results, stable-key Dataset fitting, and shared publication plotting.
 - Explicit Faradaic-efficiency analysis for amount/charge and rate/current formulations, immutable signed-denominator results, stable-key multi-product Series/Dataset workflows, total-FE closure QA without clipping/renormalization, and shared scatter/curve publication plotting.
 - Product partial-current density analysis from explicit FE and total current density, including signed/magnitude conventions, exact condition-grid validation, stable-key multi-product Dataset workflows, deterministic source provenance, diagnostic closure QA without renormalization, and shared scatter/curve publication plotting.
+- Explicit catalyst-mass, metal-mass, and ECSA activity normalization with canonical total-current reconstruction, geometric-area guards, stable-key denominator mappings, double-normalization rejection, provenance-rich results, and shared publication plotting.
+- Explicit TOF/TOFapp analysis from product molar rate or product partial current, including active-site versus total/bulk inventory semantics, explicit electron stoichiometry/current mode, exact count-to-mol conversion, stable-key inventory mappings, and denominator-compatible publication plotting.
+- CV/Cdl/ECSA analysis with explicit anodic/cathodic sweep pairing, caller-supplied scan rates and analysis potential, exact or bracketed-linear sampling, `Delta j / 2` fitting, explicit current basis, and ECSA conversion only from caller-supplied specific capacitance plus source/basis provenance.
+- Electrochemical stability analysis with caller-declared analysis/baseline/final windows, signed or magnitude retention, missing-value policy, linear drift fitting, stable-key Dataset analysis, time-basis compatibility guards, and shared long-term/summary plotting.
+- RRDE analysis with explicit collection efficiency, exact disk/ring alignment, explicit current-mode handling, standard ORR-style apparent electron-number/peroxide metrics without hidden clipping, and shared publication plotting.
+- Koutecky-Levich analysis with rpm/rps/rad-s canonicalization to angular frequency, free-intercept reciprocal-current regression, explicit total-current versus geometric-current-density basis, transport-constant-explicit apparent electron-number derivation, fit-specific provenance, and shared transformed-data/fit plotting.
 
 ### Changed
 
 - LSV/polarization processing now delegates common low-level quantity parsing and conversion to the shared electrochemistry foundation while preserving the reviewed v0.1 public API and numerical behavior.
 - Shared visualization specifications now include categorical style overrides, configurable bar-group width, and error-bar cap size while preserving existing curve-rendering behavior.
 - Development version advanced to `0.2.0.dev0` after the tagged `v0.1.0` release.
+- The planned v0.2 scientific feature sequence #19-#28 is implementation-complete on `main`; the project remains at `0.2.0.dev0` pending a separately defined v0.2 release-hardening/final-version gate.
 
 ## [0.1.0] - 2026-08-23
 
