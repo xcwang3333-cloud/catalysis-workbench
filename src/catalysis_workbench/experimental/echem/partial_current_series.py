@@ -6,11 +6,10 @@ from collections.abc import Sequence
 
 import numpy as np
 
-from catalysis_workbench.core import Dataset, Series
+from catalysis_workbench.core import Axis, Dataset, Series
 
 from .partial_current import (
     PartialCurrentDensityError,
-    PartialCurrentDensityResult,
     SignMode,
     partial_current_density,
 )
@@ -40,13 +39,26 @@ def partial_current_density_series(
     if result.values.size != current_density.x.size:
         raise PartialCurrentDensityError("FE length must match Series length")
 
-    return current_density.with_data(
-        y=result.values,
-        label=f"{current_density.label} partial current".strip(),
-    ).with_metadata(
+    metadata = current_density.metadata_dict()
+    metadata.update(
         analysis="partial_current_density",
         fe_unit="fraction",
         sign_mode=sign_mode,
+    )
+
+    return Series(
+        x=current_density.x,
+        y=result.values,
+        label=f"{current_density.label} partial current".strip(),
+        key=current_density.key,
+        x_axis=current_density.x_axis,
+        y_axis=Axis(
+            "partial_current_density",
+            unit=current_density.y_axis.unit,
+            label="Partial current density",
+            metadata=current_density.y_axis.metadata_dict(),
+        ),
+        metadata=metadata,
     )
 
 
