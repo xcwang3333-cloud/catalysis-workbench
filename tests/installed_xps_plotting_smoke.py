@@ -62,9 +62,10 @@ result = fit_xps_peaks(
     doublets=(doublet,),
     background=background,
 )
+plot_spec = FigureSpec().with_layout(figure_width_in=4.0, figure_height_in=3.0)
 figure, axes = plot_xps_fit(
     result,
-    FigureSpec().with_layout(figure_width_in=4.0, figure_height_in=3.0),
+    plot_spec,
     show_residual=True,
 )
 assert len(axes) == 2
@@ -81,6 +82,6 @@ assert diagnostics.n_points == result.fit.n_points
 
 with tempfile.TemporaryDirectory() as directory:
     output = Path(directory) / "xps-fit.svg"
-    export_figure(figure, output, spec=FigureSpec().with_layout(figure_width_in=4.0, figure_height_in=3.0))
+    export_figure(figure, output, spec=plot_spec)
     assert output.exists()
     assert output.stat().st_size > 0
