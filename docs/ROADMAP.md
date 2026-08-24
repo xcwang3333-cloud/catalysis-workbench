@@ -2,7 +2,7 @@
 
 CatalysisWorkbench is developed in staged releases. The project focuses on quantitative post-processing, comparative analysis, and publication-quality visualization of catalysis data.
 
-Before implementing each major scientific or visualization module, comparable open-source projects should be surveyed and useful algorithms, data-model ideas, visualization patterns, tests, and license constraints recorded in [`REFERENCES.md`](REFERENCES.md).
+Before implementing each major scientific or visualization module, comparable open-source projects should be surveyed and useful algorithms, data-model ideas, visualization patterns, tests, and license constraints recorded in project documentation.
 
 ## v0.1.0 — Common XY workflow
 
@@ -42,67 +42,48 @@ Before implementing each major scientific or visualization module, comparable op
 
 Shared peak fitting was deliberately deferred from v0.3 so its constraints, uncertainty semantics, provenance, and concrete XPS consumer could be designed together in v0.4.
 
-## v0.4.x — Advanced experimental analysis — implementation active
+## v0.4.x — Advanced experimental analysis — scientific implementation complete
 
-The architecture-first dependency order is maintained in [`V0_4_PLAN.md`](V0_4_PLAN.md).
+The architecture-first dependency order is maintained in [`V0_4_PLAN.md`](V0_4_PLAN.md). The scientific scope below is merged to `main`; v0.4 has **not** yet entered its separately authorized release-hardening/version/tag gates.
 
 1. **Shared constrained peak-fitting foundation — complete through Issue #75 / PR #76.**
    - `lmfit>=1.3.4` reviewed as the BSD-3-Clause runtime fitting backend;
-   - stable parameter/component keys;
-   - explicit initial/fixed/bounded/tied parameters;
+   - stable parameter/component keys and explicit initial/fixed/bounded/tied parameters;
    - Gaussian, Lorentzian, Voigt, pseudo-Voigt, and Doniach initial model families;
-   - deterministic fit provenance, physical residuals, fit statistics, and optional uncertainty/covariance state;
-   - explicit caller background and fit window;
-   - no automatic peak detection, component-count selection, smoothing, normalization, or baseline choice;
-   - exact-head CI #255 and two formal reviews passed before merge commit `b6f428d96df9950373c17e5de487ac4113a2aacc`.
+   - deterministic fit provenance, physical residuals, fit statistics and optional uncertainty/covariance state;
+   - exact-head CI #255 and two formal reviews passed before merge `b6f428d96df9950373c17e5de487ac4113a2aacc`.
 2. **XPS data semantics and preparation — complete through Issue #79 / PR #80.**
-   - explicit binding-energy/eV semantics;
-   - explicit additive energy calibration/reference correction with provenance;
-   - measured-point-only region preparation with source-order preservation;
-   - direction-safe linear background;
-   - independently implemented Shirley fixed-point integral background with explicit convergence/failure state;
-   - Tougaard remains deferred unless separately contracted;
-   - exact-head CI #261 and two formal reviews passed before merge commit `a13dbd541b299f79d83e47f079c4638b082a8061`.
+   - explicit binding-energy/eV semantics and additive energy correction;
+   - measured-point-only region preparation, linear background, independently implemented Shirley background;
+   - exact-head CI #261 and two formal reviews passed before merge `a13dbd541b299f79d83e47f079c4638b082a8061`.
 3. **Constrained XPS peak fitting — complete through Issue #83 / PR #84.**
-   - thin shared-fitter consumer with no second optimizer;
-   - explicit signed doublet separation, amplitude ratio and model-specific shape/width relations;
-   - prepared XPS background accepted only on the exact matching source/grid/unit/direction state;
-   - no hidden p/d/f ratios, chemistry assignment, charge correction or literature lookup;
-   - exact-head CI #267 and two formal reviews passed before merge commit `7897393e1e1e9e4d23fad774b4eeecdd70e2a90b`.
+   - shared-fitter consumer with explicit signed doublet separation and caller-supplied amplitude/shape relations;
+   - fail-closed prepared-background alignment and no hidden textbook ratios or chemistry lookup;
+   - exact-head CI #267 and two formal reviews passed before merge `7897393e1e1e9e4d23fad774b4eeecdd70e2a90b`.
 4. **XPS publication plotting and fit diagnostics — complete through Issue #87 / PR #88.**
-   - passive lazy adapter over retained `XPSPeakFitResult` arrays and the shared `FigureSpec` / visualization stack;
-   - measured spectrum, retained background, stable-key component curves, total fit and optional physical residual diagnostics;
-   - binding-energy direction is a rendering-only choice and does not reorder/mutate numerical results;
-   - `XPSFitDiagnostics` mirrors already-computed statistics and uncertainty availability without fabrication;
-   - no fitting, background calculation, energy correction, smoothing, normalization, resampling or chemistry assignment during plotting;
-   - exact-head CI #274 / run `32741710370` and final-head reviews passed before merge commit `3eab8c8e936cf1897081b7a396306288e517a3bb`.
+   - passive retained-array rendering through `FigureSpec`, optional physical residual panel, display-only binding-energy direction;
+   - exact-head CI #274 / run `32741710370` and final-head reviews passed before merge `3eab8c8e936cf1897081b7a396306288e517a3bb`.
 5. **EIS semantics, basic equivalent-circuit fitting, and plotting — complete through Issue #91 / PR #92.**
-   - explicit frequency/Hz and literal complex-impedance/ohm semantics with source-order preservation;
-   - ideal R/C/CPE leaves plus explicit series/parallel topology and stable `element.parameter` identities;
-   - caller-visible initial values, fixed/vary state, bounds and explicit residual weights;
-   - SciPy real+imag least-squares objective while the public complex residual remains exactly `observed - best_fit`;
-   - fail-closed immutable result reconstruction tying units/direction/circuit/parameters/best-fit/residual/weights/objective state together;
-   - passive Nyquist raw/`-Im(Z)` and principal-phase Bode plotting through the existing `FigureSpec` stack;
-   - no automatic topology/model selection, unit/sign/order correction, hidden weighting or initial-guess heuristic;
-   - final exact-head CI #285 / run `32746265252` and reviews `5009748594`, `5009757335` passed before merge commit `cd8dd171a16576067934a13ad3ac41d0fb18d55a`.
+   - explicit frequency/Hz and literal complex-impedance/ohm semantics;
+   - ideal R/C/CPE elements with explicit series/parallel topology;
+   - SciPy real+imag least-squares objective with retained physical complex residual;
+   - passive Nyquist/Bode plotting and fail-closed result reconstruction;
+   - final exact-head CI #285 / run `32746265252`, reviews `5009748594` and `5009757335`, merge `cd8dd171a16576067934a13ad3ac41d0fb18d55a`.
 6. **Quantitative BET fitting — complete through Issue #95 / PR #96.**
-   - explicit adsorption-branch and relative-pressure-fraction compatibility on the reviewed measured-isotherm foundation;
-   - caller-visible measured-point `SorptionWindow` candidate region with source order retained and no synthesized endpoints;
-   - exact BET transform and OLS diagnostics plus independent positive-parameter, Rouquerol-transform monotonicity, and monolayer-loading-inside-region checks;
-   - accepted fits retain slope/intercept, `R²`, BET constant, monolayer loading, monolayer pressure, explicit loading-to-mol/g conversion and specific surface area;
-   - explicit adsorbate cross-sectional area, molar-mass/STP conversion inputs and no hidden adsorbate lookup;
-   - preprocessing is fail-closed: only reviewed sorption preparation, measured-point crop and explicit relative-pressure conversion provenance are accepted; unknown or y/grid-altering processing is rejected;
-   - passive retained-array BET plotting uses the existing `FigureSpec` stack and performs no refitting or region search;
-   - final exact-head CI #294 / run `32752441329` succeeded on `47aee74a5a6b16dbf60bb95c2910ccd197205f2f`; final-head reviews `5010325152` and `5010328048` passed before squash merge `c76a49d64e096d6db001c27c598356baa797f3a9`.
-7. **Product calibration / GC-HPLC-NMR-derived quantification — active next stage.**
-   - separate calibration-standard fitting from sample quantification;
-   - keep response and amount units, calibration model form, fit range, intercept policy, dilution/injection/sample-volume factors, replicate handling and uncertainty state caller-visible;
-   - retain raw calibration points, exact fit/model state and deterministic provenance;
-   - fail explicitly on incompatible units, insufficient calibration state or unsupported transformations;
-   - do not infer product identity, detector/internal-standard response factors, dilution, stoichiometry, or Faradaic-efficiency inputs from labels;
-   - perform a fresh prior-art/license review and freeze the scientific/API contract before implementation.
+   - caller-visible measured `SorptionWindow`, exact BET transform and independent Rouquerol consistency state;
+   - explicit loading-to-mol/g conversion and molecular cross-sectional area;
+   - fail-closed preprocessing allowlist and passive retained-array BET plotting;
+   - final exact-head CI #294 / run `32752441329`, reviews `5010325152` and `5010328048`, merge `c76a49d64e096d6db001c27c598356baa797f3a9`.
+7. **Product calibration / GC-HPLC-NMR-derived quantification — complete through Issue #99 / PR #100.**
+   - new technique-agnostic `catalysis_workbench.experimental.product` layer upstream of electrochemical FE;
+   - explicit linear calibration with caller-selected free or fixed-zero intercept policy and optional measured-point `CalibrationRange`;
+   - retained calibration points, coefficients, physical residuals, R²/uncertainty availability and fail-closed result reconstruction;
+   - separate inverse quantification with exact response-unit matching, default extrapolation rejection, explicit ordered positive dimensionless factors and no hidden unit/stoichiometric conversion;
+   - explicit replicate mean/sample-SD/RSD summaries and passive `FigureSpec` calibration plotting;
+   - raw GC/HPLC/NMR parsing, peak integration/assignment, internal-standard identification and automatic response-factor/model/range inference remain out of scope;
+   - final exact head `967d495bba8c8f0102b8b37a6f880f566d776206`, CI #298 / run `32755942830`, reviews `5010636300` and `5010639945`, squash merge `adc0f50178d899b4f257842da6e7bac553a25254`.
 
-Ordinary v0.4 development continues with runtime/distribution version `0.3.0` until a later reviewed release gate explicitly changes it. No v0.4 tag, GitHub Release, or package-registry publication is implied by feature development.
+All planned v0.4 scientific blocks are therefore complete on `main`. Runtime/distribution version remains `0.3.0`. The next boundary is **v0.4 release hardening / Gate A**, which requires separate explicit authorization. Scientific completion alone does not authorize a version bump, `v0.4.0` tag, GitHub Release, or package-registry publication.
 
 ## v0.5.x — XAS and structures
 
