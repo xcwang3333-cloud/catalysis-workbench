@@ -6,8 +6,8 @@ import pytest
 
 from catalysis_workbench.core import Axis, Dataset, Series
 from catalysis_workbench.experimental.echem import (
-    CVSweepPair,
     CdlError,
+    CVSweepPair,
     fit_cdl,
     plot_cdl_fit,
     plot_cv,
