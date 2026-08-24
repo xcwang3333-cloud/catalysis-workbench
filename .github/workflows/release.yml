@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Existing release tag to publish (for example v0.4.0)
+        description: Existing stable release tag to publish (for example v0.4.0)
         required: true
         type: string
       expected_sha:
@@ -22,6 +22,7 @@ concurrency:
 jobs:
   build:
     name: Build and validate exact release tag
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Check out exact release tag
@@ -38,15 +39,40 @@ jobs:
 
       - name: Verify exact tag target and package versions
         shell: bash
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+          INPUT_EXPECTED_SHA: ${{ inputs.expected_sha }}
         run: |
           set -euo pipefail
 
-          tag="${{ inputs.tag }}"
-          expected_sha="${{ inputs.expected_sha }}"
+          tag="$INPUT_TAG"
+          expected_sha="$INPUT_EXPECTED_SHA"
+
+          if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Refusing non-stable release tag: $tag" >&2
+            exit 1
+          fi
+
+          if [[ ! "$expected_sha" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "Expected SHA must be a full lowercase 40-character commit SHA" >&2
+            exit 1
+          fi
+
+          if ! git show-ref --verify --quiet "refs/tags/$tag"; then
+            echo "Required Git tag does not exist: $tag" >&2
+            exit 1
+          fi
+
           actual_sha="$(git rev-parse HEAD)"
+          tag_sha="$(git rev-list -n 1 "refs/tags/$tag")"
+
+          if [[ "$tag_sha" != "$expected_sha" ]]; then
+            echo "Tag target mismatch: expected $expected_sha, tag resolves to $tag_sha" >&2
+            exit 1
+          fi
 
           if [[ "$actual_sha" != "$expected_sha" ]]; then
-            echo "Tag target mismatch: expected $expected_sha, got $actual_sha" >&2
+            echo "Checkout mismatch: expected $expected_sha, got $actual_sha" >&2
             exit 1
           fi
 
