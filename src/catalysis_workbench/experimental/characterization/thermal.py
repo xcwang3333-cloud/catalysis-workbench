@@ -94,7 +94,9 @@ def _mass_unit(unit: str | None) -> str:
     return canonical
 
 
-def _tga_y_semantic(series: Series) -> Literal["mass", "mass_fraction", "mass_percent"]:
+def _tga_y_semantic(
+    series: Series,
+) -> Literal["mass", "mass_fraction", "mass_percent"]:
     token = _semantic_token(series.y_axis.name)
     if token in _TGA_MASS_NAMES:
         return "mass"
@@ -149,7 +151,11 @@ def _monotonic_direction(x: np.ndarray) -> ThermalDirection:
     raise ThermalError("temperature values must be strictly monotonic without duplicates")
 
 
-def _validate_temperature_axis(series: Series, *, minimum_points: int = 2) -> TemperatureUnit:
+def _validate_temperature_axis(
+    series: Series,
+    *,
+    minimum_points: int = 2,
+) -> TemperatureUnit:
     if not isinstance(series, Series):
         raise TypeError("series must be a Series")
     if _semantic_token(series.x_axis.name) not in _TEMPERATURE_NAMES:
@@ -160,7 +166,9 @@ def _validate_temperature_axis(series: Series, *, minimum_points: int = 2) -> Te
         raise ThermalError("temperature values must be real")
     x = x.astype(np.float64, copy=False)
     if x.size < minimum_points:
-        raise ThermalError(f"thermal curves require at least {minimum_points} temperature points")
+        raise ThermalError(
+            f"thermal curves require at least {minimum_points} temperature points"
+        )
     if np.isnan(x).any() or np.isinf(x).any():
         raise ThermalError("temperature values must be finite")
     if unit == "K" and np.any(x < 0.0):
@@ -169,7 +177,12 @@ def _validate_temperature_axis(series: Series, *, minimum_points: int = 2) -> Te
     return unit
 
 
-def _validate_real_y(series: Series, *, operation: str, require_finite: bool = False) -> np.ndarray:
+def _validate_real_y(
+    series: Series,
+    *,
+    operation: str,
+    require_finite: bool = False,
+) -> np.ndarray:
     y = np.asarray(series.y)
     if np.iscomplexobj(y):
         raise ThermalError(f"{operation} requires real y values")
@@ -245,52 +258,6 @@ def _canonicalize_tga_series(series: Series) -> Series:
     )
 
 
-def convert_temperature(series: Series, *, target_unit: Literal["degC", "°C", "K", "kelvin"]) -> Series:
-    """Explicitly convert a thermal curve temperature axis between Celsius and kelvin."""
-    source_unit = _validate_temperature_axis(series)
-    if target_unit in {"degC", "°C"}:
-        target: TemperatureUnit = "°C"
-    elif target_unit in {"K", "kelvin"}:
-        target = "K"
-    else:
-        raise ThermalError("target_unit must be 'degC'/'°C' or 'K'/'kelvin'")
-
-    x = np.asarray(series.x, dtype=np.float64)
-    if source_unit == target:
-        converted = np.array(x, copy=True)
-    elif source_unit == "K":
-        converted = x - 273.15
-    else:
-        converted = x + 273.15
-        if np.any(converted < 0.0):
-            raise ThermalError("Celsius-to-kelvin conversion would produce temperature below 0 K")
-
-    source_sha256 = _series_data_digest(series)
-    x_metadata = series.x_axis.metadata_dict()
-    x_metadata.update(
-        {
-            "temperature_conversion": f"{source_unit}->{target}",
-            "source_sha256": source_sha256,
-        }
-    )
-    return _with_processing_record(
-        series,
-        operation="convert_temperature",
-        parameters={
-            "source_unit": source_unit,
-            "target_unit": target,
-            "source_sha256": source_sha256,
-        },
-        x=converted,
-        x_axis=Axis(
-            "temperature",
-            unit=target,
-            label=series.x_axis.label or "Temperature",
-            metadata=x_metadata,
-        ),
-    )
-
-
 def normalize_tga_mass(
     series: Series,
     *,
@@ -301,7 +268,9 @@ def normalize_tga_mass(
     source = _canonicalize_tga_series(series)
     semantic = _tga_y_semantic(source)
     if semantic != "mass":
-        raise ThermalError("normalize_tga_mass requires raw mass data; input is already normalized")
+        raise ThermalError(
+            "normalize_tga_mass requires raw mass data; input is already normalized"
+        )
     if output not in {"fraction", "percent"}:
         raise ThermalError("output must be 'fraction' or 'percent'")
     y = _validate_real_y(source, operation="TGA normalization", require_finite=True)
@@ -329,7 +298,7 @@ def normalize_tga_mass(
     source_sha256 = _series_data_digest(source)
     y_metadata = source.y_axis.metadata_dict()
     normalization_signature = (
-        f"thermal:tga:{output}:reference={reference_basis}:value={reference_value!r}:"
+        f"thermal:tga:{output}:reference={reference_basis}:"
         f"unit={source.y_axis.unit}"
     )
     y_metadata.update(
@@ -415,11 +384,15 @@ def validate_dtg_series(series: Series) -> None:
     """Validate a DTG curve with an explicit sign convention."""
     temperature_unit = _validate_temperature_axis(series)
     if _semantic_token(series.y_axis.name) not in _DTG_NAMES:
-        raise ThermalError("DTG requires y_axis.name='mass_derivative' or 'mass_loss_rate'")
+        raise ThermalError(
+            "DTG requires y_axis.name='mass_derivative' or 'mass_loss_rate'"
+        )
     sign_mode = series.y_axis.metadata.get("dtg_sign_mode")
     if sign_mode not in {"signed", "mass_loss_positive"}:
         raise ThermalError("DTG requires explicit y_axis.metadata['dtg_sign_mode']")
-    source_semantic = str(series.y_axis.metadata.get("source_mass_semantic", "")).strip()
+    source_semantic = str(
+        series.y_axis.metadata.get("source_mass_semantic", "")
+    ).strip()
     if source_semantic not in {"mass", "mass_fraction", "mass_percent"}:
         raise ThermalError("DTG requires explicit source_mass_semantic metadata")
     base_unit = {
@@ -430,7 +403,9 @@ def validate_dtg_series(series: Series) -> None:
     expected = _dtg_unit(base_unit, temperature_unit)
     unit = str(series.y_axis.unit or "").replace("degC", "°C")
     if unit != expected:
-        raise ThermalError(f"DTG unit {series.y_axis.unit!r} is incompatible; expected {expected!r}")
+        raise ThermalError(
+            f"DTG unit {series.y_axis.unit!r} is incompatible; expected {expected!r}"
+        )
     _validate_real_y(series, operation="DTG validation")
 
 
@@ -467,6 +442,77 @@ def _canonicalize_dtg_series(series: Series) -> Series:
     )
 
 
+def convert_temperature(
+    series: Series,
+    *,
+    target_unit: Literal["degC", "°C", "K", "kelvin"],
+) -> Series:
+    """Explicitly convert a thermal temperature axis between Celsius and kelvin."""
+    source_unit = _validate_temperature_axis(series)
+    is_dtg = _semantic_token(series.y_axis.name) in _DTG_NAMES
+    if is_dtg:
+        validate_dtg_series(series)
+
+    if target_unit in {"degC", "°C"}:
+        target: TemperatureUnit = "°C"
+    elif target_unit in {"K", "kelvin"}:
+        target = "K"
+    else:
+        raise ThermalError("target_unit must be 'degC'/'°C' or 'K'/'kelvin'")
+
+    x = np.asarray(series.x, dtype=np.float64)
+    if source_unit == target:
+        converted = np.array(x, copy=True)
+    elif source_unit == "K":
+        converted = x - 273.15
+    else:
+        converted = x + 273.15
+        if np.any(converted < 0.0):
+            raise ThermalError(
+                "Celsius-to-kelvin conversion would produce temperature below 0 K"
+            )
+
+    source_sha256 = _series_data_digest(series)
+    x_metadata = series.x_axis.metadata_dict()
+    x_metadata.update(
+        {
+            "temperature_conversion": f"{source_unit}->{target}",
+            "source_sha256": source_sha256,
+        }
+    )
+    converted_x_axis = Axis(
+        "temperature",
+        unit=target,
+        label=series.x_axis.label or "Temperature",
+        metadata=x_metadata,
+    )
+
+    converted_y_axis = series.y_axis
+    if is_dtg:
+        numerator = str(series.y_axis.unit).split("/", 1)[0]
+        y_metadata = series.y_axis.metadata_dict()
+        y_metadata["temperature_denominator_conversion"] = f"{source_unit}->{target}"
+        converted_y_axis = Axis(
+            series.y_axis.name,
+            unit=f"{numerator}/{target}",
+            label=series.y_axis.label,
+            metadata=y_metadata,
+        )
+
+    return _with_processing_record(
+        series,
+        operation="convert_temperature",
+        parameters={
+            "source_unit": source_unit,
+            "target_unit": target,
+            "source_sha256": source_sha256,
+        },
+        x=converted,
+        x_axis=converted_x_axis,
+        y_axis=converted_y_axis,
+    )
+
+
 def validate_temperature_programmed_series(
     series: Series,
     *,
@@ -487,12 +533,16 @@ def validate_temperature_programmed_series(
     declared = series.y_axis.metadata.get("thermal_technique")
     if declared is not None and str(declared).strip().casefold() != technique:
         raise ThermalError(
-            f"declared thermal_technique {declared!r} conflicts with requested {technique!r}"
+            f"declared thermal_technique {declared!r} conflicts with requested "
+            f"{technique!r}"
         )
     _validate_real_y(series, operation=technique.upper())
 
 
-def _canonicalize_programmed_series(series: Series, technique: Literal["tpr", "tpd"]) -> Series:
+def _canonicalize_programmed_series(
+    series: Series,
+    technique: Literal["tpr", "tpd"],
+) -> Series:
     validate_temperature_programmed_series(series, technique=technique)
     temperature_unit = _temperature_unit(series.x_axis.unit)
     normalized = _semantic_token(series.y_axis.name) in _NORMALIZED_SIGNAL_NAMES
@@ -520,7 +570,10 @@ def _canonicalize_programmed_series(series: Series, technique: Literal["tpr", "t
     )
 
 
-def _canonicalize_thermal_series(series: Series, technique: ThermalTechnique) -> Series:
+def _canonicalize_thermal_series(
+    series: Series,
+    technique: ThermalTechnique,
+) -> Series:
     if technique == "tga":
         return _canonicalize_tga_series(series)
     if technique == "dtg":
@@ -542,20 +595,28 @@ class ThermalProcessingConfig:
 
     def __post_init__(self) -> None:
         minimum = (
-            None if self.temperature_min is None else _finite_float(self.temperature_min, name="temperature_min")
+            None
+            if self.temperature_min is None
+            else _finite_float(self.temperature_min, name="temperature_min")
         )
         maximum = (
-            None if self.temperature_max is None else _finite_float(self.temperature_max, name="temperature_max")
+            None
+            if self.temperature_max is None
+            else _finite_float(self.temperature_max, name="temperature_max")
         )
         if minimum is not None and maximum is not None and minimum > maximum:
             raise ThermalError("temperature_min must be <= temperature_max")
         if self.tga_normalization not in {None, "fraction", "percent"}:
-            raise ThermalError("tga_normalization must be None, 'fraction', or 'percent'")
+            raise ThermalError(
+                "tga_normalization must be None, 'fraction', or 'percent'"
+            )
         if isinstance(self.tga_reference, str):
             if self.tga_reference != "first_point":
                 raise ThermalError("tga_reference string must be 'first_point'")
         elif isinstance(self.tga_reference, bool):
-            raise TypeError("tga_reference must be 'first_point' or a real mass value")
+            raise TypeError(
+                "tga_reference must be 'first_point' or a real mass value"
+            )
         else:
             reference = _finite_float(self.tga_reference, name="tga_reference")
             if reference <= 0.0:
@@ -626,8 +687,12 @@ def process_thermal_dataset(
     override_map = {} if overrides is None else dict(overrides)
     unknown = set(override_map) - set(dataset.keys)
     if unknown:
-        raise ThermalError(f"override keys not present in Dataset: {sorted(unknown)!r}")
-    if not all(isinstance(value, ThermalProcessingConfig) for value in override_map.values()):
+        raise ThermalError(
+            f"override keys not present in Dataset: {sorted(unknown)!r}"
+        )
+    if not all(
+        isinstance(value, ThermalProcessingConfig) for value in override_map.values()
+    ):
         raise TypeError("overrides values must be ThermalProcessingConfig instances")
     processed = tuple(
         process_thermal(
@@ -637,10 +702,17 @@ def process_thermal_dataset(
         )
         for item in dataset
     )
-    return Dataset(series=processed, name=dataset.name, metadata=dataset.metadata_dict())
+    return Dataset(
+        series=processed,
+        name=dataset.name,
+        metadata=dataset.metadata_dict(),
+    )
 
 
-def _overlay_signature(series: Series, technique: ThermalTechnique) -> tuple[Any, ...]:
+def _overlay_signature(
+    series: Series,
+    technique: ThermalTechnique,
+) -> tuple[Any, ...]:
     canonical = _canonicalize_thermal_series(series, technique)
     return (
         technique,
@@ -653,7 +725,11 @@ def _overlay_signature(series: Series, technique: ThermalTechnique) -> tuple[Any
     )
 
 
-def validate_thermal_overlay(data: Series | Dataset, *, technique: ThermalTechnique) -> None:
+def validate_thermal_overlay(
+    data: Series | Dataset,
+    *,
+    technique: ThermalTechnique,
+) -> None:
     """Reject thermal overlays with incompatible technique/unit/normalization/sign state."""
     if isinstance(data, Series):
         _canonicalize_thermal_series(data, technique)
@@ -747,7 +823,9 @@ class ThermalWindowMeasurement:
     signal_unit: str | None
 
 
-def _ascending_xy(series: Series) -> tuple[np.ndarray, np.ndarray, ThermalDirection]:
+def _ascending_xy(
+    series: Series,
+) -> tuple[np.ndarray, np.ndarray, ThermalDirection]:
     x = np.asarray(series.x, dtype=np.float64)
     y = np.asarray(series.y, dtype=np.float64)
     direction = _monotonic_direction(x)
@@ -756,7 +834,11 @@ def _ascending_xy(series: Series) -> tuple[np.ndarray, np.ndarray, ThermalDirect
     return x, y, direction
 
 
-def _boundary_value(x: np.ndarray, y: np.ndarray, position: float) -> float:
+def _boundary_value(
+    x: np.ndarray,
+    y: np.ndarray,
+    position: float,
+) -> float:
     exact = np.flatnonzero(x == position)
     if exact.size:
         value = float(y[int(exact[0])])
@@ -796,11 +878,15 @@ def measure_thermal_window(
     x, y, source_direction = _ascending_xy(source)
     if window.low < x[0] or window.high > x[-1]:
         raise ThermalError("thermal window must be fully contained in the measured range")
-    interior_mask = (x > window.low) & (x < window.high)
-    interior_y = y[interior_mask]
-    if np.isnan(interior_y).any():
+
+    measured_mask = (x >= window.low) & (x <= window.high)
+    if not measured_mask.any():
+        raise ThermalError("thermal window contains no measured temperature points")
+    if np.isnan(y[measured_mask]).any():
         raise ThermalError("thermal window contains missing y values")
 
+    interior_mask = (x > window.low) & (x < window.high)
+    interior_y = y[interior_mask]
     low_y = _boundary_value(x, y, window.low)
     high_y = _boundary_value(x, y, window.high)
     integration_x = np.concatenate(
@@ -825,7 +911,6 @@ def measure_thermal_window(
     window_digest = hashlib.sha256()
     window_digest.update(_array_digest(integration_x).encode("ascii"))
     window_digest.update(_array_digest(integration_y).encode("ascii"))
-    measured_mask = (x >= window.low) & (x <= window.high)
 
     return ThermalWindowMeasurement(
         technique=technique,
@@ -866,9 +951,16 @@ class ThermalAnnotation:
         if not text:
             raise ThermalError("ThermalAnnotation.text must not be empty")
         key = None if self.series_key is None else str(self.series_key).strip()
-        text_offset = _finite_float(self.text_offset_points, name="text_offset_points")
+        text_offset = _finite_float(
+            self.text_offset_points,
+            name="text_offset_points",
+        )
         rotation = _finite_float(self.rotation, name="rotation")
-        font_size = None if self.font_size is None else _finite_float(self.font_size, name="font_size")
+        font_size = (
+            None
+            if self.font_size is None
+            else _finite_float(self.font_size, name="font_size")
+        )
         if font_size is not None and font_size <= 0.0:
             raise ThermalError("font_size must be greater than zero")
         object.__setattr__(self, "temperature", temperature)
