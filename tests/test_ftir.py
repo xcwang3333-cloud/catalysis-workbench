@@ -311,4 +311,4 @@ def test_stack_ftir_dataset_is_explicit_non_mutating_and_records_provenance():
     np.testing.assert_allclose(stacked[0].y, (1.0, 2.0, 3.0, 2.0, 1.0))
     np.testing.assert_allclose(stacked[1].y, (4.0, 6.0, 8.0, 6.0, 4.0))
     np.testing.assert_allclose(dataset[1].y, (0.0, 2.0, 4.0, 2.0, 0.0))
-    assert stacked.metadata["ftir_stack_history"][-1]["keys"] == ["a", "b"]
+    assert stacked.metadata["ftir_stack_history"][-1]["keys"] == ("a", "b")
