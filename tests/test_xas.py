@@ -7,9 +7,9 @@ import pytest
 
 from catalysis_workbench.core import Axis, Dataset, Series
 from catalysis_workbench.experimental.characterization.xas import (
-    XASError,
     XANESNormalizationResult,
     XANESNormalizationSpec,
+    XASError,
     XASWindow,
     normalize_xanes,
     shift_xas_energy,
@@ -80,8 +80,14 @@ def test_descending_source_preserves_direction_and_scientific_result() -> None:
         np.asarray(ascending.normalized.y),
         atol=1e-12,
     )
-    np.testing.assert_allclose(descending.pre_edge_coefficients, ascending.pre_edge_coefficients)
-    np.testing.assert_allclose(descending.post_edge_coefficients, ascending.post_edge_coefficients)
+    np.testing.assert_allclose(
+        descending.pre_edge_coefficients,
+        ascending.pre_edge_coefficients,
+    )
+    np.testing.assert_allclose(
+        descending.post_edge_coefficients,
+        ascending.post_edge_coefficients,
+    )
 
 
 def test_relative_energy_is_explicit_and_non_mutating() -> None:
@@ -233,7 +239,6 @@ def test_plotting_is_lazy_and_passive() -> None:
     result = normalize_xanes(_series(), _spec())
     sys.modules.pop("matplotlib", None)
     sys.modules.pop("matplotlib.pyplot", None)
-    # Importing the numeric module/public symbols must not pull in Matplotlib.
     import catalysis_workbench.experimental.characterization.xas as xas_module
 
     assert xas_module.normalize_xanes is normalize_xanes
