@@ -4,6 +4,10 @@ All notable changes to CatalysisWorkbench are recorded here.
 
 ## [Unreleased]
 
+### Added
+
+- First v0.3 FTIR/ATR-FTIR workflow with explicit wavenumber and absorbance/transmittance semantics, explicit `A = -log10(T)` conversion, caller-window polynomial baseline fitting, direction-independent direct-window band integration, stable-key Dataset processing, shared publication plotting, deterministic provenance, installed-wheel smoke, and compact quickstart documentation.
+
 ## [0.2.0] - 2026-08-24
 
 The v0.2 release extends the reviewed common-XY foundation into explicit, provenance-rich quantitative electrochemistry while preserving the v0.1 public behavior.
