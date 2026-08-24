@@ -55,15 +55,17 @@ The architecture-first dependency order is maintained in [`V0_4_PLAN.md`](V0_4_P
    - explicit caller background and fit window;
    - no automatic peak detection, component-count selection, smoothing, normalization, or baseline choice;
    - exact-head CI #255 and two formal reviews passed before merge commit `b6f428d96df9950373c17e5de487ac4113a2aacc`.
-2. **XPS data semantics and preparation — active next stage.**
+2. **XPS data semantics and preparation — complete through Issue #79 / PR #80.**
    - explicit binding-energy/eV semantics;
    - explicit additive energy calibration/reference correction with provenance;
-   - explicit fit regions;
-   - XPS-specific linear/Shirley background preparation;
-   - Tougaard deferred unless separately contracted;
-   - no peak optimization, doublet chemistry, automatic charge correction, smoothing, normalization, or assignment in this stage.
-3. Constrained XPS peak fitting.
+   - measured-point-only region preparation with source-order preservation;
+   - direction-safe linear background;
+   - independently implemented Shirley fixed-point integral background with explicit convergence/failure state;
+   - Tougaard remains deferred unless separately contracted;
+   - exact-head CI #261 and two formal reviews passed before merge commit `a13dbd541b299f79d83e47f079c4638b082a8061`.
+3. **Constrained XPS peak fitting — active next stage.**
    - shared-fitter consumer;
+   - prepared XPS region/background consumed on the exact aligned grid;
    - caller-supplied doublet separation/ratio/width constraints;
    - no hidden chemistry assignment or literature lookup.
 4. XPS publication plotting and fit diagnostics through the shared `FigureSpec` model.
