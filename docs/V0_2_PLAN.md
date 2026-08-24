@@ -2,18 +2,19 @@
 
 v0.2 extends the reviewed v0.1 XY foundation into quantitative electrochemical analysis. New scientific modules must continue to follow the project rule: survey comparable open-source projects before implementation, record useful algorithms/architecture/tests/licenses, reuse mature dependencies where appropriate, and keep scientific calculations separate from visualization.
 
-For the project-wide execution model, merge gates, and long-range release map, see [`MASTER_PLAN.md`](MASTER_PLAN.md).
+For the project-wide execution model, merge gates, and long-range release map, see [`MASTER_PLAN.md`](MASTER_PLAN.md). For release-hardening/final-version/tag rules, see [`V0_2_RELEASING.md`](V0_2_RELEASING.md).
 
 ## Current status
 
 Checkpoint date: 2026-08-24.
 
-- Feature checkpoint used for this synchronization: `26ec2af8eede35d42023489b54231d33a2c973d5`.
+- Synchronized `main` checkpoint after the feature-completion documentation pass: `27f52d65a5c700f46163a0eb2a7481eeb2480f8c`.
 - **All planned v0.2 implementation Issues #19-#28 are complete and merged.**
 - The development version remains `0.2.0.dev0` in both distribution metadata and runtime version state.
-- There is no remaining open feature Issue in the defined v0.2 sequence.
-- The next stage is v0.2 documentation/API/package synchronization followed by a separately defined release-hardening/final-version gate.
-- The existing [`RELEASING.md`](RELEASING.md) governs v0.1 only; it does not authorize a `0.2.0` bump or `v0.2.0` tag.
+- There is no remaining open scientific feature Issue in the defined v0.2 sequence.
+- **Active release target: Issue #43 — release hardening, public API audit, and final-version gate definition.**
+- Issue #43 strengthens installed-wheel validation and release policy while deliberately retaining `0.2.0.dev0`.
+- The historical [`RELEASING.md`](RELEASING.md) governs v0.1 only; [`V0_2_RELEASING.md`](V0_2_RELEASING.md) defines the v0.2 Gate A/B/C sequence.
 
 GitHub Issues, Pull Requests, merged `main`, and exact-commit CI remain authoritative if this status block becomes stale.
 
@@ -47,6 +48,7 @@ The reviewed LSV public API from v0.1 remains compatible and reuses the shared #
 - [x] #26 — CV, Cdl, and ECSA.
 - [x] #27 — electrochemical stability analysis.
 - [x] #28 — RRDE and Koutecky-Levich basics.
+- [ ] **#43 — v0.2 release hardening, installed public-API smoke expansion, and final-version gate definition.**
 
 ## Final implemented v0.2 scientific scope
 
@@ -147,7 +149,7 @@ The complete implementation now enforces these shared expectations:
 10. [x] #27 — stability analysis.
 11. [x] #28 — RRDE/K-L basics.
 
-The sequence is now complete. Do not fabricate an Issue #29 continuation: repository issue/PR numbering is shared, and #29 is an older v0.1 PR rather than a v0.2 feature contract.
+The scientific sequence is complete. Repository issue/PR numbering is shared, so do not fabricate a numerical continuation from #28; the next real contract is Issue #43.
 
 ## Mandatory feature loop
 
@@ -169,23 +171,34 @@ prior-art scan
     -> issue closure
 ```
 
-Release-hardening/version-gate work should use the same exact-head discipline with release/API/packaging/version review in place of a scientific-feature review.
+Release-hardening/version-gate work uses the same exact-head discipline with release/API/packaging/version review in place of scientific-feature review.
 
-## v0.2 completion and release handoff
+## Active release-hardening contract — #43 / Gate A
 
-Feature completion does **not** itself create a release. The package remains `0.2.0.dev0` until a dedicated v0.2 release policy is defined and reviewed.
+Feature completion does **not** itself create a release. Issue #43 is the Gate-A hardening step and must leave the package at `0.2.0.dev0`.
 
-Before any final version bump or tag:
+Gate A requires:
 
-1. synchronize README, master plan, this plan, and changelog with the merged #19-#28 state;
-2. audit the complete public API and installed-wheel smoke path for the full v0.2 surface;
-3. define the v0.2 release-hardening gate and the separate final-version/tag gate;
-4. keep `[project].version` and runtime `__version__` synchronized;
-5. require a final-version wheel/fresh-environment smoke run after a version bump;
-6. create a `v0.2.0` tag only after explicit release authorization, if that policy is adopted;
-7. do not begin a v0.3 feature implementation while the transition state is ambiguous — first record whether v0.2 is being finalized or intentionally left as a development checkpoint.
+1. installed-wheel import provenance proving imports do not resolve from repository `src/`;
+2. exact installed distribution/runtime version equality;
+3. complete package-level `__all__` resolution with duplicate/empty export guards;
+4. representative installed-wheel v0.2 calculations for Tafel, FE, activity, TOF/TOFapp, Cdl/ECSA, stability, RRDE, and K-L using explicit scientific inputs/metadata;
+5. retained v0.1 LSV/XRD/Raman installed-wheel smoke and documented examples;
+6. Ruff, full pytest, wheel build, fresh environment installation, and `pip check`;
+7. release/API/packaging review of the exact head;
+8. no scientific algorithm changes, no final version bump, and no tag.
 
-Package-registry publication remains a separate policy decision and is not implied by completing v0.2 features or by creating a Git tag.
+## Final version and tag handoff — Gate B / Gate C
+
+Only after Issue #43/Gate A is completed may a separate Gate-B version candidate be considered. Gate B changes both version declarations together to `0.2.0`, reruns the complete final-version CI/wheel smoke, and receives formal release/API/packaging/version review.
+
+Gate C is the separate tag operation. `v0.2.0` may be created only from the reviewed Gate-B `main` commit after an explicit release authorization and changelog-date recheck.
+
+Package-registry publication remains a separate policy decision and is not implied by completing v0.2 features, Gate A/B, or by creating a Git tag.
+
+## v0.3 transition boundary
+
+Do not mix v0.3 feature implementation into Issue #43 or a v0.2 final-version branch. The repository should first record whether v0.2 is being finalized through Gate B/C or intentionally retained as a development checkpoint. Once that transition is explicit, v0.3 issues can be opened from the appropriate reviewed `main` state.
 
 ## Status synchronization
 
