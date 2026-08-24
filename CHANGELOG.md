@@ -6,7 +6,7 @@ All notable changes to CatalysisWorkbench are recorded here.
 
 ## [0.4.0] - 2026-08-25
 
-The v0.4 final-version candidate freezes the reviewed advanced experimental-analysis scope after Gate A release hardening. Gate B validates distribution/runtime version `0.4.0` through the exact installed-wheel audit. Tag `v0.4.0` has not yet been created; GitHub Release creation and package-registry publication remain separate authorization boundaries.
+The v0.4 release freezes the reviewed advanced experimental-analysis scope after Gate A release hardening and Gate B final-version validation. Tag `v0.4.0` was created on 2026-08-25 and reverse-verified to resolve exactly to release commit `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6`; GitHub Release creation and package-registry publication remain separate actions.
 
 ### Added
 
@@ -21,8 +21,9 @@ The v0.4 final-version candidate freezes the reviewed advanced experimental-anal
 ### Changed
 
 - Gate A / Issue #103 / PR #104 hardened the frozen v0.4 scope while intentionally retaining version `0.3.0`; exact-head CI #302 / run `32758548117` and two formal release reviews passed before squash merge `ce06abc11559fa7679869fc83a59356735ce6824`.
-- Gate B synchronizes `[project].version` and runtime `__version__` to `0.4.0` and requires the same fresh-wheel/public-API/scientific audit to pass on the final exact `0.4.0` artifact.
-- `v0.3.0` remains immutable at `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`; Gate B does not create `v0.4.0`, a GitHub Release, or any package-registry publication.
+- Gate B / Issue #105 / PR #106 synchronized `[project].version` and runtime `__version__` to `0.4.0`; final head `ae3dc21b1a3a4e907d8c39eb85d3dbebefd8fbb4` passed exact-head CI #304 / run `32759679632` and reviews `5011014348`, `5011017132` before squash merge `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6`.
+- Gate C / Issue #107 completed the separately authorized Git tag operation; `v0.4.0` resolves exactly to `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6` and reads distribution/runtime version `0.4.0` through the tag.
+- `v0.3.0` remains immutable at `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`; neither the v0.4 Git tag nor post-tag documentation synchronization publishes a package registry artifact.
 
 ## [0.3.0] - 2026-08-24
 
