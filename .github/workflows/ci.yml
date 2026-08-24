@@ -56,7 +56,7 @@ jobs:
       - name: Smoke documented public API from installed wheel
         run: .venv-smoke/bin/python tests/installed_api_smoke.py
 
-      - name: Run end-to-end v0.1 examples from installed wheel
+      - name: Run documented LSV/XRD/Raman examples from installed wheel
         run: |
           .venv-smoke/bin/python examples/lsv_quickstart.py
           .venv-smoke/bin/python examples/xrd_quickstart.py
