@@ -557,7 +557,9 @@ class EISFitResult:
             if parameter.key != definition.key:
                 raise EISError("EIS fitted-parameter mapping key contradicts parameter.key")
             if parameter.vary != definition.spec.vary:
-                raise EISError(f"EIS fitted parameter {definition.key} vary state contradicts circuit")
+                raise EISError(
+                    f"EIS fitted parameter {definition.key} vary state contradicts circuit"
+                )
             if parameter.lower != definition.spec.lower or parameter.upper != definition.spec.upper:
                 raise EISError(f"EIS fitted parameter {definition.key} bounds contradict circuit")
             lower, upper = _effective_bounds(definition)
