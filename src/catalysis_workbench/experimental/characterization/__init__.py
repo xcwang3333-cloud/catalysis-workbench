@@ -110,6 +110,12 @@ from .xps import (
     shirley_xps_background,
     validate_xps_series,
 )
+from .xps_fitting import (
+    XPSDoubletSpec,
+    XPSPeakFitResult,
+    XPSProcessingStep,
+    fit_xps_peaks,
+)
 from .xrd import (
     PeakAnnotation,
     XRDError,
@@ -305,7 +311,10 @@ __all__ = [
     "XPSBackgroundMethod",
     "XPSBackgroundResult",
     "XPSDirection",
+    "XPSDoubletSpec",
     "XPSError",
+    "XPSPeakFitResult",
+    "XPSProcessingStep",
     "XRDError",
     "XRDProcessingConfig",
     "XRDReferencePattern",
@@ -315,6 +324,7 @@ __all__ = [
     "convert_temperature",
     "derive_dtg",
     "fit_ftir_baseline",
+    "fit_xps_peaks",
     "id_ig_ratio",
     "linear_xps_background",
     "measure_ftir_band",
