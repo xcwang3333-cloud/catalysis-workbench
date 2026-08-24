@@ -192,3 +192,17 @@ The resulting Issue #24 direction is:
 - plotting receives already normalized data and performs no denominator lookup, condition selection, interpolation, or aggregation.
 
 Full scientific/API/test details are in `docs/ACTIVITY_NORMALIZATION.md`.
+
+## FTIR / ATR-FTIR decision for v0.3
+
+Issue #50 begins v0.3 with explicit one-dimensional FTIR/ATR-FTIR processing and publication plotting.
+
+- `spectrochempy/spectrochempy` (CeCILL-B) is the main spectroscopy architecture reference: unit/coordinate-aware datasets, explicit baseline processors, separation of processing from plotting, and provenance-rich data state. Because CeCILL-B is not treated as the source license for this module, CatalysisWorkbench uses architecture/API ideas only and copies no implementation.
+- `derb12/pybaselines` (BSD-3-Clause) is mature baseline-correction prior art with a unified API across many algorithms. It is a permissive future dependency/adapter candidate, but Issue #50 deliberately does not silently select AsLS, airPLS, SNIP, rubber-band, or any other automatic method.
+- `uw-ssec/ProSpecPy` (BSD-3-Clause) is workflow prior art for modular FTIR processing and batch/per-sample configuration. CatalysisWorkbench adopts the principle of explicit reusable operations and stable-key overrides without copying implementation.
+- RamPy (`charlesll/rampy`, GPL-2.0) provides useful spectroscopy workflow ideas including explicit baseline regions and stacking/resampling/smoothing. It is reference-only; no GPL implementation is copied or adapted.
+- `JRay-Lin/SpectraLab` (MIT) is UI/data-state prior art for keeping raw, baseline, corrected data and baseline parameters explicit. Issue #50 uses that state-separation idea only; no GUI code is introduced.
+
+The reviewed FTIR direction is conservative: wavenumber units and absorbance/transmittance semantics are explicit; source order may be ascending or descending but is never silently reversed; transmittance conversion is an explicit `A = -log10(T)` operation; baseline fitting uses only caller-supplied windows and an explicit polynomial degree; band integration is low-to-high wavenumber and independent of storage direction; missing values that affect interpolation fail explicitly; plotting preserves the shared `FigureSpec` label/limit contract while allowing explicit FTIR display direction. Peak deconvolution, automatic baseline selection, atmospheric correction, vendor-binary readers, 2-D maps, and GUI work remain out of scope for Issue #50.
+
+Full scientific/API/test details are in `docs/FTIR.md`.
