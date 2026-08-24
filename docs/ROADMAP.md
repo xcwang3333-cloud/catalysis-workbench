@@ -34,10 +34,10 @@ Before implementing each major scientific or visualization module, comparable op
 - FTIR / ATR-FTIR — implemented and merged through Issue #50 / PR #51.
 - TGA / DTG / TPR / TPD — implemented and merged through Issue #54 / PR #55.
 - Basic BET / gas-sorption plotting — implemented and merged through Issue #58 / PR #59; quantitative BET fitting remains v0.4.
-- ICP/composition data integration — selected as the next v0.3 scientific module; prior-art and scientific/API contract review are required before implementation.
-- Shared peak-fitting primitives — planned after ICP/composition unless a later explicit planning decision changes the order.
+- ICP/composition data integration — implemented and merged through Issue #62 / PR #63.
+- Shared peak-fitting primitives — still planned v0.3 scope, but execution timing is intentionally pending an explicit planning decision.
 
-The remaining v0.3 modules are roadmap scope, not an automatic execution order. Issue #60 records the current planning decision to implement the bounded ICP/composition integration layer next. Shared peak fitting remains deliberately later because its parameter constraints, baseline coupling, model families, and uncertainty semantics should be driven by concrete downstream consumers such as XPS/spectroscopy.
+After Issue #62 / PR #63, the bounded experimental-data modules planned for v0.3 are implemented. The remaining shared peak-fitting item is cross-cutting infrastructure rather than another independent characterization workflow. Before more implementation begins, explicitly decide whether to build that foundation in v0.3 or defer it to later advanced-analysis work and enter v0.3 release hardening. This roadmap does not itself authorize either choice.
 
 ## v0.4.x — Advanced experimental analysis
 
