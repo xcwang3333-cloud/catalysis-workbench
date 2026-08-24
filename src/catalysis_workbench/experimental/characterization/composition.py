@@ -38,6 +38,8 @@ class CompositionError(ValueError):
 
 
 def _finite_float(value: Any, *, name: str) -> float:
+    if isinstance(value, (bool, np.bool_)):
+        raise TypeError(f"{name} must be a real numeric value, not a boolean")
     try:
         number = float(value)
     except (TypeError, ValueError) as exc:
@@ -62,6 +64,10 @@ def _positive_float(value: Any, *, name: str) -> float:
 
 
 def _required_text(value: Any, *, name: str) -> str:
+    if value is None:
+        raise CompositionError(f"{name} must not be empty")
+    if isinstance(value, (float, np.floating)) and not isfinite(float(value)):
+        raise CompositionError(f"{name} must not be missing or non-finite")
     text = str(value).strip()
     if not text:
         raise CompositionError(f"{name} must not be empty")
@@ -320,17 +326,34 @@ class CompositionSummary:
         sd = self.standard_deviation
         if sd is not None:
             sd = _nonnegative_float(sd, name="standard_deviation")
-            if n < 2:
+        if n == 1:
+            if sd is not None:
                 raise CompositionError(
                     "standard_deviation must be None when n is smaller than 2"
                 )
+        elif sd is None:
+            raise CompositionError(
+                "standard_deviation is required when n is at least 2"
+            )
 
         rsd = self.rsd_percent
         if rsd is not None:
             rsd = _nonnegative_float(rsd, name="rsd_percent")
-            if sd is None or mean == 0.0:
+        if mean == 0.0:
+            if rsd is not None:
+                raise CompositionError("rsd_percent must be None when mean is zero")
+        elif n == 1:
+            if rsd is not None:
+                raise CompositionError("rsd_percent must be None when n is smaller than 2")
+        else:
+            if rsd is None:
                 raise CompositionError(
-                    "rsd_percent requires a defined standard deviation and non-zero mean"
+                    "rsd_percent is required when n is at least 2 and mean is non-zero"
+                )
+            expected_rsd = 100.0 * sd / mean
+            if not np.isclose(rsd, expected_rsd, rtol=1.0e-10, atol=1.0e-12):
+                raise CompositionError(
+                    "rsd_percent must equal 100 * standard_deviation / mean"
                 )
 
         source_keys = tuple(
@@ -423,6 +446,10 @@ def convert_composition_unit(
     metadata.update(
         {
             "composition_unit_conversion": f"{measurement.unit}->{target}",
+            "composition_unit_source_basis": measurement.basis,
+            "composition_unit_source_value": measurement.value,
+            "composition_unit_source_unit": measurement.unit,
+            # Retain the established immediate-source keys for compatibility.
             "composition_source_value": measurement.value,
             "composition_source_unit": measurement.unit,
         }
@@ -505,6 +532,10 @@ def solution_concentration_to_bulk_mass_fraction(
     metadata.update(
         {
             "composition_conversion": "solution_concentration_to_bulk_mass_fraction",
+            "composition_mass_balance_source_basis": measurement.basis,
+            "composition_mass_balance_source_value": measurement.value,
+            "composition_mass_balance_source_unit": measurement.unit,
+            # Retain the established immediate-source keys for compatibility.
             "composition_source_value": measurement.value,
             "composition_source_unit": measurement.unit,
             "composition_sample_mass_g": sample_mass_g,
@@ -635,12 +666,13 @@ def select_composition(
 
 def _resolve_column(frame: Any, selector: str | int, *, name: str) -> Any:
     columns = list(frame.columns)
-    if isinstance(selector, int) and not isinstance(selector, bool):
-        if selector < 0 or selector >= len(columns):
+    if isinstance(selector, Integral) and not isinstance(selector, (bool, np.bool_)):
+        position = int(selector)
+        if position < 0 or position >= len(columns):
             raise CompositionError(
-                f"{name} column index {selector} is outside the available columns"
+                f"{name} column index {position} is outside the available columns"
             )
-        return columns[selector]
+        return columns[position]
     if isinstance(selector, str):
         if selector not in frame.columns:
             raise CompositionError(f"{name} column {selector!r} was not found")
@@ -727,6 +759,10 @@ def _read_composition_frame(
         if _is_missing(numeric_value):
             raise CompositionError(
                 f"composition value is missing at selected row position {row_position}"
+            )
+        if isinstance(numeric_value, (bool, np.bool_)):
+            raise CompositionError(
+                f"composition value at selected row position {row_position} must not be boolean"
             )
         try:
             resolved_value = float(numeric_value)
@@ -840,12 +876,15 @@ def read_composition_excel(
         raise RuntimeError("pandas is required for composition Excel import") from exc
     source = Path(path)
     with pd.ExcelFile(source) as workbook:
-        if isinstance(sheet_name, int) and not isinstance(sheet_name, bool):
-            if sheet_name < 0 or sheet_name >= len(workbook.sheet_names):
+        if isinstance(sheet_name, Integral) and not isinstance(
+            sheet_name, (bool, np.bool_)
+        ):
+            position = int(sheet_name)
+            if position < 0 or position >= len(workbook.sheet_names):
                 raise CompositionError(
-                    f"sheet index {sheet_name} is outside the available Excel sheets"
+                    f"sheet index {position} is outside the available Excel sheets"
                 )
-            canonical_sheet = workbook.sheet_names[sheet_name]
+            canonical_sheet = workbook.sheet_names[position]
         elif isinstance(sheet_name, str):
             if sheet_name not in workbook.sheet_names:
                 raise CompositionError(f"sheet {sheet_name!r} was not found")
