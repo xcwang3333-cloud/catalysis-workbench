@@ -6,7 +6,7 @@ All notable changes to CatalysisWorkbench are recorded here.
 
 ## [0.2.0] - 2026-08-24
 
-The v0.2 release candidate extends the reviewed common-XY foundation into explicit, provenance-rich quantitative electrochemistry while preserving the v0.1 public behavior.
+The v0.2 release extends the reviewed common-XY foundation into explicit, provenance-rich quantitative electrochemistry while preserving the v0.1 public behavior.
 
 ### Added
 
@@ -29,8 +29,8 @@ The v0.2 release candidate extends the reviewed common-XY foundation into explic
 
 - LSV/polarization processing now delegates common low-level quantity parsing and conversion to the shared electrochemistry foundation while preserving the reviewed v0.1 public API and numerical behavior.
 - Shared visualization specifications now include categorical style overrides, configurable bar-group width, and error-bar cap size while preserving existing curve-rendering behavior.
-- Development version advanced to `0.2.0.dev0` after the tagged `v0.1.0` release and is finalized to `0.2.0` by the Gate-B candidate.
-- The planned v0.2 scientific feature sequence #19-#28 and Gate-A release hardening are complete; creation of a `v0.2.0` Git tag remains the separate Gate-C operation and is not implied by this candidate entry.
+- Development version advanced to `0.2.0.dev0` after the tagged `v0.1.0` release and was finalized to `0.2.0` through Gate B.
+- The planned v0.2 scientific feature sequence #19-#28 and Gate A/B/C release process are complete; tag `v0.2.0` was created on 2026-08-24 and verified to resolve exactly to release commit `1f7f4057397c61ef2f771b96fceadc8a529b62d9`.
 
 ## [0.1.0] - 2026-08-23
 

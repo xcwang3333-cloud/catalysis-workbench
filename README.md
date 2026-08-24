@@ -2,7 +2,7 @@
 
 **CatalysisWorkbench** is a Python workbench for quantitative post-processing, comparative analysis, and publication-quality visualization of catalysis experimental, characterization, and computational data.
 
-The reviewed v0.1 scientific foundation covers common one-dimensional XY workflows: tabular import, reusable processing, LSV/polarization curves, XRD, Raman, and exact-size PNG/SVG/PDF export. The planned v0.2 quantitative-electrochemistry implementation is now complete on `main`: shared electrochemistry quantity/provenance conventions, scatter/bar rendering, Tafel analysis, Faradaic efficiency, product partial-current density, activity normalization, TOF/TOFapp, CV/Cdl/ECSA, stability analysis, and RRDE/Koutecky-Levich basics are merged and reviewed.
+The reviewed v0.1 scientific foundation covers common one-dimensional XY workflows: tabular import, reusable processing, LSV/polarization curves, XRD, Raman, and exact-size PNG/SVG/PDF export. The v0.2 quantitative-electrochemistry release is now complete: shared electrochemistry quantity/provenance conventions, scatter/bar rendering, Tafel analysis, Faradaic efficiency, product partial-current density, activity normalization, TOF/TOFapp, CV/Cdl/ECSA, stability analysis, and RRDE/Koutecky-Levich basics are released as `v0.2.0`.
 
 ## Install from a source checkout
 
@@ -18,7 +18,7 @@ For development and tests:
 python -m pip install -e ".[dev]"
 ```
 
-The tagged v0.1.0 release used a separate release-hardening gate followed by a final-version gate; see [`docs/RELEASING.md`](docs/RELEASING.md). v0.2 Gate-A release hardening is complete through Issue #43 / PR #44. **Issue #45 is the active Gate-B final-version candidate**: source distribution metadata and runtime version are being validated at `0.2.0` under [`docs/V0_2_RELEASING.md`](docs/V0_2_RELEASING.md). No `v0.2.0` tag exists merely because the final version candidate is under review; tag creation remains the separate Gate-C operation.
+The tagged v0.1.0 release used a separate release-hardening gate followed by a final-version gate; see [`docs/RELEASING.md`](docs/RELEASING.md). v0.2 followed the dedicated Gate A/B/C procedure in [`docs/V0_2_RELEASING.md`](docs/V0_2_RELEASING.md): Gate A / Issue #43 hardened the installed-wheel API, Gate B / Issue #45 finalized and validated `0.2.0`, and Gate C / Issue #47 created and verified tag `v0.2.0` on release commit `1f7f4057397c61ef2f771b96fceadc8a529b62d9`. Package-registry publication remains a separate policy decision.
 
 ## Quickstart: CSV -> LSV processing -> publication export
 
@@ -100,7 +100,7 @@ CatalysisWorkbench focuses on data that require secondary processing before they
 
 ### Experimental data
 
-- Electrochemistry: the planned v0.2 core is implemented — LSV/polarization processing, shared quantity/provenance conventions, Tafel, Faradaic efficiency, partial current density, mass/ECSA activity normalization, TOF/TOFapp, CV/Cdl/ECSA, stability, and RRDE/K-L basics. Advanced EIS and product-calibration workflows remain later roadmap work.
+- Electrochemistry: the v0.2 core is released — LSV/polarization processing, shared quantity/provenance conventions, Tafel, Faradaic efficiency, partial current density, mass/ECSA activity normalization, TOF/TOFapp, CV/Cdl/ECSA, stability, and RRDE/K-L basics. Advanced EIS and product-calibration workflows remain later roadmap work.
 - Characterization: XRD and Raman are implemented; FTIR/ATR-FTIR, XPS, BET/sorption, XAS, composition, and thermal-analysis curves are staged later.
 - Product analysis: v0.2 Faradaic efficiency starts from already quantified product amounts or rates. Raw calibration and GC/HPLC/NMR-derived quantification workflows remain staged after the core electrochemistry foundation.
 
@@ -140,15 +140,15 @@ A catalyst or sample name remains lightweight metadata on a data series; Catalys
 
 ## Release and development status
 
-The v0.1 scientific/common-XY feature set is released as v0.1.0. The planned v0.2 implementation sequence #19-#28 and Gate-A release hardening are complete on `main`. **Issue #45 is the active Gate-B final-version candidate**: both version declarations are `0.2.0` on the release branch and must pass the complete exact-head wheel/public-API/release review before merge. A `v0.2.0` tag has not been created and requires separate Gate-C authorization after the Gate-B merge is rechecked on `main`.
+The v0.1 scientific/common-XY feature set is released as v0.1.0. The complete v0.2 implementation sequence #19-#28 plus Gate A/B/C release validation is released as `v0.2.0` on 2026-08-24. The tag resolves exactly to reviewed release commit `1f7f4057397c61ef2f771b96fceadc8a529b62d9`. Package-registry publication is not implied by the Git tag and remains out of scope until a separate distribution policy is reviewed.
 
 New functionality follows a strict feature loop: prior-art scan with license recording, implementation/regression tests, CI, Draft PR, scientific/API/compatibility review, fixes, CI, second review, Ready/merge gate, squash merge, `main` CI verification when visible, then issue closure. Release/version work uses the same exact-head discipline with release/API/packaging/version review.
 
-See [`docs/MASTER_PLAN.md`](docs/MASTER_PLAN.md) for the project-wide execution model and current checkpoint, [`docs/V0_2_PLAN.md`](docs/V0_2_PLAN.md) for the completed v0.2 feature plan and release handoff, [`docs/V0_2_RELEASING.md`](docs/V0_2_RELEASING.md) for the active v0.2 release gates, and [`docs/ROADMAP.md`](docs/ROADMAP.md) for the long-range release scope.
+See [`docs/MASTER_PLAN.md`](docs/MASTER_PLAN.md) for the project-wide execution model and current checkpoint, [`docs/V0_2_PLAN.md`](docs/V0_2_PLAN.md) for the completed v0.2 feature/release record, [`docs/V0_2_RELEASING.md`](docs/V0_2_RELEASING.md) for the completed v0.2 release gates and reusable release-policy record, and [`docs/ROADMAP.md`](docs/ROADMAP.md) for the long-range release scope.
 
 ## Roadmap
 
-- **v0.2:** quantitative core electrochemistry and Gate-A hardening complete; Gate-B `0.2.0` final-version candidate active under Issue #45; tag not yet created.
+- **v0.2:** released as `v0.2.0` on 2026-08-24 after reviewed scientific implementation and Gate A/B/C release validation.
 - **v0.3-v0.6:** extended experimental characterization, advanced electrochemistry, XAS, structures, and major DFT post-processing.
 - **v0.7-v1.0:** advanced volumetric visualization, operando/time-resolved analysis, reproducible batch workflows, and a local GUI.
 

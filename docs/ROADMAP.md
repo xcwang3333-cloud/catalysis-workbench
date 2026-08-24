@@ -17,7 +17,7 @@ Before implementing each major scientific or visualization module, comparable op
 - Publication presets as editable starting templates, not locked themes.
 - SVG / PDF / PNG export.
 
-## v0.2.x — Core electrochemistry
+## v0.2.0 — Core electrochemistry — released 2026-08-24
 
 - Tafel analysis.
 - Faradaic efficiency.
@@ -27,6 +27,7 @@ Before implementing each major scientific or visualization module, comparable op
 - CV / Cdl / ECSA.
 - Stability analysis.
 - RRDE / Koutecky–Levich basics.
+- Installed-wheel public-API and representative numerical smoke coverage for the reviewed v0.2 electrochemistry surface.
 
 ## v0.3.x — Extended experimental processing
 
