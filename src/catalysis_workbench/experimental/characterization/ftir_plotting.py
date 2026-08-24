@@ -139,8 +139,10 @@ def _apply_display_direction(
 ) -> None:
     if direction not in {"descending", "ascending", "source"}:
         raise FTIRError("wavenumber_direction must be 'descending', 'ascending', or 'source'")
-    lower = min(float(np.min(item.x)) for item in rendered_series)
-    upper = max(float(np.max(item.x)) for item in rendered_series)
+
+    current_left, current_right = ax.get_xlim()
+    lower = min(float(current_left), float(current_right))
+    upper = max(float(current_left), float(current_right))
     if direction == "descending":
         ax.set_xlim(upper, lower)
         return
