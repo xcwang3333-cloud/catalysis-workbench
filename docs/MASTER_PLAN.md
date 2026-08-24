@@ -22,7 +22,7 @@ Checkpoint date: 2026-08-25.
 
 - Repository: `xcwang3333-cloud/catalysis-workbench`.
 - Stable integration branch: `main`.
-- Reviewed Gate-A `main` baseline: `ce06abc11559fa7679869fc83a59356735ce6824` (`release: harden frozen v0.4 installed-wheel and public API (#104)`).
+- Reviewed v0.4 release commit: `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6` (`release: finalize v0.4.0 candidate and exact-wheel audit (#106)`).
 - v0.4 architecture checkpoint: Issue #73 / PR #74 — complete at `a7fb245bd39f8aa3dc18141c2ecf6f005f02ebd1`.
 - shared constrained peak-fitting: Issue #75 / PR #76 — complete at `b6f428d96df9950373c17e5de487ac4113a2aacc`; CI #255; reviews `5008457897`, `5008470806`.
 - XPS preparation: Issue #79 / PR #80 — complete at `a13dbd541b299f79d83e47f079c4638b082a8061`; CI #261; reviews `5008700786`, `5008706395`.
@@ -34,12 +34,14 @@ Checkpoint date: 2026-08-25.
 - completion-state documentation checkpoint: Issue #101 / PR #102 — complete at `a02df77d078671e24b07b37f6196204e312c9146`.
 - v0.4 scientific implementation: **complete**.
 - v0.4 Gate A / Issue #103 / PR #104 — complete at `ce06abc11559fa7679869fc83a59356735ce6824`; final head `9d79845d6fae253b01a46794c3c055e4966c6e55`; CI #302 / run `32758548117`; reviews `5010905065`, `5010908809`.
-- Active release stage: **v0.4 Gate B / Issue #105 — final `0.4.0` version candidate and exact-wheel audit**.
+- v0.4 Gate B / Issue #105 / PR #106 — complete at `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6`; final head `ae3dc21b1a3a4e907d8c39eb85d3dbebefd8fbb4`; CI #304 / run `32759679632`; reviews `5011014348`, `5011017132`.
+- v0.4 Gate C / Issue #107 — complete; tag `v0.4.0` was created on 2026-08-25 and reverse-verified to resolve exactly to `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6`.
 - Reviewed runtime fitting dependency: `lmfit>=1.3.4`.
-- Gate-B branch distribution/runtime version is `0.4.0`; `main` remains the reviewed Gate-A baseline until Gate B merges.
+- distribution/runtime version on the reviewed release commit and through tag `v0.4.0` is `0.4.0`.
 - `v0.3.0` remains fixed on release commit `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`.
-- No `v0.4.0` tag, GitHub Release, or package-registry publication has been performed.
-- Next boundary after Gate B: **Gate C creation of tag `v0.4.0`**, requiring separate explicit authorization.
+- Active maintenance stage: **Issue #108 — post-tag documentation synchronization**.
+- GitHub Release creation for `v0.4.0` is authorized by the user's current `继续推进` instruction and is the next release action after #108 is merged and reverified.
+- No GitHub Release or package-registry publication has yet been performed; package publication remains a separate explicit boundary and is not authorized.
 
 Live GitHub Issue/PR/tag state remains authoritative if this checkpoint becomes stale.
 
@@ -52,7 +54,7 @@ Detailed long-range scope is maintained in [`ROADMAP.md`](ROADMAP.md).
 | v0.1.x | common XY core, tabular I/O, reusable processing, LSV, XRD, Raman, shared publication rendering/export | complete/released |
 | v0.2.x | quantitative core electrochemistry and shared scatter/bar summaries | complete/released as v0.2.0 |
 | v0.3.x | FTIR, thermal analysis, basic gas sorption, ICP/composition | complete/released as v0.3.0 |
-| v0.4.x | shared fitting, XPS, EIS, quantitative BET, product calibration | scientific scope + Gate A complete; Gate B `0.4.0` candidate active; tag pending |
+| v0.4.x | shared fitting, XPS, EIS, quantitative BET, product calibration | complete/released as Git tag v0.4.0; GitHub Release pending post-tag docs sync |
 | v0.5.x | XAS, structures, basic DFT energetics | planned |
 | v0.6.x | electronic structure and catalysis thermodynamics | planned |
 | v0.7.x | advanced computational visualization | planned |
@@ -171,15 +173,11 @@ All planned v0.4 scientific blocks and the completion-state synchronization are 
 
 Gate A / Issue #103 / PR #104 is complete. It froze the v0.4 scientific scope, added the unified installed-wheel/public-API audit, retained version `0.3.0`, passed exact-head CI #302 / run `32758548117` and two formal release reviews, and squash-merged as `ce06abc11559fa7679869fc83a59356735ce6824`.
 
-Gate B / Issue #105 is separately authorized and active. It changes distribution/runtime version together to `0.4.0`, updates the expected exact-wheel version, stages the v0.4 changelog candidate, and reruns the complete Gate-A audit on the final `0.4.0` artifact. It must not add scientific functionality.
+Gate B / Issue #105 / PR #106 is complete. It synchronized distribution/runtime version to `0.4.0`; final exact head `ae3dc21b1a3a4e907d8c39eb85d3dbebefd8fbb4` passed CI #304 / run `32759679632`, reviews `5011014348` and `5011017132`, behind=0 / mergeable=true / threads=0, then expected-head squash-merged as `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6`.
 
-The following actions remain separate after Gate B:
+Gate C / Issue #107 is complete. Under separate explicit authorization, tag `v0.4.0` was created on 2026-08-25 and reverse-verified to resolve exactly to `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6`; reads through the tag report distribution/runtime version `0.4.0`, and `v0.3.0` remained unchanged.
 
-- creating or moving tag `v0.4.0` — Gate C, explicit authorization required;
-- creating a GitHub Release;
-- publishing to PyPI or another package registry.
-
-Each release boundary must be explicit and exact-head reviewed.
+Post-tag documentation synchronization is tracked by Issue #108. After that docs-only checkpoint is merged and `main`/tag state is reverified, the authorized next action is GitHub Release creation for the existing `v0.4.0` tag. Package-registry publication remains a later separate explicit boundary and is not authorized by either the Git tag or GitHub Release.
 
 ## Mandatory development loop
 
@@ -274,4 +272,4 @@ After each merged scientific Issue, update only documentation whose statements b
 - preceding Issue closure/completion;
 - version/tag/publication boundaries.
 
-Gate B / Issue #105 is the active v0.4 release stage. After Gate B merges and `main` is verified at `0.4.0`, execution must stop before Gate C until explicit authorization is given to create tag `v0.4.0`.
+Issue #108 is the active v0.4 post-tag documentation checkpoint. After it merges, reverify `main` and immutable tag `v0.4.0`, then create and verify the authorized GitHub Release. Stop again before any package-registry publication unless that separate boundary is explicitly authorized.
