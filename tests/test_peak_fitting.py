@@ -227,24 +227,31 @@ def test_parameter_bounds_and_expression_state_fail_explicitly() -> None:
 
 
 def test_model_domains_reject_values_that_backend_would_otherwise_clip() -> None:
+    x = np.linspace(-2.0, 2.0, 101)
+    y = _gaussian(x, amplitude=1.0, center=0.0, sigma=0.5)
+    source = _series(x, y)
+
+    bad_sigma = _gaussian_component(
+        "bad_sigma",
+        amplitude=FitParameterSpec(1.0),
+        center=FitParameterSpec(0.0),
+        sigma=FitParameterSpec(-1.0),
+    )
     with pytest.raises(PeakFittingError, match="sigma"):
-        _gaussian_component(
-            "bad_sigma",
-            amplitude=FitParameterSpec(1.0),
-            center=FitParameterSpec(0.0),
-            sigma=FitParameterSpec(-1.0),
-        )
+        fit_peaks(source, PeakFitSpec(-1.5, 1.5, (bad_sigma,)))
+
+    bad_fraction = PeakComponentSpec(
+        key="bad_fraction",
+        model="pseudo_voigt",
+        parameters={
+            "amplitude": FitParameterSpec(1.0),
+            "center": FitParameterSpec(0.0),
+            "sigma": FitParameterSpec(1.0),
+            "fraction": FitParameterSpec(1.2),
+        },
+    )
     with pytest.raises(PeakFittingError, match="fraction"):
-        PeakComponentSpec(
-            key="bad_fraction",
-            model="pseudo_voigt",
-            parameters={
-                "amplitude": FitParameterSpec(1.0),
-                "center": FitParameterSpec(0.0),
-                "sigma": FitParameterSpec(1.0),
-                "fraction": FitParameterSpec(1.2),
-            },
-        )
+        fit_peaks(source, PeakFitSpec(-1.5, 1.5, (bad_fraction,)))
 
 
 def test_nonfinite_missing_complex_and_nonmonotonic_input_fail() -> None:
