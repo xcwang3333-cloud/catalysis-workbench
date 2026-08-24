@@ -50,6 +50,8 @@ result = fit_peaks(
 
 assert result.success, result.message
 assert result.source_key == "installed-peak-fit"
-assert result.parameters["peak_a.amplitude"].value == np.testing.assert_allclose(
-    result.parameters["peak_a.amplitude"].value, 10.0, rtol=1e-5
-)
+np.testing.assert_allclose(result.parameters["peak_a.amplitude"].value, 10.0, rtol=1e-5)
+np.testing.assert_allclose(result.parameters["peak_a.center"].value, 0.6, atol=1e-6)
+np.testing.assert_allclose(result.parameters["peak_a.sigma"].value, 0.75, rtol=1e-5)
+np.testing.assert_allclose(result.background, 1.25)
+assert np.max(np.abs(result.residual)) < 1e-7
