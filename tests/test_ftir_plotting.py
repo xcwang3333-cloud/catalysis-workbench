@@ -49,6 +49,13 @@ def test_plot_ftir_defaults_to_conventional_descending_display_without_mutating_
     fig.canvas.draw()
 
 
+def test_plot_ftir_preserves_explicit_empty_axis_label_contract():
+    spec = get_preset("publication").updated(xlabel="")
+    fig, ax = plot_ftir(_spectrum(), spec)
+    assert ax.get_xlabel() == ""
+    fig.canvas.draw()
+
+
 def test_plot_ftir_can_follow_source_or_force_ascending_direction():
     descending = _spectrum(descending=True)
     fig_source, ax_source = plot_ftir(descending, wavenumber_direction="source")
