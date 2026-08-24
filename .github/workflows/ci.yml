@@ -65,6 +65,7 @@ jobs:
           .venv-smoke/bin/python tests/installed_sorption_smoke.py
           .venv-smoke/bin/python tests/installed_bet_smoke.py
           .venv-smoke/bin/python tests/installed_composition_smoke.py
+          .venv-smoke/bin/python tests/installed_product_calibration_smoke.py
           CATALYSIS_WORKBENCH_EXPECTED_VERSION=0.3.0 .venv-smoke/bin/python tests/installed_v03_release_smoke.py
 
       - name: Run documented LSV/XRD/Raman/FTIR/thermal/sorption/composition examples from installed wheel
