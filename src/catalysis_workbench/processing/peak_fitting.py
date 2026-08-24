@@ -13,9 +13,10 @@ import re
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from types import MappingProxyType
-from typing import Literal, TypeAlias
+from typing import Any, Literal, TypeAlias
 
 import numpy as np
+from lmfit import Parameters
 from lmfit.model import Model
 from lmfit.models import (
     DoniachModel,
@@ -43,14 +44,14 @@ _KEY_PATTERN = re.compile(r"^[A-Za-z][A-Za-z0-9_]*$")
 _REFERENCE_PATTERN = re.compile(
     r"\{([A-Za-z][A-Za-z0-9_]*)\.([A-Za-z][A-Za-z0-9_]*)\}"
 )
-_MODEL_CLASSES: dict[PeakModelFamily, type[Model]] = {
+_MODEL_CLASSES: dict[str, type[Model]] = {
     "gaussian": GaussianModel,
     "lorentzian": LorentzianModel,
     "voigt": VoigtModel,
     "pseudo_voigt": PseudoVoigtModel,
     "doniach": DoniachModel,
 }
-_MODEL_PARAMETERS: dict[PeakModelFamily, frozenset[str]] = {
+_MODEL_PARAMETERS: dict[str, frozenset[str]] = {
     "gaussian": frozenset({"amplitude", "center", "sigma"}),
     "lorentzian": frozenset({"amplitude", "center", "sigma"}),
     "voigt": frozenset({"amplitude", "center", "sigma", "gamma"}),
@@ -73,13 +74,20 @@ def _finite_float(value: object, *, name: str) -> float:
     return number
 
 
-def _immutable_array(values: ArrayLike, *, name: str, ndim: int = 1) -> NDArray[np.float64]:
+def _immutable_array(
+    values: ArrayLike,
+    *,
+    name: str,
+    ndim: int = 1,
+) -> NDArray[np.float64]:
     try:
         array = np.asarray(values, dtype=np.float64)
     except (TypeError, ValueError) as exc:
         raise TypeError(f"{name} must contain real numeric values") from exc
     if array.ndim != ndim:
-        raise PeakFittingError(f"{name} must be {ndim}-dimensional; got shape {array.shape}")
+        raise PeakFittingError(
+            f"{name} must be {ndim}-dimensional; got shape {array.shape}"
+        )
     if ndim == 1 and array.size == 0:
         raise PeakFittingError(f"{name} must not be empty")
     if not np.isfinite(array).all():
@@ -145,8 +153,16 @@ class FitParameterSpec:
 
     def __post_init__(self) -> None:
         value = _finite_float(self.value, name="parameter value")
-        lower = None if self.lower is None else _finite_float(self.lower, name="lower bound")
-        upper = None if self.upper is None else _finite_float(self.upper, name="upper bound")
+        lower = (
+            None
+            if self.lower is None
+            else _finite_float(self.lower, name="lower bound")
+        )
+        upper = (
+            None
+            if self.upper is None
+            else _finite_float(self.upper, name="upper bound")
+        )
         if lower is not None and upper is not None and lower > upper:
             raise PeakFittingError("parameter lower bound must be <= upper bound")
         if lower is not None and value < lower:
@@ -198,7 +214,7 @@ class PeakComponentSpec:
                 raise PeakFittingError(f"duplicate component parameter: {name!r}")
             normalized_parameters[name] = spec
 
-        required = _MODEL_PARAMETERS[model]  # type: ignore[index]
+        required = _MODEL_PARAMETERS[model]
         actual = frozenset(normalized_parameters)
         if actual != required:
             missing = sorted(required - actual)
@@ -209,12 +225,17 @@ class PeakComponentSpec:
             if extra:
                 details.append(f"unexpected {extra}")
             raise PeakFittingError(
-                f"{model} parameters must be exactly {sorted(required)}; " + "; ".join(details)
+                f"{model} parameters must be exactly {sorted(required)}; "
+                + "; ".join(details)
             )
 
         object.__setattr__(self, "key", key)
         object.__setattr__(self, "model", model)
-        object.__setattr__(self, "parameters", MappingProxyType(normalized_parameters))
+        object.__setattr__(
+            self,
+            "parameters",
+            MappingProxyType(normalized_parameters),
+        )
         object.__setattr__(self, "label", str(self.label).strip())
         object.__setattr__(self, "metadata", _freeze_scalar_metadata(self.metadata))
 
@@ -248,18 +269,19 @@ class PeakFitSpec:
         method = str(self.method).strip()
         if method not in _ALLOWED_METHODS:
             raise PeakFittingError(
-                f"unsupported fitting method {method!r}; choose one of {sorted(_ALLOWED_METHODS)}"
+                f"unsupported fitting method {method!r}; "
+                f"choose one of {sorted(_ALLOWED_METHODS)}"
             )
 
         background = (
             None
             if self.background is None
-            else _immutable_array(self.background, name="background", ndim=1)
+            else _immutable_array(self.background, name="background")
         )
         weights = (
             None
             if self.weights is None
-            else _immutable_array(self.weights, name="weights", ndim=1)
+            else _immutable_array(self.weights, name="weights")
         )
         if weights is not None:
             if np.any(weights < 0):
@@ -295,7 +317,8 @@ class FittedParameter:
 
     def __post_init__(self) -> None:
         correlations = {
-            str(key): float(value) for key, value in sorted(self.correlations.items())
+            str(key): float(value)
+            for key, value in sorted(self.correlations.items())
         }
         object.__setattr__(self, "correlations", MappingProxyType(correlations))
 
@@ -335,16 +358,24 @@ class PeakFitResult:
     def __post_init__(self) -> None:
         object.__setattr__(self, "x", _immutable_array(self.x, name="result x"))
         object.__setattr__(
-            self, "observed_y", _immutable_array(self.observed_y, name="result observed_y")
+            self,
+            "observed_y",
+            _immutable_array(self.observed_y, name="result observed_y"),
         )
         object.__setattr__(
-            self, "background", _immutable_array(self.background, name="result background")
+            self,
+            "background",
+            _immutable_array(self.background, name="result background"),
         )
         object.__setattr__(
-            self, "best_fit_y", _immutable_array(self.best_fit_y, name="result best_fit_y")
+            self,
+            "best_fit_y",
+            _immutable_array(self.best_fit_y, name="result best_fit_y"),
         )
         object.__setattr__(
-            self, "residual", _immutable_array(self.residual, name="result residual")
+            self,
+            "residual",
+            _immutable_array(self.residual, name="result residual"),
         )
         curves = {
             str(key): _immutable_array(curve, name=f"component curve {key!r}")
@@ -396,17 +427,21 @@ def _public_parameter_map(
 
 def _expression_dependencies(expr: str) -> tuple[str, ...]:
     references = tuple(
-        f"{component}.{parameter}" for component, parameter in _REFERENCE_PATTERN.findall(expr)
+        f"{component}.{parameter}"
+        for component, parameter in _REFERENCE_PATTERN.findall(expr)
     )
-    if "{" in _REFERENCE_PATTERN.sub("", expr) or "}" in _REFERENCE_PATTERN.sub("", expr):
+    remainder = _REFERENCE_PATTERN.sub("", expr)
+    if "{" in remainder or "}" in remainder:
         raise PeakFittingError(
-            "parameter expressions must reference parameters with {component.parameter} syntax"
+            "parameter expressions must reference parameters with "
+            "{component.parameter} syntax"
         )
     return references
 
 
 def _validate_expression_graph(
-    components: tuple[PeakComponentSpec, ...], public_to_internal: Mapping[str, str]
+    components: tuple[PeakComponentSpec, ...],
+    public_to_internal: Mapping[str, str],
 ) -> None:
     graph: dict[str, tuple[str, ...]] = {}
     for component in components:
@@ -416,10 +451,15 @@ def _validate_expression_graph(
                 graph[public] = ()
                 continue
             references = _expression_dependencies(parameter.expr)
-            unknown = [reference for reference in references if reference not in public_to_internal]
+            unknown = [
+                reference
+                for reference in references
+                if reference not in public_to_internal
+            ]
             if unknown:
                 raise PeakFittingError(
-                    f"parameter expression for {public!r} references unknown parameters: {unknown}"
+                    f"parameter expression for {public!r} references "
+                    f"unknown parameters: {unknown}"
                 )
             graph[public] = references
 
@@ -441,7 +481,10 @@ def _validate_expression_graph(
         visit(node)
 
 
-def _translate_expression(expr: str, public_to_internal: Mapping[str, str]) -> str:
+def _translate_expression(
+    expr: str,
+    public_to_internal: Mapping[str, str],
+) -> str:
     _expression_dependencies(expr)
 
     def replace(match: re.Match[str]) -> str:
@@ -456,9 +499,54 @@ def _translate_expression(expr: str, public_to_internal: Mapping[str, str]) -> s
     return _REFERENCE_PATTERN.sub(replace, expr)
 
 
+def _finite_backend_bound(value: float) -> float | None:
+    return float(value) if np.isfinite(value) else None
+
+
+def _validate_parameter_against_model_domain(
+    *,
+    component: PeakComponentSpec,
+    name: str,
+    parameter_spec: FitParameterSpec,
+    backend_parameter: Any,
+) -> None:
+    """Reject requests that lmfit would otherwise silently clip to model bounds."""
+    domain_lower = _finite_backend_bound(float(backend_parameter.min))
+    domain_upper = _finite_backend_bound(float(backend_parameter.max))
+    public = f"{component.key}.{name}"
+
+    if domain_lower is not None:
+        if parameter_spec.value < domain_lower:
+            raise PeakFittingError(
+                f"{public} initial value violates {component.model} model domain: "
+                f"value must be >= {domain_lower}"
+            )
+        if parameter_spec.lower is not None and parameter_spec.lower < domain_lower:
+            raise PeakFittingError(
+                f"{public} lower bound violates {component.model} model domain: "
+                f"lower must be >= {domain_lower}"
+            )
+    if domain_upper is not None:
+        if parameter_spec.value > domain_upper:
+            raise PeakFittingError(
+                f"{public} initial value violates {component.model} model domain: "
+                f"value must be <= {domain_upper}"
+            )
+        if parameter_spec.upper is not None and parameter_spec.upper > domain_upper:
+            raise PeakFittingError(
+                f"{public} upper bound violates {component.model} model domain: "
+                f"upper must be <= {domain_upper}"
+            )
+
+    # Width zero is numerically singular for the supported spectroscopy models even
+    # though lmfit represents the built-in sigma domain with a non-strict min=0 hint.
+    if name == "sigma" and parameter_spec.value <= 0:
+        raise PeakFittingError(f"{public} sigma initial value must be > 0")
+
+
 def _build_model_and_parameters(
     spec: PeakFitSpec,
-) -> tuple[Model, object, dict[str, Model], dict[str, str], dict[str, str]]:
+) -> tuple[Model, Parameters, dict[str, Model], dict[str, str]]:
     public_to_internal, internal_to_public = _public_parameter_map(spec.components)
     _validate_expression_graph(spec.components, public_to_internal)
 
@@ -483,10 +571,21 @@ def _build_model_and_parameters(
                     f"backend model {component.model!r} does not provide parameter {name!r}"
                 )
 
-            # Clear built-in expression defaults for explicitly public parameters (for
-            # example Voigt gamma) before applying caller state. Derived parameters such
-            # as height/fwhm remain backend-internal and are not exposed as public inputs.
-            params[internal].set(expr="")
+            # Capture and validate built-in model domains before setting a caller value.
+            # lmfit clips out-of-domain initial values in Parameter._init_bounds(); this
+            # wrapper must fail explicitly instead of silently accepting that correction.
+            backend_parameter = params[internal]
+            _validate_parameter_against_model_domain(
+                component=component,
+                name=name,
+                parameter_spec=parameter_spec,
+                backend_parameter=backend_parameter,
+            )
+
+            # Clear built-in expressions for parameters that CatalysisWorkbench exposes
+            # explicitly (for example Voigt gamma). Derived fwhm/height expressions stay
+            # backend-internal and are not public fitting inputs.
+            backend_parameter.set(expr="")
             set_kwargs: dict[str, object] = {
                 "value": parameter_spec.value,
                 "vary": parameter_spec.vary,
@@ -495,18 +594,47 @@ def _build_model_and_parameters(
                 set_kwargs["min"] = parameter_spec.lower
             if parameter_spec.upper is not None:
                 set_kwargs["max"] = parameter_spec.upper
-            params[internal].set(**set_kwargs)
+            backend_parameter.set(**set_kwargs)
             if parameter_spec.expr is not None:
-                params[internal].set(
+                backend_parameter.set(
                     vary=False,
-                    expr=_translate_expression(parameter_spec.expr, public_to_internal),
+                    expr=_translate_expression(
+                        parameter_spec.expr,
+                        public_to_internal,
+                    ),
                 )
 
     try:
         params.update_constraints()
     except Exception as exc:
         raise PeakFittingError(f"invalid parameter expression: {exc}") from exc
-    return combined_model, params, component_models, public_to_internal, internal_to_public
+
+    # Validate the initial constrained values as well. This catches a tie whose evaluated
+    # value violates a built-in model domain before optimization begins.
+    for component in spec.components:
+        prefix = _component_prefix(component.key)
+        for name, parameter_spec in component.parameters.items():
+            internal = f"{prefix}{name}"
+            backend_parameter = params[internal]
+            value = float(backend_parameter.value)
+            domain_lower = _finite_backend_bound(float(backend_parameter.min))
+            domain_upper = _finite_backend_bound(float(backend_parameter.max))
+            if domain_lower is not None and value < domain_lower:
+                raise PeakFittingError(
+                    f"expression for {component.key}.{name} evaluates below model domain"
+                )
+            if domain_upper is not None and value > domain_upper:
+                raise PeakFittingError(
+                    f"expression for {component.key}.{name} evaluates above model domain"
+                )
+            if name == "sigma" and value <= 0:
+                raise PeakFittingError(
+                    f"expression for {component.key}.{name} must evaluate to sigma > 0"
+                )
+            if parameter_spec.expr is None:
+                continue
+
+    return combined_model, params, component_models, internal_to_public
 
 
 def _optional_finite(value: object | None) -> float | None:
@@ -514,6 +642,48 @@ def _optional_finite(value: object | None) -> float | None:
         return None
     number = float(value)
     return number if np.isfinite(number) else None
+
+
+def _parameter_results(
+    *,
+    spec: PeakFitSpec,
+    params: Parameters,
+    internal_to_public: Mapping[str, str],
+) -> dict[str, FittedParameter]:
+    output: dict[str, FittedParameter] = {}
+    for component in spec.components:
+        prefix = _component_prefix(component.key)
+        for name, parameter_spec in component.parameters.items():
+            internal = f"{prefix}{name}"
+            parameter = params[internal]
+            correlations: dict[str, float] = {}
+            for other_internal, correlation in (parameter.correl or {}).items():
+                other_public = internal_to_public.get(other_internal)
+                if other_public is not None and np.isfinite(correlation):
+                    correlations[other_public] = float(correlation)
+            public = f"{component.key}.{name}"
+            output[public] = FittedParameter(
+                component_key=component.key,
+                parameter_name=name,
+                value=float(parameter.value),
+                stderr=_optional_finite(parameter.stderr),
+                vary=bool(parameter.vary),
+                lower=_finite_backend_bound(float(parameter.min)),
+                upper=_finite_backend_bound(float(parameter.max)),
+                expr=parameter_spec.expr,
+                correlations=correlations,
+            )
+    return output
+
+
+def _fixed_only_statistics(
+    residual: np.ndarray,
+    weights: np.ndarray | None,
+) -> tuple[float, float]:
+    objective_residual = residual if weights is None else residual * weights
+    chi_square = float(np.sum(objective_residual**2))
+    reduced = chi_square / residual.size
+    return chi_square, reduced
 
 
 def fit_peaks(series: Series, spec: PeakFitSpec) -> PeakFitResult:
@@ -558,65 +728,85 @@ def fit_peaks(series: Series, spec: PeakFitSpec) -> PeakFitResult:
                 "weights must contain exactly one residual multiplier per fit-window point"
             )
 
-    model, params, component_models, _, internal_to_public = _build_model_and_parameters(spec)
-    varying = sum(bool(parameter.vary) and parameter.expr is None for parameter in params.values())
+    model, params, component_models, internal_to_public = _build_model_and_parameters(spec)
+    varying = sum(
+        bool(parameter.vary) and parameter.expr is None
+        for name, parameter in params.items()
+        if name in internal_to_public
+    )
     if selected <= varying:
         raise PeakFittingError(
             f"fit window has {selected} points but {varying} independently varying parameters"
         )
 
     target = observed - background
-    try:
-        backend_result = model.fit(
-            target,
-            params=params,
-            x=x_fit,
-            weights=weights,
-            method=spec.method,
-        )
-    except Exception as exc:
-        raise PeakFittingError(f"lmfit optimization failed: {exc}") from exc
-
-    component_curves = {
-        key: np.asarray(component_model.eval(params=backend_result.params, x=x_fit), dtype=float)
-        for key, component_model in component_models.items()
-    }
-    best_fit_y = background + np.asarray(backend_result.best_fit, dtype=float)
-    residual = observed - best_fit_y
-
-    parameter_results: dict[str, FittedParameter] = {}
-    for component in spec.components:
-        prefix = _component_prefix(component.key)
-        for name, parameter_spec in component.parameters.items():
-            internal = f"{prefix}{name}"
-            parameter = backend_result.params[internal]
-            correlations: dict[str, float] = {}
-            for other_internal, correlation in (parameter.correl or {}).items():
-                other_public = internal_to_public.get(other_internal)
-                if other_public is not None and np.isfinite(correlation):
-                    correlations[other_public] = float(correlation)
-            public = f"{component.key}.{name}"
-            parameter_results[public] = FittedParameter(
-                component_key=component.key,
-                parameter_name=name,
-                value=float(parameter.value),
-                stderr=_optional_finite(parameter.stderr),
-                vary=bool(parameter.vary),
-                lower=None if not np.isfinite(parameter.min) else float(parameter.min),
-                upper=None if not np.isfinite(parameter.max) else float(parameter.max),
-                expr=parameter_spec.expr,
-                correlations=correlations,
-            )
-
     covariance: np.ndarray | None = None
     covariance_parameter_order: tuple[str, ...] = ()
-    if backend_result.covar is not None:
-        candidate = np.asarray(backend_result.covar, dtype=np.float64)
-        if candidate.ndim == 2 and np.isfinite(candidate).all():
-            covariance = candidate
-            covariance_parameter_order = tuple(
-                internal_to_public.get(name, name) for name in (backend_result.var_names or [])
+    aic = float("nan")
+    bic = float("nan")
+
+    if varying == 0:
+        modeled_peaks = np.asarray(model.eval(params=params, x=x_fit), dtype=float)
+        component_curves = {
+            key: np.asarray(component_model.eval(params=params, x=x_fit), dtype=float)
+            for key, component_model in component_models.items()
+        }
+        best_fit_y = background + modeled_peaks
+        residual = observed - best_fit_y
+        chi_square, reduced_chi_square = _fixed_only_statistics(residual, weights)
+        parameter_results = _parameter_results(
+            spec=spec,
+            params=params,
+            internal_to_public=internal_to_public,
+        )
+        success = True
+        message = "all public parameters fixed or constrained; model evaluated without optimization"
+        method = spec.method
+        n_varying_parameters = 0
+    else:
+        try:
+            backend_result = model.fit(
+                target,
+                params=params,
+                x=x_fit,
+                weights=weights,
+                method=spec.method,
             )
+        except Exception as exc:
+            raise PeakFittingError(f"lmfit optimization failed: {exc}") from exc
+
+        component_curves = {
+            key: np.asarray(
+                component_model.eval(params=backend_result.params, x=x_fit),
+                dtype=float,
+            )
+            for key, component_model in component_models.items()
+        }
+        best_fit_y = background + np.asarray(backend_result.best_fit, dtype=float)
+        residual = observed - best_fit_y
+        parameter_results = _parameter_results(
+            spec=spec,
+            params=backend_result.params,
+            internal_to_public=internal_to_public,
+        )
+
+        if backend_result.covar is not None:
+            candidate = np.asarray(backend_result.covar, dtype=np.float64)
+            if candidate.ndim == 2 and np.isfinite(candidate).all():
+                covariance = candidate
+                covariance_parameter_order = tuple(
+                    internal_to_public.get(name, name)
+                    for name in (backend_result.var_names or [])
+                )
+
+        chi_square = float(backend_result.chisqr)
+        reduced_chi_square = float(backend_result.redchi)
+        aic = float(backend_result.aic)
+        bic = float(backend_result.bic)
+        n_varying_parameters = int(backend_result.nvarys)
+        success = bool(backend_result.success)
+        message = str(backend_result.message)
+        method = str(backend_result.method)
 
     return PeakFitResult(
         source_key=series.key,
@@ -637,13 +827,13 @@ def fit_peaks(series: Series, spec: PeakFitSpec) -> PeakFitResult:
         parameters=parameter_results,
         covariance=covariance,
         covariance_parameter_order=covariance_parameter_order,
-        chi_square=float(backend_result.chisqr),
-        reduced_chi_square=float(backend_result.redchi),
-        aic=float(backend_result.aic),
-        bic=float(backend_result.bic),
-        n_varying_parameters=int(backend_result.nvarys),
-        success=bool(backend_result.success),
-        message=str(backend_result.message),
-        method=str(backend_result.method),
+        chi_square=chi_square,
+        reduced_chi_square=reduced_chi_square,
+        aic=aic,
+        bic=bic,
+        n_varying_parameters=n_varying_parameters,
+        success=success,
+        message=message,
+        method=method,
         backend="lmfit",
     )
