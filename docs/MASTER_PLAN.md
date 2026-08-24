@@ -22,7 +22,8 @@ Checkpoint date: 2026-08-24.
 
 - Repository: `xcwang3333-cloud/catalysis-workbench`.
 - Stable integration branch: `main`.
-- Current reviewed `main` checkpoint after thermal merge: `d06d4459955d50801ed7676326efcecdccb6df73` (`feat: add explicit TGA DTG TPR TPD thermal analysis (#55)`).
+- Current reviewed `main` checkpoint after gas-sorption merge: `de0352970f79ce37467907116c02a3d8bc15a178` (`feat: add explicit gas-sorption isotherm semantics and plotting (#59)`).
+- Thermal feature merge commit: `d06d4459955d50801ed7676326efcecdccb6df73` (`feat: add explicit TGA DTG TPR TPD thermal analysis (#55)`).
 - FTIR feature merge commit: `bf6e834b584943747b8dcb5278141e8ca0c5512f` (`feat: add explicit FTIR and ATR-FTIR processing (#51)`).
 - `v0.2.0` tagged release commit: `1f7f4057397c61ef2f771b96fceadc8a529b62d9` (`release: finalize v0.2.0 candidate (#46)`).
 - v0.1 scientific/common-XY foundation is released as `v0.1.0`.
@@ -33,10 +34,11 @@ Checkpoint date: 2026-08-24.
 - Distribution metadata and runtime `__version__` at the tagged release both report `0.2.0`; changelog release date is 2026-08-24.
 - Package-registry publication remains a separate policy decision and was not part of the v0.2 Git release.
 - Issue #48 / PR #49 completed the post-v0.2-release documentation synchronization; it did not change the tagged release contents.
-- **v0.3 development is active: Issue #50 / PR #51 completed FTIR / ATR-FTIR, and Issue #54 / PR #55 completed the TGA / DTG / TPR / TPD thermal-analysis foundation.**
+- **v0.3 development is active: Issue #50 / PR #51 completed FTIR / ATR-FTIR, Issue #54 / PR #55 completed TGA / DTG / TPR / TPD, and Issue #58 / PR #59 completed the basic gas-sorption isotherm foundation.**
 - Issue #52 / PR #53 synchronized the first v0.3 FTIR checkpoint.
-- Issue #56 is the docs-only post-thermal synchronization and planning checkpoint; it changes no scientific implementation or version metadata.
-- **Basic BET / gas-sorption plotting is selected as the next v0.3 scientific module.** ICP/composition integration and shared peak-fitting primitives remain later v0.3 scope.
+- Issue #56 / PR #57 synchronized the post-thermal checkpoint and selected gas sorption next.
+- Issue #60 is the docs-only post-sorption synchronization and planning checkpoint; it changes no scientific implementation or version metadata.
+- **ICP/composition data integration is selected as the next v0.3 scientific module.** Shared peak-fitting primitives remain later v0.3 scope.
 
 Live GitHub issue/PR/tag state remains authoritative if this checkpoint becomes stale.
 
@@ -48,7 +50,7 @@ The detailed release scope is maintained in [`ROADMAP.md`](ROADMAP.md). The inte
 | --- | --- | --- |
 | v0.1.x | common XY core, tabular I/O, reusable processing, LSV, XRD, Raman, publication curve rendering/export | complete/released as v0.1.0 |
 | v0.2.x | quantitative core electrochemistry and shared scatter/bar summaries | complete/released as v0.2.0 on 2026-08-24 |
-| v0.3.x | extended experimental processing | in progress — FTIR/ATR-FTIR and thermal analysis complete; basic BET/gas-sorption plotting selected next |
+| v0.3.x | extended experimental processing | in progress — FTIR/ATR-FTIR, thermal analysis, and basic gas-sorption complete; ICP/composition selected next |
 | v0.4.x | advanced experimental analysis | planned |
 | v0.5.x | XAS, structures, basic DFT energetics | planned |
 | v0.6.x | electronic structure and catalysis thermodynamics | planned |
@@ -96,17 +98,18 @@ v0.3 extends experimental characterization while retaining the same explicit sci
 
 - #50 / PR #51 — FTIR / ATR-FTIR validation and processing; explicit transmittance-to-absorbance conversion; caller-window polynomial baseline fitting; direction-independent direct-window band integration; stable-key Dataset workflows; shared publication plotting; prior-art/license documentation; installed-wheel smoke and quickstart.
 - #54 / PR #55 — TGA / DTG / TPR / TPD thermal-analysis foundation; explicit °C/K temperature semantics/conversion; raw-mass versus normalized TGA bases; explicit reference-mass normalization; measured-grid DTG with explicit sign convention; TPR/TPD detector-signal semantics; measured-point-supported thermal-window extrema/integration; stable-key Dataset workflows; compatibility guards; provenance; lazy shared publication plotting; installed-wheel smoke and quickstart.
+- #58 / PR #59 — basic gas-sorption isotherm semantics and publication plotting; explicit `P/P0` fraction/percent representation; explicit loading units and adsorbate/temperature/branch state; explicit standard-gas conditions for `cm^3(STP)/g`; no branch inference from pressure direction; stable-key Dataset processing; measured-point-only window summaries; strict compatibility guards; lazy shared publication plotting; installed-wheel smoke and quickstart.
 
 ### Documentation checkpoints
 
 - #52 / PR #53 — docs-only synchronization after the merged FTIR module.
-- #56 — docs-only synchronization after the thermal merge plus next-module priority decision. It does not alter scientific code, version metadata, tags, or release state.
+- #56 / PR #57 — docs-only synchronization after the thermal merge plus gas-sorption priority decision.
+- #60 — docs-only synchronization after the gas-sorption merge plus ICP/composition priority decision. It does not alter scientific code, version metadata, tags, or release state.
 
 ### Remaining roadmap scope and priority
 
-1. **Basic BET / gas-sorption plotting — selected next.** The v0.3 contract should establish explicit relative-pressure (`P/P0`), adsorbed-quantity, adsorption/desorption branch, unit, provenance, overlay, and publication-plot semantics without prematurely implementing quantitative BET fitting.
-2. ICP/composition data integration — planned after the basic sorption layer unless a later explicit planning decision changes the order.
-3. Shared peak-fitting primitives — planned later in v0.3; this is cross-cutting and should be designed around concrete downstream needs rather than pulled forward without a scientific consumer.
+1. **ICP/composition data integration — selected next.** The scientific contract should make element/sample identity, concentration or composition basis, units, replicate/uncertainty handling, stable keys, provenance, compatibility, and publication summaries explicit without assuming digestion chemistry or instrument calibration state.
+2. Shared peak-fitting primitives — planned later in v0.3; this cross-cutting layer should be designed around concrete downstream consumers such as XPS/spectroscopy rather than implemented speculatively.
 
 Quantitative BET fitting remains v0.4 scope. The next scientific Issue must begin with a prior-art/license survey before locking its API contract.
 
@@ -207,4 +210,4 @@ This lightweight resynchronization is the required checkpoint between feature/re
 
 ## Immediate next action
 
-Complete Issue #56 as a docs-only status synchronization. After its exact-head CI/review/merge gate, open the next v0.3 scientific Issue for **basic BET / gas-sorption plotting**, beginning with a fresh prior-art/license survey and an explicit scientific/API contract. Do not include quantitative BET fitting or other v0.4 algorithms unless separately planned and reviewed.
+Complete Issue #60 as a docs-only status synchronization. After its exact-head CI/review/merge gate, open the next v0.3 scientific Issue for **ICP/composition data integration**, beginning with a fresh prior-art/license survey and an explicit scientific/API contract. Do not introduce shared peak-fitting, XPS fitting, calibration-curve assumptions, digestion chemistry, instrument control, or v0.3 release/version work unless separately planned and reviewed.
