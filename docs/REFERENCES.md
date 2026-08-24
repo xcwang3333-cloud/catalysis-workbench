@@ -220,3 +220,16 @@ Issue #54 extends v0.3 with a conservative one-dimensional thermal-analysis foun
 The reviewed direction keeps temperature conversion explicit (`°C`/K), never silently normalizes raw TGA mass, defines DTG as caller-selected signed `dy/dT` or positive mass-loss `-dy/dT`, treats TPR/TPD initially as calibrated-or-uncalibrated detector signals without inferring chemical amount, and limits direct feature quantification to explicit temperature windows with maximum/minimum selection plus net/absolute area. Window interpolation is restricted to the two requested boundaries and fails on missing bracketing data. Automatic peak detection, onset extrapolation, deconvolution, kinetic fitting, smoothing/baseline correction, vendor readers, and TPR/TPD calibration-to-amount remain outside Issue #54.
 
 Full scientific/API/test details are in `docs/THERMAL_ANALYSIS.md`.
+
+## Basic gas-sorption isotherm decision for v0.3
+
+Issue #58 adds a conservative measured-isotherm foundation before any BET surface-area or pore-structure fitting.
+
+- `pauliacomi/pyGAPS` (MIT) is the primary adsorption architecture/scientific reference. Its explicit pressure mode/unit, loading basis/unit, material basis/unit, adsorbate, temperature, point-isotherm representation, and adsorption/desorption-aware plotting are useful design prior art. CatalysisWorkbench keeps its existing `Series`/`Dataset` model instead of introducing a second isotherm hierarchy. pyGAPS can infer branch from pressure direction; Issue #58 deliberately rejects that behavior and requires caller-declared branch metadata.
+- `hjkgrp/SESAMI_web` (MIT) is workflow/scope prior art demonstrating that BET region selection and surface-area determination require nontrivial consistency/linearity criteria and are a separate quantitative analysis problem. Issue #58 therefore does not hide BET fitting inside plotting or basic data preparation.
+- `AIF-development-team/adsorptioninformationformat` (MIT) is interoperability/metadata prior art. It reinforces the need for explicit adsorbate, measurement conditions, pressure representation, and loading units. AIF and vendor-specific parser expansion are deferred.
+- `nakulrampal/betsi-gui` reports a non-standard/`NOASSERTION` license in GitHub repository metadata. Its dedicated Rouquerol/BET workflow is useful scope reference only; no implementation is copied or adapted.
+
+The reviewed v0.3 direction keeps `P/P0` explicit as fraction or percent, rejects the inverse `P0/P` as an alias, preserves ascending or descending measured branch order without branch inference, requires explicit loading units and standard-gas temperature/pressure for `cm^3(STP)/g`, addresses Dataset operations by stable `Series.key`, and permits only model-free measured-point summaries plus shared-renderer publication plotting. There is no hidden sorting, interpolation, alignment, clipping, smoothing, normalization, or unit conversion. BET linear-region selection, Rouquerol criteria, monolayer capacity, surface area, pore volume, pore-size distributions, t-plot/alpha-s/Dubinin/model fitting, hysteresis classification, and parser expansion remain outside Issue #58.
+
+No upstream implementation code is copied and no new dependency is introduced. Full scientific/API/test details are in `docs/GAS_SORPTION.md`.
