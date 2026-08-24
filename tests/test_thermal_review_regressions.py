@@ -6,8 +6,11 @@ from catalysis_workbench.core import Axis, Dataset, Series
 from catalysis_workbench.experimental.characterization import (
     ThermalError,
     ThermalWindow,
+    convert_temperature,
+    derive_dtg,
     measure_thermal_window,
     normalize_tga_mass,
+    validate_dtg_series,
     validate_thermal_overlay,
 )
 
@@ -55,3 +58,30 @@ def test_quantitative_window_requires_at_least_one_measured_point():
             ThermalWindow(120.0, 180.0),
             technique="tpr",
         )
+
+
+def test_normalized_percent_dtg_validates_measures_and_converts_temperature():
+    normalized = normalize_tga_mass(
+        _raw_mass("normalized", 1.0),
+        output="percent",
+        reference="first_point",
+    )
+    dtg = derive_dtg(normalized, sign_mode="mass_loss_positive")
+
+    assert dtg.y_axis.unit == "%/°C"
+    assert dtg.y_axis.metadata["source_mass_semantic"] == "mass_percent"
+    validate_dtg_series(dtg)
+
+    measured = measure_thermal_window(
+        dtg,
+        ThermalWindow(150.0, 350.0),
+        technique="dtg",
+        extremum_mode="maximum",
+        area_mode="net",
+    )
+    assert measured.n_measured_points == 2
+    assert measured.signal_unit == "%/°C"
+
+    kelvin = convert_temperature(dtg, target_unit="K")
+    assert kelvin.y_axis.unit == "%/K"
+    validate_dtg_series(kelvin)
