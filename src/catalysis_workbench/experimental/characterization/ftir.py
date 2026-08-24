@@ -768,6 +768,10 @@ def measure_ftir_band(
     if np.isnan(y_asc[finite_mask]).any():
         raise FTIRError("FTIR integration window contains missing absorbance values")
     integration_y = np.interp(integration_x, x_asc, y_asc)
+    if np.isnan(integration_y).any():
+        raise FTIRError(
+            "FTIR integration boundary interpolation depends on missing absorbance values"
+        )
 
     if area_mode == "absolute":
         area = float(np.trapezoid(np.abs(integration_y), x=integration_x))
