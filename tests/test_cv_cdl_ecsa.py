@@ -168,6 +168,7 @@ def test_pair_rejects_mismatched_grid_reference_basis_and_missing_values():
     mismatched_grid = Series(
         x=(0.6, 0.45, 0.4),
         y=good.cathodic.y,
+        key=good.cathodic.key,
         x_axis=good.cathodic.x_axis,
         y_axis=good.cathodic.y_axis,
     )
@@ -183,6 +184,7 @@ def test_pair_rejects_mismatched_grid_reference_basis_and_missing_values():
     wrong_reference = Series(
         x=good.cathodic.x,
         y=good.cathodic.y,
+        key=good.cathodic.key,
         x_axis=_potential_axis("Ag/AgCl"),
         y_axis=good.cathodic.y_axis,
     )
@@ -208,6 +210,7 @@ def test_pair_rejects_mismatched_grid_reference_basis_and_missing_values():
     nan_anodic = Series(
         x=good.anodic.x,
         y=(np.nan, 1.0, 1.0),
+        key=good.anodic.key,
         x_axis=good.anodic.x_axis,
         y_axis=good.anodic.y_axis,
     )
@@ -226,6 +229,7 @@ def test_non_geometric_current_density_is_rejected_to_prevent_circular_ecsa():
     bad_anodic = Series(
         x=good.anodic.x,
         y=good.anodic.y,
+        key=good.anodic.key,
         x_axis=good.anodic.x_axis,
         y_axis=Axis(
             "current_density",
