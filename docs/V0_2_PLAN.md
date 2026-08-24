@@ -8,18 +8,31 @@ For the project-wide execution model, merge gates, and long-range release map, s
 
 Checkpoint date: 2026-08-24.
 
-- Feature checkpoint used for this synchronization: `ecdc033212d2f9b91dfb0505528f743df625524f`.
-- Completed: #18, #19, #20, #21, #22, #23.
-- Current implementation target: **#24 — mass and specific activity normalization**.
-- Remaining after #24: #25, #26, #27, #28.
+- Feature checkpoint used for this synchronization: `26ec2af8eede35d42023489b54231d33a2c973d5`.
+- **All planned v0.2 implementation Issues #19-#28 are complete and merged.**
+- The development version remains `0.2.0.dev0` in both distribution metadata and runtime version state.
+- There is no remaining open feature Issue in the defined v0.2 sequence.
+- The next stage is v0.2 documentation/API/package synchronization followed by a separately defined release-hardening/final-version gate.
+- The existing [`RELEASING.md`](RELEASING.md) governs v0.1 only; it does not authorize a `0.2.0` bump or `v0.2.0` tag.
 
 GitHub Issues, Pull Requests, merged `main`, and exact-commit CI remain authoritative if this status block becomes stale.
 
-## Shared contracts first
+## Shared contracts and completed modules
 
-Before domain modules proliferate, v0.2 centralizes conservative electrochemistry quantity validation and traceable fit/result conventions. That foundation is now implemented by #19, and the reviewed LSV public API remains compatible. Units remain explicit strings in v0.2; Pint is still deferred.
+The v0.2 implementation sequence established one integrated quantitative electrochemistry stack:
 
-The visualization layer also now provides generic scatter and categorical bar rendering through #20, reusing the existing `FigureSpec` layout/typography/export state. Domain modules must continue to reuse that shared visualization system rather than creating separate Matplotlib style stacks.
+- #19 — shared quantity/unit/reference/provenance conventions.
+- #20 — shared scatter and categorical bar visualization primitives.
+- #21 — Tafel analysis and publication plotting.
+- #22 — Faradaic efficiency and multi-product closure QA.
+- #23 — product partial-current density and closure QA.
+- #24 — catalyst-mass, metal-mass, and ECSA activity normalization.
+- #25 — TOF and TOFapp with explicit inventory semantics.
+- #26 — CV, Cdl, and ECSA analysis.
+- #27 — electrochemical stability analysis.
+- #28 — RRDE and Koutecky-Levich basics.
+
+The reviewed LSV public API from v0.1 remains compatible and reuses the shared #19 quantity layer.
 
 ## Backlog map
 
@@ -29,77 +42,116 @@ The visualization layer also now provides generic scatter and categorical bar re
 - [x] #21 — Tafel analysis and publication plotting.
 - [x] #22 — Faradaic efficiency and multi-product closure QA.
 - [x] #23 — product partial-current density and closure QA.
-- [ ] **#24 — mass and specific activity normalization.**
-- [ ] #25 — TOF and TOFapp.
-- [ ] #26 — CV, Cdl, and ECSA.
-- [ ] #27 — electrochemical stability analysis.
-- [ ] #28 — RRDE and Koutecky-Levich basics.
+- [x] #24 — mass and specific activity normalization.
+- [x] #25 — TOF and TOFapp.
+- [x] #26 — CV, Cdl, and ECSA.
+- [x] #27 — electrochemical stability analysis.
+- [x] #28 — RRDE and Koutecky-Levich basics.
 
-## Implemented v0.2 foundation
+## Final implemented v0.2 scientific scope
 
-The completed sequence #19-#23 establishes reusable contracts that later modules should consume rather than duplicate:
+### Shared electrochemistry foundation — #19
 
-- #19: explicit electrochemistry quantities/units, reference handling, source digests, fit-window/provenance types, and v0.1 LSV compatibility.
-- #20: shared curve/scatter/bar publication rendering, stable-key styling, explicit supplied errors, and common exact-size figure/export behavior.
-- #21: explicit Tafel fit windows, branch/current-sign declarations, signed slope/intercept/R², stable-key Dataset fitting, and traceable fit provenance.
-- #22: amount/charge and rate/current Faradaic efficiency with explicit electron stoichiometry, multi-product stable-key workflows, and closure QA without clipping or renormalization.
-- #23: product partial-current density from explicit FE and total current density, signed/magnitude modes, exact condition compatibility, deterministic source provenance, and diagnostic closure QA.
+- conservative explicit-string unit conversion for potential, current/current density, charge, time, scan rate, area, mass/loading, amount/rate, and rotation rate;
+- explicit reference-name handling and electron stoichiometry;
+- deterministic `SourceDataRef`, `FitWindow`, and `AnalysisProvenance` contracts;
+- numerical electrochemistry remains Matplotlib-lazy.
 
-## Current target: #24 mass and specific activity normalization
+### Shared quantitative visualization — #20
 
-Issue #24 is the next coding target and must begin with a fresh prior-art scan before implementation.
+- generic curve/scatter/bar rendering through the existing `FigureSpec` stack;
+- stable-key styles and explicit-only uncertainty;
+- compatibility guards for reference and normalization metadata;
+- exact-size publication export remains shared rather than domain-specific.
 
-Core scientific requirements:
+### Tafel — #21
 
-- numerator semantics must be explicit; total current and current density may only be converted when the dimensional path is declared;
-- denominator basis must be explicit and recorded, including catalyst mass, active-metal mass, ECSA, or another caller-declared supported basis;
-- built-in v0.2 focus is catalyst-mass activity, metal-mass activity, and ECSA-specific activity;
-- no denominator is inferred from sample labels or hidden metadata;
-- units must be conservatively validated/converted through the shared #19 quantity layer where applicable;
-- current sign is preserved unless magnitude output is explicitly requested;
-- double normalization must fail explicitly;
-- output axis/provenance metadata must distinguish normalization bases sufficiently for shared renderer compatibility checks;
-- Dataset-level denominators must be addressed by stable `Series.key`, not display labels;
-- curve/bar plotting must remain a thin adapter over the shared visualization layer from #20.
+- explicit fit window, physical branch, and numeric current sign;
+- signed slope/intercept/R² and immutable fit provenance;
+- no automatic Tafel-region selection or mechanism inference.
 
-The prior-art review should record relevant equations, API/data-model ideas, validation/test patterns, visualization/reporting conventions, and licenses in [`REFERENCES.md`](REFERENCES.md) and the module-specific documentation created for #24.
+### Faradaic efficiency — #22
 
-## Domain scope
+- explicit amount/charge and rate/current formulations;
+- caller-supplied electron number;
+- multi-product closure QA without clipping or renormalization;
+- stable product keys and source provenance.
 
-- Tafel: explicit fit windows/branches, log-current handling, slope/intercept/fit-quality provenance. **Implemented in #21.**
-- Faradaic efficiency: explicit charge/electron stoichiometry and product amount/rate inputs; no raw chromatogram calibration yet. **Implemented in #22.**
-- Partial current density: explicit FE fraction and signed/magnitude convention. **Implemented in #23.**
-- Mass/specific activity: explicit denominator basis (catalyst mass, metal mass, ECSA, or another caller-declared basis). **Current #24 target.**
-- TOF/TOFapp: explicit electron number and site/metal inventory; total-metal normalization is `TOFapp` unless an active-site inventory is genuinely supplied.
-- CV/Cdl/ECSA: explicit scan rates/non-Faradaic window, Cdl fitting, and caller-supplied specific capacitance for ECSA conversion.
-- Stability: chronoamperometry/chronopotentiometry retention, drift, and interval summaries without hiding sign or reference semantics.
-- RRDE/K-L: explicit collection efficiency, rotation units, electron-number/peroxide equations, and Koutecky-Levich fitting inputs/constants.
+### Partial current density — #23
 
-## Required implementation order
+- `j_product = FE_fraction * j_total` with explicit signed/magnitude behavior;
+- exact condition-grid compatibility and no hidden interpolation;
+- product-current closure QA without rescaling.
 
-1. [x] #18 — finish the v0.1 release gate before changing the public API further.
-2. [x] #19 — centralize electrochemistry quantity/unit/result conventions.
-3. [x] #20 — add shared scatter/bar rendering so domain modules do not fork visualization.
-4. [x] #21 — Tafel; it exercises fit-result conventions directly on the existing LSV foundation.
+### Activity normalization — #24
+
+- canonical total-current numerator;
+- explicit `catalyst_mass`, `metal_mass`, and `ecsa` denominator bases;
+- geometric current-density reconstruction only through explicit geometric area;
+- double-normalization rejection and stable-key denominator mappings.
+
+### TOF / TOFapp — #25
+
+- active-site inventory is the only built-in basis that produces intrinsic TOF;
+- total-metal or bulk inventory produces TOFapp;
+- rate and product-partial-current routes with explicit electron number and sign mode;
+- exact count-to-mol conversion and provenance-rich denominator semantics.
+
+### CV / Cdl / ECSA — #26
+
+- explicit caller-selected analysis potential and scan rates;
+- anodic/cathodic sweep pairing and `Δj/2` Cdl fit semantics;
+- no automatic declaration of a non-Faradaic region;
+- ECSA requires explicit specific capacitance and basis/source description.
+
+### Stability — #27
+
+- explicit analysis, baseline, and final windows;
+- signed/magnitude retention, linear drift, and missing-value policy;
+- no hidden smoothing, outlier removal, baseline selection, or time reconstruction;
+- `time_basis` compatibility prevents wall-clock/running-only durability traces from silently mixing.
+
+### RRDE / Koutecky-Levich — #28
+
+- explicit RRDE collection efficiency and current-mode semantics;
+- exact disk/ring alignment with no interpolation;
+- standard ORR-style apparent electron-number/peroxide equations without hidden clipping;
+- rpm/rps/rad/s canonicalization to angular frequency;
+- free-intercept K-L fit of reciprocal current versus `omega^-1/2`;
+- apparent K-L electron number requires explicit transport constants and, for total current, explicit electrode area;
+- no device-specific `N`, electrolyte constants, background processing, or reaction inference is hidden in the API.
+
+## Cross-module invariants established by v0.2
+
+The complete implementation now enforces these shared expectations:
+
+- units, references, normalization bases, sign modes, fit windows, stoichiometry, and denominator bases are explicit;
+- stable `Series.key` values, not display labels, address per-catalyst mappings and style state;
+- deterministic source digests and analysis provenance accompany derived quantitative results;
+- no scientific module silently interpolates, clips, renormalizes, flips signs, smooths, or guesses physical constants where that would alter meaning;
+- plotting adapters consume already calculated values and reuse the shared visualization layer;
+- incompatible reference/normalization/time/sign semantics fail before misleading overlays are created;
+- installed-package smoke remains part of the CI merge gate.
+
+## Required implementation order — completed
+
+1. [x] #18 — v0.1 release hardening.
+2. [x] #19 — electrochemistry quantity/unit/result foundation.
+3. [x] #20 — shared scatter/bar rendering.
+4. [x] #21 — Tafel.
 5. [x] #22 — Faradaic efficiency.
-6. [x] #23 — partial current density, reusing FE semantics.
-7. [ ] **#24 — mass/specific activity normalization.**
-8. [ ] #25 — TOF/TOFapp, reusing product-current and denominator provenance.
-9. [ ] #26 — CV/Cdl/ECSA.
-10. [ ] #27 — stability analysis.
-11. [ ] #28 — RRDE/K-L basics.
+6. [x] #23 — partial current density.
+7. [x] #24 — mass/specific activity normalization.
+8. [x] #25 — TOF/TOFapp.
+9. [x] #26 — CV/Cdl/ECSA.
+10. [x] #27 — stability analysis.
+11. [x] #28 — RRDE/K-L basics.
 
-Do not skip ahead in this sequence unless a dependency review explicitly changes the plan in GitHub first.
-
-## Dependencies between modules
-
-Faradaic efficiency precedes product partial-current helpers. Activity and TOF should reuse the same current/product and denominator-provenance conventions rather than each inventing unit parsing. #24 should reuse #19 quantity/provenance semantics, #20 rendering, and #23 current-basis/sign conventions where they are scientifically applicable. #25 should then reuse #23 product current plus the denominator-provenance conventions established by #24 where appropriate.
-
-CV/Cdl/ECSA and RRDE/K-L can proceed after the shared electrochemistry foundation because they have fewer dependencies on FE/product metrics, but the planned execution order remains #24 -> #25 -> #26 -> #27 -> #28.
+The sequence is now complete. Do not fabricate an Issue #29 continuation: repository issue/PR numbering is shared, and #29 is an older v0.1 PR rather than a v0.2 feature contract.
 
 ## Mandatory feature loop
 
-Every remaining v0.2 issue follows:
+Any future scientific issue continues to follow:
 
 ```text
 prior-art scan
@@ -111,14 +163,30 @@ prior-art scan
     -> CI
     -> second review
     -> Ready
-    -> merge gate
+    -> exact-head merge gate
     -> squash merge
-    -> main CI
+    -> main CI verification when visible
     -> issue closure
 ```
 
-The first review is not the final approval if it produced fixes. A second formal review must examine the corrected head SHA before the PR becomes Ready.
+Release-hardening/version-gate work should use the same exact-head discipline with release/API/packaging/version review in place of a scientific-feature review.
+
+## v0.2 completion and release handoff
+
+Feature completion does **not** itself create a release. The package remains `0.2.0.dev0` until a dedicated v0.2 release policy is defined and reviewed.
+
+Before any final version bump or tag:
+
+1. synchronize README, master plan, this plan, and changelog with the merged #19-#28 state;
+2. audit the complete public API and installed-wheel smoke path for the full v0.2 surface;
+3. define the v0.2 release-hardening gate and the separate final-version/tag gate;
+4. keep `[project].version` and runtime `__version__` synchronized;
+5. require a final-version wheel/fresh-environment smoke run after a version bump;
+6. create a `v0.2.0` tag only after explicit release authorization, if that policy is adopted;
+7. do not begin a v0.3 feature implementation while the transition state is ambiguous — first record whether v0.2 is being finalized or intentionally left as a development checkpoint.
+
+Package-registry publication remains a separate policy decision and is not implied by completing v0.2 features or by creating a Git tag.
 
 ## Status synchronization
 
-After each merged v0.2 issue, re-read `main`, open Issues/PRs, this plan, the README capability summary, and relevant module documentation before starting the next feature. Update only statements that became false or materially incomplete; long-range scope remains in [`ROADMAP.md`](ROADMAP.md).
+After each merged issue or release gate, re-read `main`, open Issues/PRs, this plan, the README capability summary, changelog/version state, and relevant module documentation. Update only statements that became false or materially incomplete; long-range scope remains in [`ROADMAP.md`](ROADMAP.md).
