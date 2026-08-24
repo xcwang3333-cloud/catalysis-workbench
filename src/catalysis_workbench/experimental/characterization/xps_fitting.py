@@ -270,6 +270,7 @@ def _validate_background_alignment(
     source_digest = _series_data_digest(series)
     x = np.asarray(series.x, dtype=np.float64)
     y = np.asarray(series.y, dtype=np.float64)
+    source_direction = _direction(x)
 
     if background.source_key != series.key:
         raise XPSError("XPS background source key does not match fit Series")
@@ -277,6 +278,10 @@ def _validate_background_alignment(
         raise XPSError("XPS background source digest does not match fit Series")
     if background.x_unit != "eV":
         raise XPSError("XPS background binding-energy unit must be eV")
+    if background.y_unit != series.y_axis.unit:
+        raise XPSError("XPS background intensity unit does not match fit Series")
+    if background.source_direction != source_direction:
+        raise XPSError("XPS background source direction does not match fit Series")
     if not np.array_equal(background.x, x):
         raise XPSError("XPS background x grid/order does not exactly match fit Series")
     if not np.array_equal(background.observed_y, y):
