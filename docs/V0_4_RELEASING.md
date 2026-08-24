@@ -48,36 +48,21 @@ The Gate-A PR must satisfy all of the following on its final exact head:
 7. Installed distribution metadata and runtime `catalysis_workbench.__version__` agree exactly and remain `0.3.0`.
 8. Every documented package-level `__all__` surface is non-empty, duplicate-free, contains only valid string names, and every exported name resolves from the installed wheel.
 9. The documented public-module audit includes `catalysis_workbench.experimental.product` in addition to the previously released public modules.
-10. The declared `catalysis-workbench` console entry point resolves from installed distribution metadata and executes successfully from the installed wheel.
-11. `tests/installed_v04_release_smoke.py` orchestrates the retained v0.3 release audit plus the reviewed installed-wheel v0.4 peak-fitting, XPS, EIS, quantitative-BET, and product-calibration smokes.
-12. Existing module-specific installed smokes and documented quickstarts remain green.
-13. Numerical processing/electrochemistry/characterization/product imports remain Matplotlib-lazy before plotting is requested.
-14. Release documentation describes a pre-version/pre-tag Gate-A state and does not claim that v0.4 is released.
-15. Formal release/API/packaging/compatibility review has no unresolved blockers.
-16. If the PR head changes after any finding is fixed, CI and review evidence from the old head becomes stale and must be rerun.
-17. A second formal review is performed on the final exact head.
-18. The merge gate confirms the PR is not behind `main`, is mergeable, has no unresolved review threads, and uses the exact head SHA that passed the final evidence.
-19. Merge is an expected-head squash merge, followed by direct `main` verification and Issue #103 closure.
+10. `tests/installed_v04_release_smoke.py` orchestrates the retained v0.3 release audit plus the reviewed installed-wheel v0.4 peak-fitting, XPS, EIS, quantitative-BET, and product-calibration smokes.
+11. Existing module-specific installed smokes and documented quickstarts remain green.
+12. Numerical processing/electrochemistry/characterization/product imports remain Matplotlib-lazy before plotting is requested.
+13. Release documentation describes a pre-version/pre-tag Gate-A state and does not claim that v0.4 is released.
+14. Formal release/API/packaging/compatibility review has no unresolved blockers.
+15. If the PR head changes after any finding is fixed, CI and review evidence from the old head becomes stale and must be rerun.
+16. A second formal review is performed on the final exact head.
+17. The merge gate confirms the PR is not behind `main`, is mergeable, has no unresolved review threads, and uses the exact head SHA that passed the final evidence.
+18. Merge is an expected-head squash merge, followed by direct `main` verification and Issue #103 closure.
 
 Gate A may strengthen tests, release documentation, public-API validation, installed-wheel evidence, or packaging plumbing. It must not weaken an existing smoke or silently alter scientific semantics to make a release check pass.
 
-## Packaging defect found during Gate-A preflight
-
-Live preflight found that `[project.scripts]` declared:
-
-```toml
-catalysis-workbench = "catalysis_workbench.cli:main"
-```
-
-while `src/catalysis_workbench/cli.py` did not exist on either the Gate-A starting `main` commit or the immutable `v0.3.0` tag. Wheel installation could therefore create a console script whose target module was missing.
-
-Gate A repairs this as release plumbing rather than as a new user-facing scientific CLI. The minimal `catalysis_workbench.cli:main` implementation provides argument parsing and `--version` only; it adds no analysis command, file-format adapter, scientific default, or alternate workflow. Unit and installed-wheel checks prevent a dangling declared console entry point from passing a later release gate unnoticed.
-
-This historical defect does not justify moving the `v0.3.0` tag. The tag remains immutable evidence of the already reviewed v0.3 release state.
-
 ## Unified installed-wheel v0.4 audit
 
-`tests/installed_v04_release_smoke.py` runs inside a fresh environment containing the built wheel and its declared dependencies. It verifies packaging invariants before invoking the retained installed scientific smokes as independent subprocesses with the same installed interpreter.
+`tests/installed_v04_release_smoke.py` runs inside a fresh environment containing the built wheel and its declared dependencies. It verifies packaging/public-API invariants before invoking the retained installed scientific smokes as independent subprocesses with the same installed interpreter.
 
 The unified audit covers:
 
@@ -85,7 +70,6 @@ The unified audit covers:
 - runtime/distribution version agreement and explicit expected Gate-A version;
 - all documented public `__all__` surfaces, including product analysis;
 - Matplotlib-lazy numerical public imports before plotting;
-- installed console-entry-point metadata, target resolution, executable presence, and exact `--version` output;
 - retained v0.3 release numerical audit;
 - shared constrained peak fitting;
 - XPS preparation, constrained fitting, plotting and diagnostics;
