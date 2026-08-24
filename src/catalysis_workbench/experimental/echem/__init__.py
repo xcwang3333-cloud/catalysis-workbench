@@ -90,6 +90,20 @@ from .tafel import (
     fit_tafel,
     fit_tafel_dataset,
 )
+from .tof import (
+    AVOGADRO_CONSTANT_MOL_INV,
+    TurnoverCurrentMode,
+    TurnoverFrequencyError,
+    TurnoverFrequencyResult,
+    TurnoverInventoryBasis,
+    TurnoverSourceKind,
+    turnover_frequency_from_partial_current,
+    turnover_frequency_from_partial_current_dataset,
+    turnover_frequency_from_partial_current_series,
+    turnover_frequency_from_rate,
+    turnover_frequency_from_rate_dataset,
+    turnover_frequency_from_rate_series,
+)
 
 if TYPE_CHECKING:
     from matplotlib.axes import Axes
@@ -185,7 +199,28 @@ def plot_activity(
     )
 
 
+def plot_turnover_frequency(
+    data: Series | Dataset,
+    spec: FigureSpec | None = None,
+    *,
+    kind: str = "scatter",
+    errors: ScatterError | Mapping[str, ScatterError] | None = None,
+    preset: str = "publication",
+) -> tuple[Figure, Axes]:
+    """Lazily render already calculated TOF/TOFapp data."""
+    from .tof_plotting import plot_turnover_frequency as _plot_turnover_frequency
+
+    return _plot_turnover_frequency(
+        data,
+        spec,
+        kind=kind,  # type: ignore[arg-type]
+        errors=errors,
+        preset=preset,
+    )
+
+
 __all__ = [
+    "AVOGADRO_CONSTANT_MOL_INV",
     "ActivityBasis",
     "ActivityCurrentBasis",
     "ActivityNormalizationError",
@@ -214,6 +249,11 @@ __all__ = [
     "TafelBranch",
     "TafelError",
     "TafelFitResult",
+    "TurnoverCurrentMode",
+    "TurnoverFrequencyError",
+    "TurnoverFrequencyResult",
+    "TurnoverInventoryBasis",
+    "TurnoverSourceKind",
     "amount_to_mol",
     "area_to_cm2",
     "charge_to_c",
@@ -247,6 +287,7 @@ __all__ = [
     "plot_lsv",
     "plot_partial_current_density",
     "plot_tafel",
+    "plot_turnover_frequency",
     "potential_to_v",
     "process_lsv",
     "process_lsv_dataset",
@@ -258,4 +299,10 @@ __all__ = [
     "source_data_ref",
     "time_to_s",
     "to_current_density",
+    "turnover_frequency_from_partial_current",
+    "turnover_frequency_from_partial_current_dataset",
+    "turnover_frequency_from_partial_current_series",
+    "turnover_frequency_from_rate",
+    "turnover_frequency_from_rate_dataset",
+    "turnover_frequency_from_rate_series",
 ]
