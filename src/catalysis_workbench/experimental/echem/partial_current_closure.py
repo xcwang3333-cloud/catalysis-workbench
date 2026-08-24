@@ -97,7 +97,10 @@ def _validate_current_density_normalization(total: Series, partial: Series) -> N
         )
 
 
-def _validate_current_source_provenance(total_source: SourceDataRef, partial: Series) -> None:
+def _validate_current_source_provenance(
+    total_source: SourceDataRef,
+    partial: Series,
+) -> None:
     current_source = partial.metadata.get("current_source")
     if current_source is None:
         return
@@ -108,7 +111,8 @@ def _validate_current_source_provenance(total_source: SourceDataRef, partial: Se
     source_sha = current_source.get("sha256")
     if not isinstance(source_sha, str) or source_sha.casefold() != total_source.sha256:
         raise PartialCurrentClosureError(
-            "partial-current current_source provenance does not match total current density"
+            "partial-current current_source provenance does not match "
+            "total current density"
         )
 
 
@@ -173,7 +177,8 @@ class PartialCurrentClosureResult:
         )
         if not np.allclose(relative, expected_relative, rtol=0.0, atol=0.0):
             raise PartialCurrentClosureError(
-                "closure relative_error is inconsistent with absolute error and total current"
+                "closure relative_error is inconsistent with absolute error "
+                "and total current"
             )
         expected_passed = relative <= tolerance
         if not np.array_equal(passed, expected_passed):
