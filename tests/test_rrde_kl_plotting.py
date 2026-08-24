@@ -83,17 +83,11 @@ def test_plot_koutecky_levich_renders_points_and_stored_fit():
     result = _kl_result()
     figure, axes = plot_koutecky_levich(result)
     assert len(axes.lines) == 2
-    plotted = sorted(
-        (np.asarray(line.get_xdata()), np.asarray(line.get_ydata()))
-        for line in axes.lines
-    )
-    assert any(
-        np.allclose(y, result.reciprocal_current)
-        for _, y in plotted
-    )
+    plotted_y = [np.asarray(line.get_ydata()) for line in axes.lines]
+    assert any(np.allclose(y, result.reciprocal_current) for y in plotted_y)
     assert any(
         np.allclose(np.sort(y), np.sort(result.fitted_reciprocal_current))
-        for _, y in plotted
+        for y in plotted_y
     )
     figure.clear()
 
