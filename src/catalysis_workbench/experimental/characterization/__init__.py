@@ -4,6 +4,23 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from .composition import (
+    BulkMassFractionUnit,
+    CompositionBasis,
+    CompositionError,
+    CompositionMeasurement,
+    CompositionSummary,
+    CompositionSummaryTable,
+    CompositionTable,
+    SolutionConcentrationUnit,
+    convert_composition_table,
+    convert_composition_unit,
+    read_composition_csv,
+    read_composition_excel,
+    select_composition,
+    solution_concentration_to_bulk_mass_fraction,
+    summarize_composition_replicates,
+)
 from .ftir import (
     FTIRBand,
     FTIRBandMeasurement,
@@ -216,7 +233,27 @@ def plot_sorption(
     return _plot_sorption(data, spec, branch=branch, preset=preset)
 
 
+def plot_composition(
+    data: CompositionTable | CompositionSummaryTable,
+    spec: FigureSpec | None = None,
+    *,
+    error: str = "none",
+    preset: str = "publication",
+) -> tuple[Figure, Axes]:
+    """Lazily dispatch to the shared-renderer composition publication adapter."""
+    from .composition_plotting import plot_composition as _plot_composition
+
+    return _plot_composition(data, spec, error=error, preset=preset)
+
+
 __all__ = [
+    "BulkMassFractionUnit",
+    "CompositionBasis",
+    "CompositionError",
+    "CompositionMeasurement",
+    "CompositionSummary",
+    "CompositionSummaryTable",
+    "CompositionTable",
     "DTGSignMode",
     "FTIRBand",
     "FTIRBandMeasurement",
@@ -233,6 +270,7 @@ __all__ = [
     "RamanProcessingConfig",
     "RamanRatioResult",
     "RelativePressureUnit",
+    "SolutionConcentrationUnit",
     "SorptionBranch",
     "SorptionBranchSelection",
     "SorptionCondition",
@@ -256,6 +294,8 @@ __all__ = [
     "XRDError",
     "XRDProcessingConfig",
     "XRDReferencePattern",
+    "convert_composition_table",
+    "convert_composition_unit",
     "convert_relative_pressure",
     "convert_temperature",
     "derive_dtg",
@@ -265,6 +305,7 @@ __all__ = [
     "measure_raman_band",
     "measure_thermal_window",
     "normalize_tga_mass",
+    "plot_composition",
     "plot_ftir",
     "plot_raman",
     "plot_sorption",
@@ -282,12 +323,17 @@ __all__ = [
     "process_xrd",
     "process_xrd_dataset",
     "raman_ratio",
+    "read_composition_csv",
+    "read_composition_excel",
+    "select_composition",
     "select_sorption_branch",
+    "solution_concentration_to_bulk_mass_fraction",
     "stack_ftir_dataset",
     "stack_raman_dataset",
     "stack_thermal_dataset",
     "stack_xrd_dataset",
     "subtract_ftir_baseline",
+    "summarize_composition_replicates",
     "summarize_sorption_window",
     "transmittance_to_absorbance",
     "validate_dtg_series",
