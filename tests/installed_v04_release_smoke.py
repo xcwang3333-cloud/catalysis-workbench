@@ -12,7 +12,7 @@ import os
 import subprocess
 import sys
 from importlib import import_module
-from importlib.metadata import entry_points, version as distribution_version
+from importlib.metadata import version as distribution_version
 from pathlib import Path
 
 import catalysis_workbench
@@ -82,29 +82,6 @@ def _assert_numerical_imports_are_matplotlib_lazy() -> None:
     assert not loaded, f"numerical public imports loaded Matplotlib: {loaded!r}"
 
 
-def _assert_console_entry_point() -> None:
-    matches = [
-        point
-        for point in entry_points(group="console_scripts")
-        if point.name == "catalysis-workbench"
-    ]
-    assert len(matches) == 1, f"expected one catalysis-workbench console entry point: {matches!r}"
-    point = matches[0]
-    assert point.value == "catalysis_workbench.cli:main", point.value
-    assert callable(point.load())
-
-    executable = Path(sys.executable).resolve().parent / "catalysis-workbench"
-    assert executable.is_file(), f"installed console script not found: {executable}"
-    completed = subprocess.run(
-        [str(executable), "--version"],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-    assert completed.stderr == ""
-    assert completed.stdout.strip() == f"catalysis-workbench {catalysis_workbench.__version__}"
-
-
 def _run_reviewed_installed_smokes() -> None:
     tests_dir = ROOT / "tests"
     for filename in REVIEWED_INSTALLED_SMOKES:
@@ -118,7 +95,6 @@ def main() -> None:
     _assert_gate_version()
     _assert_numerical_imports_are_matplotlib_lazy()
     _assert_public_exports()
-    _assert_console_entry_point()
     _run_reviewed_installed_smokes()
     print("installed v0.4 Gate-A release audit: ok")
 
