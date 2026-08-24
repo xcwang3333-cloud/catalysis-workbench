@@ -1,5 +1,14 @@
 """Reusable numerical processing primitives for scientific data."""
 
+from .peak_fitting import (
+    FitParameterSpec,
+    FittedParameter,
+    PeakComponentSpec,
+    PeakFitResult,
+    PeakFitSpec,
+    PeakFittingError,
+    fit_peaks,
+)
 from .xy import (
     IntegrationResult,
     ProcessingError,
@@ -14,9 +23,16 @@ from .xy import (
 )
 
 __all__ = [
+    "FitParameterSpec",
+    "FittedParameter",
     "IntegrationResult",
+    "PeakComponentSpec",
+    "PeakFitResult",
+    "PeakFitSpec",
+    "PeakFittingError",
     "ProcessingError",
     "crop",
+    "fit_peaks",
     "integrate",
     "interpolate",
     "map_dataset",
