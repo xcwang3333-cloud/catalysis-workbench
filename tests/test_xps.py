@@ -242,7 +242,15 @@ def test_numerical_xps_module_import_keeps_matplotlib_lazy() -> None:
 import json
 import sys
 import catalysis_workbench.experimental.characterization.xps as xps
-print(json.dumps({"matplotlib": any(name == "matplotlib" or name.startswith("matplotlib.") for name in sys.modules), "exports": sorted(xps.__all__)}))
+loaded_matplotlib = any(
+    name == "matplotlib" or name.startswith("matplotlib.")
+    for name in sys.modules
+)
+payload = {
+    "matplotlib": loaded_matplotlib,
+    "exports": sorted(xps.__all__),
+}
+print(json.dumps(payload))
 """
     completed = subprocess.run(
         [sys.executable, "-c", code],
