@@ -6,7 +6,7 @@ All notable changes to CatalysisWorkbench are recorded here.
 
 ## [0.3.0] - 2026-08-24
 
-The v0.3 final-version candidate freezes the reviewed extended-characterization scope after Gate A release hardening. The Git tag and any package-registry publication remain separately authorized operations.
+The v0.3 release freezes the reviewed extended-characterization scope after Gate A release hardening and Gate B final-version validation. Tag `v0.3.0` was created on 2026-08-24 and reverse-verified to resolve exactly to release commit `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`; package-registry publication remains a separate policy decision.
 
 ### Added
 
@@ -17,8 +17,9 @@ The v0.3 final-version candidate freezes the reviewed extended-characterization 
 
 ### Changed
 
-- Gate B synchronizes distribution metadata and runtime `__version__` at `0.3.0` and requires a freshly built exact wheel to pass the unified v0.3 installed numerical audit, existing installed API/module smokes, all seven quickstarts, public `__all__` resolution, `pip check`, installed-source verification, and Matplotlib-lazy characterization import.
-- Shared peak-fitting remains intentionally deferred to v0.4 for joint design with constrained XPS/spectroscopy consumers; no new scientific algorithms are introduced by the v0.3 release gates.
+- Gate B synchronized distribution metadata and runtime `__version__` at `0.3.0` and validated a freshly built exact wheel through the unified v0.3 installed numerical audit, existing installed API/module smokes, all seven quickstarts, public `__all__` resolution, `pip check`, installed-source verification, and Matplotlib-lazy characterization import.
+- Gate C / Issue #70 completed the separately authorized Git tag operation; `v0.3.0` resolves exactly to `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`.
+- Shared peak-fitting remains intentionally deferred to v0.4 for joint design with constrained XPS/spectroscopy consumers; no new scientific algorithms were introduced by the v0.3 release gates.
 
 ## [0.2.0] - 2026-08-24
 

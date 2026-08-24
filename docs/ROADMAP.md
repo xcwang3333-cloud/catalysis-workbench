@@ -29,15 +29,18 @@ Before implementing each major scientific or visualization module, comparable op
 - RRDE / Koutecký–Levich basics.
 - Installed-wheel public-API and representative numerical smoke coverage for the reviewed v0.2 electrochemistry surface.
 
-## v0.3.x — Extended experimental processing — scope frozen / release hardening
+## v0.3.0 — Extended experimental processing — released 2026-08-24
 
 - FTIR / ATR-FTIR — implemented and merged through Issue #50 / PR #51.
 - TGA / DTG / TPR / TPD — implemented and merged through Issue #54 / PR #55.
 - Basic BET / gas-sorption plotting — implemented and merged through Issue #58 / PR #59; quantitative BET fitting remains v0.4.
 - ICP/composition data integration — implemented and merged through Issue #62 / PR #63.
-- Gate A release hardening — selected after the post-ICP checkpoint; no additional v0.3 scientific feature is added during the frozen release scope.
+- Gate A / Issue #66 / PR #67 completed frozen-scope release hardening while retaining version `0.2.0`.
+- Gate B / Issue #68 / PR #69 finalized and exact-wheel validated distribution/runtime version `0.3.0`.
+- Gate C / Issue #70 created and reverse-verified tag `v0.3.0` on release commit `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`.
+- Package-registry publication was not part of the Git release and remains a separate policy decision.
 
-Shared peak-fitting has been deliberately deferred from v0.3 to v0.4. Its model families, baseline coupling, parameter constraints/ties, uncertainty/covariance semantics, and provenance will be designed with concrete constrained XPS/spectroscopy consumers rather than as a speculative standalone abstraction.
+Shared peak-fitting was deliberately deferred from v0.3 to v0.4. Its model families, baseline coupling, parameter constraints/ties, uncertainty/covariance semantics, and provenance will be designed with concrete constrained XPS/spectroscopy consumers rather than as a speculative standalone abstraction.
 
 ## v0.4.x — Advanced experimental analysis
 
