@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
+from dataclasses import replace
 
 import numpy as np
 import pytest
@@ -323,6 +324,27 @@ def test_explicit_weights_affect_objective_only_not_physical_residual_definition
         fit_eis(source, fixed, weights=np.array([1.0, 2.0]))
     with pytest.raises(EISError, match="strictly positive"):
         fit_eis(source, fixed, weights=np.array([1.0, 0.0, 1.0]))
+
+
+def test_fit_result_rejects_contradictory_public_state() -> None:
+    frequency = np.logspace(3, 0, 20)
+    source = _series(frequency, np.full(frequency.shape, 7.0 + 0.0j))
+    result = fit_eis(source, _r("r", 6.0))
+
+    with pytest.raises(EISError, match="frequency_direction contradicts"):
+        replace(result, frequency_direction="ascending")
+    with pytest.raises(EISError, match="frequency_unit"):
+        replace(result, frequency_unit="kHz")
+    with pytest.raises(EISError, match="objective_sum_squares contradicts"):
+        replace(result, objective_sum_squares=result.objective_sum_squares + 1.0)
+
+    bad_parameter = replace(result.parameters["r.R"], vary=False)
+    with pytest.raises(EISError, match="vary state contradicts"):
+        replace(result, parameters={"r.R": bad_parameter})
+
+    zero_parameter = replace(result.parameters["r.R"], value=0.0)
+    with pytest.raises(EISError, match="physical/caller bounds"):
+        replace(result, parameters={"r.R": zero_parameter})
 
 
 def test_nyquist_uses_exact_real_and_caller_selected_imaginary_view() -> None:
