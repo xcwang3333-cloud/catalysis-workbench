@@ -1,12 +1,16 @@
-# XPS preparation and constrained fitting
+# XPS preparation, constrained fitting, plotting, and diagnostics
 
-CatalysisWorkbench separates XPS-specific scientific semantics from generic optimization. Issue #79 established binding-energy semantics, explicit energy correction, measured-point region preparation, and explicit linear/Shirley backgrounds. Issue #83 adds constrained XPS component/doublet fitting as a thin domain adapter over the reviewed shared `fit_peaks()` foundation.
+CatalysisWorkbench separates XPS-specific scientific semantics from generic optimization and from publication rendering.
 
-The XPS layer does not infer chemistry, choose peak count, look up literature constraints, or perform publication plotting.
+- Issue #79 / PR #80 established binding-energy semantics, explicit energy correction, measured-point region preparation, and linear/Shirley backgrounds.
+- Issue #83 / PR #84 added constrained XPS components/doublets as a thin domain adapter over the reviewed shared `fit_peaks()` foundation.
+- Issue #87 / PR #88 is the stage-D implementation candidate for passive XPS publication plotting and value-oriented fit diagnostics.
 
-## Public API
+The XPS stack does not infer chemistry, choose peak count, look up literature constraints, or hide scientific processing inside plotting.
 
-The reviewed/prepared numerical surface is exported from `catalysis_workbench.experimental.characterization`:
+## Public numerical API
+
+The reviewed numerical surface exported from `catalysis_workbench.experimental.characterization` includes:
 
 - `XPSError`
 - `XPSDirection`
@@ -17,17 +21,25 @@ The reviewed/prepared numerical surface is exported from `catalysis_workbench.ex
 - `prepare_xps_region`
 - `linear_xps_background`
 - `shirley_xps_background`
-
-Issue #83 adds the constrained-fitting surface:
-
 - `XPSProcessingStep`
 - `XPSDoubletSpec`
 - `XPSPeakFitResult`
 - `fit_xps_peaks`
 
+Stage D adds a numerical diagnostic summary that does not import Matplotlib:
+
+- `XPSFitDiagnostics`
+- `summarize_xps_fit`
+
 The generic peak model/parameter contracts remain owned by `catalysis_workbench.processing`: callers use `FitParameterSpec` and `PeakComponentSpec` rather than an XPS-specific duplicate model system.
 
-The numerical XPS modules do not import a CatalysisWorkbench plotting adapter. Importing `xps_fitting` itself defers shared-fitting/lmfit loading until a doublet is constructed or a fit is actually executed.
+## Lazy plotting API
+
+Stage D adds the lazy public adapter:
+
+- `plot_xps_fit`
+
+The root characterization module defines a lightweight dispatch wrapper. Importing `catalysis_workbench.experimental.characterization` does not import the XPS plotting module or Matplotlib. Matplotlib is loaded only when plotting is actually called.
 
 ## Scientific input contract
 
@@ -136,8 +148,7 @@ The initial background is the measured-endpoint linear background. Each fixed-po
 2. evaluates the right-side cumulative integral with trapezoidal integration on the measured x grid;
 3. evaluates the explicit Shirley equation;
 4. enforces low/high endpoint intensities exactly;
-5. checks the maximum absolute update against
-   `absolute_tolerance + relative_tolerance * scale`.
+5. checks the maximum absolute update against `absolute_tolerance + relative_tolerance * scale`.
 
 Defaults:
 
@@ -161,9 +172,9 @@ The regression suite tests this constant-background case directly, together with
 
 ## Shared constrained fitting boundary
 
-Issue #83 does **not** implement a second optimizer. `fit_xps_peaks()` builds an explicit shared `PeakFitSpec` and delegates optimization to `catalysis_workbench.processing.fit_peaks()`.
+`fit_xps_peaks()` does **not** implement a second optimizer. It builds an explicit shared `PeakFitSpec` and delegates optimization to `catalysis_workbench.processing.fit_peaks()`.
 
-The analysis chain is therefore:
+The numerical analysis chain is:
 
 ```text
 raw XPS Series
@@ -172,7 +183,7 @@ raw XPS Series
     -> explicit linear/Shirley background (or explicit zero background)
     -> explicit XPS components/doublets
     -> shared constrained peak fitting
-    -> later publication plotting
+    -> immutable XPS/shared fit result
 ```
 
 Generic line shapes, fit methods, parameter-domain validation, residual semantics, and uncertainty/covariance handling remain owned by the shared fitter.
@@ -256,13 +267,15 @@ When `fit_xps_peaks()` receives an `XPSBackgroundResult`, the adapter is fail-cl
 
 - background source key equals fit Series key;
 - deterministic source numerical SHA-256 equals the fit Series digest;
+- binding-energy unit is eV;
+- intensity unit matches the fit Series intensity unit;
+- declared background source direction matches the fit Series direction;
 - exact x-grid values **and order** match;
 - exact observed-y values match;
-- background unit is eV;
 - background array length and finiteness are valid;
 - the explicit fit window includes every point of the background's source region.
 
-The adapter never crops, interpolates, reverses, or otherwise repairs a mismatched background. A background from a different energy correction, region, storage order, or modified intensity must be recomputed explicitly from the intended Series.
+The adapter never crops, interpolates, reverses, relabels, or otherwise repairs a mismatched background. A background from a different energy correction, intensity basis, region, storage direction/order, or modified intensity must be recomputed explicitly from the intended Series.
 
 With `background=None`, the shared fit uses its explicit zero-background semantics and may fit any explicit measured-point subwindow supported by the shared contract.
 
@@ -318,32 +331,190 @@ result = fit_xps_peaks(
 
 The values above are API examples only, not literature defaults.
 
+# Stage D: passive XPS publication plotting
+
+Stage D renders **already computed** `XPSPeakFitResult` state. It does not call `fit_xps_peaks()`, `fit_peaks()`, a model evaluator, a background function, or an energy-correction function.
+
+## Plot layers
+
+`plot_xps_fit(result, ...)` reads the exact retained shared-fit arrays:
+
+- measured spectrum: `result.fit.observed_y`;
+- background: `result.fit.background`;
+- component curves: `result.fit.component_curves[key]`;
+- total best fit: `result.fit.best_fit_y`;
+- optional residual: `result.fit.residual`.
+
+No curve is regenerated from fitted parameters inside the plotting layer.
+
+By default, measured data use point markers, the background/components use dashed lines, and the best fit uses a solid line. These are semantic fallbacks only. The normal `FigureSpec.series_styles` mechanism remains authoritative for user customization.
+
+## Stable visual keys
+
+The plotting adapter reserves deterministic stable keys for non-component layers:
+
+```text
+xps_observed
+xps_background
+xps_best_fit
+xps_residual
+```
+
+Individual fitted components retain their actual mathematical component keys from the shared fit specification.
+
+Example style override:
+
+```python
+from catalysis_workbench.visualization import FigureSpec, SeriesStyle
+
+spec = FigureSpec().with_series_style(
+    "main",
+    SeriesStyle(line_width=1.5, line_style="--", label="Main state"),
+)
+```
+
+Display labels may repeat; stable keys remain the styling identity. A fitted component whose key collides with a reserved plotting-layer key fails explicitly rather than silently overriding the layer.
+
+Unknown `FigureSpec.series_styles` keys also fail explicitly for an XPS fit plot.
+
+## Binding-energy display direction
+
+`binding_energy_display` accepts:
+
+- `"descending"` — default publication display, high binding energy at the left;
+- `"ascending"` — low binding energy at the left;
+- `"source"` — match the stored source direction recorded in `XPSPeakFitResult`.
+
+This changes only Matplotlib x-axis limits/orientation. It does **not** reverse, sort, copy into a new scientific ordering, or mutate the retained x/y/result arrays.
+
+An explicit `FigureSpec.xlim` controls the numerical displayed span. The selected binding-energy display direction controls the orientation of that span.
+
+## Optional physical-residual panel
+
+With `show_residual=True`, the figure contains a main fit panel plus a smaller residual panel below it.
+
+The residual is exactly the reviewed public physical residual:
+
+```text
+residual = observed - best_fit
+```
+
+It is **not** an optimizer-weighted objective residual and is not normalized or standardized for plotting.
+
+The residual panel:
+
+- uses the exact retained x grid;
+- includes a zero reference line;
+- shares the main x span/orientation;
+- uses a linear residual y scale;
+- inherits the same `FigureSpec` typography, spine, tick, and x-limit settings;
+- carries the common binding-energy x label when the main panel suppresses duplicate x tick labels.
+
+`residual_height_fraction` and `residual_gap_fraction` are caller-visible fractions of the configured `LayoutSpec` axes drawing area. They must leave a positive main-panel height.
+
+## FigureSpec integration
+
+Stage D does not create a parallel XPS style model.
+
+The existing `FigureSpec` remains the redraw/export recipe for:
+
+- figure width/height;
+- physical axes drawing area/margins;
+- font family and sizes;
+- line widths/styles and marker sizes;
+- stable-key series overrides;
+- spine/tick settings;
+- legend behavior;
+- x/y limits and scales;
+- title and annotations;
+- exact-size PNG/SVG/PDF export settings.
+
+Default XPS labels respect `PlotStyle.axis_unit_format`, producing for example `Binding energy (eV)` or `Binding energy / eV`. Caller-supplied `FigureSpec.xlabel` / `ylabel` remain authoritative.
+
+The plotting adapter returns the headless Matplotlib `Figure` plus a tuple containing the main `Axes` and, when requested, the residual `Axes`. It never calls `show()`.
+
+## Internal multi-axes rendering primitive
+
+The existing internal visualization rc/figure creation was factored so `figure_context(spec)` creates one isolated headless Figure and domain renderers may add multiple axes inside the configured drawing area. The existing `figure_axes_context(spec)` continues to use that helper and therefore preserves the original single-axes rendering behavior.
+
+This helper is internal; it does not add a second public visualization framework.
+
+# Stage D: fit diagnostics summary
+
+`summarize_xps_fit(result)` returns immutable `XPSFitDiagnostics` state copied from already-computed XPS/shared-fit results.
+
+It reports:
+
+- success/message;
+- fit method/backend;
+- retained background method;
+- source storage direction;
+- stable component keys;
+- number of fitted points;
+- number of varying parameters;
+- chi-square, reduced chi-square, AIC, and BIC;
+- whether covariance is available;
+- fitted-parameter count;
+- parameter names with available standard errors;
+- parameter names whose standard errors are unavailable.
+
+The summary does not recompute a fit, create confidence intervals, fabricate zero uncertainties, or interpret fit quality as chemical proof.
+
+## Stage-D example
+
+```python
+from catalysis_workbench.experimental.characterization import (
+    plot_xps_fit,
+    summarize_xps_fit,
+)
+from catalysis_workbench.visualization import FigureSpec, export_figure
+
+spec = (
+    FigureSpec()
+    .with_layout(figure_width_in=3.5, figure_height_in=3.0)
+    .with_style(axis_label_size=8, tick_label_size=7, line_width=1.2)
+)
+
+figure, axes = plot_xps_fit(
+    result,
+    spec,
+    show_background=True,
+    show_components=True,
+    show_residual=True,
+    binding_energy_display="descending",
+)
+
+diagnostics = summarize_xps_fit(result)
+export_figure(figure, "xps-fit.svg", spec=spec)
+```
+
+The plot/export calls do not modify `result`.
+
 ## Prior-art and license boundary
 
 The v0.4 architecture survey identified several useful XPS projects. Implementation decisions remain explicit:
 
-- `jacobdben/XPyS` — MIT. Useful workflow reference for linear/Shirley concepts and linked XPS doublets. Its surveyed doublet code hard-codes p/d intensity ratios (`1/2`, `2/3`); CatalysisWorkbench does not copy that implementation and deliberately requires caller-supplied ratios instead.
-- `lmfit/lmfit-py` — BSD-3-Clause and already the reviewed shared fitting backend. Stage C reuses CatalysisWorkbench's wrapper/API rather than calling mutable lmfit objects as durable XPS state.
-- `JulioAzcarate/pyFitXPS` — repository license metadata previously reviewed as non-standard/NOASSERTION; architecture reference only.
-- `Julian-Hochhaus/lmfitxps` — top-level MIT text, but its LICENSE states its Shirley implementation was inspired by GPL-3.0 code; that implementation remains reference-only and is not copied/adapted.
+- `jacobdben/XPyS` — MIT. Useful workflow reference for linear/Shirley concepts, linked XPS doublets, and the high-level visual layering of measured data / total fit / components / background. Its plotting calls fitting directly and uses hard-coded plotting choices. CatalysisWorkbench copies no code and instead plots retained result state through `FigureSpec`.
+- `lmfit/lmfit-py` — BSD-3-Clause and already the reviewed shared fitting backend. XPS plotting never calls mutable lmfit models/results as a rendering backend.
+- `JulioAzcarate/pyFitXPS` — repository license metadata previously reviewed as non-standard/NOASSERTION; architecture/reference only. Its standard fit + smaller residual panel and reversed binding-energy display are high-level layout references only. CatalysisWorkbench does not copy its implementation or global `rcParams` approach.
+- `Julian-Hochhaus/lmfitxps` — top-level MIT text, but its LICENSE states its Shirley implementation was inspired by GPL-3.0 code; that Shirley implementation remains reference-only and is not copied/adapted.
 
-No new runtime dependency is introduced by constrained XPS fitting.
+No new runtime dependency is introduced by XPS stage D.
 
 ## Explicit non-goals
 
 The current XPS stack does not:
 
-- detect peaks;
-- choose component count;
+- detect peaks or choose component count;
 - look up binding energies, spin-orbit splittings, branching ratios, or width rules;
 - automatically charge-correct spectra;
 - infer oxidation state/species;
 - automatically choose or recompute background;
 - smooth or normalize intensity;
+- interpolate/resample data during fitting or plotting;
 - calculate Tougaard background;
 - perform global/sequential multi-spectrum analysis;
 - read proprietary vendor-binary XPS files;
-- plot XPS figures;
 - provide a GUI.
 
-Those later capabilities require separate scientific/API review.
+The stage-D plotting layer additionally does not perform any numerical processing or fitting merely because a figure is requested.
