@@ -22,6 +22,7 @@ Checkpoint date: 2026-08-24.
 
 - Repository: `xcwang3333-cloud/catalysis-workbench`.
 - Stable integration branch: `main`.
+- Reviewed post-v0.3 documentation baseline on `main`: `112c3c29fc8dcbfbf70f384baaba3f66fc1429f1` (`docs: synchronize post-release v0.3.0 state (#72)`).
 - `v0.3.0` tagged release commit: `845ac4c15d399a8816c7ba66d61ea6ec4cc11293` (`release: finalize v0.3.0 candidate (#69)`).
 - `v0.2.0` tagged release commit: `1f7f4057397c61ef2f771b96fceadc8a529b62d9` (`release: finalize v0.2.0 candidate (#46)`).
 - v0.1 scientific/common-XY foundation is released as `v0.1.0`.
@@ -33,13 +34,14 @@ Checkpoint date: 2026-08-24.
 - Issue #56 / PR #57 synchronized the post-thermal checkpoint and selected gas sorption next.
 - Issue #60 / PR #61 synchronized the post-sorption checkpoint and selected ICP/composition next.
 - Issue #64 / PR #65 synchronized the post-ICP checkpoint without changing scientific code, API, tests, or version metadata.
-- **The explicit scope decision is complete:** shared peak-fitting is deferred to v0.4 and will be designed together with constrained XPS/spectroscopy consumers.
+- **The v0.3 scope decision is complete:** shared peak-fitting was deferred to v0.4 for joint design with constrained XPS/spectroscopy consumers.
 - **v0.3 Gate A / Issue #66 / PR #67 is complete** at merge commit `8a3ae75f43ffa7d808f2a431f6326912a5dff9c6`; it hardened the frozen scope while intentionally retaining package/runtime version `0.2.0`.
 - **v0.3 Gate B / Issue #68 / PR #69 is complete** at merge commit `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`; it synchronized distribution/runtime version to `0.3.0` and passed the exact-wheel release audit plus two-pass release review.
 - **v0.3 Gate C / Issue #70 is complete:** tag `v0.3.0` was explicitly authorized, created, and reverse-verified to resolve exactly to `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`.
 - Distribution metadata and runtime `__version__` at the tagged v0.3 release both report `0.3.0`; changelog release date is 2026-08-24.
-- Package-registry publication remains a separate policy decision and was not part of the v0.3 Git release.
-- Issue #71 is the post-v0.3-release documentation synchronization; it must not move or recreate the `v0.3.0` tag.
+- Issue #71 / PR #72 completed post-v0.3-release documentation synchronization at `112c3c29fc8dcbfbf70f384baaba3f66fc1429f1` without moving the `v0.3.0` tag.
+- **Active project boundary: Issue #73 — v0.4 shared constrained peak-fitting + XPS architecture.** It is docs/planning only and starts from the reviewed post-v0.3 baseline.
+- Package-registry publication remains a separate explicit policy decision and has not been performed.
 
 Live GitHub issue/PR/tag state remains authoritative if this checkpoint becomes stale.
 
@@ -52,7 +54,7 @@ The detailed release scope is maintained in [`ROADMAP.md`](ROADMAP.md). The inte
 | v0.1.x | common XY core, tabular I/O, reusable processing, LSV, XRD, Raman, publication curve rendering/export | complete/released as v0.1.0 |
 | v0.2.x | quantitative core electrochemistry and shared scatter/bar summaries | complete/released as v0.2.0 on 2026-08-24 |
 | v0.3.x | extended experimental processing | complete/released as v0.3.0 on 2026-08-24 |
-| v0.4.x | advanced experimental analysis | planned — shared constrained peak-fitting with XPS, XPS processing, EIS fitting, quantitative BET, product calibration |
+| v0.4.x | advanced experimental analysis | architecture active through #73 — shared constrained peak-fitting + XPS first, then XPS plotting, EIS, quantitative BET and product calibration |
 | v0.5.x | XAS, structures, basic DFT energetics | planned |
 | v0.6.x | electronic structure and catalysis thermodynamics | planned |
 | v0.7.x | advanced computational visualization | planned |
@@ -108,17 +110,46 @@ v0.3 extends experimental characterization while retaining the same explicit sci
 - #56 / PR #57 — docs-only synchronization after the thermal merge plus gas-sorption priority decision.
 - #60 / PR #61 — docs-only synchronization after the gas-sorption merge plus ICP/composition priority decision.
 - #64 / PR #65 — docs-only synchronization after the ICP/composition merge and explicit handoff to the release decision.
-- #71 — post-release documentation synchronization after the verified `v0.3.0` tag; no tagged contents are changed.
+- #71 / PR #72 — post-release documentation synchronization after the verified `v0.3.0` tag; no tagged contents changed.
 
 ### Released v0.3 baseline and v0.4 handoff
 
-- Shared peak-fitting is **not** part of v0.3. It moves to v0.4, where model families, baseline coupling, parameter constraints/ties, uncertainty/covariance semantics, and provenance can be designed with constrained XPS/spectroscopy as a concrete downstream consumer.
+- Shared peak-fitting is **not** part of v0.3. It moved to v0.4, where model families, baseline/background coupling, parameter constraints/ties, uncertainty/covariance semantics and provenance are designed with constrained XPS/spectroscopy as a concrete downstream consumer.
 - Quantitative BET fitting remains v0.4 scope.
 - Gate A / Issue #66 / PR #67 completed installed-wheel/API hardening on the frozen scope while version remained `0.2.0`.
 - Gate B / Issue #68 / PR #69 finalized distribution/runtime version `0.3.0`, built and installed the exact wheel, passed the unified v0.3 numerical smoke and all seven quickstarts, and completed two-pass release review.
 - Gate C / Issue #70 separately authorized and verified tag `v0.3.0` exactly on `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`.
 - Package-registry publication remains outside the Git release gate.
-- After post-release documentation synchronization, the next scientific planning boundary is v0.4 architecture, beginning with the shared constrained peak-fitting/XPS contract rather than immediately adding an implementation.
+
+## v0.4 architecture and execution status
+
+The detailed v0.4 dependency graph and first scientific/API contracts are maintained in [`V0_4_PLAN.md`](V0_4_PLAN.md).
+
+### Active architecture checkpoint
+
+Issue #73 defines the shared constrained-fitting/XPS architecture before implementation begins.
+
+- `lmfit/lmfit-py` is the preferred nonlinear-fitting backend candidate after BSD-3-Clause verification; no runtime dependency is added by the architecture-only checkpoint.
+- the shared fitting layer owns explicit parameter/component/fit/result state, stable keys, bounded/tied parameters, deterministic provenance, residual/statistical output and explicit uncertainty availability;
+- the shared layer does **not** choose peaks, component count, smoothing, normalization, baseline/background or chemical assignments;
+- XPS owns binding-energy semantics, energy correction, XPS backgrounds and doublet-domain constraints;
+- initial doublet separation/ratio/width ties are caller supplied, not silently looked up from element/orbital labels;
+- general spectroscopy baselines and XPS backgrounds remain distinct responsibilities; initial XPS work may contract linear/Shirley backgrounds, while Tougaard requires separate scientific scope;
+- numerical fitting and XPS preprocessing remain separate from the lazy publication-rendering adapter;
+- runtime/distribution version remains `0.3.0` during ordinary architecture/feature work until a later explicit release gate.
+
+### Planned v0.4 sequence
+
+1. shared constrained peak-fitting foundation and lmfit integration;
+2. XPS semantics, energy correction and background preparation;
+3. constrained XPS components/doublets and shared-fit integration;
+4. XPS publication plotting and fit diagnostics;
+5. EIS plotting and basic equivalent-circuit fitting;
+6. quantitative BET fitting;
+7. product-calibration / GC-HPLC-NMR quantification foundation;
+8. completion-state synchronization and later release gates.
+
+Each implementation Issue still requires a fresh prior-art/license refresh, hand-verifiable scientific regressions, exact-head CI and two-pass review.
 
 ## Mandatory development loop
 
@@ -195,6 +226,7 @@ To reduce status drift, each document has a narrow responsibility:
 - [`V0_2_PLAN.md`](V0_2_PLAN.md): v0.2 dependency graph, issue-level status, scientific scope, and completed release handoff.
 - [`V0_2_RELEASING.md`](V0_2_RELEASING.md): completed v0.2 release-hardening, final-version, tag, and package-distribution boundaries.
 - [`V0_3_RELEASING.md`](V0_3_RELEASING.md): completed v0.3 frozen-scope hardening, final-version, tag verification, and package-distribution boundary record.
+- [`V0_4_PLAN.md`](V0_4_PLAN.md): active v0.4 dependency order, shared constrained-fitting/XPS architecture and implementation boundaries.
 - [`RELEASING.md`](RELEASING.md): historical v0.1 release policy.
 - [`REFERENCES.md`](REFERENCES.md): prior-art projects, useful ideas, and license decisions.
 - module-specific documents: exact scientific/API contracts for implemented modules.
@@ -218,4 +250,4 @@ This lightweight resynchronization is the required checkpoint between feature/re
 
 ## Release sequence from this checkpoint
 
-The v0.3 Git release is complete as `v0.3.0` on release commit `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`. Issue #71 performs the post-release documentation synchronization without moving the tag. After that docs-only checkpoint is merged and `main` is rechecked, the next project-level decision boundary is v0.4 architecture: define the shared constrained peak-fitting/XPS contract and issue decomposition before scientific implementation begins. Package-registry publication remains a separate explicit policy decision and is not implied by proceeding to v0.4.
+The v0.3 Git release and post-release synchronization are complete. Issue #73 is the active v0.4 architecture checkpoint and must merge before the first shared fitting implementation Issue begins. After #73, implementation proceeds in the dependency order defined in `V0_4_PLAN.md`, beginning with the shared constrained peak-fitting foundation. Package-registry publication remains a separate explicit policy decision and is not implied by v0.4 development.
