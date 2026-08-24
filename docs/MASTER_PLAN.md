@@ -22,7 +22,7 @@ Checkpoint date: 2026-08-24.
 
 - Repository: `xcwang3333-cloud/catalysis-workbench`.
 - Stable integration branch: `main`.
-- Current reviewed `main` checkpoint: `ecdc033212d2f9b91dfb0505528f743df625524f` (`Add product partial-current density analysis (#35)`).
+- Feature checkpoint used for this synchronization: `ecdc033212d2f9b91dfb0505528f743df625524f` (`Add product partial-current density analysis (#35)`).
 - v0.1 scientific/common-XY foundation and release-hardening work are complete.
 - v0.2 development has completed Issues #19-#23.
 - Current implementation target: **Issue #24 — mass and specific activity normalization**.
