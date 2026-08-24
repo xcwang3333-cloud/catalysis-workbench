@@ -188,7 +188,9 @@ def plot_ftir(
     if not isinstance(resolved_spec, FigureSpec):
         raise TypeError("spec must be a FigureSpec")
 
-    xlabel = resolved_spec.xlabel or _ftir_x_label(resolved_spec.style.axis_unit_format)
+    xlabel = resolved_spec.xlabel
+    if xlabel is None:
+        xlabel = _ftir_x_label(resolved_spec.style.axis_unit_format)
     ylabel = resolved_spec.ylabel
     if ylabel is None:
         ylabel = format_axis_label(
