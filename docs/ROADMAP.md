@@ -32,12 +32,12 @@ Before implementing each major scientific or visualization module, comparable op
 ## v0.3.x — Extended experimental processing — in progress
 
 - FTIR / ATR-FTIR — implemented and merged through Issue #50 / PR #51.
-- Basic BET/sorption plotting — planned.
+- TGA / DTG / TPR / TPD — implemented and merged through Issue #54 / PR #55.
+- Basic BET / gas-sorption plotting — selected as the next v0.3 scientific module; prior-art and scientific/API contract review are required before implementation.
 - ICP/composition data integration — planned.
-- TGA / DTG / TPR / TPD — planned.
 - Shared peak-fitting primitives — planned.
 
-The remaining v0.3 modules are roadmap scope, not an implied execution order; their priority is chosen explicitly before the next scientific Issue is opened.
+The remaining v0.3 modules are roadmap scope, not an automatic execution order. Issue #56 records the current planning decision to implement the bounded basic BET / gas-sorption plotting layer next, while quantitative BET fitting remains reserved for v0.4.
 
 ## v0.4.x — Advanced experimental analysis
 

@@ -7,6 +7,7 @@ All notable changes to CatalysisWorkbench are recorded here.
 ### Added
 
 - First v0.3 FTIR/ATR-FTIR workflow with explicit wavenumber and absorbance/transmittance semantics, explicit `A = -log10(T)` conversion, caller-window polynomial baseline fitting, direction-independent direct-window band integration, stable-key Dataset processing, shared publication plotting, deterministic provenance, installed-wheel smoke, and compact quickstart documentation.
+- Reviewed TGA / DTG / TPR / TPD thermal-analysis foundation with explicit °C/K temperature semantics and conversion, raw-mass versus normalized TGA bases, explicit reference-mass normalization, measured-grid `numpy.gradient` DTG with caller-selected sign convention, TPR/TPD detector-signal semantics, measured-point-supported direct thermal-window extrema/integration, stable-key Dataset processing, compatibility guards, deterministic provenance, lazy shared publication plotting, installed-wheel thermal smoke, and compact quickstart documentation.
 
 ## [0.2.0] - 2026-08-24
 
