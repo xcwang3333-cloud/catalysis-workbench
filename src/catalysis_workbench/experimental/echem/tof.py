@@ -21,9 +21,11 @@ from .quantities import (
     area_to_cm2,
     current_density_to_a_cm2,
     current_to_a,
-    electron_number as validate_electron_number,
     molar_rate_to_mol_s,
     normalize_unit,
+)
+from .quantities import (
+    electron_number as validate_electron_number,
 )
 
 AVOGADRO_CONSTANT_MOL_INV = 6.02214076e23
