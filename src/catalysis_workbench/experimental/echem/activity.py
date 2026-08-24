@@ -66,24 +66,36 @@ def _immutable(values: ArrayLike, *, name: str) -> NDArray[np.float64]:
 
 
 def _basis(value: object) -> ActivityBasis:
-    if value in {"catalyst_mass", "metal_mass", "ecsa"}:
-        return value  # type: ignore[return-value]
+    if isinstance(value, str):
+        if value == "catalyst_mass":
+            return "catalyst_mass"
+        if value == "metal_mass":
+            return "metal_mass"
+        if value == "ecsa":
+            return "ecsa"
     raise ActivityNormalizationError(
         "basis must be 'catalyst_mass', 'metal_mass', or 'ecsa'"
     )
 
 
 def _current_basis(value: object) -> ActivityCurrentBasis:
-    if value in {"current", "current_density"}:
-        return value  # type: ignore[return-value]
+    if isinstance(value, str):
+        if value == "current":
+            return "current"
+        if value == "current_density":
+            return "current_density"
     raise ActivityNormalizationError(
-        "current_basis must be 'current' or 'current_density'"
+        "current_basis must be 'current' or 'current_density'; "
+        "'current_density' declares geometric-area normalization"
     )
 
 
 def _sign(value: object) -> SignMode:
-    if value in {"signed", "magnitude"}:
-        return value  # type: ignore[return-value]
+    if isinstance(value, str):
+        if value == "signed":
+            return "signed"
+        if value == "magnitude":
+            return "magnitude"
     raise ActivityNormalizationError("sign_mode must be 'signed' or 'magnitude'")
 
 
@@ -172,31 +184,35 @@ class ActivityNormalizationResult:
     geometric_area_cm2: float | None = None
 
     def __post_init__(self) -> None:
-        cb = _current_basis(self.source_current_basis)
+        current_basis = _current_basis(self.source_current_basis)
         basis = _basis(self.basis)
-        sign = _sign(self.sign_mode)
+        sign_mode = _sign(self.sign_mode)
+
         if not isinstance(self.source_current_unit, str) or not self.source_current_unit.strip():
             raise ActivityNormalizationError("source_current_unit must be a non-empty string")
         source_unit = self.source_current_unit.strip()
         source_unit_valid = (
             is_current_unit(source_unit)
-            if cb == "current"
+            if current_basis == "current"
             else is_current_density_unit(source_unit)
         )
         if not source_unit_valid:
-            kind = "current" if cb == "current" else "current-density"
+            kind = "current" if current_basis == "current" else "current-density"
             raise ActivityNormalizationError(
                 f"source_current_unit {source_unit!r} is not a supported {kind} unit"
             )
+
         if not isinstance(self.denominator_unit, str) or not self.denominator_unit.strip():
             raise ActivityNormalizationError("denominator_unit must be a non-empty string")
         denominator_unit = self.denominator_unit.strip()
+
         source = _immutable(self.source_current_canonical, name="canonical source current")
         total = _immutable(self.total_current_a, name="total current")
         if source.shape != total.shape:
             raise ActivityNormalizationError(
                 "canonical source current and total current must have matching shapes"
             )
+
         denominator_value = _positive(self.denominator_value, name="denominator_value")
         denominator_canonical = _positive(
             self.denominator_canonical_value,
@@ -204,13 +220,17 @@ class ActivityNormalizationResult:
         )
         expected_denominator, _ = _denominator(basis, denominator_value, denominator_unit)
         if not np.isclose(
-            denominator_canonical, expected_denominator, rtol=1e-12, atol=0.0
+            denominator_canonical,
+            expected_denominator,
+            rtol=1e-12,
+            atol=0.0,
         ):
             raise ActivityNormalizationError(
                 "denominator_canonical_value is inconsistent with denominator_value/unit"
             )
+
         area = self.geometric_area_cm2
-        if cb == "current_density":
+        if current_basis == "current_density":
             area = _positive(area, name="geometric_area_cm2")
             expected_total = source * area
         else:
@@ -223,7 +243,8 @@ class ActivityNormalizationResult:
             raise ActivityNormalizationError(
                 "total_current_a is inconsistent with canonical source current and area"
             )
-        object.__setattr__(self, "source_current_basis", cb)
+
+        object.__setattr__(self, "source_current_basis", current_basis)
         object.__setattr__(self, "source_current_unit", source_unit)
         object.__setattr__(self, "source_current_canonical", source)
         object.__setattr__(self, "total_current_a", total)
@@ -232,7 +253,7 @@ class ActivityNormalizationResult:
         object.__setattr__(self, "denominator_unit", denominator_unit)
         object.__setattr__(self, "denominator_canonical_value", denominator_canonical)
         object.__setattr__(self, "output_unit", _output_unit(basis, self.output_unit))
-        object.__setattr__(self, "sign_mode", sign)
+        object.__setattr__(self, "sign_mode", sign_mode)
         object.__setattr__(self, "geometric_area_cm2", area)
 
     @property
@@ -269,13 +290,21 @@ def normalize_activity(
     geometric_area_value: float | None = None,
     geometric_area_unit: str | None = None,
 ) -> ActivityNormalizationResult:
-    """Normalize explicitly declared current by an explicitly declared denominator."""
-    cb = _current_basis(current_basis)
+    """Normalize an explicitly declared total current or geometric current density.
+
+    ``current_basis='current_density'`` is an explicit scientific declaration that the
+    supplied raw array is geometrically normalized current density. Raw arrays carry no
+    axis metadata, so an ECSA-, mass-, or otherwise non-geometrically normalized density
+    must not be passed under this basis. A geometric area is always required to recover
+    the canonical total-current numerator.
+    """
+    current_basis_resolved = _current_basis(current_basis)
     _require_numeric(current, name="current")
-    resolved_basis = _basis(basis)
-    output = _output_unit(resolved_basis, output_unit)
+    basis_resolved = _basis(basis)
+    output = _output_unit(basis_resolved, output_unit)
+
     try:
-        if cb == "current":
+        if current_basis_resolved == "current":
             if geometric_area_value is not None or geometric_area_unit is not None:
                 raise ActivityNormalizationError(
                     "geometric area must not be supplied for total-current input"
@@ -289,17 +318,18 @@ def normalize_activity(
             total = source * area_cm2
     except EchemQuantityError as exc:
         raise ActivityNormalizationError(str(exc)) from exc
+
     denominator, _ = _denominator(
-        resolved_basis,
+        basis_resolved,
         denominator_value,
         denominator_unit,
     )
     return ActivityNormalizationResult(
-        source_current_basis=cb,
+        source_current_basis=current_basis_resolved,
         source_current_unit=current_unit,
         source_current_canonical=source,
         total_current_a=total,
-        basis=resolved_basis,
+        basis=basis_resolved,
         denominator_value=denominator_value,
         denominator_unit=denominator_unit,
         denominator_canonical_value=denominator,
@@ -324,6 +354,7 @@ def _series_basis(
 ) -> ActivityCurrentBasis:
     name = series.y_axis.name.casefold()
     normalization = _normalization(series)
+
     if name == "current":
         if normalization is not None:
             raise ActivityNormalizationError(
@@ -331,6 +362,7 @@ def _series_basis(
                 f"{normalization!r}; refusing double normalization"
             )
         return "current"
+
     if name not in {"current_density", "partial_current_density"}:
         raise ActivityNormalizationError(
             "activity normalization requires y_axis.name='current', "
@@ -349,6 +381,7 @@ def _series_basis(
         raise ActivityNormalizationError(
             "partial_current_density input must carry Issue #23 source provenance"
         )
+
     supplied_area = _area(geometric_area_value, geometric_area_unit)
     stored_area = series.y_axis.metadata.get("electrode_area_cm2")
     if stored_area is not None and not np.isclose(
@@ -390,7 +423,8 @@ def normalize_activity_series(
     """Normalize one current Series and retain deterministic source provenance."""
     if not isinstance(series, Series):
         raise TypeError("series must be a Series")
-    cb = _series_basis(
+
+    current_basis = _series_basis(
         series,
         geometric_area_value=geometric_area_value,
         geometric_area_unit=geometric_area_unit,
@@ -398,7 +432,7 @@ def normalize_activity_series(
     result = normalize_activity(
         series.y,
         current_unit=series.y_axis.unit or "",
-        current_basis=cb,
+        current_basis=current_basis,
         basis=basis,
         denominator_value=denominator_value,
         denominator_unit=denominator_unit,
@@ -407,9 +441,11 @@ def normalize_activity_series(
         geometric_area_value=geometric_area_value,
         geometric_area_unit=geometric_area_unit,
     )
+
+    source_normalization = _normalization(series)
     provenance = make_analysis_provenance(
         series,
-        input_basis=f"activity_normalization:{cb}",
+        input_basis=f"activity_normalization:{current_basis}",
         units={
             "source_current": result.source_current_unit,
             "canonical_source_current": (
@@ -423,12 +459,14 @@ def normalize_activity_series(
         parameters={
             "basis": result.basis,
             "source_current_basis": result.source_current_basis,
+            "source_normalization": source_normalization,
             "sign_mode": result.sign_mode,
             "denominator_value": result.denominator_value,
             "denominator_canonical_value": result.denominator_canonical_value,
             "geometric_area_cm2": result.geometric_area_cm2,
         },
     )
+
     metadata = series.metadata_dict()
     metadata.update(
         {
@@ -438,7 +476,7 @@ def normalize_activity_series(
             "sign_mode": result.sign_mode,
             "source_current_basis": result.source_current_basis,
             "source_current_unit": result.source_current_unit,
-            "source_normalization": _normalization(series),
+            "source_normalization": source_normalization,
             "geometric_area_cm2": result.geometric_area_cm2,
             "denominator_value": result.denominator_value,
             "denominator_unit": result.denominator_unit,
@@ -449,6 +487,7 @@ def normalize_activity_series(
             "provenance": provenance,
         }
     )
+
     return Series(
         x=series.x,
         y=result.values,
@@ -473,6 +512,7 @@ def _keyed(
 ) -> dict[str, tuple[object, str]]:
     if not isinstance(mapping, Mapping):
         raise TypeError(f"{name} must be a mapping addressed by Series.key")
+
     normalized: dict[str, tuple[object, str]] = {}
     for raw_key, spec in mapping.items():
         if not isinstance(raw_key, str) or not raw_key.strip():
@@ -492,6 +532,7 @@ def _keyed(
                 f"{name}[{key!r}] must be a (value, unit) pair"
             )
         normalized[key] = (spec[0], spec[1])
+
     missing = set(expected) - set(normalized)
     unknown = set(normalized) - set(expected)
     if missing:
@@ -519,12 +560,14 @@ def normalize_activity_dataset(
         raise TypeError("dataset must be a Dataset")
     if len(dataset) == 0:
         raise ActivityNormalizationError("cannot normalize an empty Dataset")
+
     keys = tuple(item.key for item in dataset)
     if any(not key for key in keys):
         raise ActivityNormalizationError(
             "activity Dataset normalization requires non-empty Series.key values"
         )
     denominator_map = _keyed(denominators, expected=keys, name="denominators")
+
     density_keys = tuple(
         item.key
         for item in dataset
@@ -563,6 +606,7 @@ def normalize_activity_dataset(
                 geometric_area_unit=area_unit,
             )
         )
+
     resolved_basis = _basis(basis)
     return Dataset(
         series=tuple(output),
