@@ -2,7 +2,7 @@
 
 v0.3 release work is deliberately separated from scientific feature implementation. Completing the reviewed v0.3 modules does not itself authorize a version bump, Git tag, or package-registry publication.
 
-This document defines the v0.3 Gate A / Gate B / Gate C procedure. The completed v0.2 procedure remains in [`V0_2_RELEASING.md`](V0_2_RELEASING.md).
+This document records the completed v0.3 Gate A / Gate B / Gate C procedure. The completed v0.2 procedure remains in [`V0_2_RELEASING.md`](V0_2_RELEASING.md).
 
 ## Frozen v0.3 scientific scope
 
@@ -16,6 +16,20 @@ The v0.3 release scope is frozen to four reviewed experimental-processing additi
 The explicit scope decision after Issue #64 / PR #65 is to **defer shared peak-fitting to v0.4 and design it together with constrained XPS/spectroscopy consumers**. This avoids freezing model families, baseline coupling, parameter constraints/ties, uncertainty/covariance semantics, and fitting provenance before a concrete downstream consumer exists.
 
 Quantitative BET fitting, XPS fitting, EIS fitting, product-calibration workflows, XAS, and other later-roadmap algorithms are not part of v0.3 release hardening.
+
+## Completed v0.3 release state
+
+The v0.3 Git release is complete as of 2026-08-24:
+
+- Gate A / Issue #66 / PR #67 was squash-merged to `main` at `8a3ae75f43ffa7d808f2a431f6326912a5dff9c6` after exact-head CI and two-pass release/API/packaging/compatibility review while intentionally retaining version `0.2.0`.
+- Gate B / Issue #68 / PR #69 was squash-merged to `main` at `845ac4c15d399a8816c7ba66d61ea6ec4cc11293` after the final `0.3.0` exact-wheel audit and two-pass release review.
+- Gate C / Issue #70 was explicitly authorized, and tag `v0.3.0` was created and reverse-verified to resolve exactly to `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`.
+- Tagged distribution metadata and runtime `__version__` both report exactly `0.3.0`.
+- `CHANGELOG.md` records release date `2026-08-24`.
+- No scientific/API implementation changed during Gate C.
+- No package-registry publication was performed; package publication remains a separate policy decision.
+
+The `v0.3.0` tag is immutable release evidence for the reviewed Gate-B commit. Post-release documentation changes must not move or recreate that tag.
 
 ## Gate A completed state
 
@@ -58,16 +72,18 @@ The Gate-A unified smoke is numerical rather than import-only. It verifies, at m
 
 The smoke intentionally does not perform hidden interpolation, smoothing, closure normalization, unit guessing, branch inference, peak fitting, BET fitting, calibration fitting, or other deferred analysis.
 
-## Gate B — final `0.3.0` version candidate
+## Gate B completed state — final `0.3.0` version
 
-Gate B is active through Issue #68 / PR #69 on branch `release/v0.3-gate-b`, created directly from the reviewed Gate-A `main` commit `8a3ae75f43ffa7d808f2a431f6326912a5dff9c6` after explicit user authorization.
+Gate B / Issue #68 / PR #69 ran on branch `release/v0.3-gate-b`, created directly from the reviewed Gate-A `main` commit `8a3ae75f43ffa7d808f2a431f6326912a5dff9c6` after explicit user authorization. Its final exact PR head was `aa56cfe3d99f07a416bfcc8b199d5cbea34cbdc5`, and it was expected-head squash-merged to `main` as `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`.
 
-Gate B changes both version declarations together:
+Gate B changed both version declarations together:
 
 - `[project].version`: `0.2.0` -> `0.3.0`;
 - `catalysis_workbench.__version__`: `0.2.0` -> `0.3.0`.
 
-The Gate-B PR contains no new scientific feature work. Before it may merge:
+The exact-head CI built `catalysis_workbench-0.3.0-py3-none-any.whl`, installed it in a fresh environment, passed `pip check`, installed-source verification, all documented public `__all__` checks, the unified v0.3 numerical audit, existing v0.2 electrochemistry and module-specific smokes, and all seven documented quickstarts. Two formal release-review passes were anchored to the final exact head; the merge gate confirmed behind=0, mergeable state, and zero unresolved review threads.
+
+The historical Gate-B acceptance contract was:
 
 1. Ruff and the complete pytest suite pass again with the final version in the source tree.
 2. The built artifact is a `catalysis_workbench-0.3.0-*.whl` wheel.
@@ -82,11 +98,15 @@ The Gate-B PR contains no new scientific feature work. Before it may merge:
 11. A second independent review is performed on the final exact head after any Gate-B fix; prior review evidence is stale if the head changes.
 12. The PR head SHA used by the merge gate is exactly the head that passed CI and both review passes, it is not behind `main`, and no review threads remain unresolved.
 
-Merging Gate B establishes a reviewed `main` commit that reports `0.3.0`; it still does not create a Git tag.
+Merging Gate B established the reviewed `0.3.0` release commit but did not itself create the Git tag.
 
-## Gate C — explicit `v0.3.0` tag authorization
+## Gate C completed state — explicit `v0.3.0` tag authorization
 
-A `v0.3.0` tag may be created only after all of the following are true:
+Gate C / Issue #70 began only after explicit user authorization. Before tag creation, `main` was re-read and confirmed to remain exactly `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`; distribution/runtime versions were both `0.3.0`; the changelog release date matched 2026-08-24; and `v0.3.0` did not pre-exist.
+
+Tag `v0.3.0` was then created on the reviewed Gate-B merge commit. Reverse verification through GitHub resolved `v0.3.0` exactly to `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`, and reads through the tag confirmed distribution/runtime version `0.3.0`. Issue #70 was closed completed only after this verification.
+
+The historical Gate-C authorization criteria were:
 
 1. Gate B has been squash-merged to `main`.
 2. The intended tag commit is re-read directly from `main` and reports runtime/distribution version `0.3.0`.
@@ -94,7 +114,7 @@ A `v0.3.0` tag may be created only after all of the following are true:
 4. The changelog release date matches the actual tag date. If the date changes, correct it in a reviewed commit and rerun the required gate before tagging.
 5. **Explicit user authorization has been given for creating tag `v0.3.0`.**
 
-Tagging is a separate operation from both release hardening and the final version bump.
+Tagging remains a separate operation from both release hardening and the final version bump.
 
 ## Package-registry boundary
 
@@ -125,4 +145,5 @@ If a release check exposes a scientific/API defect, fix the defect explicitly wi
 - Do not treat editable-install success as proof that the wheel is installable.
 - Do not remove explicit scientific metadata from smoke fixtures to make the release audit shorter.
 - Do not mix v0.4 XPS/BET/EIS or other new feature work into the v0.3 final-version PR.
+- Do not move or recreate the existing `v0.3.0` tag during post-release documentation work.
 - Do not create or publish a package-registry release without the separate distribution policy.
