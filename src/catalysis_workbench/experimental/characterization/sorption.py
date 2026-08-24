@@ -23,11 +23,7 @@ SorptionLoadingFamily = Literal[
 ]
 SorptionDirection = Literal["ascending", "descending"]
 
-_RELATIVE_PRESSURE_NAMES = {
-    "relativepressure",
-    "pp0",
-    "p0p",
-}
+_RELATIVE_PRESSURE_NAMES = {"relativepressure", "pp0"}
 _LOADING_NAMES = {"adsorbedquantity", "loading", "uptake"}
 _FRACTION_UNITS = {"1", "fraction", "dimensionless"}
 _PERCENT_UNITS = {"%", "percent", "percentage"}
@@ -55,8 +51,7 @@ def _positive_float(value: Any, *, name: str) -> float:
 
 
 def _semantic_token(value: str) -> str:
-    token = str(value).strip().casefold()
-    token = token.replace("₀", "0")
+    token = str(value).strip().casefold().replace("₀", "0")
     return "".join(character for character in token if character.isalnum())
 
 
@@ -80,45 +75,27 @@ def _relative_pressure_unit(unit: str | None) -> RelativePressureUnit:
         return "1"
     if token in _PERCENT_UNITS:
         return "%"
-    raise SorptionError(
-        f"unsupported relative-pressure unit {unit!r}; use '1' or '%'"
-    )
+    raise SorptionError(f"unsupported relative-pressure unit {unit!r}; use '1' or '%'")
 
 
 def _loading_signature(unit: str | None) -> tuple[SorptionLoadingFamily, str]:
     if unit is None or not str(unit).strip():
         raise SorptionError("adsorbed quantity requires an explicit unit")
     token = _compact_unit(str(unit))
-    molar_mmol = {
-        "mmol/g",
-        "mmolg-1",
-        "mmolg1",
-    }
-    molar_molkg = {
-        "mol/kg",
-        "molkg-1",
-        "molkg1",
-    }
-    mass_mass = {
-        "mg/g",
-        "mgg-1",
-        "mgg1",
-    }
-    volume_stp = {
+    if token in {"mmol/g", "mmolg-1", "mmolg1"}:
+        return "molar_per_mass", "mmol/g"
+    if token in {"mol/kg", "molkg-1", "molkg1"}:
+        return "molar_per_mass", "mol/kg"
+    if token in {"mg/g", "mgg-1", "mgg1"}:
+        return "mass_per_mass", "mg/g"
+    if token in {
         "cm3(stp)/g",
         "cm3stp/g",
         "cm3(stp)g-1",
         "cm3stpg-1",
         "cm3(stp)g1",
         "cm3stpg1",
-    }
-    if token in molar_mmol:
-        return "molar_per_mass", "mmol/g"
-    if token in molar_molkg:
-        return "molar_per_mass", "mol/kg"
-    if token in mass_mass:
-        return "mass_per_mass", "mg/g"
-    if token in volume_stp:
+    }:
         return "gas_volume_stp_per_mass", "cm^3(STP)/g"
     raise SorptionError(
         f"unsupported adsorbed-quantity unit {unit!r}; use mmol/g, mol/kg, "
@@ -153,7 +130,9 @@ def _monotonic_direction(values: np.ndarray) -> SorptionDirection:
     )
 
 
-def _validate_numeric_axes(series: Series) -> tuple[RelativePressureUnit, str, str]:
+def _validate_numeric_axes(
+    series: Series,
+) -> tuple[RelativePressureUnit, SorptionLoadingFamily, str]:
     if not isinstance(series, Series):
         raise TypeError("series must be a Series")
     if _semantic_token(series.x_axis.name) not in _RELATIVE_PRESSURE_NAMES:
@@ -197,36 +176,28 @@ class SorptionCondition:
         adsorbate = str(self.adsorbate).strip()
         if not adsorbate:
             raise SorptionError("adsorbate must not be empty")
-        temperature = _positive_float(
+        measurement_temperature = _positive_float(
             self.measurement_temperature_k,
             name="measurement_temperature_k",
         )
         if self.branch not in {"adsorption", "desorption"}:
             raise SorptionError("branch must be 'adsorption' or 'desorption'")
-
         standard_temperature = (
             None
             if self.standard_temperature_k is None
-            else _positive_float(
-                self.standard_temperature_k,
-                name="standard_temperature_k",
-            )
+            else _positive_float(self.standard_temperature_k, name="standard_temperature_k")
         )
         standard_pressure = (
             None
             if self.standard_pressure_kpa is None
-            else _positive_float(
-                self.standard_pressure_kpa,
-                name="standard_pressure_kpa",
-            )
+            else _positive_float(self.standard_pressure_kpa, name="standard_pressure_kpa")
         )
         if (standard_temperature is None) != (standard_pressure is None):
             raise SorptionError(
                 "standard_temperature_k and standard_pressure_kpa must be supplied together"
             )
-
         object.__setattr__(self, "adsorbate", adsorbate)
-        object.__setattr__(self, "measurement_temperature_k", temperature)
+        object.__setattr__(self, "measurement_temperature_k", measurement_temperature)
         object.__setattr__(self, "standard_temperature_k", standard_temperature)
         object.__setattr__(self, "standard_pressure_kpa", standard_pressure)
 
@@ -236,15 +207,16 @@ def prepare_sorption_series(series: Series, condition: SorptionCondition) -> Ser
     if not isinstance(condition, SorptionCondition):
         raise TypeError("condition must be a SorptionCondition")
     pressure_unit, loading_family, loading_unit = _validate_numeric_axes(series)
-    if loading_family == "gas_volume_stp_per_mass":
-        if condition.standard_temperature_k is None or condition.standard_pressure_kpa is None:
-            raise SorptionError(
-                "cm^3(STP)/g loading requires explicit standard_temperature_k and "
-                "standard_pressure_kpa"
-            )
+    if loading_family == "gas_volume_stp_per_mass" and (
+        condition.standard_temperature_k is None or condition.standard_pressure_kpa is None
+    ):
+        raise SorptionError(
+            "cm^3(STP)/g loading requires explicit standard_temperature_k and "
+            "standard_pressure_kpa"
+        )
 
     source_sha256 = _series_data_digest(series)
-    x = np.asarray(series.x, dtype=np.float64)
+    direction = _monotonic_direction(np.asarray(series.x, dtype=np.float64))
     metadata = series.metadata_dict()
     metadata.update(
         {
@@ -253,17 +225,13 @@ def prepare_sorption_series(series: Series, condition: SorptionCondition) -> Ser
             "sorption_branch": condition.branch,
             "sorption_pressure_representation": "relative",
             "sorption_loading_family": loading_family,
-            "sorption_source_direction": _monotonic_direction(x),
+            "sorption_source_direction": direction,
             "sorption_source_sha256": source_sha256,
         }
     )
     if loading_family == "gas_volume_stp_per_mass":
-        metadata.update(
-            {
-                "sorption_standard_temperature_k": condition.standard_temperature_k,
-                "sorption_standard_pressure_kpa": condition.standard_pressure_kpa,
-            }
-        )
+        metadata["sorption_standard_temperature_k"] = condition.standard_temperature_k
+        metadata["sorption_standard_pressure_kpa"] = condition.standard_pressure_kpa
     else:
         metadata.pop("sorption_standard_temperature_k", None)
         metadata.pop("sorption_standard_pressure_kpa", None)
@@ -281,6 +249,7 @@ def prepare_sorption_series(series: Series, condition: SorptionCondition) -> Ser
                 "loading_unit": loading_unit,
                 "standard_temperature_k": condition.standard_temperature_k,
                 "standard_pressure_kpa": condition.standard_pressure_kpa,
+                "source_direction": direction,
                 "source_sha256": source_sha256,
             },
         }
@@ -321,20 +290,18 @@ def _condition_from_series(series: Series) -> SorptionCondition:
         ) from exc
     if branch not in {"adsorption", "desorption"}:
         raise SorptionError("invalid sorption_branch metadata")
-    standard_temperature = metadata.get("sorption_standard_temperature_k")
-    standard_pressure = metadata.get("sorption_standard_pressure_kpa")
     return SorptionCondition(
         adsorbate=adsorbate,
         measurement_temperature_k=temperature,
         branch=branch,
-        standard_temperature_k=standard_temperature,
-        standard_pressure_kpa=standard_pressure,
+        standard_temperature_k=metadata.get("sorption_standard_temperature_k"),
+        standard_pressure_kpa=metadata.get("sorption_standard_pressure_kpa"),
     )
 
 
 def validate_sorption_series(series: Series) -> None:
     """Validate a prepared sorption branch without changing its numerical data."""
-    pressure_unit, loading_family, loading_unit = _validate_numeric_axes(series)
+    _, loading_family, loading_unit = _validate_numeric_axes(series)
     condition = _condition_from_series(series)
     declared_family = str(series.metadata.get("sorption_loading_family", "")).strip()
     if declared_family != loading_family:
@@ -343,12 +310,10 @@ def validate_sorption_series(series: Series) -> None:
         )
     if series.metadata.get("sorption_pressure_representation") != "relative":
         raise SorptionError("sorption pressure representation must be explicitly 'relative'")
-    if loading_family == "gas_volume_stp_per_mass":
-        if condition.standard_temperature_k is None or condition.standard_pressure_kpa is None:
-            raise SorptionError(
-                "cm^3(STP)/g loading requires explicit standard gas conditions"
-            )
-    _relative_pressure_unit(pressure_unit)
+    if loading_family == "gas_volume_stp_per_mass" and (
+        condition.standard_temperature_k is None or condition.standard_pressure_kpa is None
+    ):
+        raise SorptionError("cm^3(STP)/g loading requires explicit standard gas conditions")
 
 
 def _canonicalize_sorption_series(series: Series) -> Series:
@@ -391,9 +356,8 @@ def convert_relative_pressure(
     """Explicitly convert relative pressure between fraction and percent."""
     source = _canonicalize_sorption_series(series)
     source_unit = _relative_pressure_unit(source.x_axis.unit)
-    target: RelativePressureUnit
     if target_unit in {"fraction", "1"}:
-        target = "1"
+        target: RelativePressureUnit = "1"
     elif target_unit in {"percent", "%"}:
         target = "%"
     else:
@@ -456,18 +420,12 @@ class SorptionProcessingConfig:
         minimum = (
             None
             if self.relative_pressure_min is None
-            else _finite_float(
-                self.relative_pressure_min,
-                name="relative_pressure_min",
-            )
+            else _finite_float(self.relative_pressure_min, name="relative_pressure_min")
         )
         maximum = (
             None
             if self.relative_pressure_max is None
-            else _finite_float(
-                self.relative_pressure_max,
-                name="relative_pressure_max",
-            )
+            else _finite_float(self.relative_pressure_max, name="relative_pressure_max")
         )
         if minimum is not None and minimum < 0.0:
             raise SorptionError("relative_pressure_min must be non-negative")
@@ -475,10 +433,13 @@ class SorptionProcessingConfig:
             raise SorptionError("relative_pressure_max must be non-negative")
         if minimum is not None and maximum is not None and minimum > maximum:
             raise SorptionError("relative_pressure_min must be <= relative_pressure_max")
-        vertical_offset = _finite_float(self.vertical_offset, name="vertical_offset")
         object.__setattr__(self, "relative_pressure_min", minimum)
         object.__setattr__(self, "relative_pressure_max", maximum)
-        object.__setattr__(self, "vertical_offset", vertical_offset)
+        object.__setattr__(
+            self,
+            "vertical_offset",
+            _finite_float(self.vertical_offset, name="vertical_offset"),
+        )
 
 
 def process_sorption(
@@ -555,16 +516,15 @@ def process_sorption_dataset(
     if not isinstance(default, SorptionProcessingConfig):
         raise TypeError("config must be a SorptionProcessingConfig")
 
-    processed = tuple(
-        process_sorption(
-            item,
-            condition=condition_map.get(item.key),
-            config=override_map.get(item.key, default),
-        )
-        for item in dataset
-    )
     return Dataset(
-        series=processed,
+        series=tuple(
+            process_sorption(
+                item,
+                condition=condition_map.get(item.key),
+                config=override_map.get(item.key, default),
+            )
+            for item in dataset
+        ),
         name=dataset.name,
         metadata=dataset.metadata_dict(),
     )
@@ -575,9 +535,10 @@ def _overlay_signature(series: Series) -> tuple[Any, ...]:
     condition = _condition_from_series(source)
     loading_family, loading_unit = _loading_signature(source.y_axis.unit)
     standard = (
-        condition.standard_temperature_k,
-        condition.standard_pressure_kpa,
-    ) if loading_family == "gas_volume_stp_per_mass" else (None, None)
+        (condition.standard_temperature_k, condition.standard_pressure_kpa)
+        if loading_family == "gas_volume_stp_per_mass"
+        else (None, None)
+    )
     return (
         condition.adsorbate.casefold(),
         condition.measurement_temperature_k,
@@ -630,12 +591,11 @@ def select_sorption_branch(
     if len(data) == 0:
         raise SorptionError("cannot filter an empty sorption Dataset")
     canonical = tuple(_canonicalize_sorption_series(item) for item in data)
-    if branch == "all":
-        selected = canonical
-    else:
-        selected = tuple(
-            item for item in canonical if item.metadata["sorption_branch"] == branch
-        )
+    selected = (
+        canonical
+        if branch == "all"
+        else tuple(item for item in canonical if item.metadata["sorption_branch"] == branch)
+    )
     if not selected:
         raise SorptionError(f"Dataset contains no declared {branch!r} branch")
     return Dataset(
@@ -694,21 +654,19 @@ def summarize_sorption_window(
         raise TypeError("window must be a SorptionWindow")
     x = np.asarray(source.x, dtype=np.float64)
     y = np.asarray(source.y, dtype=np.float64)
-    lower = float(np.min(x))
-    upper = float(np.max(x))
-    if window.low < lower or window.high > upper:
+    if window.low < float(np.min(x)) or window.high > float(np.max(x)):
         raise SorptionError("sorption window must be fully contained in measured range")
-    mask = (x >= window.low) & (x <= window.high)
-    indices = np.flatnonzero(mask)
+    indices = np.flatnonzero((x >= window.low) & (x <= window.high))
     if indices.size == 0:
         raise SorptionError(
             "sorption window contains no measured points; interpolation is not performed"
         )
     selected_y = y[indices]
-    min_local = int(np.argmin(selected_y))
-    max_local = int(np.argmax(selected_y))
-    min_index = int(indices[min_local])
-    max_index = int(indices[max_local])
+    min_index = int(indices[int(np.argmin(selected_y))])
+    max_index = int(indices[int(np.argmax(selected_y))])
+    branch = str(source.metadata["sorption_branch"])
+    if branch not in {"adsorption", "desorption"}:
+        raise SorptionError("invalid sorption_branch metadata")
     return SorptionWindowSummary(
         window=window,
         n_measured_points=int(indices.size),
@@ -718,7 +676,7 @@ def summarize_sorption_window(
         maximum_relative_pressure=float(x[max_index]),
         pressure_unit=str(source.x_axis.unit),
         loading_unit=str(source.y_axis.unit),
-        branch=str(source.metadata["sorption_branch"]),
+        branch=branch,
         source_direction=_monotonic_direction(x),
         source_key=source.key,
         source_label=source.label,
