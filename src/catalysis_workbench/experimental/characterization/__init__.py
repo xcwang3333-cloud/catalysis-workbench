@@ -50,7 +50,6 @@ from .thermal import (
     ThermalTechnique,
     ThermalWindow,
     ThermalWindowMeasurement,
-    convert_temperature,
     derive_dtg,
     measure_thermal_window,
     normalize_tga_mass,
@@ -81,6 +80,47 @@ if TYPE_CHECKING:
 
     from catalysis_workbench.core import Dataset, Series
     from catalysis_workbench.visualization import FigureSpec
+
+
+def convert_temperature(series: Series, *, target_unit: str) -> Series:
+    """Convert a thermal temperature axis and keep DTG denominator units consistent."""
+    from catalysis_workbench.core import Axis, Series as CoreSeries
+
+    from .thermal import convert_temperature as _convert_temperature
+
+    semantic = "".join(
+        character
+        for character in str(series.y_axis.name).strip().casefold()
+        if character.isalnum()
+    )
+    is_dtg = semantic in {"dtg", "massderivative", "masslossrate"}
+    if is_dtg:
+        validate_dtg_series(series)
+
+    converted = _convert_temperature(series, target_unit=target_unit)
+    if not is_dtg:
+        return converted
+
+    source_unit = str(series.y_axis.unit)
+    numerator = source_unit.split("/", 1)[0]
+    y_metadata = converted.y_axis.metadata_dict()
+    y_metadata["temperature_denominator_conversion"] = (
+        f"{series.x_axis.unit}->{converted.x_axis.unit}"
+    )
+    return CoreSeries(
+        x=converted.x,
+        y=converted.y,
+        label=converted.label,
+        key=converted.key,
+        x_axis=converted.x_axis,
+        y_axis=Axis(
+            converted.y_axis.name,
+            unit=f"{numerator}/{converted.x_axis.unit}",
+            label=converted.y_axis.label,
+            metadata=y_metadata,
+        ),
+        metadata=converted.metadata_dict(),
+    )
 
 
 def plot_xrd(
