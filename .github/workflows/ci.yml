@@ -58,8 +58,9 @@ jobs:
           .venv-smoke/bin/python tests/installed_api_smoke.py
           .venv-smoke/bin/python tests/installed_thermal_smoke.py
           .venv-smoke/bin/python tests/installed_sorption_smoke.py
+          .venv-smoke/bin/python tests/installed_composition_smoke.py
 
-      - name: Run documented LSV/XRD/Raman/FTIR/thermal/sorption examples from installed wheel
+      - name: Run documented LSV/XRD/Raman/FTIR/thermal/sorption/composition examples from installed wheel
         run: |
           .venv-smoke/bin/python examples/lsv_quickstart.py
           .venv-smoke/bin/python examples/xrd_quickstart.py
@@ -67,3 +68,4 @@ jobs:
           .venv-smoke/bin/python examples/ftir_quickstart.py
           .venv-smoke/bin/python examples/thermal_quickstart.py
           .venv-smoke/bin/python examples/sorption_quickstart.py
+          .venv-smoke/bin/python examples/composition_quickstart.py
