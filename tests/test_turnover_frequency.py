@@ -216,9 +216,18 @@ def test_frequency_output_units_are_explicit_and_equivalent():
         inventory_value=1.0,
         inventory_unit="umol",
     )
-    assert turnover_frequency_from_rate(**common, output_unit="s^-1").values.item() == pytest.approx(1)
-    assert turnover_frequency_from_rate(**common, output_unit="min^-1").values.item() == pytest.approx(60)
-    assert turnover_frequency_from_rate(**common, output_unit="h^-1").values.item() == pytest.approx(3600)
+    assert turnover_frequency_from_rate(
+        **common,
+        output_unit="s^-1",
+    ).values.item() == pytest.approx(1)
+    assert turnover_frequency_from_rate(
+        **common,
+        output_unit="min^-1",
+    ).values.item() == pytest.approx(60)
+    assert turnover_frequency_from_rate(
+        **common,
+        output_unit="h^-1",
+    ).values.item() == pytest.approx(3600)
 
 
 def test_rate_series_records_metric_axis_and_deterministic_provenance():
