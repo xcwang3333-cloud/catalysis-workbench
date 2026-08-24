@@ -101,6 +101,8 @@ def test_public_closure_constructor_validates_source_correspondence():
 
 def test_public_closure_constructor_requires_one_source_per_product():
     co = _fe_series("CO", (50.0, 50.0, 50.0))
+    co_source = source_data_ref(co)
+    h2_source = source_data_ref(_fe_series("H2", (50.0, 50.0, 50.0)))
 
     with pytest.raises(FaradaicEfficiencyError, match="one SourceDataRef"):
         FaradaicEfficiencyClosure(
@@ -109,5 +111,5 @@ def test_public_closure_constructor_requires_one_source_per_product():
             total_fraction=(0.5, 0.5, 0.5),
             exceeds_limit=(False, False, False),
             product_keys=("CO",),
-            sources=(),
+            sources=(co_source, h2_source),
         )
