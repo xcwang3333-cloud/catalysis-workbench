@@ -54,11 +54,14 @@ jobs:
           .venv-smoke/bin/python -m pip check
 
       - name: Smoke documented public API from installed wheel
-        run: .venv-smoke/bin/python tests/installed_api_smoke.py
+        run: |
+          .venv-smoke/bin/python tests/installed_api_smoke.py
+          .venv-smoke/bin/python tests/installed_thermal_smoke.py
 
-      - name: Run documented LSV/XRD/Raman/FTIR examples from installed wheel
+      - name: Run documented LSV/XRD/Raman/FTIR/thermal examples from installed wheel
         run: |
           .venv-smoke/bin/python examples/lsv_quickstart.py
           .venv-smoke/bin/python examples/xrd_quickstart.py
           .venv-smoke/bin/python examples/raman_quickstart.py
           .venv-smoke/bin/python examples/ftir_quickstart.py
+          .venv-smoke/bin/python examples/thermal_quickstart.py

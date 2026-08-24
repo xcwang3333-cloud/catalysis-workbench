@@ -206,3 +206,17 @@ Issue #50 begins v0.3 with explicit one-dimensional FTIR/ATR-FTIR processing and
 The reviewed FTIR direction is conservative: wavenumber units and absorbance/transmittance semantics are explicit; source order may be ascending or descending but is never silently reversed; transmittance conversion is an explicit `A = -log10(T)` operation; baseline fitting uses only caller-supplied windows and an explicit polynomial degree; band integration is low-to-high wavenumber and independent of storage direction; missing values that affect interpolation fail explicitly; plotting preserves the shared `FigureSpec` label/limit contract while allowing explicit FTIR display direction. Peak deconvolution, automatic baseline selection, atmospheric correction, vendor-binary readers, 2-D maps, and GUI work remain out of scope for Issue #50.
 
 Full scientific/API/test details are in `docs/FTIR.md`.
+
+## TGA / DTG / TPR / TPD thermal-analysis decision for v0.3
+
+Issue #54 extends v0.3 with a conservative one-dimensional thermal-analysis foundation before BET/sorption, composition integration, or shared peak fitting.
+
+- `MyonicS/pyTGA` (MIT) is the principal Python TGA workflow reference. Its explicit temperature/weight/time columns, staged experiment model, multi-manufacturer parser tests, quick plotting, and example data demonstrate useful separation between parsing and thermal processing. CatalysisWorkbench keeps its existing `Series`/`Dataset` model and generic tabular I/O; vendor-specific PerkinElmer, Mettler Toledo, Netzsch, and TA readers are deferred.
+- `mayankskii/TGAnalysis` (MIT, MATLAB) is scope prior art covering TGA/DTG alongside later deconvolution and kinetic methods such as Coats–Redfern, Friedman, FWO, and KAS. It is used only to define the foundation/advanced-analysis boundary; no MATLAB implementation is copied.
+- `lukasbaldauf/tga-kinetics` (MIT) is equation/workflow prior art for explicit `-dm/dt`, time/temperature/mass inputs, finite-difference rate handling, simulated test datasets, and sensitivity of kinetic fits to model/initial conditions. Issue #54 therefore makes DTG sign convention explicit but deliberately excludes kinetic parameter estimation.
+- `Danilosauro/thermogravimetric-analysis` had no repository license detected during the survey. Its batch-treatment and automated-plotting ideas are reference-only; no code is reused.
+- `numpy/numpy` (BSD-3-Clause), already a dependency, supplies `numpy.gradient` as the numerical derivative kernel on a measured strictly monotonic temperature grid. CatalysisWorkbench owns the temperature/mass semantics, unit validation, explicit DTG sign mode, source-direction handling, provenance, failure policy, and hand-verifiable regression tests around that kernel.
+
+The reviewed direction keeps temperature conversion explicit (`°C`/K), never silently normalizes raw TGA mass, defines DTG as caller-selected signed `dy/dT` or positive mass-loss `-dy/dT`, treats TPR/TPD initially as calibrated-or-uncalibrated detector signals without inferring chemical amount, and limits direct feature quantification to explicit temperature windows with maximum/minimum selection plus net/absolute area. Window interpolation is restricted to the two requested boundaries and fails on missing bracketing data. Automatic peak detection, onset extrapolation, deconvolution, kinetic fitting, smoothing/baseline correction, vendor readers, and TPR/TPD calibration-to-amount remain outside Issue #54.
+
+Full scientific/API/test details are in `docs/THERMAL_ANALYSIS.md`.
