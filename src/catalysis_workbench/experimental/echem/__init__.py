@@ -14,6 +14,21 @@ from .activity import (
     normalize_activity_dataset,
     normalize_activity_series,
 )
+from .cv_cdl import (
+    CVSamplingMethod,
+    CVSweepPair,
+    CdlCurrentBasis,
+    CdlDifferenceMode,
+    CdlError,
+    CdlFitCollection,
+    CdlFitResult,
+    CdlPairProvenance,
+    ECSAResult,
+    ecsa_from_cdl,
+    fit_cdl,
+    fit_cdl_groups,
+    sample_cv_current,
+)
 from .fe import (
     FaradaicEfficiencyClosure,
     FaradaicEfficiencyError,
@@ -219,6 +234,30 @@ def plot_turnover_frequency(
     )
 
 
+def plot_cv(
+    data: Series | Dataset,
+    spec: FigureSpec | None = None,
+    *,
+    preset: str = "publication",
+) -> tuple[Figure, Axes]:
+    """Lazily render already prepared cyclic-voltammetry sweeps."""
+    from .cv_cdl_plotting import plot_cv as _plot_cv
+
+    return _plot_cv(data, spec, preset=preset)
+
+
+def plot_cdl_fit(
+    result: CdlFitResult,
+    spec: FigureSpec | None = None,
+    *,
+    preset: str = "publication",
+) -> tuple[Figure, Axes]:
+    """Lazily render an already calculated Cdl fit."""
+    from .cv_cdl_plotting import plot_cdl_fit as _plot_cdl_fit
+
+    return _plot_cdl_fit(result, spec, preset=preset)
+
+
 __all__ = [
     "AVOGADRO_CONSTANT_MOL_INV",
     "ActivityBasis",
@@ -226,8 +265,17 @@ __all__ = [
     "ActivityNormalizationError",
     "ActivityNormalizationResult",
     "AnalysisProvenance",
+    "CVSamplingMethod",
+    "CVSweepPair",
+    "CdlCurrentBasis",
+    "CdlDifferenceMode",
+    "CdlError",
+    "CdlFitCollection",
+    "CdlFitResult",
+    "CdlPairProvenance",
     "ClosureComparisonMode",
     "CurrentSign",
+    "ECSAResult",
     "EchemQuantityError",
     "FARADAY_CONSTANT_C_MOL",
     "FaradaicEfficiencyClosure",
@@ -261,12 +309,15 @@ __all__ = [
     "correct_ir_drop",
     "current_density_to_a_cm2",
     "current_to_a",
+    "ecsa_from_cdl",
     "electron_number",
     "faradaic_efficiency_closure",
     "faradaic_efficiency_dataset",
     "faradaic_efficiency_from_amount",
     "faradaic_efficiency_from_rate",
     "faradaic_efficiency_series",
+    "fit_cdl",
+    "fit_cdl_groups",
     "fit_tafel",
     "fit_tafel_dataset",
     "loading_to_g_cm2",
@@ -283,6 +334,8 @@ __all__ = [
     "partial_current_density_dataset",
     "partial_current_density_series",
     "plot_activity",
+    "plot_cdl_fit",
+    "plot_cv",
     "plot_faradaic_efficiency",
     "plot_lsv",
     "plot_partial_current_density",
@@ -294,6 +347,7 @@ __all__ = [
     "rhe_offset_from_she",
     "rotation_rate_to_rad_s",
     "same_reference",
+    "sample_cv_current",
     "scan_rate_to_v_s",
     "series_data_sha256",
     "source_data_ref",
