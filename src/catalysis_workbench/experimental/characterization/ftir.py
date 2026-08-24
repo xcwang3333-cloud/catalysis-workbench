@@ -12,7 +12,13 @@ import numpy as np
 from numpy.typing import ArrayLike
 
 from catalysis_workbench.core import Axis, Dataset, Series
-from catalysis_workbench.processing import ProcessingError, crop, normalize, offset, subtract_baseline
+from catalysis_workbench.processing import (
+    ProcessingError,
+    crop,
+    normalize,
+    offset,
+    subtract_baseline,
+)
 
 FTIRNormalization = Literal["max", "max_abs", "minmax", "area"]
 FTIRAreaMode = Literal["absolute", "net"]
@@ -384,7 +390,9 @@ def fit_ftir_baseline(
     if x_fit.size <= degree:
         raise FTIRError("baseline fit requires more selected fit points than polynomial degree")
     if np.isnan(y_fit).any():
-        raise FTIRError("baseline fit windows contain missing absorbance values; clean them explicitly")
+        raise FTIRError(
+            "baseline fit windows contain missing absorbance values; clean them explicitly"
+        )
 
     center = float((np.min(x_fit) + np.max(x_fit)) / 2.0)
     scale = float((np.max(x_fit) - np.min(x_fit)) / 2.0)
@@ -810,7 +818,11 @@ class FTIRPeakAnnotation:
         key = None if self.series_key is None else str(self.series_key).strip()
         offset_points = _finite_float(self.text_offset_points, name="text_offset_points")
         rotation = _finite_float(self.rotation, name="rotation")
-        font_size = None if self.font_size is None else _finite_float(self.font_size, name="font_size")
+        font_size = (
+            None
+            if self.font_size is None
+            else _finite_float(self.font_size, name="font_size")
+        )
         if font_size is not None and font_size <= 0:
             raise FTIRError("font_size must be greater than zero")
         object.__setattr__(self, "wavenumber_cm1", position)
