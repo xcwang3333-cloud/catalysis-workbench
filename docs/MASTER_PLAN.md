@@ -22,6 +22,7 @@ Checkpoint date: 2026-08-24.
 
 - Repository: `xcwang3333-cloud/catalysis-workbench`.
 - Stable integration branch: `main`.
+- Current post-FTIR `main` checkpoint: `bf6e834b584943747b8dcb5278141e8ca0c5512f` (`feat: add explicit FTIR and ATR-FTIR processing (#51)`).
 - `v0.2.0` tagged release commit: `1f7f4057397c61ef2f771b96fceadc8a529b62d9` (`release: finalize v0.2.0 candidate (#46)`).
 - v0.1 scientific/common-XY foundation is released as `v0.1.0`.
 - **All planned v0.2 implementation Issues #19-#28 are complete and merged.**
@@ -30,7 +31,9 @@ Checkpoint date: 2026-08-24.
 - **Gate C / Issue #47 is complete: tag `v0.2.0` was explicitly authorized, created, and verified identical to the tagged release commit.**
 - Distribution metadata and runtime `__version__` at the tagged release both report `0.2.0`; changelog release date is 2026-08-24.
 - Package-registry publication remains a separate policy decision and was not part of the v0.2 Git release.
-- Issue #48 / PR #49 is the post-release documentation synchronization that records this stable release state; it does not change the tagged release contents.
+- Issue #48 / PR #49 completed the post-v0.2-release documentation synchronization; it did not change the tagged release contents.
+- **v0.3 development is active: Issue #50 / PR #51 completed the first reviewed FTIR / ATR-FTIR module and merged it to `main`.**
+- Issue #52 is the docs-only synchronization that records this v0.3 checkpoint; it does not select the next scientific module.
 
 Live GitHub issue/PR/tag state remains authoritative if this checkpoint becomes stale.
 
@@ -42,7 +45,7 @@ The detailed release scope is maintained in [`ROADMAP.md`](ROADMAP.md). The inte
 | --- | --- | --- |
 | v0.1.x | common XY core, tabular I/O, reusable processing, LSV, XRD, Raman, publication curve rendering/export | complete/released as v0.1.0 |
 | v0.2.x | quantitative core electrochemistry and shared scatter/bar summaries | complete/released as v0.2.0 on 2026-08-24 |
-| v0.3.x | extended experimental processing | planned |
+| v0.3.x | extended experimental processing | in progress — FTIR/ATR-FTIR complete |
 | v0.4.x | advanced experimental analysis | planned |
 | v0.5.x | XAS, structures, basic DFT energetics | planned |
 | v0.6.x | electronic structure and catalysis thermodynamics | planned |
@@ -80,7 +83,28 @@ The detailed v0.2 scientific contract and completed issue sequence are maintaine
 
 `v0.2.0` is the reviewed baseline for the complete quantitative core electrochemistry scope. Gate-B CI built `catalysis_workbench-0.2.0-py3-none-any.whl`, installed it into a fresh virtual environment, passed `pip check`, complete public `__all__` resolution, representative #21-#28 numerical smoke, and the installed LSV/XRD/Raman examples. Gate C subsequently verified the tag is identical to the reviewed release commit.
 
-No scientific/API implementation change belongs in the post-release documentation synchronization. After this synchronization is merged, v0.2 is operationally closed and the next development stage is v0.3 planning from the reviewed post-release `main` baseline.
+No scientific/API implementation change belongs in the post-release documentation synchronization. v0.2 is operationally closed; new development proceeds on top of the reviewed post-release `main` baseline without moving the `v0.2.0` tag.
+
+## v0.3 execution status
+
+v0.3 extends experimental characterization while retaining the same explicit scientific-contract and exact-head review discipline.
+
+### Completed
+
+- #50 / PR #51 — FTIR / ATR-FTIR validation and processing; explicit transmittance-to-absorbance conversion; caller-window polynomial baseline fitting; direction-independent direct-window band integration; stable-key Dataset workflows; shared publication plotting; prior-art/license documentation; installed-wheel smoke and quickstart.
+
+### Current synchronization
+
+- #52 — docs-only synchronization of README, MASTER_PLAN, ROADMAP, and CHANGELOG after the merged FTIR module. It must not alter scientific code, version metadata, tags, or the remaining v0.3 priority order.
+
+### Remaining roadmap scope
+
+- basic BET/sorption plotting;
+- ICP/composition data integration;
+- TGA / DTG / TPR / TPD;
+- shared peak-fitting primitives.
+
+These remaining modules are not ordered by this document. Their next priority is a product/scientific planning decision made before opening the next implementation Issue.
 
 ## Mandatory development loop
 
@@ -179,4 +203,4 @@ This lightweight resynchronization is the required checkpoint between feature/re
 
 ## Immediate next action
 
-After the post-release documentation synchronization is merged and `main` is rechecked, inspect the live open-Issue state and begin v0.3 planning from [`ROADMAP.md`](ROADMAP.md). Do not infer or fabricate the first v0.3 Issue number, and do not mix v0.3 scientific implementation into the v0.2 release-sync PR.
+Complete Issue #52 as a docs-only synchronization and recheck `main`. Then choose the next v0.3 scientific module from the remaining scope in [`ROADMAP.md`](ROADMAP.md). Do not infer or fabricate the next implementation Issue number before that priority decision, and do not mix scientific implementation into the documentation-sync PR.
