@@ -21,10 +21,15 @@ Checkpoint date: 2026-08-24.
 - XPS publication plotting and fit diagnostics: Issue #87 / PR #88 — complete at `3eab8c8e936cf1897081b7a396306288e517a3bb`.
 - XPS plotting final exact-head CI: run #274 / `32741710370` — success on `15288b21be118a450614445d6bbf82d80d459271`.
 - XPS plotting final-head review records: `5009266827`, `5009270492` (COMMENT because GitHub rejects self-APPROVE).
+- EIS semantics, R/C/CPE circuit fitting, Nyquist/Bode plotting and diagnostics: Issue #91 / PR #92 — complete at `cd8dd171a16576067934a13ad3ac41d0fb18d55a`.
+- EIS final exact-head CI: run #285 / `32746265252` — success on `18d81a0029cc851c136420fc550ec3e823094862`.
+- EIS final-head review records: `5009748594`, `5009757335` (COMMENT because GitHub rejects self-APPROVE).
+- EIS reference/license boundary is recorded in `REFERENCES.md`: `ECSHackWeek/impedance.py` (MIT) and `vyrjana/pyimpspec` (GPL-3.0) are reference-only and neither is a dependency.
 - reviewed runtime dependency: `lmfit>=1.3.4` (BSD-3-Clause upstream).
 - project version remains `0.3.0`.
+- `v0.3.0` remains fixed on `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`.
 - no v0.4 tag, GitHub Release, or package-registry publication has been authorized or performed.
-- active scientific stage after the docs checkpoint: **EIS plotting and basic equivalent-circuit fitting**.
+- active scientific stage after the post-EIS docs checkpoint: **quantitative BET fitting**.
 
 ## v0.4 dependency order
 
@@ -32,8 +37,8 @@ Checkpoint date: 2026-08-24.
 2. **XPS semantics, energy correction, and background preparation — complete (#79 / #80).**
 3. **Constrained XPS components/doublets and shared-fit integration — complete (#83 / #84).**
 4. **XPS publication plotting and fit diagnostics/summary — complete (#87 / #88).**
-5. **EIS plotting and basic equivalent-circuit fitting — active next stage.**
-6. Quantitative BET fitting.
+5. **EIS semantics, Nyquist/Bode plotting and basic equivalent-circuit fitting — complete (#91 / #92).**
+6. **Quantitative BET fitting — active next stage.**
 7. Product calibration and GC/HPLC/NMR-derived quantification.
 8. Completion-state synchronization and later release-hardening/version gates.
 
@@ -231,54 +236,110 @@ The reviewed adapter renders directly from retained shared-fit arrays:
 
 Full XPS behavior is documented in [`XPS.md`](XPS.md).
 
-## Active EIS stage — plotting and basic equivalent-circuit fitting
+## Completed EIS stage — explicit impedance semantics, basic circuit fitting, and plotting
 
-The next scientific Issue must refresh EIS prior art/licenses and freeze an explicit impedance-domain contract before implementation.
+Issue #91 / PR #92 delivered the fifth v0.4 scientific block as an explicit impedance-domain analysis layer under `catalysis_workbench.experimental.echem`.
 
-### Initial EIS scope
+### EIS data and circuit contracts
 
-The first reviewed EIS stage may cover:
+Reviewed behavior includes:
 
-- explicit frequency and complex-impedance data semantics/units;
-- direction/order validation without hidden sorting or frequency-unit guessing;
-- Nyquist plotting and Bode magnitude/phase plotting through the existing `FigureSpec` visualization system;
-- an explicit, limited equivalent-circuit specification with caller-visible topology, parameter initial values/bounds/fixed state and weighting;
-- constrained fitting through a mature reviewed numerical backend or a narrowly justified adapter, not ad hoc hidden optimization;
-- backend-independent fit result/diagnostic/provenance state;
-- installed-wheel EIS numerical/plotting smoke.
+- canonical `frequency` x semantics in Hz and literal complex `impedance` y semantics in ohm;
+- finite, strictly positive, strictly monotonic ascending or descending frequency vectors with source order preserved;
+- real-only impedance rejected rather than silently cast into an ambiguous EIS trace;
+- ideal resistor, capacitor, and constant-phase element definitions plus explicit series/parallel composition;
+- globally unique stable circuit-element keys and stable `<element>.<parameter>` public parameter keys;
+- explicit finite initial values, caller bounds, fixed/vary state, and physical domains;
+- deterministic circuit evaluation on the exact caller frequency vector;
+- no circuit-string DSL, topology inference, automatic model selection, hidden unit conversion, sorting, interpolation, resampling, or initial-guess heuristic.
 
-### EIS scientific guardrails
+### EIS fitting/result invariants
 
-- no automatic circuit-topology selection;
-- no inference of units or sign convention from display labels alone;
-- no hidden frequency sorting/interpolation/resampling;
-- no silent conversion between `Z''` and `-Z''`; sign/display convention must be explicit;
-- no automatic initial-guess generation unless a later Issue separately contracts and validates it;
-- no hidden weighting choice; unweighted or explicitly requested weighting semantics must be visible;
-- no electrochemical interpretation inferred solely from a fitted circuit label;
-- numerical processing/fitting and rendering remain separate responsibilities;
-- no new runtime dependency without explicit license/packaging review.
+- fitting uses `scipy.optimize.least_squares` with the TRF method and a deterministic real+imag residual vector;
+- `weights=None` means uniform objective multipliers; explicit weights contain one finite strictly positive multiplier per frequency point and apply equally to real and imaginary objective channels;
+- public physical residual remains exact `Z_observed - Z_best_fit`, independent of objective weighting;
+- backend-independent immutable `EISFitResult` retains source identity, frequency order, circuit, fitted parameters, weights, exact arrays, optimizer status and objective state;
+- fail-closed result reconstruction cross-checks source SHA, canonical units, frequency direction, circuit topology, parameter keys/vary/bounds/physical domains, best-fit circuit evaluation, physical residual, weight state, objective sum-of-squares and varying-parameter count;
+- contradictory public result metadata cannot be reconstructed and later consumed as a valid fit;
+- `EISFitDiagnostics` / `summarize_eis_fit()` mirror existing result state without fabricating covariance, standard errors or electrochemical interpretation.
+
+### EIS plotting invariants
+
+- `plot_eis_nyquist()` renders exact retained real impedance and a caller-visible `raw` or common `negative` imaginary display choice;
+- Nyquist sign selection is rendering-only and never mutates source or fit arrays;
+- `plot_eis_bode()` renders exact `|Z|` and principal phase from retained complex impedance with no unwrap/reordering;
+- observed/best-fit overlays require exact source key, source digest, frequency grid/order and observed-impedance alignment;
+- EIS plotting uses existing `FigureSpec` typography/layout/style/export contracts and stable layer keys rather than adding a parallel plotting framework;
+- numerical `experimental.echem` import remains Matplotlib-lazy until a plotting call is made.
+
+### EIS validation and license evidence
+
+- final exact PR head: `18d81a0029cc851c136420fc550ec3e823094862`;
+- CI #285 / run `32746265252` — success;
+- Ruff, full pytest, fresh-wheel installation, installed EIS fit/plot/export smoke and existing quickstarts — success;
+- final-head review records: `5009748594`, `5009757335`;
+- behind=0, mergeable=true and unresolved review threads=0 before merge;
+- expected-head squash merge commit / reviewed main checkpoint: `cd8dd171a16576067934a13ad3ac41d0fb18d55a`;
+- `ECSHackWeek/impedance.py` (MIT) and `vyrjana/pyimpspec` (GPL-3.0) were used as workflow/architecture/validation references only; no implementation code was copied or adapted and neither project is a dependency.
+
+Full EIS behavior is documented in [`EIS.md`](EIS.md), with license decisions retained in [`REFERENCES.md`](REFERENCES.md).
+
+## Active quantitative BET stage
+
+The next scientific Issue must refresh adsorption/BET prior art and licenses, then freeze an explicit quantitative contract before implementation. The existing v0.3 gas-sorption module remains the measured-isotherm foundation; quantitative BET must build on it rather than introducing a second incompatible isotherm data model.
+
+### Initial quantitative BET scope
+
+The first reviewed quantitative BET stage should cover:
+
+- validation that input is an explicit adsorption isotherm on a supported relative-pressure and loading basis;
+- the explicit BET transform and a caller-visible candidate pressure/point region;
+- direction/order-safe handling without hidden sorting, interpolation or synthesized points;
+- explicit Rouquerol-style physical-consistency checks for candidate regions rather than choosing a region from linearity alone;
+- linear regression only on the explicit accepted BET transform region;
+- retained slope/intercept, BET constant `C`, monolayer capacity and surface area with equations and units documented;
+- explicit caller-visible adsorbate molecular cross-sectional area and required loading/molar conversion basis rather than an embedded gas-specific lookup unless separately reviewed;
+- fit/result diagnostics and deterministic source/region/provenance state;
+- passive plotting/summary integration using existing visualization contracts;
+- hand-verifiable synthetic/reference regressions and installed-wheel smoke.
+
+### Quantitative BET scientific guardrails
+
+- no automatic adsorption/desorption branch inference;
+- no silent pressure-mode or loading-basis conversion;
+- no hidden standard-state assumption for volumetric loading;
+- no silent adsorbate cross-sectional-area lookup;
+- no automatic BET region chosen solely by maximum R² or visual linearity;
+- no acceptance of a mathematically linear region that violates required physical-consistency criteria;
+- no hidden sorting, interpolation, resampling, smoothing or outlier deletion;
+- no pore-size distribution, t-plot, alpha-s, Dubinin, hysteresis classification or advanced adsorption-model fitting in this first quantitative-BET block;
+- numerical analysis and publication rendering remain separate responsibilities;
+- any new dependency requires explicit prior-art/license/packaging review before adoption.
 
 ## Later v0.4 stages
 
-After EIS:
+After quantitative BET:
 
-1. quantitative BET fitting;
-2. product calibration / GC-HPLC-NMR quantification;
-3. completion-state synchronization and later release gates.
+1. product calibration / GC-HPLC-NMR quantification;
+2. completion-state synchronization and later release-hardening/version gates.
 
 ## Prior-art / license decisions
 
-The architecture record remains in [`REFERENCES.md`](REFERENCES.md). Key decisions relevant to completed XPS work are:
+The architecture record remains in [`REFERENCES.md`](REFERENCES.md). Key decisions relevant to completed and active v0.4 work are:
 
-- `lmfit/lmfit-py` — BSD-3-Clause; implemented runtime backend for shared fitting;
+- `lmfit/lmfit-py` — BSD-3-Clause; implemented runtime backend for shared peak fitting;
 - `derb12/pybaselines` — BSD-3-Clause; potential general-spectroscopy baseline adapter, not assumed to supply XPS Shirley/Tougaard semantics;
 - `jacobdben/XPyS` — MIT; XPS scientific/workflow reference only; its code-level p/d doublet ratios are not adopted as hidden defaults;
 - `JulioAzcarate/pyFitXPS` — non-standard/NOASSERTION repository license metadata; reference only;
 - `Julian-Hochhaus/lmfitxps` — Shirley implementation has mixed/GPL provenance recorded in its LICENSE; reference only for that implementation;
-- `Julian-Hochhaus/LG4X-V2` — mixed provenance including GPL-derived portions despite top-level MIT text; workflow/UX reference only.
+- `Julian-Hochhaus/LG4X-V2` — mixed provenance including GPL-derived portions despite top-level MIT text; workflow/UX reference only;
+- `ECSHackWeek/impedance.py` — MIT; EIS workflow/API/test reference only, no dependency or code copy;
+- `vyrjana/pyimpspec` — GPL-3.0; EIS architecture/validation reference only, no dependency or code copy/adaptation;
+- `pauliacomi/pyGAPS` — MIT; existing gas-sorption architecture/scientific reference and a primary source to refresh before quantitative BET implementation;
+- `hjkgrp/SESAMI_web` — MIT; existing BET workflow/scope reference whose current equations/selection criteria must be rechecked before implementation;
+- `nakulrampal/betsi-gui` — previously reported as non-standard/NOASSERTION in GitHub metadata; reference-only unless current license verification establishes otherwise.
 
-No XPS implementation code is copied from reference-only projects.
+Reference presence does not authorize code reuse. Quantitative BET must perform a fresh license/equation review in its own Issue before implementation.
 
 ## Compatibility and version policy
 

@@ -22,7 +22,7 @@ Checkpoint date: 2026-08-24.
 
 - Repository: `xcwang3333-cloud/catalysis-workbench`.
 - Stable integration branch: `main`.
-- Current scientific `main` baseline: `3eab8c8e936cf1897081b7a396306288e517a3bb` (`feat: add XPS publication plotting and diagnostics (#88)`).
+- Current scientific `main` baseline: `cd8dd171a16576067934a13ad3ac41d0fb18d55a` (`feat: add explicit EIS analysis and plotting (#92)`).
 - v0.4 architecture checkpoint: Issue #73 / PR #74 — complete at `a7fb245bd39f8aa3dc18141c2ecf6f005f02ebd1`.
 - v0.4 shared constrained peak-fitting foundation: Issue #75 / PR #76 — complete at `b6f428d96df9950373c17e5de487ac4113a2aacc`.
 - shared-fitting exact-head CI #255 / run `32733891934` — success.
@@ -35,13 +35,16 @@ Checkpoint date: 2026-08-24.
 - constrained-XPS formal reviews: `5009021201`, `5009026855`.
 - XPS publication plotting and fit diagnostics: Issue #87 / PR #88 — complete at `3eab8c8e936cf1897081b7a396306288e517a3bb`.
 - XPS plotting final exact-head CI #274 / run `32741710370` — success on `15288b21be118a450614445d6bbf82d80d459271`.
-- XPS plotting final-head review records: `5009266827`, `5009270492` (COMMENT because GitHub rejects self-APPROVE).
+- XPS plotting final-head review records: `5009266827`, `5009270492`.
+- EIS semantics, R/C/CPE circuit fitting, Nyquist/Bode plotting, and diagnostics: Issue #91 / PR #92 — complete at `cd8dd171a16576067934a13ad3ac41d0fb18d55a`.
+- EIS final exact-head CI #285 / run `32746265252` — success on `18d81a0029cc851c136420fc550ec3e823094862`.
+- EIS final-head review records: `5009748594`, `5009757335`.
 - Reviewed runtime fitting dependency: `lmfit>=1.3.4`.
 - Distribution/runtime version remains `0.3.0`.
 - `v0.3.0` remains fixed on release commit `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`.
 - Package-registry publication has not been performed and remains a separate policy decision.
-- Active status checkpoint: Issue #89 — post-XPS-plotting docs sync and EIS handoff.
-- Next scientific stage after #89: EIS plotting and basic equivalent-circuit fitting.
+- Active status checkpoint: Issue #93 — post-EIS docs sync and quantitative-BET handoff.
+- Next scientific stage after #93: quantitative BET fitting.
 
 Live GitHub Issue/PR/tag state remains authoritative if this checkpoint becomes stale.
 
@@ -187,38 +190,63 @@ The first CI attempt exposed only two Ruff defects (unused import and one overlo
 
 Full XPS preparation/fitting/plotting/diagnostics behavior is documented in [`XPS.md`](XPS.md).
 
-### Active next scientific block — EIS plotting and basic equivalent-circuit fitting
+### EIS semantics, basic circuit fitting, and plotting — complete
 
-After the docs-only #89 checkpoint, implementation proceeds to an explicit EIS domain layer.
+Issue #91 / PR #92 delivered the fifth v0.4 scientific block as an explicit complex-impedance domain layer under `catalysis_workbench.experimental.echem`.
+
+Reviewed behavior includes:
+
+- existing immutable complex-capable `Series` is reused with explicit `frequency`/Hz and `impedance`/ohm semantics and literal `Z = Z' + jZ''` storage;
+- finite positive strictly monotonic ascending or descending frequency is accepted without hidden sorting, interpolation, resampling, sign conversion, or phase unwrapping;
+- ideal `EISResistor`, `EISCapacitor`, and `EISCPE` leaves plus explicit `EISSeriesCircuit` / `EISParallelCircuit` composition form the initial typed circuit graph;
+- CPE uses the explicit convention `Z = 1 / [Q (j 2π f)^n]` with `Q > 0` and `0 < n <= 1`;
+- element keys and public `element.parameter` names are stable and globally unique within a circuit;
+- parameter initial values, fixed/vary state and bounds remain explicit and are checked against physical domains;
+- `fit_eis()` uses existing SciPy trust-region least squares with deterministic real+imag residual stacking and optional explicit positive point weights applied equally to both objective channels;
+- the public physical complex residual remains exactly `Z_observed - Z_best_fit` independent of objective weighting;
+- `EISFitResult` is immutable and fail-closes contradictory reconstructed source/direction/unit/circuit/parameter/best-fit/residual/weight/objective state;
+- `EISFitDiagnostics` / `summarize_eis_fit()` expose retained fit state without fabricating covariance, standard errors, or electrochemical interpretation;
+- lazy `plot_eis_nyquist()` derives exact `Re(Z)` plus caller-selected raw `Im(Z)` or conventional `-Im(Z)` as display state only;
+- lazy two-panel `plot_eis_bode()` derives exact magnitude and principal phase without hidden unwrap/reordering and reuses existing `FigureSpec`/multi-axes rendering infrastructure;
+- fit overlays require exact source/digest/grid/observed-state alignment;
+- root numerical electrochemistry imports remain Matplotlib-lazy;
+- `impedance.py` (MIT) and `pyimpspec` (GPL-3.0) are reference-only; no EIS runtime dependency was added;
+- installed-wheel EIS fit/plot/export smoke and all existing smokes/quickstarts pass.
+
+Formal review found one real fail-closed issue before the final gate: a manually reconstructed public `EISFitResult` could initially carry contradictory metadata/state. That constructor was hardened and dedicated contradiction regressions were added before the final CI. Final evidence is exact-head CI #285 / run `32746265252` on `18d81a0029cc851c136420fc550ec3e823094862`, reviews `5009748594` and `5009757335`, and expected-head squash merge `cd8dd171a16576067934a13ad3ac41d0fb18d55a`.
+
+Full EIS scientific/fitting/plotting behavior is documented in [`EIS.md`](EIS.md).
+
+### Active next scientific block — quantitative BET fitting
+
+After the docs-only #93 checkpoint, implementation proceeds to a quantitative BET consumer of the already reviewed measured gas-sorption foundation.
 
 Required initial boundary:
 
-- define frequency and complex-impedance semantics/units explicitly;
-- preserve measured frequency order unless a specific operation documents a transformed view; no hidden sort/interpolation/resampling;
-- make Nyquist sign/display convention explicit rather than silently switching between `Z''` and `-Z''`;
-- add Nyquist and Bode publication plotting through the existing `FigureSpec` system;
-- equivalent-circuit topology must be caller-visible and limited to a reviewed initial set;
-- initial values, fixed/vary state, bounds and weighting must be explicit;
-- no automatic topology selection or hidden initial-guess heuristic in the first stage;
-- fitting results must be backend-independent, auditable and retain source/circuit/weighting provenance;
-- numerical fitting and rendering remain separate responsibilities;
-- any new runtime fitting/circuit dependency requires prior-art/license/packaging review before adoption.
+- preserve explicit adsorbate, adsorption/desorption branch, relative-pressure representation, loading basis/unit, temperature and standard-state metadata from the measured-isotherm layer;
+- define the BET transform and all transformed quantities explicitly rather than hiding them in plotting;
+- make the candidate BET region caller-visible and measured-point based;
+- apply reviewed Rouquerol consistency checks as physical acceptance criteria in addition to ordinary linear-regression diagnostics;
+- expose accepted/rejected criteria rather than silently selecting the visually straightest region;
+- calculate slope/intercept, BET constant, monolayer capacity and specific surface area only from an accepted region;
+- require explicit adsorbate molecular cross-sectional area and any standard-state quantity needed for loading-to-moles conversion; no hidden lookup table in the first stage;
+- retain deterministic source identity, selected measured points, transformed arrays, fit statistics, physical-consistency results, units and calculation inputs in immutable result state;
+- publication plotting/summary remains a passive consumer of reviewed quantitative state and the existing `FigureSpec` system.
 
-Explicit non-goals of the initial EIS block:
+Explicit non-goals of the initial quantitative-BET block:
 
-- no automatic circuit discovery/model selection;
-- no unit inference from display labels alone;
-- no silent frequency sorting or interpolation;
-- no hidden residual weighting;
-- no electrochemical interpretation inferred solely from a circuit label;
+- no automatic branch inference;
+- no silent pressure/loading/standard-state conversion;
+- no automatic BET-region choice without explicit reviewed criteria and caller-visible state;
+- no pore-size distribution, BJH/DFT/NLDFT, t-plot, alpha-s, Dubinin, hysteresis classification, or arbitrary adsorption-model fitting;
+- no adsorbate-property lookup inferred solely from a display label;
 - no GUI or new visualization framework parallel to `FigureSpec`.
 
 ### Later v0.4 dependency order
 
-1. EIS plotting and basic equivalent-circuit fitting;
-2. quantitative BET fitting;
-3. product calibration / GC-HPLC-NMR quantification;
-4. completion-state synchronization and later release gates.
+1. quantitative BET fitting;
+2. product calibration / GC-HPLC-NMR quantification;
+3. completion-state synchronization and later release gates.
 
 ## Mandatory development loop
 
@@ -294,6 +322,7 @@ After squash merge, re-read `main`. When connector visibility does not expose a 
 - [`V0_4_PLAN.md`](V0_4_PLAN.md): active v0.4 dependency order and scientific/API boundaries.
 - [`PEAK_FITTING.md`](PEAK_FITTING.md): reviewed shared-fitting contract.
 - [`XPS.md`](XPS.md): reviewed XPS semantics, preparation, fitting, plotting and diagnostics contract.
+- [`EIS.md`](EIS.md): reviewed EIS semantics, circuit fitting, Nyquist/Bode plotting and diagnostics contract.
 - [`REFERENCES.md`](REFERENCES.md): prior-art projects, useful ideas, licenses, and dependency/reference-only decisions.
 - module-specific documents: exact scientific/API contracts for implemented modules.
 - GitHub Issues: active acceptance criteria.
@@ -310,4 +339,4 @@ After each merged scientific Issue, update only documentation whose statements b
 - whether the preceding Issue is actually closed/completed;
 - version/tag/publication boundaries.
 
-The post-XPS-plotting checkpoint is Issue #89. After it merges, the next active scientific Issue should implement EIS plotting/basic equivalent-circuit fitting without reopening or duplicating the completed XPS numerical/rendering stack.
+The post-EIS checkpoint is Issue #93. After it merges, the next active scientific Issue should implement quantitative BET fitting without reopening or duplicating the completed measured-isotherm, XPS, or EIS foundations.
