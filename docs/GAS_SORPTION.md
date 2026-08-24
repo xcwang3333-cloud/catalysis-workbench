@@ -2,6 +2,8 @@
 
 Issue #58 adds a conservative gas-sorption isotherm layer for explicit measured `P/P0` versus adsorbed quantity data and publication plotting. It deliberately stops before BET surface-area fitting, Rouquerol region selection, pore-volume or pore-size-distribution calculations.
 
+Quantitative BET fitting is added later by v0.4 Issue #95 as a separate consumer of this measured-isotherm contract. Its equations, consistency checks, unit conversion and explicit caller-region policy are documented in [`BET.md`](BET.md). The v0.3 behavior described below remains unchanged.
+
 ## Design boundary
 
 Gas-sorption data continue to use the shared immutable `Series` / `Dataset` model. CatalysisWorkbench does not introduce a second isotherm object hierarchy. Numerical handling, experimental-condition metadata, and publication rendering remain separate.
@@ -97,7 +99,7 @@ Dataset condition/config overrides use stable `Series.key` values. Unknown keys 
 
 The helper performs no boundary interpolation. A requested interval containing no actual measured point fails rather than inventing values.
 
-This is not a BET-region selector and does not report monolayer capacity, BET constant, surface area, pore volume, hysteresis area, or pore-size information.
+This v0.3 helper itself is not a BET-region selector and does not report monolayer capacity, BET constant, surface area, pore volume, hysteresis area, or pore-size information. v0.4 quantitative BET deliberately reuses `SorptionWindow` as an explicit caller-selected measured region rather than changing this summary behavior.
 
 ## Overlay compatibility
 
@@ -134,14 +136,14 @@ The module was scoped after reviewing:
 - `pauliacomi/pyGAPS` — MIT. Primary architecture/scientific reference for explicit pressure mode/unit, loading basis/unit, material basis/unit, adsorbate/temperature metadata, branch-aware plotting, and extensive adsorption analysis. CatalysisWorkbench does not copy its implementation and deliberately does not adopt automatic branch inference from pressure direction.
 - `hjkgrp/SESAMI_web` — MIT. Workflow/scope reference demonstrating that BET region selection, Rouquerol consistency criteria, and surface-area calculation are substantial quantitative algorithms distinct from raw isotherm plotting.
 - `AIF-development-team/adsorptioninformationformat` — MIT. Metadata/interoperability reference reinforcing explicit experimental conditions and units. Issue #58 does not add an AIF or vendor-specific parser.
-- `nakulrampal/betsi-gui` — GitHub license metadata reports a non-standard/`NOASSERTION` license. Reference only. Its dedicated BET/Rouquerol workflow further supports keeping BET fitting outside the v0.3 plotting foundation.
+- `nakulrampal/betsi-gui` — current upstream `LICENSE.txt` directly verifies MIT. The older Issue #58-era `NOASSERTION` repository-metadata note is superseded by this direct license verification. Its dedicated BET/Rouquerol workflow remains reference-only; no implementation is copied or adapted.
 - Existing CatalysisWorkbench `FigureSpec` and shared renderer remain the publication backend.
 
 No upstream implementation code is copied.
 
-## Explicitly deferred
+## Explicitly deferred from the v0.3 foundation
 
-Issue #58 does not implement:
+Issue #58 itself does not implement:
 
 - BET surface-area calculation or automatic linear-region selection;
 - Rouquerol criteria;
@@ -154,3 +156,5 @@ Issue #58 does not implement:
 - AIF or manufacturer-specific parser expansion;
 - GUI behavior;
 - a `0.3.0` version bump, tag, release, or package-registry publication.
+
+The later quantitative BET implementation is separately contracted by Issue #95 and does not retroactively change the reviewed v0.3 measured-isotherm behavior.
