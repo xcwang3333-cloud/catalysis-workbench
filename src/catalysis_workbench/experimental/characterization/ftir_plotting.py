@@ -11,7 +11,12 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
 from catalysis_workbench.core import Dataset, Series
-from catalysis_workbench.visualization import FigureSpec, format_axis_label, get_preset, render_curves
+from catalysis_workbench.visualization import (
+    FigureSpec,
+    format_axis_label,
+    get_preset,
+    render_curves,
+)
 
 from .ftir import (
     FTIRError,
@@ -117,7 +122,11 @@ def _draw_annotations(
             horizontalalignment="center",
             verticalalignment="bottom",
             rotation=annotation.rotation,
-            fontsize=default_font_size if annotation.font_size is None else annotation.font_size,
+            fontsize=(
+                default_font_size
+                if annotation.font_size is None
+                else annotation.font_size
+            ),
             color=annotation.color,
             clip_on=True,
         )
@@ -140,7 +149,8 @@ def _apply_display_direction(
         return
 
     source_directions = {
-        _monotonic_direction(np.asarray(item.x, dtype=np.float64)) for item in rendered_series
+        _monotonic_direction(np.asarray(item.x, dtype=np.float64))
+        for item in rendered_series
     }
     if len(source_directions) != 1:
         raise FTIRError(
