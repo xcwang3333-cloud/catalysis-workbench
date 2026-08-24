@@ -110,9 +110,9 @@ from .thermal import (
     validate_thermal_overlay,
 )
 from .xas import (
-    XASError,
     XANESNormalizationResult,
     XANESNormalizationSpec,
+    XASError,
     XASWindow,
     normalize_xanes,
     shift_xas_energy,
@@ -386,9 +386,9 @@ __all__ = [
     "ThermalTechnique",
     "ThermalWindow",
     "ThermalWindowMeasurement",
-    "XASError",
     "XANESNormalizationResult",
     "XANESNormalizationSpec",
+    "XASError",
     "XASWindow",
     "XPSBackgroundMethod",
     "XPSBackgroundResult",
