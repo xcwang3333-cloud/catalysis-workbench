@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Sequence
 from dataclasses import dataclass
 from math import isfinite
 from numbers import Real
@@ -267,7 +267,7 @@ def _validate_provenance_units(
     *,
     basis: KLCurrentBasis,
 ) -> None:
-    units: Mapping[str, str] = provenance.units
+    units = dict(provenance.units)
     expected = {
         "rotation_source": provenance.source.x_unit,
         "rotation": "rad/s",
@@ -325,7 +325,7 @@ def _validate_provenance_contract(
             "K-L selected rotation rates lie outside the provenance fit window"
         )
 
-    parameters = provenance.parameters
+    parameters = dict(provenance.parameters)
     if parameters.get("current_mode") != mode:
         raise KouteckyLevichError(
             "K-L provenance current_mode contradicts result current_mode"
@@ -479,7 +479,7 @@ class KouteckyLevichFitResult:
 
 @dataclass(frozen=True, slots=True)
 class KLElectronNumberResult:
-    """Explicit apparent electron number derived from one positive K-L slope."""
+    """Explicit apparent electron number with fit and transport provenance."""
 
     electron_number: float
     diffusion_coefficient_cm2_s: float
@@ -488,6 +488,9 @@ class KLElectronNumberResult:
     electrode_area_cm2: float | None
     faraday_constant_c_mol: float
     current_basis: KLCurrentBasis
+    fit_slope: float
+    fit_window: FitWindow
+    fit_current_mode: KLCurrentMode
     fit_source_sha256: str
 
     def __post_init__(self) -> None:
@@ -509,6 +512,18 @@ class KLElectronNumberResult:
             name="faraday_constant_c_mol",
         )
         basis = _current_basis(self.current_basis)
+        slope = _positive_scalar(self.fit_slope, name="fit_slope")
+        mode = _current_mode(self.fit_current_mode)
+        if mode == "signed":
+            raise KouteckyLevichError(
+                "K-L electron-number provenance cannot use a signed fit"
+            )
+        if not isinstance(self.fit_window, FitWindow):
+            raise TypeError("fit_window must be a FitWindow")
+        if self.fit_window.unit != "rad/s" or self.fit_window.lower <= 0.0:
+            raise KouteckyLevichError(
+                "K-L electron-number fit_window must use positive rad/s bounds"
+            )
         if basis == "current":
             area = _positive_scalar(self.electrode_area_cm2, name="electrode_area_cm2")
         else:
@@ -525,6 +540,21 @@ class KLElectronNumberResult:
                 "fit_source_sha256 must contain exactly 64 hexadecimal characters"
             )
 
+        transport = (
+            0.62
+            * faraday
+            * diffusion ** (2.0 / 3.0)
+            * viscosity ** (-1.0 / 6.0)
+            * concentration
+        )
+        if area is not None:
+            transport *= area
+        expected_n = 1.0 / (slope * transport)
+        if not np.isclose(electron_number, expected_n, rtol=1e-12, atol=1e-15):
+            raise KouteckyLevichError(
+                "electron_number contradicts the stored fit slope and transport constants"
+            )
+
         object.__setattr__(self, "electron_number", electron_number)
         object.__setattr__(self, "diffusion_coefficient_cm2_s", diffusion)
         object.__setattr__(self, "kinematic_viscosity_cm2_s", viscosity)
@@ -532,6 +562,8 @@ class KLElectronNumberResult:
         object.__setattr__(self, "electrode_area_cm2", area)
         object.__setattr__(self, "faraday_constant_c_mol", faraday)
         object.__setattr__(self, "current_basis", basis)
+        object.__setattr__(self, "fit_slope", slope)
+        object.__setattr__(self, "fit_current_mode", mode)
         object.__setattr__(self, "fit_source_sha256", sha)
 
 
@@ -688,6 +720,9 @@ def kl_electron_number(
         electrode_area_cm2=area,
         faraday_constant_c_mol=faraday,
         current_basis=result.current_basis,
+        fit_slope=result.slope,
+        fit_window=result.fit_window,
+        fit_current_mode=result.current_mode,
         fit_source_sha256=result.provenance.source.sha256,
     )
 
