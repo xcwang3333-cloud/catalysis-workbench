@@ -76,12 +76,22 @@ The architecture-first dependency order is maintained in [`V0_4_PLAN.md`](V0_4_P
    - `XPSFitDiagnostics` mirrors already-computed statistics and uncertainty availability without fabrication;
    - no fitting, background calculation, energy correction, smoothing, normalization, resampling or chemistry assignment during plotting;
    - exact-head CI #274 / run `32741710370` and final-head reviews passed before merge commit `3eab8c8e936cf1897081b7a396306288e517a3bb`.
-5. **EIS plotting and basic equivalent-circuit fitting — active next stage.**
-   - explicit frequency/complex-impedance semantics and sign convention;
-   - Nyquist/Bode plotting through `FigureSpec`;
-   - caller-visible circuit topology, initial values, bounds/fixed state and weighting;
-   - no automatic topology selection, hidden unit inference, frequency sorting, weighting or initial-guess heuristic in the initial stage.
-6. BET quantitative fitting with explicit region-selection/Rouquerol contracts.
+5. **EIS semantics, basic equivalent-circuit fitting, and plotting — complete through Issue #91 / PR #92.**
+   - explicit frequency/Hz and literal complex-impedance/ohm semantics with source-order preservation;
+   - ideal R/C/CPE leaves plus explicit series/parallel topology and stable `element.parameter` identities;
+   - caller-visible initial values, fixed/vary state, bounds and explicit residual weights;
+   - SciPy real+imag least-squares objective while the public complex residual remains exactly `observed - best_fit`;
+   - fail-closed immutable result reconstruction tying units/direction/circuit/parameters/best-fit/residual/weights/objective state together;
+   - passive Nyquist raw/`-Im(Z)` and principal-phase Bode plotting through the existing `FigureSpec` stack;
+   - no automatic topology/model selection, unit/sign/order correction, hidden weighting or initial-guess heuristic;
+   - final exact-head CI #285 / run `32746265252` and reviews `5009748594`, `5009757335` passed before merge commit `cd8dd171a16576067934a13ad3ac41d0fb18d55a`.
+6. **BET quantitative fitting — active next stage.**
+   - explicit measured-isotherm compatibility and BET transform;
+   - caller-visible measured-point candidate region;
+   - Rouquerol physical-consistency checks in addition to ordinary regression diagnostics;
+   - slope/intercept, BET constant, monolayer capacity and specific surface area only from an accepted region;
+   - explicit adsorbate cross-sectional area and standard-state/unit inputs rather than hidden lookup;
+   - no silent branch/pressure/loading conversion or automatic visually straight region selection.
 7. Product quantification from calibration data and GC/HPLC/NMR-derived values.
 
 Ordinary v0.4 development continues with runtime/distribution version `0.3.0` until a later reviewed release gate explicitly changes it. No v0.4 tag, GitHub Release, or package-registry publication is implied by feature development.
