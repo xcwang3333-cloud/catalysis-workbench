@@ -97,6 +97,20 @@ from .quantities import (
     scan_rate_to_v_s,
     time_to_s,
 )
+from .stability import (
+    StabilityAnalysisConfig,
+    StabilityError,
+    StabilityMissingPolicy,
+    StabilityResult,
+    StabilityResultCollection,
+    StabilityRetentionMode,
+    StabilityWindow,
+    StabilityWindowSpec,
+    StabilityYKind,
+    analyze_stability,
+    analyze_stability_dataset,
+    validate_stability_series,
+)
 from .tafel import (
     CurrentSign,
     TafelBranch,
@@ -258,6 +272,36 @@ def plot_cdl_fit(
     return _plot_cdl_fit(result, spec, preset=preset)
 
 
+def plot_stability(
+    data: Series | Dataset,
+    spec: FigureSpec | None = None,
+    *,
+    preset: str = "publication",
+) -> tuple[Figure, Axes]:
+    """Lazily render validated electrochemical stability traces."""
+    from .stability_plotting import plot_stability as _plot_stability
+
+    return _plot_stability(data, spec, preset=preset)
+
+
+def plot_stability_summary(
+    results: StabilityResultCollection | Sequence[StabilityResult],
+    spec: FigureSpec | None = None,
+    *,
+    metric: str = "retention_percent",
+    preset: str = "publication",
+) -> tuple[Figure, Axes]:
+    """Lazily render one already-calculated stability summary metric."""
+    from .stability_plotting import plot_stability_summary as _plot_stability_summary
+
+    return _plot_stability_summary(
+        results,
+        spec,
+        metric=metric,  # type: ignore[arg-type]
+        preset=preset,
+    )
+
+
 __all__ = [
     "AVOGADRO_CONSTANT_MOL_INV",
     "ActivityBasis",
@@ -294,6 +338,15 @@ __all__ = [
     "PartialCurrentDensityResult",
     "SignMode",
     "SourceDataRef",
+    "StabilityAnalysisConfig",
+    "StabilityError",
+    "StabilityMissingPolicy",
+    "StabilityResult",
+    "StabilityResultCollection",
+    "StabilityRetentionMode",
+    "StabilityWindow",
+    "StabilityWindowSpec",
+    "StabilityYKind",
     "TafelBranch",
     "TafelError",
     "TafelFitResult",
@@ -303,6 +356,8 @@ __all__ = [
     "TurnoverInventoryBasis",
     "TurnoverSourceKind",
     "amount_to_mol",
+    "analyze_stability",
+    "analyze_stability_dataset",
     "area_to_cm2",
     "charge_to_c",
     "convert_potential_to_rhe",
@@ -339,6 +394,8 @@ __all__ = [
     "plot_faradaic_efficiency",
     "plot_lsv",
     "plot_partial_current_density",
+    "plot_stability",
+    "plot_stability_summary",
     "plot_tafel",
     "plot_turnover_frequency",
     "potential_to_v",
@@ -359,4 +416,5 @@ __all__ = [
     "turnover_frequency_from_rate",
     "turnover_frequency_from_rate_dataset",
     "turnover_frequency_from_rate_series",
+    "validate_stability_series",
 ]
