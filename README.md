@@ -2,7 +2,7 @@
 
 **CatalysisWorkbench** is a Python workbench for quantitative post-processing, comparative analysis, and publication-quality visualization of catalysis experimental, characterization, and computational data.
 
-The v0.1 scientific foundation covers common one-dimensional XY workflows: tabular import, reusable processing, LSV/polarization curves, XRD, Raman, and exact-size PNG/SVG/PDF export.
+The reviewed v0.1 scientific foundation covers common one-dimensional XY workflows: tabular import, reusable processing, LSV/polarization curves, XRD, Raman, and exact-size PNG/SVG/PDF export. v0.2 development is extending that foundation into quantitative electrochemistry; shared electrochemistry quantity/provenance conventions, scatter/bar rendering, Tafel analysis, Faradaic efficiency, and product partial-current density are already merged on `main`.
 
 ## Install from a source checkout
 
@@ -81,16 +81,16 @@ python examples/xrd_quickstart.py
 python examples/raman_quickstart.py
 ```
 
-## Public API map for v0.1
+## Public API map
 
-The supported v0.1 import surfaces are intentionally organized by responsibility rather than re-exporting every object from the package root.
+The supported import surfaces are intentionally organized by responsibility rather than re-exporting every object from the package root.
 
 - `catalysis_workbench.core`: `Axis`, `Series`, `Dataset`.
 - `catalysis_workbench.io`: `read_csv`, `read_txt`, `read_excel`, `read_tabular`, `TabularReadError`.
 - `catalysis_workbench.processing`: crop, normalization, offset, Savitzky-Golay smoothing, interpolation, integration, explicit baseline subtraction, Dataset mapping, and processing errors/results.
-- `catalysis_workbench.experimental.echem`: LSV processing/configuration, explicit RHE/iR/current-density helpers, and `plot_lsv`.
+- `catalysis_workbench.experimental.echem`: reviewed LSV processing/configuration; explicit electrochemistry quantity/reference/provenance helpers; Tafel fitting; Faradaic-efficiency analysis and closure QA; product partial-current density and closure QA; plus lazy publication plotting adapters.
 - `catalysis_workbench.experimental.characterization`: XRD and Raman validation, processing, quantitative Raman-band helpers, annotations/reference sticks, and `plot_xrd` / `plot_raman`.
-- `catalysis_workbench.visualization`: `FigureSpec`, `LayoutSpec`, `PlotStyle`, `SeriesStyle`, annotations/export settings, presets, `render_curves`, and `export_figure`.
+- `catalysis_workbench.visualization`: `FigureSpec`, `LayoutSpec`, `PlotStyle`, `SeriesStyle`, annotations/export settings, presets, shared curve/scatter/bar renderers, and `export_figure`.
 
 Objects or functions in implementation modules that are not exported by these package-level `__all__` surfaces should be treated as internal and may change during development.
 
@@ -100,17 +100,17 @@ CatalysisWorkbench focuses on data that require secondary processing before they
 
 ### Experimental data
 
-- Electrochemistry: LSV, with Tafel, CV, FE, partial current density, ECSA/Cdl, RRDE/K-L, EIS, and stability staged in later roadmap releases.
-- Characterization: XRD and Raman in v0.1; FTIR/ATR-FTIR, XPS, BET/sorption, XAS, composition, and thermal-analysis curves are staged later.
-- Product analysis: calibration, GC/HPLC/NMR-derived quantification, product rates, and Faradaic efficiency are staged after the core electrochemistry foundation.
+- Electrochemistry: LSV/polarization processing, shared quantity/provenance conventions, Tafel analysis, Faradaic efficiency, and product partial-current density are implemented. Mass/specific activity, TOF/TOFapp, CV/Cdl/ECSA, stability, and RRDE/K-L are the remaining planned v0.2 sequence.
+- Characterization: XRD and Raman are implemented; FTIR/ATR-FTIR, XPS, BET/sorption, XAS, composition, and thermal-analysis curves are staged later.
+- Product analysis: v0.2 Faradaic efficiency starts from already quantified product amounts or rates. Raw calibration and GC/HPLC/NMR-derived quantification workflows remain staged after the core electrochemistry foundation.
 
 ### Computational data
 
-Planned modules cover atomic structures, geometry, adsorption/free energies, CHE, DOS/PDOS, Bader charge, COHP/ICOHP, charge-density difference, and related post-processing. These are not part of v0.1.
+Planned modules cover atomic structures, geometry, adsorption/free energies, CHE, DOS/PDOS, Bader charge, COHP/ICOHP, charge-density difference, and related post-processing. These are not part of the current implemented core.
 
 ### Visualization
 
-v0.1 provides publication-ready curve rendering with adjustable figure/axes geometry, typography, lines/markers, ticks, legends, annotations, limits, presets, and exact-size PNG/SVG/PDF export. Shared scatter/bar and advanced scientific visualizations are staged in later releases.
+The shared visualization layer provides publication-ready curve, scatter, and categorical bar rendering with adjustable figure/axes geometry, typography, lines/markers, ticks, legends, annotations, limits, presets, explicit errors where supplied, stable-key styling, and exact-size PNG/SVG/PDF export. Later releases will build advanced scientific visualizations and interactive editing on the same explicit figure-state model.
 
 ## Out of scope
 
@@ -138,18 +138,18 @@ Raw data -> I/O -> standardized data -> scientific analysis -> result -> visuali
 
 A catalyst or sample name remains lightweight metadata on a data series; CatalysisWorkbench does not introduce a laboratory sample-management system.
 
-## v0.1.0 release validation
+## Release and development status
 
-The v0.1 scientific/common-XY feature set and release-hardening gate are complete, and the final release version is `0.1.0`. The release policy requires the final-version wheel, Ruff/pytest suite, installed-wheel smoke checks, and formal release/API/packaging review to pass before a `v0.1.0` tag may point to the reviewed `main` commit. See [`docs/V0_1_AUDIT.md`](docs/V0_1_AUDIT.md), [`CHANGELOG.md`](CHANGELOG.md), and [`docs/RELEASING.md`](docs/RELEASING.md).
+The v0.1 scientific/common-XY feature set and release-hardening gate are complete. v0.2 development has completed the shared electrochemistry foundation (#19), scatter/bar rendering (#20), Tafel (#21), Faradaic efficiency (#22), and product partial-current density (#23). The next implementation target is **Issue #24: mass and specific activity normalization**.
+
+New functionality follows a strict feature loop: prior-art scan with license recording, implementation/regression tests, CI, Draft PR, scientific/API/compatibility review, fixes, CI, second review, Ready/merge gate, squash merge, `main` CI verification, then issue closure.
+
+See [`docs/MASTER_PLAN.md`](docs/MASTER_PLAN.md) for the project-wide execution model and current checkpoint, [`docs/V0_2_PLAN.md`](docs/V0_2_PLAN.md) for the active v0.2 dependency/order plan, and [`docs/ROADMAP.md`](docs/ROADMAP.md) for the long-range release scope.
 
 ## Roadmap
 
-- **v0.2:** Tafel, FE, partial current, activity normalization, TOF/TOFapp, CV/Cdl/ECSA, stability, RRDE/K-L, plus shared electrochemistry quantity conventions and scatter/bar rendering.
+- **v0.2:** quantitative core electrochemistry, with #19-#23 complete and #24-#28 remaining in the planned sequence.
 - **v0.3-v0.6:** extended experimental characterization, advanced electrochemistry, XAS, structures, and major DFT post-processing.
 - **v0.7-v1.0:** advanced volumetric visualization, operando/time-resolved analysis, reproducible batch workflows, and a local GUI.
 
-See [`docs/ROADMAP.md`](docs/ROADMAP.md) and [`docs/V0_2_PLAN.md`](docs/V0_2_PLAN.md) for staged details.
-
-## Development status
-
-The `main` branch is kept stable. New work should be developed through feature/release branches and pull requests. v0.1 is feature-complete and release-hardened; release tags are created only from a reviewed final-version `main` commit after the documented release gate.
+The `main` branch is kept stable. New work should be developed through feature/release branches and pull requests, and live GitHub repository state remains authoritative if descriptive documentation becomes stale.
