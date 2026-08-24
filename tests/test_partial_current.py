@@ -11,6 +11,7 @@ import pytest
 from catalysis_workbench.core import Axis, Dataset, Series
 from catalysis_workbench.experimental.echem import (
     PartialCurrentClosureError,
+    PartialCurrentClosureResult,
     PartialCurrentDensityError,
     PartialCurrentDensityResult,
     partial_current_closure,
@@ -235,6 +236,19 @@ def test_magnitude_closure_is_explicit_and_handles_zero_total_deterministically(
     assert result.passed.tolist() == [True, False]
 
 
+def test_public_closure_result_rejects_inconsistent_relative_error():
+    with pytest.raises(PartialCurrentClosureError, match="relative_error"):
+        PartialCurrentClosureResult(
+            total_current_density=[-100.0],
+            summed_partial_current_density=[-90.0],
+            residual=[10.0],
+            absolute_error=[10.0],
+            relative_error=[0.01],
+            tolerance_fraction=0.05,
+            passed=[True],
+        )
+
+
 def test_dataset_closure_retains_source_digests_and_validates_units():
     current = _total_current()
     partial = partial_current_density_dataset(
@@ -257,6 +271,40 @@ def test_dataset_closure_retains_source_digests_and_validates_units():
     )
     with pytest.raises(PartialCurrentClosureError, match="units must match"):
         partial_current_closure_dataset(current, Dataset([bad]))
+
+
+def test_dataset_closure_rejects_mismatched_total_current_provenance():
+    source_current = _total_current()
+    partial = partial_current_density_dataset(
+        source_current,
+        Dataset([_fe("CO", (100.0, 100.0, 100.0))]),
+    )
+    other_current = _total_current(values=(-10.0, -25.0, -40.0))
+
+    with pytest.raises(PartialCurrentClosureError, match="current_source provenance"):
+        partial_current_closure_dataset(other_current, partial)
+
+
+def test_dataset_closure_rejects_current_density_normalization_mismatch():
+    current = _total_current()
+    partial = partial_current_density_series(current, _fe(values=(100.0, 100.0, 100.0)))
+    mismatched = Series(
+        x=partial.x,
+        y=partial.y,
+        key=partial.key,
+        label=partial.label,
+        x_axis=partial.x_axis,
+        y_axis=Axis(
+            "partial_current_density",
+            unit=partial.y_axis.unit,
+            label=partial.y_axis.label,
+            metadata={"normalization": "ecsa"},
+        ),
+        metadata=partial.metadata_dict(),
+    )
+
+    with pytest.raises(PartialCurrentClosureError, match="normalization metadata differ"):
+        partial_current_closure_dataset(current, Dataset([mismatched]))
 
 
 def test_numerical_echem_import_remains_matplotlib_lazy():
