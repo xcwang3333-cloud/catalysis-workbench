@@ -60,7 +60,6 @@ from .quantities import (
     amount_to_mol,
     area_to_cm2,
     charge_to_c,
-    convert_potential_to_rhe as _unused_convert_potential_to_rhe,
     current_density_to_a_cm2,
     current_to_a,
     electron_number,
