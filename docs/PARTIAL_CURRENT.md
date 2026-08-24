@@ -57,9 +57,9 @@ Two comparison modes are explicit:
 - `signed`: compare `sum(j_product)` with signed `j_total`;
 - `magnitude`: compare `sum(abs(j_product))` with `abs(j_total)`.
 
-The report includes summed partial current, signed residual, absolute error, relative error, tolerance, and pass/fail mask. At zero total current, exact zero closure has zero relative error; any non-zero closure error is infinite and fails a finite tolerance.
+The report includes summed partial current, signed residual, absolute error, relative error, tolerance, and pass/fail mask. At zero total current, exact zero closure has zero relative error; any non-zero closure error is infinite and fails a finite tolerance. The public `PartialCurrentClosureResult` constructor re-validates residual, absolute error, relative error, and pass/fail consistency so an internally contradictory QA result cannot be constructed silently.
 
-`partial_current_closure_dataset(...)` adds unit/condition validation and deterministic source references for the total-current Series and every partial-current Series.
+`partial_current_closure_dataset(...)` adds unit/condition validation and deterministic source references for the total-current Series and every partial-current Series. Total and partial current-density normalization metadata must agree. If a partial-current Series carries `current_source` provenance from `partial_current_density_series(...)`, its source SHA-256 must match the total-current Series supplied to closure; provenance-free manually constructed partial-current Series remain supported when their explicit scientific metadata are compatible.
 
 ## Publication plotting
 
@@ -88,6 +88,9 @@ Reject explicitly:
 - condition value/order mismatch;
 - condition-axis name/unit/reference/normalization mismatch;
 - empty multi-product Dataset or missing stable product keys;
-- closure arrays with incompatible shapes or invalid tolerance/mode.
+- closure arrays with incompatible shapes or invalid tolerance/mode;
+- inconsistent closure result residual/absolute/relative/pass state;
+- total/partial current-density normalization mismatch;
+- stale or mismatched `current_source` provenance when that provenance is present.
 
 None of these failures triggers an automatic scientific correction.
