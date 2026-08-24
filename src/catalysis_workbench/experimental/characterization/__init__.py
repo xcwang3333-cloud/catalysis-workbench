@@ -4,6 +4,16 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from .bet import (
+    BETConsistencyResult,
+    BETError,
+    BETFitDiagnostics,
+    BETFitResult,
+    BETRegionEvaluation,
+    evaluate_bet_region,
+    fit_bet,
+    summarize_bet_fit,
+)
 from .composition import (
     BulkMassFractionUnit,
     CompositionBasis,
@@ -251,6 +261,18 @@ def plot_sorption(
     return _plot_sorption(data, spec, branch=branch, preset=preset)
 
 
+def plot_bet_fit(
+    result: BETFitResult,
+    spec: FigureSpec | None = None,
+    *,
+    preset: str = "publication",
+) -> tuple[Figure, Axes]:
+    """Lazily render an already-computed accepted quantitative BET fit."""
+    from .bet_plotting import plot_bet_fit as _plot_bet_fit
+
+    return _plot_bet_fit(result, spec, preset=preset)
+
+
 def plot_composition(
     data: CompositionTable | CompositionSummaryTable,
     spec: FigureSpec | None = None,
@@ -293,6 +315,11 @@ def plot_xps_fit(
 
 
 __all__ = [
+    "BETConsistencyResult",
+    "BETError",
+    "BETFitDiagnostics",
+    "BETFitResult",
+    "BETRegionEvaluation",
     "BulkMassFractionUnit",
     "CompositionBasis",
     "CompositionError",
@@ -353,6 +380,8 @@ __all__ = [
     "convert_relative_pressure",
     "convert_temperature",
     "derive_dtg",
+    "evaluate_bet_region",
+    "fit_bet",
     "fit_ftir_baseline",
     "fit_xps_peaks",
     "id_ig_ratio",
@@ -361,6 +390,7 @@ __all__ = [
     "measure_raman_band",
     "measure_thermal_window",
     "normalize_tga_mass",
+    "plot_bet_fit",
     "plot_composition",
     "plot_ftir",
     "plot_raman",
@@ -393,6 +423,7 @@ __all__ = [
     "stack_thermal_dataset",
     "stack_xrd_dataset",
     "subtract_ftir_baseline",
+    "summarize_bet_fit",
     "summarize_composition_replicates",
     "summarize_sorption_window",
     "summarize_xps_fit",
