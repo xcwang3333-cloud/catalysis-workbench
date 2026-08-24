@@ -38,7 +38,12 @@ def _validate_activity_series(data: Series | Dataset) -> None:
             raise ActivityNormalizationError(
                 "activity plotting requires y_axis.name='activity'"
             )
-        normalization = item.y_axis.metadata.get("normalization")
+        raw_normalization = item.y_axis.metadata.get("normalization")
+        normalization = (
+            raw_normalization.strip().casefold()
+            if isinstance(raw_normalization, str)
+            else None
+        )
         if normalization not in _ACTIVITY_BASES:
             raise ActivityNormalizationError(
                 "activity y-axis normalization metadata must identify "
