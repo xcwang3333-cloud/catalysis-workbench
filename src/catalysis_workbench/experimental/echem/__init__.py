@@ -15,14 +15,14 @@ from .activity import (
     normalize_activity_series,
 )
 from .cv_cdl import (
-    CVSamplingMethod,
-    CVSweepPair,
     CdlCurrentBasis,
     CdlDifferenceMode,
     CdlError,
     CdlFitCollection,
     CdlFitResult,
     CdlPairProvenance,
+    CVSamplingMethod,
+    CVSweepPair,
     ECSAResult,
     ecsa_from_cdl,
     fit_cdl,
