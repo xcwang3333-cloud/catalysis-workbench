@@ -22,15 +22,15 @@ Checkpoint date: 2026-08-24.
 
 - Repository: `xcwang3333-cloud/catalysis-workbench`.
 - Stable integration branch: `main`.
-- Current released `main` checkpoint: `1f7f4057397c61ef2f771b96fceadc8a529b62d9` (`release: finalize v0.2.0 candidate (#46)`).
+- `v0.2.0` tagged release commit: `1f7f4057397c61ef2f771b96fceadc8a529b62d9` (`release: finalize v0.2.0 candidate (#46)`).
 - v0.1 scientific/common-XY foundation is released as `v0.1.0`.
 - **All planned v0.2 implementation Issues #19-#28 are complete and merged.**
 - **Gate A / Issue #43 / PR #44 is complete.**
 - **Gate B / Issue #45 / PR #46 is complete.**
-- **Gate C / Issue #47 is complete: tag `v0.2.0` was explicitly authorized, created, and verified identical to release commit `1f7f4057397c61ef2f771b96fceadc8a529b62d9`.**
-- Distribution metadata and runtime `__version__` both report `0.2.0`; changelog release date is 2026-08-24.
+- **Gate C / Issue #47 is complete: tag `v0.2.0` was explicitly authorized, created, and verified identical to the tagged release commit.**
+- Distribution metadata and runtime `__version__` at the tagged release both report `0.2.0`; changelog release date is 2026-08-24.
 - Package-registry publication remains a separate policy decision and was not part of the v0.2 Git release.
-- **Active target: Issue #48 — post-release documentation synchronization.**
+- Issue #48 / PR #49 is the post-release documentation synchronization that records this stable release state; it does not change the tagged release contents.
 
 Live GitHub issue/PR/tag state remains authoritative if this checkpoint becomes stale.
 
@@ -74,13 +74,13 @@ The detailed v0.2 scientific contract and completed issue sequence are maintaine
 - #43 / PR #44 — Gate-A release hardening, full installed-wheel public-API audit, representative #21-#28 numerical smoke, and v0.2 Gate A/B/C release-policy definition.
 - #45 / PR #46 — Gate-B final version `0.2.0`, exact-wheel validation, two-pass release/API/packaging/version review, and merge.
 - #47 — Gate-C explicit release authorization, `v0.2.0` tag creation, and exact-target verification.
-- #48 — post-release documentation synchronization.
+- #48 / PR #49 — post-release documentation synchronization; no change to the tagged release commit.
 
 ### Released v0.2 baseline
 
 `v0.2.0` is the reviewed baseline for the complete quantitative core electrochemistry scope. Gate-B CI built `catalysis_workbench-0.2.0-py3-none-any.whl`, installed it into a fresh virtual environment, passed `pip check`, complete public `__all__` resolution, representative #21-#28 numerical smoke, and the installed LSV/XRD/Raman examples. Gate C subsequently verified the tag is identical to the reviewed release commit.
 
-No scientific/API implementation change belongs in Issue #48. Once the post-release documentation sync is merged, v0.2 is operationally closed and the next development stage is v0.3 planning from the reviewed `main` baseline.
+No scientific/API implementation change belongs in the post-release documentation synchronization. After this synchronization is merged, v0.2 is operationally closed and the next development stage is v0.3 planning from the reviewed post-release `main` baseline.
 
 ## Mandatory development loop
 
@@ -179,4 +179,4 @@ This lightweight resynchronization is the required checkpoint between feature/re
 
 ## Immediate next action
 
-Complete Issue #48 as a docs/changelog-only post-release synchronization from the released `main=1f7f4057397c61ef2f771b96fceadc8a529b62d9`. After #48 merges and `main` is rechecked, inspect the live open-Issue state and begin v0.3 planning from [`ROADMAP.md`](ROADMAP.md). Do not infer or fabricate the first v0.3 Issue number, and do not mix v0.3 scientific implementation into the v0.2 release-sync PR.
+After the post-release documentation synchronization is merged and `main` is rechecked, inspect the live open-Issue state and begin v0.3 planning from [`ROADMAP.md`](ROADMAP.md). Do not infer or fabricate the first v0.3 Issue number, and do not mix v0.3 scientific implementation into the v0.2 release-sync PR.
