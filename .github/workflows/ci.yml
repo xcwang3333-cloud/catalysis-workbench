@@ -56,6 +56,7 @@ jobs:
       - name: Smoke documented public API and reviewed scientific modules from installed wheel
         run: |
           .venv-smoke/bin/python tests/installed_api_smoke.py
+          .venv-smoke/bin/python tests/installed_peak_fitting_smoke.py
           .venv-smoke/bin/python tests/installed_thermal_smoke.py
           .venv-smoke/bin/python tests/installed_sorption_smoke.py
           .venv-smoke/bin/python tests/installed_composition_smoke.py
