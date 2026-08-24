@@ -2,7 +2,7 @@
 
 v0.4 release work is deliberately separated from scientific implementation. Completion of the reviewed v0.4 scientific scope does not itself authorize a version bump, Git tag, GitHub Release, or package-registry publication.
 
-This document records the v0.4 Gate A / Gate B / Gate C procedure. Gate A is complete. Gate B is the separately authorized final-version candidate. Gate C tagging, GitHub Release creation, and package-registry publication remain separate later boundaries.
+This document records the v0.4 Gate A / Gate B / Gate C procedure and completed evidence. Gate A, Gate B, and Gate C are complete. Tag `v0.4.0` was created on 2026-08-25 and reverse-verified on the reviewed release commit. GitHub Release creation is a later separate action; package-registry publication remains a still-later independent boundary.
 
 ## Frozen v0.4 scientific scope
 
@@ -42,37 +42,29 @@ Gate A added the unified `tests/installed_v04_release_smoke.py` audit and wired 
 
 Gate A created no v0.4 tag, GitHub Release, or package publication and changed no scientific semantics.
 
-## Gate B — authorized final `0.4.0` candidate
+## Gate B — completed final `0.4.0` candidate
 
-Gate B is tracked by Issue #105 on branch `release/v0.4-gate-b`, created directly from reviewed Gate-A `main` commit `ce06abc11559fa7679869fc83a59356735ce6824` after explicit user authorization.
+Gate B / Issue #105 / PR #106 was performed on branch `release/v0.4-gate-b`, created directly from reviewed Gate-A `main` commit `ce06abc11559fa7679869fc83a59356735ce6824` after explicit user authorization.
 
-Gate B changes both version declarations together:
+Gate B changed both version declarations together:
 
 - `[project].version`: `0.3.0` -> `0.4.0`;
 - `catalysis_workbench.__version__`: `0.3.0` -> `0.4.0`.
 
-Gate B contains no new scientific feature work. Before it may merge, the final exact head must satisfy all of the following:
+Gate B contained no new scientific feature work. The final exact head satisfied all release criteria: Ruff/full pytest, wheel build/install, `pip check`, exact distribution/runtime version equality, installed-source verification, all documented package-level `__all__` surfaces including product analysis, Matplotlib-lazy numerical imports, the retained v0.3 numerical release audit, all reviewed v0.4 installed smokes, and all seven documented quickstarts.
 
-1. Ruff and the complete pytest suite pass with `0.4.0` in the source tree.
-2. CI builds the final `catalysis_workbench-0.4.0-*.whl` artifact from that exact head.
-3. A fresh virtual environment installs the wheel and `pip check` succeeds.
-4. Installed distribution metadata and runtime `__version__` both report exactly `0.4.0`.
-5. Installed imports are proven to resolve outside the repository `src/` tree.
-6. Every documented package-level `__all__` surface resolves from the installed wheel, including the product-analysis surface.
-7. The unified v0.4 installed-wheel audit passes unchanged except for the expected release version being `0.4.0`.
-8. The retained v0.3 numerical release audit, module-specific installed smokes, reviewed v0.4 smokes, and all seven documented quickstarts pass on the same installed `0.4.0` wheel.
-9. Numerical processing/electrochemistry/characterization/product imports remain Matplotlib-lazy before plotting is requested.
-10. `CHANGELOG.md` contains an explicit `[0.4.0]` candidate section with intended release date `2026-08-25`.
-11. README and central release/status documentation describe the final-version candidate consistently and do not claim that tag `v0.4.0` already exists.
-12. `v0.3.0` remains fixed on `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`.
-13. No `v0.4.0` tag, GitHub Release, or package-registry publication is created by Gate B.
-14. Formal release/API/packaging/version review has no unresolved blockers.
-15. If the PR head changes after a finding is fixed, previous CI and review evidence is stale and must be rerun.
-16. A second formal review is performed on the final exact head.
-17. The merge gate confirms behind=0, mergeable=true, review threads=0, and that the exact head being merged is the one that passed final CI/review.
-18. Merge uses expected-head squash merge, followed by direct `main` verification and Issue #105 closure.
+Final Gate-B evidence:
 
-Merging Gate B will establish the reviewed `0.4.0` release commit on `main`; it will still not create a Git tag.
+- branch base: `ce06abc11559fa7679869fc83a59356735ce6824`;
+- final PR head: `ae3dc21b1a3a4e907d8c39eb85d3dbebefd8fbb4`;
+- exact-head CI #304 / run `32759679632`: success;
+- formal reviews: `5011014348`, `5011017132`;
+- merge gate: behind=0, mergeable=true, review threads=0;
+- expected-head squash merge / reviewed release commit: `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6`;
+- `main` was directly re-read and verified at the same commit;
+- Issue #105: completed/closed.
+
+Gate B established the reviewed `0.4.0` release commit on `main` but intentionally created no Git tag, GitHub Release, or package-registry publication.
 
 ## Unified installed-wheel v0.4 audit
 
@@ -93,26 +85,43 @@ The unified audit covers:
 
 The existing scientific smokes remain authoritative for their module-specific numerical assertions. The unified release program composes them rather than copying a second set of scientific equations into release plumbing.
 
-## Gate C — separate `v0.4.0` tag boundary
+## Gate C — completed `v0.4.0` tag boundary
 
-Creation of tag `v0.4.0` is not authorized by Gate B. Gate C may begin only after Gate B is squash-merged and the intended release commit is re-read directly from `main`.
+Gate C began only after Gate B was squash-merged and the intended release commit was re-read directly from `main`. Explicit user authorization was given before tag creation.
 
-Before tag creation, Gate C must verify at minimum:
+Pre-tag verification confirmed:
 
-1. `main` is exactly the reviewed Gate-B merge commit;
-2. distribution metadata and runtime `__version__` both report `0.4.0`;
-3. `CHANGELOG.md` release date matches the actual tag date; if the date changes, correct it in a reviewed commit and rerun the required release gate;
-4. no unreviewed release-critical change has intervened;
-5. tag `v0.4.0` does not already exist;
-6. explicit user authorization has been given for creating tag `v0.4.0`.
+1. `main` was exactly `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6`;
+2. distribution metadata and runtime `__version__` both reported `0.4.0`;
+3. `CHANGELOG.md` release date `2026-08-25` matched the actual local tag date;
+4. no unreviewed release-critical change had intervened;
+5. tag `v0.4.0` did not already exist;
+6. prior tag `v0.3.0` remained fixed on `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`.
 
-After creation, the tag must be reverse-verified to resolve exactly to the reviewed release commit and reads through the tag must report version `0.4.0`.
+Gate C / Issue #107 then created tag `v0.4.0`. Reverse verification proved:
+
+- `v0.4.0` resolves exactly to `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6` with no ahead/behind drift;
+- `pyproject.toml` read through the tag reports `0.4.0`;
+- `src/catalysis_workbench/__init__.py` read through the tag reports `__version__ = "0.4.0"`;
+- `main` remained unchanged by tag creation;
+- `v0.3.0` remained unchanged;
+- Issue #107 was closed as completed after all reverse checks passed.
+
+Gate C created no GitHub Release and performed no package-registry publication.
+
+## Post-tag documentation synchronization
+
+Issue #108 is the routine docs-only checkpoint that replaces stale Gate-B/tag-pending wording with the verified tagged `v0.4.0` state. Its scope is restricted to README/release-plan/roadmap/changelog status synchronization; it must not alter scientific code, public API, dependencies, version declarations, or either immutable tag.
+
+After #108 merges, `main` and `v0.4.0` must be reverified before the next release action.
 
 ## GitHub Release and package-registry boundaries
 
-A Git tag does not authorize a GitHub Release, and neither a tag nor GitHub Release authorizes package-registry publication.
+A Git tag does not itself publish a GitHub Release, and neither a tag nor GitHub Release authorizes package-registry publication.
 
-GitHub Release creation and PyPI/other registry publication remain separate policy/actions covering artifact provenance, credentials/account ownership, licensing/distributability, reproducibility, signing/attestation where applicable, and intended public/private distribution.
+The user's current `继续推进` instruction explicitly authorizes creation of the GitHub Release for the existing, already verified `v0.4.0` tag after Issue #108 is merged and reverified. Package-registry publication remains a separate policy/action and is not authorized.
+
+GitHub Release and any later PyPI/other registry publication must preserve artifact provenance, credentials/account ownership, licensing/distributability, reproducibility, signing/attestation where applicable, and intended public/private distribution.
 
 ## Drift and failure policy
 
@@ -122,13 +131,17 @@ If `main` moves while a release PR is open, verify branch/base drift before merg
 
 If release hardening exposes a real API or packaging defect, fix it explicitly with regression coverage. If it exposes a scientific defect, route the defect through normal scientific/API compatibility discipline rather than weakening the release audit.
 
-## What Gate B must not do
+## Historical Gate-B non-actions
 
-- do not create or move `v0.4.0`;
-- do not move or recreate `v0.3.0`;
-- do not create a GitHub Release;
-- do not publish a package;
-- do not add a new scientific module or scientific algorithm;
-- do not hide or relax an incompatibility merely to satisfy CI;
-- do not treat editable-install success as wheel-install evidence;
-- do not reuse CI/review evidence after the PR head changes.
+Gate B was required to:
+
+- not create or move `v0.4.0`;
+- not move or recreate `v0.3.0`;
+- not create a GitHub Release;
+- not publish a package;
+- not add a new scientific module or scientific algorithm;
+- not hide or relax an incompatibility merely to satisfy CI;
+- not treat editable-install success as wheel-install evidence;
+- not reuse CI/review evidence after the PR head changed.
+
+Those constraints were satisfied. The later Gate C tag action and current post-tag documentation synchronization are separate, audited steps.
