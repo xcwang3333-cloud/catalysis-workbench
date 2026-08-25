@@ -22,6 +22,7 @@ Checkpoint date: 2026-08-25.
 
 - Repository: `xcwang3333-cloud/catalysis-workbench`.
 - Stable integration branch: `main`.
+- Current v0.6 architecture baseline: `3803e014376a7edb22d6a9a5b6480541742499be` after Issue #146 / PR #147.
 - v0.5 scientific-completion baseline: `a7ebd009ec83b0aeb068ad2d2f6712c17a783f1f`.
 - Completion-state docs merge: `8c958ffc29a36afa9340cada2239b51520c87a3d` (#134/#135).
 - v0.5 Gate A: #136/#137 — complete at `0ffcd7e4a89340d993468039ba83b44bc7638050`.
@@ -30,22 +31,14 @@ Checkpoint date: 2026-08-25.
 - Distribution/runtime version is `0.5.0`.
 - Gate C / Issue #142 is complete; tag `v0.5.0` resolves exactly to `9400ac0044ac333d2cae228554c08d955a816a4c` and reads distribution/runtime version `0.5.0` through the tag.
 - The public GitHub Release `CatalysisWorkbench v0.5.0` is published from the existing verified tag; Issue #144 is complete.
+- Final v0.5 post-release documentation synchronization Issue #143 is complete/closed; its merge is `bed5c6e750a6066baa8daa21492aa9eb90e8bca8`.
 - Released v0.4 tag: `v0.4.0 -> bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6`, immutable and independently reverse-verified.
 - The v0.4 GitHub Release is published from the existing `v0.4.0` tag.
 - `v0.3.0` remains fixed on release commit `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`.
 - PyPI/package-registry publication is explicitly deferred; Issue #113 is closed `not_planned`.
-- v0.5 architecture checkpoint: Issue #115 / PR #116 — complete.
-- XAS/XANES: Issue #117 / PR #118 — complete.
-- FT-EXAFS: Issue #119 / PR #120 — complete.
-- WT-EXAFS: Issue #121 / PR #122 — complete.
-- EXAFS fitting-result summaries: Issue #123 / PR #124 — complete.
-- Atomic-structure model/adapters: Issue #125 / PR #126 — complete.
-- Geometry/coordination/structure comparison: Issue #127 / PR #129 — complete.
-- Static structure visualization: Issue #130 / PR #131 — complete.
-- Basic DFT energetics: Issue #132 / PR #133 — complete.
-- v0.5 scientific implementation: **complete**.
-- Active maintenance stage: **Issue #143 — final post-release documentation synchronization**.
-- After #143 merges and is reverified, the v0.5 GitHub release cycle is complete. The next scientific release is v0.6; package-registry/PyPI publication remains a separate future authorization decision.
+- v0.6 architecture checkpoint: Issue #146 / PR #147 — complete at `3803e014376a7edb22d6a9a5b6480541742499be`.
+- Active stage: **Issue #148 — synchronize the completed v0.6 architecture into central documentation before scientific implementation block 1**.
+- No v0.6 scientific implementation block starts until #148 is complete and `main` is reverified.
 
 Live GitHub Issue/PR/tag state remains authoritative if this checkpoint becomes stale.
 
@@ -60,7 +53,7 @@ Detailed long-range scope is maintained in [`ROADMAP.md`](ROADMAP.md).
 | v0.3.x | FTIR, thermal analysis, basic gas sorption, ICP/composition | complete/released as v0.3.0 |
 | v0.4.x | shared fitting, XPS, EIS, quantitative BET, product calibration | complete/released as v0.4.0; GitHub Release published; PyPI deferred |
 | v0.5.x | XAS/XANES, FT/WT-EXAFS, EXAFS summaries, structures/geometry/static visualization, basic DFT energetics | complete/released as v0.5.0; GitHub Release published; PyPI deferred |
-| v0.6.x | electronic structure and catalysis thermodynamics | planned |
+| v0.6.x | electronic structure and catalysis thermodynamics | architecture complete; scientific implementation pending |
 | v0.7.x | advanced computational visualization | planned |
 | v0.8.x | operando/time-resolved analysis | planned |
 | v0.9.x | reproducible batch workflows and first interactive editor | planned |
@@ -154,7 +147,7 @@ Completed release steps:
     -> #140/#141 post-Gate-B docs sync — complete
     -> Gate C #142 — complete; v0.5.0 reverse-verified
     -> GitHub Release #144 — complete; CatalysisWorkbench v0.5.0 published
-    -> #143 final post-release docs sync — active
+    -> #143 final post-release docs sync — complete at bed5c6e750a6066baa8daa21492aa9eb90e8bca8
     -> package-registry publication — only if separately reauthorized
 ```
 
@@ -162,7 +155,33 @@ Gate A final head `fb13cdbf633366a0840f5f2e21af215bee47b133` passed CI #358 / ru
 
 Gate B final head `b95841ed472aff1fa4d05af7335547ee5c3cd611` passed CI #360 / run `32800514038` and reviews `5014348449`, `5014349058` before squash merge `9400ac0044ac333d2cae228554c08d955a816a4c`. Distribution/runtime version is `0.5.0`.
 
-Gate C / #142 created and reverse-verified `v0.5.0` exactly on `9400ac0044ac333d2cae228554c08d955a816a4c`; the tag must not be moved or recreated. GitHub Release / #144 is publicly published from that existing tag. PyPI/package-registry publication remains deferred.
+Gate C / #142 created and reverse-verified `v0.5.0` exactly on `9400ac0044ac333d2cae228554c08d955a816a4c`; the tag must not be moved or recreated. GitHub Release / #144 is publicly published from that existing tag. Final post-release docs sync #143 is complete. PyPI/package-registry publication remains deferred.
+
+## v0.6 execution status
+
+The reviewed v0.6 architecture, scientific semantics, dependency boundaries, implementation order, prior-art/license decisions, and v0.7 handoff are maintained in [`V0_6_PLAN.md`](V0_6_PLAN.md).
+
+### Architecture checkpoint — complete
+
+Issue #146 / PR #147 froze the architecture before any v0.6 scientific implementation. The checkpoint was merged at `3803e014376a7edb22d6a9a5b6480541742499be` after exact-head CI and final-head scientific/API/license review.
+
+The frozen scientific implementation order is:
+
+1. electronic-structure + volumetric semantics/adapters;
+2. DOS/PDOS processing + passive plotting;
+3. band-center analysis;
+4. Bader result parsing + charge accounting;
+5. COHP/ICOHP parsing + bonding analysis;
+6. geometry–bonding correlation;
+7. CHE/free-energy thermodynamics;
+8. free-energy diagrams;
+9. charge-density-difference calculation + lattice/grid validation.
+
+The architecture establishes shared energy-reference, spin, site/orbital projection, normalization, provenance, lattice/grid and component semantics before descriptor-specific processing. CHE extends the reviewed v0.5 DFT-energy foundation instead of creating a second incompatible energy model.
+
+### Current pre-implementation sync
+
+Issue #148 synchronizes the completed architecture checkpoint into central docs. No v0.6 numerical implementation, runtime dependency addition, version change, tag action, GitHub Release action, or PyPI action belongs in this step. Scientific block 1 begins only after #148 merges and `main` is reverified.
 
 ## Mandatory development loop
 
@@ -235,11 +254,12 @@ After squash merge, re-read `main`. When connector visibility does not expose a 
 - [`../README.md`](../README.md): user-facing overview, installation, public capability summary and links.
 - [`MASTER_PLAN.md`](MASTER_PLAN.md): project-wide execution order, checkpoint summary, governance and quality gates.
 - [`ROADMAP.md`](ROADMAP.md): long-range release scope; not a per-commit log.
+- [`V0_6_PLAN.md`](V0_6_PLAN.md): v0.6 architecture, frozen dependency order, scientific/API semantics, prior-art/license decisions, test strategy, and v0.7 handoff.
 - [`V0_5_PLAN.md`](V0_5_PLAN.md): v0.5 architecture, dependency order, scientific completion state and release handoff.
 - [`V0_5_RELEASING.md`](V0_5_RELEASING.md): v0.5 Gate A/B/C procedure and release evidence.
 - [`V0_4_PLAN.md`](V0_4_PLAN.md) / [`V0_4_RELEASING.md`](V0_4_RELEASING.md): retained v0.4 scientific/release history.
 - technique documents such as [`XAS.md`](XAS.md), [`EXAFS.md`](EXAFS.md), [`WT_EXAFS.md`](WT_EXAFS.md), [`STRUCTURE_GEOMETRY.md`](STRUCTURE_GEOMETRY.md), [`STRUCTURE_VISUALIZATION.md`](STRUCTURE_VISUALIZATION.md), and [`DFT_ENERGETICS.md`](DFT_ENERGETICS.md): reviewed domain contracts.
-- [`REFERENCES.md`](REFERENCES.md): long-lived prior-art reference survey.
+- [`REFERENCES.md`](REFERENCES.md): long-lived prior-art reference survey; release-specific architecture decisions may additionally be frozen in the corresponding `V0_X_PLAN.md`.
 - GitHub Issues: active acceptance criteria.
 - GitHub Pull Requests: concrete diff, review evidence, CI state and merge decision.
 
@@ -254,4 +274,4 @@ After each merged scientific Issue, update only documentation whose statements b
 - preceding Issue closure/completion;
 - version/tag/publication boundaries.
 
-Issue #143 is the active final v0.5 post-release documentation checkpoint. After it merges, reverify `main`, immutable `v0.5.0`, immutable `v0.4.0`, and the published GitHub Release. Then the v0.5 GitHub release cycle is complete; PyPI remains deferred unless separately reauthorized.
+Issue #148 is the active pre-implementation v0.6 central-document synchronization checkpoint. After it merges, reverify `main`, immutable `v0.5.0`, immutable `v0.4.0`, distribution/runtime version `0.5.0`, and PyPI-deferred state. Then start v0.6 scientific block 1 from the exact verified `main` baseline using the frozen order in `V0_6_PLAN.md`.
