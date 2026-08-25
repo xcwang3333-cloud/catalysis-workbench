@@ -1,23 +1,27 @@
 from __future__ import annotations
 
-from dataclasses import FrozenInstanceError
-from pathlib import Path
+import dataclasses
+import pathlib
 
 import numpy as np
 import pytest
 
-from catalysis_workbench.computation import AtomicStructure
-from catalysis_workbench.computation.bader import (
-    BaderChargeResult,
-    BaderChargeSiteResult,
-    BaderError,
-    BaderResult,
-    BaderSiteResult,
-    account_bader_charges,
-    bader_charge_frame,
-    bader_result_frame,
-)
-from catalysis_workbench.io.bader import BaderIOError, read_bader_acf
+import catalysis_workbench.computation as computation
+import catalysis_workbench.io.bader as bader_io
+
+FrozenInstanceError = dataclasses.FrozenInstanceError
+Path = pathlib.Path
+AtomicStructure = computation.AtomicStructure
+BaderChargeResult = computation.BaderChargeResult
+BaderChargeSiteResult = computation.BaderChargeSiteResult
+BaderError = computation.BaderError
+BaderResult = computation.BaderResult
+BaderSiteResult = computation.BaderSiteResult
+account_bader_charges = computation.account_bader_charges
+bader_charge_frame = computation.bader_charge_frame
+bader_result_frame = computation.bader_result_frame
+BaderIOError = bader_io.BaderIOError
+read_bader_acf = bader_io.read_bader_acf
 
 
 STANDARD_ACF = """#         X           Y           Z       CHARGE      MIN DIST   ATOMIC VOL
