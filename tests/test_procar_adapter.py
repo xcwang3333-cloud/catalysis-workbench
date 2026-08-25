@@ -75,7 +75,7 @@ def _parsed_total(band: BandStructureState) -> SimpleNamespace:
     return SimpleNamespace(
         is_soc=False,
         xyz_data=None,
-        orbitals=["s", "pz", "tot"],
+        orbitals=["s", "pz", "px"],
         kpoints=np.array(band.kpoints_fractional, copy=True),
         data={1: _projection_values()},
         eigenvalues={1: np.array(band.channel("total").energies_ev.T, copy=True)},
@@ -103,7 +103,7 @@ def test_single_backend_spin_channel_maps_to_physical_total_and_transposes_axes(
     state = _convert(parsed, band)
 
     assert state.channels[0].spin == "total"
-    assert state.orbitals == ("s", "pz", "tot")
+    assert state.orbitals == ("s", "pz", "px")
     assert state.channels[0].weights.shape == (2, 4, 2, 3)
     assert np.array_equal(
         state.channels[0].weights,
@@ -112,6 +112,8 @@ def test_single_backend_spin_channel_maps_to_physical_total_and_transposes_axes(
     assert state.metadata["kpoint_atol"] == pytest.approx(1e-5)
     assert state.metadata["energy_atol_ev"] == pytest.approx(1e-4)
     assert state.metadata["occupancies_available"] is True
+    assert state.metadata["orbital_source_semantics"] == "pymatgen-core parsed.orbitals"
+    assert state.metadata["raw_terminal_tot_retained"] is False
     assert state.metadata["source_kpoint_weights"] == (1.0, 1.0, 0.0, 0.0)
 
 
@@ -120,7 +122,7 @@ def test_collinear_source_requires_and_preserves_complete_up_down() -> None:
     parsed = SimpleNamespace(
         is_soc=False,
         xyz_data=None,
-        orbitals=["s", "pz", "tot"],
+        orbitals=["s", "pz", "px"],
         kpoints=np.array(band.kpoints_fractional, copy=True),
         data={1: _projection_values(), -1: _projection_values(100.0)},
         eigenvalues={
@@ -181,7 +183,7 @@ def test_soc_or_vector_projection_state_fails_closed() -> None:
 def test_orbital_site_band_and_projection_shape_mismatches_fail_closed() -> None:
     band = _band_state()
     parsed = _parsed_total(band)
-    parsed.orbitals = ["s", "s", "tot"]
+    parsed.orbitals = ["s", "s", "px"]
     with pytest.raises(ElectronicStructureIOError, match="unique"):
         _convert(parsed, band)
 
