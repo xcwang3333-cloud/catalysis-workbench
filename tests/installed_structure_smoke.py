@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from pathlib import Path
 import tempfile
+from pathlib import Path
 
 import numpy as np
 
@@ -13,7 +13,6 @@ from catalysis_workbench.io import (
     read_poscar,
     read_xyz_structure,
 )
-
 
 POSCAR = """SiO test
 1.0
