@@ -22,7 +22,7 @@ Checkpoint date: 2026-08-25.
 
 - Repository: `xcwang3333-cloud/catalysis-workbench`.
 - Stable integration branch: `main`.
-- Exact pre-sync baseline: `b9e3e27c667df9afc6060e387ad0ca4510a73d78`, the expected-head squash merge of v0.7 Block-2 Issue #206 / PR #207.
+- Exact pre-sync baseline: `4a4b1329cbd8153f868cdc2d353dfc0c613778a4`, the expected-head squash merge of v0.7 Block-3 Issue #210 / PR #211.
 - Distribution/runtime version is `0.6.0`.
 - Released tag `v0.6.0 -> c7793b309f41d174c14534bd6d4acdacc2a57636` is immutable.
 - The public GitHub Release `CatalysisWorkbench v0.6.0` is published from that existing tag.
@@ -37,11 +37,15 @@ Checkpoint date: 2026-08-25.
 - Block-1 final head `db0526cfca5b6cc540ac8198b9fd2a02754ba391` passed CI #474 / run `32855491587` and exact-head reviews `5019699984`, `5019702262`; unresolved review threads were zero and the PR was behind=0 / mergeable=true before squash merge.
 - v0.7 Block-1 completion-state synchronization: Issue #204 / PR #205 — complete at `ff263c20b8986c65a47dfdd544ca712a8e3f3cd8`.
 - v0.7 Block 2, charge-density-difference + electron-density + ELF visualization: Issue #206 / PR #207 — complete at `b9e3e27c667df9afc6060e387ad0ca4510a73d78`.
-- Block-2 final head `c3a952f9aad9535cfc7b2a88413527fd40487cfe` passed CI #486 / run `32862918547` (Ruff, 1009-test full pytest, fresh-wheel/public-API smoke, v0.6 + v0.7 Block-1/2 installed audits, optional structure/electronic/bonding + real current `pymatgen-core` ELFCAR round-trip, and documented examples) and exact-head reviews `5020510393`, `5020512056`; unresolved review threads were zero and the PR was behind=0 / mergeable=true before expected-head squash merge.
+- Block-2 final head `c3a952f9aad9535cfc7b2a88413527fd40487cfe` passed CI #486 / run `32862918547` and exact-head reviews `5020510393`, `5020512056`; unresolved review threads were zero and the PR was behind=0 / mergeable=true before expected-head squash merge.
+- v0.7 Block-2 completion-state synchronization: Issue #208 / PR #209 — complete at `bf80f9bb3ffa1d1a764ff71a5202c05e4b5e827e`.
+- v0.7 Block 3, band-structure state/adapters + passive plotting: Issue #210 / PR #211 — complete at `4a4b1329cbd8153f868cdc2d353dfc0c613778a4`.
+- Block-3 final head `b1f1dca77b469f6d3fb4524f7c51f719fa9350e4` passed CI #490 / run `32867366543` (Ruff, full pytest, fresh-wheel/public-API smoke, v0.6 + v0.7 Block-1/2/3 installed audits, optional structure/electronic/bonding/ELFCAR/band adapters including current `pymatgen-core` line-mode KPOINTS and reciprocal `2*pi` convention smoke, and documented examples) and exact-head reviews `5020939345`, `5020940558`; unresolved review threads were zero and the PR was behind=0 / mergeable=true before expected-head squash merge.
 - [`V0_7_PLAN.md`](V0_7_PLAN.md) remains the release-specific authority for the frozen seven-block v0.7 scope, scientific/visualization contracts, dependency order, prior-art/license decisions, testing strategy, and release boundaries.
 - [`VOLUMETRIC_VISUALIZATION.md`](VOLUMETRIC_VISUALIZATION.md) records the reviewed Block-1 scalar-field/source-grid/renderer-neutral foundation and Block-2 charge-density-difference, electron-density, ELFCAR/ELF, and exact-slice visualization contracts.
-- Active stage: **Issue #208 — synchronize the completed v0.7 Block-2 state into central documentation**.
-- v0.7 Block 3, band-structure state/adapters + passive band plotting, begins only after #208 merges and `main` plus release boundaries are reverified.
+- [`BAND_STRUCTURE.md`](BAND_STRUCTURE.md) records the reviewed Block-3 reciprocal-space, physical-spin, explicit Fermi-reference, VASP line-mode adapter, path-discontinuity, and passive band-plotting contract.
+- Active stage: **Issue #212 — synchronize the completed v0.7 Block-3 state into central documentation**.
+- v0.7 Block 4, PROCAR projection processing + fat-band plotting, begins only after #212 merges and `main` plus release boundaries are reverified.
 
 Live GitHub Issue/PR/tag state remains authoritative if this checkpoint becomes stale.
 
@@ -57,7 +61,7 @@ Detailed long-range scope is maintained in [`ROADMAP.md`](ROADMAP.md).
 | v0.4.x | shared fitting, XPS, EIS, quantitative BET, product calibration | complete/released as v0.4.0; GitHub Release published; PyPI deferred |
 | v0.5.x | XAS/XANES, FT/WT-EXAFS, EXAFS summaries, structures/geometry/static visualization, basic DFT energetics | complete/released as v0.5.0; GitHub Release published; PyPI deferred |
 | v0.6.x | electronic structure and catalysis thermodynamics | complete/released as v0.6.0; GitHub Release published; PyPI deferred |
-| v0.7.x | advanced computational visualization | architecture + Blocks 1-2 complete; completion sync #208 active before Block 3 |
+| v0.7.x | advanced computational visualization | architecture + Blocks 1-3 complete; completion sync #212 active before Block 4 |
 | v0.8.x | operando/time-resolved analysis | planned |
 | v0.9.x | reproducible batch workflows and first interactive editor | planned |
 | v1.0.0 | stable personal catalysis data workbench and local GUI | planned |
@@ -312,11 +316,21 @@ Issue #204 / PR #205 synchronized the merged Block-1 state into central document
 
 Issue #206 / PR #207 delivered technique-level visualization on the reviewed Block-1 scalar-field and scene foundation. Signed charge-density-difference scenes consume an existing reviewed `ChargeDensityDifferenceResult` without repeated arithmetic. Total electron-density scenes preserve the exact reviewed `VolumetricGrid.total` values, canonical `1/angstrom^3` unit and caller-supplied finite thresholds without normalization, clipping, smoothing, unit conversion, interpolation or grid transformation. Lazy optional `read_elfcar_field(...)` returns one exact dimensionless ELF `ScalarField` per explicit physical channel, maps current `spin_up` / `spin_down` directly, version-guards historical direct-spin `total` / `diff` semantics without ever applying CHGCAR total/magnetization interpretation, and fails closed on ambiguous/unexpected/nonfinite/mismatched state. Passive Matplotlib slice rendering uses exact source-grid values, explicit display ranges, and deterministic fractional/full-lattice or intrinsic-plane geometry including skew cells. No mesh extraction, PyVista/VTK/scikit-image dependency, or Block-7 3-D renderer call is introduced.
 
-Block-2 final head `c3a952f9aad9535cfc7b2a88413527fd40487cfe` passed CI #486 / run `32862918547` with Ruff, 1009-test full pytest, fresh-wheel/public-API audits, real current optional-backend ELFCAR round-trip and documented examples, plus final-head reviews `5020510393`, `5020512056`, before expected-head squash merge `b9e3e27c667df9afc6060e387ad0ca4510a73d78`.
+Block-2 final head `c3a952f9aad9535cfc7b2a88413527fd40487cfe` passed CI #486 / run `32862918547` and final-head reviews `5020510393`, `5020512056` before expected-head squash merge `b9e3e27c667df9afc6060e387ad0ca4510a73d78`.
 
-### Current Block-2 completion-state sync
+### Block-2 completion-state sync — complete
 
-Issue #208 is the docs-only checkpoint after Block 2. It records merged Block-2 reality in central documentation without adding Block-3 implementation. Block 3 begins only after #208 merges and `main`, immutable `v0.6.0`, distribution/runtime `0.6.0`, public v0.6 GitHub Release, and PyPI-deferred state are reverified.
+Issue #208 / PR #209 synchronized the merged Block-2 state into central documentation at `bf80f9bb3ffa1d1a764ff71a5202c05e4b5e827e` before Block 3 began.
+
+### Band-structure state, VASP adapter, and passive plotting — complete
+
+Issue #210 / PR #211 delivered CatalysisWorkbench-owned immutable band-structure state with exact ordered reciprocal k-points, explicit full reciprocal-lattice matrix and `2*pi` convention, exact physical `total` or complete collinear `up/down` channels, source band index/order, explicit path segments and source labels, retained source Fermi/reference state, periodic structure provenance and deterministic digests. Path distance uses the retained full reciprocal matrix literally, excludes discontinuity jumps, and never inserts or removes `2*pi`. `reference_band_structure_to_fermi(...)` performs only the explicit retained `E - E_F` transformation and is idempotent; neither parser nor renderer shifts energies implicitly. The lazy optional `read_vasprun_band_structure(...)` supports standard reciprocal-coordinate line-mode VASP `KPOINTS` plus `vasprun.xml`, maps physical spin from VASP `ISPIN`, validates every source path point against the explicit line-mode interpolation, and fails closed on hybrid/uniform+line mismatches, unsupported layouts, SOC/noncollinear state, or ambiguous spin semantics. Passive Matplotlib plotting renders every retained band/spin/segment separately so discontinuities are never connected and no gap, metallicity, occupation, symmetry path or band reconnection is inferred. The reviewed domain contract is recorded in [`BAND_STRUCTURE.md`](BAND_STRUCTURE.md), with no new runtime dependency or Block-4 PROCAR implementation.
+
+Block-3 final head `b1f1dca77b469f6d3fb4524f7c51f719fa9350e4` passed CI #490 / run `32867366543` with Ruff, full pytest, fresh-wheel/public-API audits, current optional-backend line-mode KPOINTS/reciprocal-convention smoke and documented examples, plus final-head reviews `5020939345`, `5020940558`, before expected-head squash merge `4a4b1329cbd8153f868cdc2d353dfc0c613778a4`.
+
+### Current Block-3 completion-state sync
+
+Issue #212 is the docs-only checkpoint after Block 3. It records merged Block-3 reality in central documentation without adding Block-4 implementation. Block 4 begins only after #212 merges and `main`, immutable `v0.6.0`, distribution/runtime `0.6.0`, public v0.6 GitHub Release, and PyPI-deferred state are reverified.
 
 ## Mandatory development loop
 
@@ -391,6 +405,7 @@ After squash merge, re-read `main`. When connector visibility does not expose a 
 - [`ROADMAP.md`](ROADMAP.md): long-range release scope; not a per-commit log.
 - [`V0_7_PLAN.md`](V0_7_PLAN.md): v0.7 architecture, frozen seven-block dependency order, scientific/visualization semantics, prior-art/license decisions, testing strategy, and release handoff.
 - [`VOLUMETRIC_VISUALIZATION.md`](VOLUMETRIC_VISUALIZATION.md): reviewed v0.7 Block-1 scalar-field/source-grid/renderer-neutral foundation and Block-2 density/ELF/exact-slice visualization contracts.
+- [`BAND_STRUCTURE.md`](BAND_STRUCTURE.md): reviewed v0.7 Block-3 ordinary band-state, reciprocal-path/`2*pi`, physical-spin, explicit Fermi-reference, VASP line-mode adapter and passive plotting contract.
 - [`V0_6_PLAN.md`](V0_6_PLAN.md): retained v0.6 architecture, frozen dependency order, scientific/API semantics, prior-art/license decisions, test strategy, and v0.7 handoff.
 - [`V0_6_RELEASING.md`](V0_6_RELEASING.md): retained v0.6 Gate A/B/C procedure and release evidence.
 - [`V0_5_PLAN.md`](V0_5_PLAN.md): v0.5 architecture, dependency order, scientific completion state and release handoff.
@@ -412,4 +427,4 @@ After each merged scientific Issue, update only documentation whose statements b
 - preceding Issue closure/completion;
 - version/tag/publication boundaries.
 
-Issue #208 is the active v0.7 Block-2 completion-state documentation checkpoint. After it merges, reverify `main`, Issue #208 closure, immutable `v0.6.0 -> c7793b309f41d174c14534bd6d4acdacc2a57636`, distribution/runtime version `0.6.0`, public v0.6 GitHub Release state, and PyPI-deferred state. Then start v0.7 Block 3 (band-structure state/adapters + passive band plotting) from that exact verified `main` baseline using [`V0_7_PLAN.md`](V0_7_PLAN.md) and the completed v0.7 foundations.
+Issue #212 is the active v0.7 Block-3 completion-state documentation checkpoint. After it merges, reverify `main`, Issue #212 closure, immutable `v0.6.0 -> c7793b309f41d174c14534bd6d4acdacc2a57636`, distribution/runtime version `0.6.0`, public v0.6 GitHub Release state, and PyPI-deferred state. Then start v0.7 Block 4 (PROCAR projection processing + fat-band plotting) from that exact verified `main` baseline using [`V0_7_PLAN.md`](V0_7_PLAN.md), [`BAND_STRUCTURE.md`](BAND_STRUCTURE.md), and the completed v0.7 foundations.
