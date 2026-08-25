@@ -42,9 +42,9 @@ Before implementing each major scientific or visualization module, comparable op
 
 Shared peak fitting was deliberately deferred from v0.3 so its constraints, uncertainty semantics, provenance, and concrete XPS consumer could be designed together in v0.4.
 
-## v0.4.0 — Advanced experimental analysis — tagged 2026-08-25
+## v0.4.0 — Advanced experimental analysis — released 2026-08-25
 
-The architecture-first dependency order is maintained in [`V0_4_PLAN.md`](V0_4_PLAN.md), with release evidence in [`V0_4_RELEASING.md`](V0_4_RELEASING.md). All scientific scope, Gate A release hardening, Gate B final-version validation, and Gate C tag verification are complete. Tag `v0.4.0` resolves exactly to release commit `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6` and reports distribution/runtime version `0.4.0`.
+The architecture-first dependency order is maintained in [`V0_4_PLAN.md`](V0_4_PLAN.md), with release evidence in [`V0_4_RELEASING.md`](V0_4_RELEASING.md). All scientific scope, Gate A release hardening, Gate B final-version validation, Gate C tag verification, post-tag documentation synchronization, and GitHub Release publication are complete. Tag `v0.4.0` resolves exactly to release commit `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6` and reports distribution/runtime version `0.4.0`. Package-registry/PyPI publication is deferred.
 
 1. **Shared constrained peak-fitting foundation — complete through Issue #75 / PR #76.**
    - `lmfit>=1.3.4` reviewed as the BSD-3-Clause runtime fitting backend;
@@ -85,17 +85,30 @@ The architecture-first dependency order is maintained in [`V0_4_PLAN.md`](V0_4_P
 
 Gate A / Issue #103 / PR #104 completed frozen-scope release hardening on exact head `9d79845d6fae253b01a46794c3c055e4966c6e55`, CI #302 / run `32758548117`, reviews `5010905065` and `5010908809`, and squash merge `ce06abc11559fa7679869fc83a59356735ce6824`, while retaining version `0.3.0`.
 
-Gate B / Issue #105 / PR #106 finalized distribution/runtime version `0.4.0`; final head `ae3dc21b1a3a4e907d8c39eb85d3dbebefd8fbb4` passed CI #304 / run `32759679632` and reviews `5011014348`, `5011017132` before squash merge `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6`. Gate C / Issue #107 then created and reverse-verified `v0.4.0` on that exact commit. GitHub Release creation and package-registry publication remain separate actions; package publication is not authorized by the Git tag.
+Gate B / Issue #105 / PR #106 finalized distribution/runtime version `0.4.0`; final head `ae3dc21b1a3a4e907d8c39eb85d3dbebefd8fbb4` passed CI #304 / run `32759679632` and reviews `5011014348`, `5011017132` before squash merge `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6`. Gate C / Issue #107 then created and reverse-verified `v0.4.0` on that exact commit. The GitHub Release was subsequently published from that existing immutable tag. Package publication remains deferred.
 
-## v0.5.x — XAS and structures
+## v0.5.x — XAS, structures, and basic DFT energetics — scientific scope complete
 
-- XANES import, normalization, and comparison.
-- FT-EXAFS and WT-EXAFS visualization.
-- EXAFS fitting-result summaries.
-- POSCAR / CONTCAR / CIF / XYZ import.
-- Bond lengths, angles, coordination, and structure comparison.
-- Basic atomic-structure visualization, informed by dedicated open-source structure-visualization projects such as `pretty-lattice` while keeping structure analysis and rendering separated.
-- DFT energetics and adsorption-energy analysis.
+The reviewed dependency order and scientific contracts are maintained in [`V0_5_PLAN.md`](V0_5_PLAN.md). All eight planned scientific blocks are merged on `main`; the scientific-completion checkpoint is `a7ebd009ec83b0aeb068ad2d2f6712c17a783f1f`. Completion-state documentation synchronization is Issue #134, after which Gate A frozen-scope release hardening is next. Distribution/runtime version intentionally remains `0.4.0` until Gate B.
+
+1. **XAS/XANES — #117 / #118 — complete.**
+   - explicit energy/eV semantics, caller-controlled energy shifts, measured-point regions, explicit E0 and pre/post-edge polynomial normalization, positive edge-step validation, retained provenance and passive comparison plotting.
+2. **FT-EXAFS — #119 / #120 — complete.**
+   - explicit uniform k-grid/transform state, no hidden interpolation, retained complex χ(R), magnitude/real/imaginary/phase views and passive publication plotting.
+3. **WT-EXAFS — #121 / #122 — complete.**
+   - explicit Cauchy k–R transform, complex WT matrix, retained transform parameters, phase mapping and single-frequency ridge regression evidence.
+4. **EXAFS fitting-result summaries — #123 / #124 — complete.**
+   - neutral external-fit summary contract preserving path/shell parameters, uncertainty availability and producer-specific diagnostic labels without cross-tool reinterpretation.
+5. **Atomic-structure foundation/adapters — #125 / #126 — complete.**
+   - immutable CatalysisWorkbench-owned structure state and reviewed POSCAR/CONTCAR/CIF/XYZ adapters using optional `pymatgen-core` support.
+6. **Geometry/coordination/comparison — #127 / #129 — complete.**
+   - explicit periodic images, exact site distances/angles, caller-bounded cutoff coordination, and explicit site-mapped structure comparison with no hidden MIC/auto-alignment.
+7. **Static structure visualization — #130 / #131 — complete.**
+   - renderer-neutral immutable `StructureScene`, explicit atom/bond/cell state, presentation-only visual defaults and passive Matplotlib 3D rendering; `pretty-lattice` was architecture/UX reference only.
+8. **Basic DFT energetics — #132 / #133 — complete.**
+   - immutable explicit eV ledger, same-basis relative energies, generic retained linear combinations, transparent adsorption-energy convention, detached reporting and passive relative-energy plotting.
+
+The next phase is v0.5 Gate A. CHE/free-energy thermodynamics, DOS/PDOS, Bader, COHP/ICOHP, charge-density difference and VASP job management remain v0.6+ work.
 
 ## v0.6.x — Electronic structure and catalysis thermodynamics
 
