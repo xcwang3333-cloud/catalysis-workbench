@@ -4,7 +4,9 @@ All notable changes to CatalysisWorkbench are recorded here.
 
 ## [Unreleased]
 
-The frozen v0.5 scientific implementation is complete on `main` at `a7ebd009ec83b0aeb068ad2d2f6712c17a783f1f`. Completion-state documentation synchronization is tracked by Issue #134; Gate A frozen-scope release hardening is next. Distribution/runtime version intentionally remains `0.4.0` until a later reviewed Gate B, and no `v0.5.0` tag exists yet.
+## [0.5.0] - 2026-08-25
+
+The v0.5 release candidate freezes the reviewed XAS, structure, and basic DFT-energetics scope after Gate A release hardening and Gate B final-version validation. Distribution/runtime version is `0.5.0` on reviewed Gate-B release commit `9400ac0044ac333d2cae228554c08d955a816a4c`. No `v0.5.0` tag exists yet: Gate C tag creation and reverse verification remain a separate explicit authorization boundary. GitHub Release creation is also separate, and PyPI/package-registry publication remains deferred.
 
 ### Added
 
@@ -16,12 +18,16 @@ The frozen v0.5 scientific implementation is complete on `main` at `a7ebd009ec83
 - Explicit periodic-image geometry, exact site distance/angle, caller-bounded cutoff coordination, and caller-mapped structure comparison without hidden minimum-image or auto-alignment behavior.
 - Renderer-neutral immutable `StructureScene` plus passive static Matplotlib 3D structure publication rendering with explicit atoms, bonds, unit-cell geometry, camera/projection, and presentation-only visual defaults.
 - Basic DFT energetics with immutable eV energy ledgers, explicit normalization bases/source IDs, same-basis relative energies, generic retained linear combinations, transparent adsorption-energy arithmetic, detached reporting tables, and passive relative-energy plotting.
+- Unified v0.5 fresh-wheel release audit covering installed-source verification, distribution/runtime version agreement, all documented package-level `__all__` surfaces including `catalysis_workbench.computation`, Matplotlib-lazy numerical imports, the retained v0.4 audit, and every reviewed v0.5 base-environment installed smoke.
 
 ### Changed
 
 - All eight v0.5 scientific implementation blocks (#117/#118, #119/#120, #121/#122, #123/#124, #125/#126, #127/#129, #130/#131, #132/#133) are complete; scientific-completion commit is `a7ebd009ec83b0aeb068ad2d2f6712c17a783f1f`.
-- v0.5 completion-state documentation synchronization is Issue #134; Gate A is the next release phase and must retain version `0.4.0`.
-- PyPI/package-registry publication remains deferred and is not part of the v0.5 scientific-completion checkpoint.
+- Completion-state documentation synchronization #134/#135 merged as `8c958ffc29a36afa9340cada2239b51520c87a3d`.
+- Gate A / Issue #136 / PR #137 hardened the frozen v0.5 scope while retaining version `0.4.0`; final head `fb13cdbf633366a0840f5f2e21af215bee47b133` passed CI #358 / run `32799486710` and reviews `5014277750`, `5014278425` before squash merge `0ffcd7e4a89340d993468039ba83b44bc7638050`.
+- Gate B / Issue #138 / PR #139 synchronized `[project].version`, runtime `__version__`, and the exact-wheel expected version to `0.5.0`; final head `b95841ed472aff1fa4d05af7335547ee5c3cd611` passed CI #360 / run `32800514038` and reviews `5014348449`, `5014349058` before squash merge `9400ac0044ac333d2cae228554c08d955a816a4c`.
+- `v0.4.0` remains immutable at `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6`; no `v0.5.0` tag, v0.5 GitHub Release, or package-registry artifact has been created by Gate B.
+- PyPI/package-registry publication remains deferred.
 
 ## [0.4.0] - 2026-08-25
 
