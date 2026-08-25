@@ -6,6 +6,7 @@ from .electronic_structure import (
     read_chgcar_density,
     read_vasprun_dos,
 )
+from .elf import read_elfcar_field
 from .lobster import LobsterIOError, read_lobster_cohp, read_lobster_icohp
 from .structure import (
     StructureIOError,
@@ -27,6 +28,7 @@ __all__ = [
     "read_cif_structure",
     "read_contcar",
     "read_csv",
+    "read_elfcar_field",
     "read_excel",
     "read_lobster_cohp",
     "read_lobster_icohp",
