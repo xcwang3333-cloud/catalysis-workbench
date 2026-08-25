@@ -4,7 +4,6 @@ import subprocess
 import sys
 from dataclasses import FrozenInstanceError
 
-import numpy as np
 import pytest
 
 from catalysis_workbench.computation import (
