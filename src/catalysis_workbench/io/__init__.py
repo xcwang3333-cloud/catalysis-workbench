@@ -1,6 +1,7 @@
 """Readers and writers for tabular and scientific data formats."""
 
 from .bader import BaderIOError, read_bader_acf
+from .band_structure import read_vasprun_band_structure
 from .electronic_structure import (
     ElectronicStructureIOError,
     read_chgcar_density,
@@ -35,6 +36,7 @@ __all__ = [
     "read_poscar",
     "read_tabular",
     "read_txt",
+    "read_vasprun_band_structure",
     "read_vasprun_dos",
     "read_xyz_structure",
 ]
