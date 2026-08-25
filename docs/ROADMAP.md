@@ -87,9 +87,9 @@ Gate A / Issue #103 / PR #104 completed frozen-scope release hardening on exact 
 
 Gate B / Issue #105 / PR #106 finalized distribution/runtime version `0.4.0`; final head `ae3dc21b1a3a4e907d8c39eb85d3dbebefd8fbb4` passed CI #304 / run `32759679632` and reviews `5011014348`, `5011017132` before squash merge `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6`. Gate C / Issue #107 then created and reverse-verified `v0.4.0` on that exact commit. The GitHub Release was subsequently published from that existing immutable tag. Package publication remains deferred.
 
-## v0.5.0 — XAS, structures, and basic DFT energetics — Gate B complete, tag pending
+## v0.5.0 — XAS, structures, and basic DFT energetics — released 2026-08-25
 
-The reviewed dependency order and scientific contracts are maintained in [`V0_5_PLAN.md`](V0_5_PLAN.md), with release evidence in [`V0_5_RELEASING.md`](V0_5_RELEASING.md). All eight scientific blocks, completion-state synchronization, Gate A frozen-scope hardening, and Gate B final-version exact-wheel validation are complete. Distribution/runtime version is `0.5.0`. The reviewed Gate-B release commit is `9400ac0044ac333d2cae228554c08d955a816a4c`. No `v0.5.0` tag exists yet; Gate C remains a separate explicit authorization boundary. PyPI/package publication remains deferred.
+The reviewed dependency order and scientific contracts are maintained in [`V0_5_PLAN.md`](V0_5_PLAN.md), with release evidence in [`V0_5_RELEASING.md`](V0_5_RELEASING.md). All eight scientific blocks, completion-state synchronization, Gate A frozen-scope hardening, Gate B final-version exact-wheel validation, Gate C tag verification, and GitHub Release publication are complete. Distribution/runtime version is `0.5.0`. Tag `v0.5.0` resolves exactly to reviewed release commit `9400ac0044ac333d2cae228554c08d955a816a4c`, and the public GitHub Release `CatalysisWorkbench v0.5.0` is published from that existing tag. PyPI/package publication remains deferred.
 
 1. **XAS/XANES — #117 / #118 — complete.**
    - explicit energy/eV semantics, caller-controlled energy shifts, measured-point regions, explicit E0 and pre/post-edge polynomial normalization, positive edge-step validation, retained provenance and passive comparison plotting.
@@ -112,7 +112,8 @@ Release-gate evidence:
 
 - Gate A / #136 / #137: final head `fb13cdbf633366a0840f5f2e21af215bee47b133`, CI #358 / run `32799486710`, reviews `5014277750`, `5014278425`, squash merge `0ffcd7e4a89340d993468039ba83b44bc7638050`, version retained at `0.4.0`.
 - Gate B / #138 / #139: final head `b95841ed472aff1fa4d05af7335547ee5c3cd611`, CI #360 / run `32800514038`, reviews `5014348449`, `5014349058`, squash merge `9400ac0044ac333d2cae228554c08d955a816a4c`, distribution/runtime version finalized to `0.5.0`.
-- Gate C: pending separate authorization; no `v0.5.0` tag exists yet.
+- Gate C / #142: tag `v0.5.0` created and reverse-verified exactly on `9400ac0044ac333d2cae228554c08d955a816a4c`; distribution/runtime through the tag is `0.5.0`.
+- GitHub Release / #144: `CatalysisWorkbench v0.5.0` publicly published from the existing tag with populated release notes.
 
 CHE/free-energy thermodynamics, DOS/PDOS, Bader, COHP/ICOHP, charge-density difference and VASP job management remain v0.6+ work.
 

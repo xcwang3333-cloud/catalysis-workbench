@@ -81,26 +81,42 @@ The exact candidate wheel passed Ruff/full pytest, fresh installation, `pip chec
 
 Gate B did **not** create a tag, GitHub Release, or package-registry artifact.
 
-Post-Gate-B overview/changelog synchronization is tracked by Issue #140 before any Gate-C action.
+Post-Gate-B overview/changelog synchronization completed through Issue #140 / PR #141, producing post-docs `main=85d19870ff6b117318f903d59a9e16b35ac19830` before Gate C.
 
-## Gate C — tag creation and reverse verification — pending authorization
+## Gate C — tag creation and reverse verification — complete
 
-Gate C is a separate explicit authorization boundary. Completion of Gate B does not authorize tag creation.
+Tracking: Issue #142.
 
-After separate user authorization, Gate C may create the `v0.5.0` tag only on the exact reviewed Gate-B release commit `9400ac0044ac333d2cae228554c08d955a816a4c`. After the tag is pushed, reverse-verify:
+After separate user authorization, lightweight tag `v0.5.0` was created and pushed exactly on the reviewed Gate-B release commit `9400ac0044ac333d2cae228554c08d955a816a4c`.
 
-- `v0.5.0` resolves exactly to `9400ac0044ac333d2cae228554c08d955a816a4c`;
-- reads through the tag report distribution/runtime version `0.5.0`;
-- `main` and prior immutable tags remain consistent;
-- `v0.4.0` remains exactly `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6`.
+### Gate C evidence
 
-Do not move or recreate a release tag after verification.
+| Evidence | State |
+| --- | --- |
+| authorized tag | `v0.5.0` |
+| exact target commit | `9400ac0044ac333d2cae228554c08d955a816a4c` |
+| reverse verification | tag and target commit are identical |
+| distribution version through tag | `0.5.0` |
+| runtime `__version__` through tag | `0.5.0` |
+| post-Gate-B-docs `main` after tag push | `85d19870ff6b117318f903d59a9e16b35ac19830` |
+| `v0.4.0` invariant | `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6` |
+| tracking Issue | #142 — completed |
 
-## Post-tag actions
+The release tag must not be moved or recreated after verification.
 
-A Git tag does not itself create a GitHub Release or publish a Python package.
+## GitHub Release — complete
 
-After Gate C, post-tag documentation synchronization may be handled as routine docs-only maintenance. GitHub Release creation is a separate release action. PyPI/package-registry publication remains deferred unless explicitly reauthorized in a future decision.
+Tracking: Issue #144.
+
+The public GitHub Release `CatalysisWorkbench v0.5.0` was published from the existing verified `v0.5.0` tag on 2026-08-25. The Release is not a draft or prerelease, and its release notes record the reviewed v0.5 scientific scope plus Gate A/B/C validation evidence.
+
+Publishing the GitHub Release did not move the tag or publish a Python package-registry artifact.
+
+## Post-release state
+
+Final post-release documentation synchronization is tracked by Issue #143 and is docs/changelog only.
+
+PyPI/package-registry publication remains deferred unless explicitly reauthorized in a future decision.
 
 ## Mandatory evidence discipline
 

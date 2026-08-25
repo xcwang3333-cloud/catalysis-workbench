@@ -6,7 +6,7 @@ All notable changes to CatalysisWorkbench are recorded here.
 
 ## [0.5.0] - 2026-08-25
 
-The v0.5 release candidate freezes the reviewed XAS, structure, and basic DFT-energetics scope after Gate A release hardening and Gate B final-version validation. Distribution/runtime version is `0.5.0` on reviewed Gate-B release commit `9400ac0044ac333d2cae228554c08d955a816a4c`. No `v0.5.0` tag exists yet: Gate C tag creation and reverse verification remain a separate explicit authorization boundary. GitHub Release creation is also separate, and PyPI/package-registry publication remains deferred.
+The v0.5 release freezes the reviewed XAS, structure, and basic DFT-energetics scope after Gate A release hardening, Gate B final-version validation, Gate C tag verification, and public GitHub Release publication. Tag `v0.5.0` resolves exactly to reviewed Gate-B release commit `9400ac0044ac333d2cae228554c08d955a816a4c`, and distribution/runtime version through the tag is `0.5.0`. The GitHub Release `CatalysisWorkbench v0.5.0` is published from that existing immutable tag with reviewed release notes. PyPI/package-registry publication remains deferred.
 
 ### Added
 
@@ -26,7 +26,9 @@ The v0.5 release candidate freezes the reviewed XAS, structure, and basic DFT-en
 - Completion-state documentation synchronization #134/#135 merged as `8c958ffc29a36afa9340cada2239b51520c87a3d`.
 - Gate A / Issue #136 / PR #137 hardened the frozen v0.5 scope while retaining version `0.4.0`; final head `fb13cdbf633366a0840f5f2e21af215bee47b133` passed CI #358 / run `32799486710` and reviews `5014277750`, `5014278425` before squash merge `0ffcd7e4a89340d993468039ba83b44bc7638050`.
 - Gate B / Issue #138 / PR #139 synchronized `[project].version`, runtime `__version__`, and the exact-wheel expected version to `0.5.0`; final head `b95841ed472aff1fa4d05af7335547ee5c3cd611` passed CI #360 / run `32800514038` and reviews `5014348449`, `5014349058` before squash merge `9400ac0044ac333d2cae228554c08d955a816a4c`.
-- `v0.4.0` remains immutable at `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6`; no `v0.5.0` tag, v0.5 GitHub Release, or package-registry artifact has been created by Gate B.
+- Post-Gate-B state synchronization #140/#141 merged before Gate C; Gate C / Issue #142 then created and reverse-verified `v0.5.0` exactly on `9400ac0044ac333d2cae228554c08d955a816a4c`.
+- GitHub Release tracking Issue #144 completed after the public `CatalysisWorkbench v0.5.0` Release was published from the existing tag with populated release notes.
+- `v0.4.0` remains immutable at `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6`.
 - PyPI/package-registry publication remains deferred.
 
 ## [0.4.0] - 2026-08-25
