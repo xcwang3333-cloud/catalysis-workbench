@@ -181,7 +181,7 @@ The reviewed v0.5 characterization stack adds explicit XAS/XANES preparation and
 
 The computation stack adds immutable atomic structures, optional POSCAR/CONTCAR/CIF/XYZ adapters through the reviewed `structure` extra, explicit periodic-image geometry/coordination/comparison, renderer-neutral static structure scenes, and basic DFT energy ledgers/relative/reaction/adsorption-energy post-processing. Structure visual radii/colors never feed back into scientific bond/coordination analysis, and DFT helpers do not apply CHE, ZPE, entropy, chemical-potential, or stoichiometric inference.
 
-See [`docs/V0_5_PLAN.md`](docs/V0_5_PLAN.md), [`docs/XAS.md`](docs/XAS.md), [`docs/EXAFS.md`](docs/EXAFS.md), [`docs/WT_EXAFS.md`](docs/WT_EXAFS.md), [`docs/EXAFS_FIT_SUMMARY.md`](docs/EXAFS_FIT_SUMMARY.md), [`docs/ATOMIC_STRUCTURE.md`](docs/ATOMIC_STRUCTURE.md), [`docs/STRUCTURE_GEOMETRY.md`](docs/STRUCTURE_GEOMETRY.md), [`docs/STRUCTURE_VISUALIZATION.md`](docs/STRUCTURE_VISUALIZATION.md), and [`docs/DFT_ENERGETICS.md`](docs/DFT_ENERGETICS.md) for the reviewed contracts.
+See [`docs/V0_5_PLAN.md`](docs/V0_5_PLAN.md), [`docs/XAS.md`](docs/XAS.md), [`docs/EXAFS.md`](docs/EXAFS.md), [`docs/WT_EXAFS.md`](docs/WT_EXAFS.md), [`docs/EXAFS_FIT_SUMMARIES.md`](docs/EXAFS_FIT_SUMMARIES.md), [`docs/STRUCTURES.md`](docs/STRUCTURES.md), [`docs/STRUCTURE_GEOMETRY.md`](docs/STRUCTURE_GEOMETRY.md), [`docs/STRUCTURE_VISUALIZATION.md`](docs/STRUCTURE_VISUALIZATION.md), and [`docs/DFT_ENERGETICS.md`](docs/DFT_ENERGETICS.md) for the reviewed contracts.
 
 ## Public API map
 
