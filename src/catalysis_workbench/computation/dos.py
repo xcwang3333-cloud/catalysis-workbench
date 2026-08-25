@@ -120,7 +120,10 @@ class DOSTrace:
             _required_text(value, name="source_projection_key")
             for value in self.source_projection_keys
         )
-        spins = tuple(_required_text(value, name="source_spin").lower() for value in self.source_spins)
+        spins = tuple(
+            _required_text(value, name="source_spin").lower()
+            for value in self.source_spins
+        )
         operations = tuple(_required_text(value, name="operation") for value in self.operations)
         if not channel_digests or not operations:
             raise DOSProcessingError("source channels and operation history must not be empty")
