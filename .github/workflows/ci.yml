@@ -53,37 +53,13 @@ jobs:
           .venv-smoke/bin/python -m pip install dist/catalysis_workbench-*.whl
           .venv-smoke/bin/python -m pip check
 
-      - name: Audit installed public API and frozen v0.4 scientific scope
+      - name: Audit installed public API and frozen v0.5 scientific scope
         run: |
           .venv-smoke/bin/python tests/installed_api_smoke.py
           .venv-smoke/bin/python tests/installed_thermal_smoke.py
           .venv-smoke/bin/python tests/installed_sorption_smoke.py
           .venv-smoke/bin/python tests/installed_composition_smoke.py
-          CATALYSIS_WORKBENCH_EXPECTED_VERSION=0.4.0 .venv-smoke/bin/python tests/installed_v04_release_smoke.py
-
-      - name: Audit installed v0.5 XAS/XANES surface
-        run: .venv-smoke/bin/python tests/installed_xas_smoke.py
-
-      - name: Audit installed v0.5 EXAFS forward-FT surface
-        run: .venv-smoke/bin/python tests/installed_exafs_smoke.py
-
-      - name: Audit installed v0.5 WT-EXAFS surface
-        run: .venv-smoke/bin/python tests/installed_wt_exafs_smoke.py
-
-      - name: Audit installed v0.5 EXAFS fit-summary surface
-        run: .venv-smoke/bin/python tests/installed_exafs_fit_summary_smoke.py
-
-      - name: Audit installed v0.5 atomic-structure base surface
-        run: .venv-smoke/bin/python tests/installed_structure_model_smoke.py
-
-      - name: Audit installed v0.5 structure geometry surface
-        run: .venv-smoke/bin/python tests/installed_structure_geometry_smoke.py
-
-      - name: Audit installed v0.5 structure visualization surface
-        run: .venv-smoke/bin/python tests/installed_structure_visualization_smoke.py
-
-      - name: Audit installed v0.5 DFT energetics surface
-        run: .venv-smoke/bin/python tests/installed_dft_energetics_smoke.py
+          CATALYSIS_WORKBENCH_EXPECTED_VERSION=0.4.0 .venv-smoke/bin/python tests/installed_v05_release_smoke.py
 
       - name: Audit installed v0.5 structure adapters with optional backend
         run: |
