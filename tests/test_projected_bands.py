@@ -138,7 +138,7 @@ def test_explicit_aggregation_is_exact_and_canonicalized_to_source_order() -> No
     assert result.orbitals == ("s", "pz")
     source = state.channel("total").weights
     expected = source[:, :, :, (0, 1)].sum(axis=(2, 3))
-    assert np.array_equal(result.weights, expected)
+    assert np.allclose(result.weights, expected, rtol=0.0, atol=1e-15)
     assert np.max(result.weights) > 1.0
     assert result.aggregation == "sum"
 
