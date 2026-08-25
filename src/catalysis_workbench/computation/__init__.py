@@ -1,5 +1,15 @@
 """Post-processing for atomistic and DFT calculation results."""
 
+from .bader import (
+    BaderChargeResult,
+    BaderChargeSiteResult,
+    BaderError,
+    BaderResult,
+    BaderSiteResult,
+    account_bader_charges,
+    bader_charge_frame,
+    bader_result_frame,
+)
 from .band_center import BandCenterError, BandCenterResult, calculate_band_center
 from .dft_energetics import (
     DFTEnergeticsError,
@@ -67,6 +77,11 @@ from .structure_scene import (
 
 __all__ = [
     "AtomicStructure",
+    "BaderChargeResult",
+    "BaderChargeSiteResult",
+    "BaderError",
+    "BaderResult",
+    "BaderSiteResult",
     "BandCenterError",
     "BandCenterResult",
     "CoordinationNeighbor",
@@ -103,8 +118,11 @@ __all__ = [
     "StructureScene",
     "StructureSceneError",
     "VolumetricGrid",
+    "account_bader_charges",
     "adsorption_energy",
     "aggregate_dos",
+    "bader_charge_frame",
+    "bader_result_frame",
     "build_structure_scene",
     "calculate_band_center",
     "combine_energies",
