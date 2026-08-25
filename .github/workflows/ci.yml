@@ -61,7 +61,7 @@ jobs:
           .venv-smoke/bin/python tests/installed_composition_smoke.py
           CATALYSIS_WORKBENCH_EXPECTED_VERSION=0.5.0 .venv-smoke/bin/python tests/installed_v05_release_smoke.py
 
-      - name: Audit installed v0.5 structure adapters with optional backend
+      - name: Audit installed v0.5 structure and v0.6 electronic adapters
         run: |
           python -m venv .venv-structure
           .venv-structure/bin/python -m pip install --upgrade pip
@@ -69,6 +69,7 @@ jobs:
           .venv-structure/bin/python -m pip install "catalysis-workbench[structure] @ file://${wheel_path}"
           .venv-structure/bin/python -m pip check
           .venv-structure/bin/python tests/installed_structure_smoke.py
+          .venv-structure/bin/python tests/installed_electronic_structure_smoke.py
 
       - name: Run documented LSV/XRD/Raman/FTIR/thermal/sorption/composition examples from installed wheel
         run: |

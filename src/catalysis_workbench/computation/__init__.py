@@ -14,6 +14,14 @@ from .dft_energetics import (
     relative_energies,
     relative_energy_frame,
 )
+from .electronic_structure import (
+    DOSChannel,
+    DOSProjection,
+    ElectronicDOS,
+    ElectronicEnergyAxis,
+    ElectronicStructureError,
+    VolumetricGrid,
+)
 from .geometry import (
     CoordinationNeighbor,
     CoordinationResult,
@@ -53,6 +61,11 @@ __all__ = [
     "DFTEnergeticsError",
     "DFTEnergyEntry",
     "DFTEnergyLedger",
+    "DOSChannel",
+    "DOSProjection",
+    "ElectronicDOS",
+    "ElectronicEnergyAxis",
+    "ElectronicStructureError",
     "EnergyCombinationResult",
     "EnergyTerm",
     "GeometryError",
@@ -74,6 +87,7 @@ __all__ = [
     "StructureError",
     "StructureScene",
     "StructureSceneError",
+    "VolumetricGrid",
     "adsorption_energy",
     "build_structure_scene",
     "combine_energies",
