@@ -9,6 +9,7 @@ from catalysis_workbench.computation.band_structure import (
     BandStructureState,
 )
 from catalysis_workbench.computation.projected_bands import (
+    AggregatedBandProjection,
     BandProjectionChannel,
     BandProjectionError,
     BandProjectionState,
@@ -141,6 +142,32 @@ def test_explicit_aggregation_is_exact_and_canonicalized_to_source_order() -> No
     assert np.allclose(result.weights, expected, rtol=0.0, atol=1e-15)
     assert np.max(result.weights) > 1.0
     assert result.aggregation == "sum"
+
+
+def test_aggregated_state_rejects_noncanonical_or_spoofed_site_identity() -> None:
+    state = _projection_state()
+    base = dict(
+        band_structure=state.band_structure,
+        projection_state_digest=state.digest,
+        projection_source_digest=state.source_digest,
+        spin="total",
+        orbitals=("s",),
+        weights=np.ones((2, 4)),
+    )
+    with pytest.raises(BandProjectionError, match="source order"):
+        AggregatedBandProjection(
+            **base,
+            site_indices=(1, 0),
+            site_keys=("site-He", "site-H"),
+            elements=("He", "H"),
+        )
+    with pytest.raises(BandProjectionError, match="associated structure sites"):
+        AggregatedBandProjection(
+            **base,
+            site_indices=(0,),
+            site_keys=("site-He",),
+            elements=("He",),
+        )
 
 
 def test_aggregation_never_normalizes_or_sums_spin_implicitly() -> None:
