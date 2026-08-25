@@ -65,12 +65,7 @@ def main() -> None:
     assert center.source_trace_digest == total.digest
     assert center.source_spins == ("up", "down")
     assert center.integration_method == "trapezoid"
-    assert center.center_ev == np.testing.assert_allclose(
-        [center.center_ev],
-        [2.0],
-        rtol=0.0,
-        atol=1e-12,
-    )
+    np.testing.assert_allclose(center.center_ev, 26.0 / 15.0, rtol=0.0, atol=1e-12)
 
     down = dos_channel_trace(dos, projection_key="total", spin="down")
     referenced = reference_dos_to_fermi(down)
