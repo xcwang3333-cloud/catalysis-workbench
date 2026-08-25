@@ -126,6 +126,16 @@ def test_explicit_aggregation_is_hand_verifiable_and_fail_closed() -> None:
     assert trace.source_projection_keys == ("site:fe-0:dxy", "site:fe-0:dxz")
     assert trace.normalization_basis == "site"
 
+    reversed_trace = aggregate_dos(
+        dos,
+        tuple(reversed(fe_channels)),
+        key="fe-d-up",
+        label="Fe d up",
+    )
+    assert reversed_trace.source_projection_keys == trace.source_projection_keys
+    assert reversed_trace.source_channel_digests == trace.source_channel_digests
+    assert reversed_trace.digest == trace.digest
+
     mixed = (dos.channels[0], dos.channels[2])
     with pytest.raises(DOSProcessingError, match="normalization"):
         aggregate_dos(dos, mixed, key="bad")
@@ -210,6 +220,35 @@ def test_plot_overlay_rejects_incompatible_reference_or_normalization() -> None:
     )
     with pytest.raises(DOSVisualizationError, match="normalization-basis"):
         plot_dos((native, site))
+
+
+def test_source_native_cross_source_overlay_requires_explicit_common_reference() -> None:
+    dos = _dos()
+    native = dos_channel_trace(dos, projection_key="total", spin="up", key="source-a")
+    other = ElectronicDOS(
+        energy=dos.energy,
+        channels=(
+            DOSChannel(
+                DOSProjection("total", "total"),
+                "up",
+                (1.1, 2.1, 3.1, 4.1),
+            ),
+        ),
+    )
+    other_native = dos_channel_trace(
+        other,
+        projection_key="total",
+        spin="up",
+        key="source-b",
+    )
+    with pytest.raises(DOSVisualizationError, match="same ElectronicDOS source"):
+        plot_dos((native, other_native))
+
+    figure, ax = plot_dos(
+        (reference_dos_to_fermi(native), reference_dos_to_fermi(other_native))
+    )
+    assert len(ax.lines) == 2
+    figure.canvas.draw()
 
 
 def test_source_native_fermi_marker_uses_retained_current_axis_position() -> None:
