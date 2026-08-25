@@ -6,7 +6,12 @@ import sys
 
 import numpy as np
 
-from catalysis_workbench.computation import AtomicStructure, ScalarField, VolumetricGrid, slice_scalar_field
+from catalysis_workbench.computation import (
+    AtomicStructure,
+    ScalarField,
+    VolumetricGrid,
+    slice_scalar_field,
+)
 from catalysis_workbench.io import read_elfcar_field
 from catalysis_workbench.visualization import (
     SliceLayerSpec,
