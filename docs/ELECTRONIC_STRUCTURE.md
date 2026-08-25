@@ -140,6 +140,8 @@ The function requires a caller-supplied numeric `energy_min_ev`, `energy_max_ev`
 - integration method (`trapezoid`);
 - resulting `center_ev` and a deterministic scientific digest.
 
+For a retained density unit `U`, the denominator `integral rho(E) dE` has numerical units `U * eV`, the numerator `integral rho(E) E dE` has numerical units `U * eV^2`, and their ratio is in eV. No unit conversion is performed by the descriptor function.
+
 A zero or near-zero denominator fails when it does not exceed the explicit caller-supplied tolerance. No hidden absolute tolerance is selected by the library because denominator scale depends on the retained DOS unit/normalization basis.
 
 Occupied-only, unoccupied-only, or full-range analysis is therefore a window choice made by the caller. A name such as `d_band_center` does not trigger projection selection, spin summation, occupancy inference, or Fermi referencing. To combine physical `up` and `down` channels, the caller first constructs an explicit positive summed `DOSTrace` through block-2 aggregation; the band-center function integrates that retained state as supplied.
