@@ -12,6 +12,14 @@ from typing import Any
 import numpy as np
 from numpy.typing import NDArray
 
+_ELEMENT_SYMBOLS = frozenset(
+    "H He Li Be B C N O F Ne Na Mg Al Si P S Cl Ar K Ca Sc Ti V Cr Mn Fe Co Ni Cu Zn "
+    "Ga Ge As Se Br Kr Rb Sr Y Zr Nb Mo Tc Ru Rh Pd Ag Cd In Sn Sb Te I Xe Cs Ba La Ce "
+    "Pr Nd Pm Sm Eu Gd Tb Dy Ho Er Tm Yb Lu Hf Ta W Re Os Ir Pt Au Hg Tl Pb Bi Po At Rn "
+    "Fr Ra Ac Th Pa U Np Pu Am Cm Bk Cf Es Fm Md No Lr Rf Db Sg Bh Hs Mt Ds Rg Cn Nh Fl Mc "
+    "Lv Ts Og".split()
+)
+
 
 class StructureError(ValueError):
     """Raised when atomic-structure state is internally inconsistent."""
@@ -59,7 +67,10 @@ def _frozen_float_matrix(
     columns: int,
     rows: int | None = None,
 ) -> NDArray[np.float64]:
-    source = np.asarray(values)
+    try:
+        source = np.asarray(values)
+    except (TypeError, ValueError) as exc:
+        raise TypeError(f"{name} must contain real numeric values") from exc
     if np.iscomplexobj(source):
         raise StructureError(f"{name} must contain real values")
     try:
@@ -85,6 +96,17 @@ def _nonblank_strings(values: Sequence[str], *, name: str) -> tuple[str, ...]:
     result = tuple(str(value).strip() for value in values)
     if not result or any(not value for value in result):
         raise StructureError(f"{name} must contain nonblank strings")
+    return result
+
+
+def _element_symbols(values: Sequence[str]) -> tuple[str, ...]:
+    result = _nonblank_strings(values, name="elements")
+    invalid = [value for value in result if value not in _ELEMENT_SYMBOLS]
+    if invalid:
+        raise StructureError(
+            "elements must contain canonical chemical element symbols; invalid: "
+            + ", ".join(invalid)
+        )
     return result
 
 
@@ -118,7 +140,7 @@ def _pbc_flags(values: Sequence[bool]) -> tuple[bool, bool, bool]:
     return result[0], result[1], result[2]
 
 
-def _update_digest_string(digest: hashlib._Hash, value: str | None) -> None:
+def _update_digest_string(digest: Any, value: str | None) -> None:
     if value is None:
         digest.update(b"\xff")
         return
@@ -177,7 +199,7 @@ class AtomicStructure:
 
     def __post_init__(self) -> None:
         species = _nonblank_strings(self.species, name="species")
-        elements = _nonblank_strings(self.elements, name="elements")
+        elements = _element_symbols(self.elements)
         coordinates = _frozen_float_matrix(
             self.cartesian_coordinates,
             name="cartesian_coordinates",
