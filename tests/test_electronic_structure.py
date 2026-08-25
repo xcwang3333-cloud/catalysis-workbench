@@ -166,6 +166,24 @@ def test_volumetric_grid_retains_physical_units_and_exact_integrals() -> None:
     assert grid.metadata["producer"]["name"] == "VASP"
 
 
+def test_volumetric_mapping_order_does_not_change_scientific_identity() -> None:
+    structure = _structure()
+    total = np.array([[[1.0]], [[2.0]]])
+    magnetization = np.array([[[0.25]], [[-0.25]]])
+    grid_a = VolumetricGrid(
+        structure=structure,
+        components={"total": total, "magnetization_z": magnetization},
+    )
+    grid_b = VolumetricGrid(
+        structure=structure,
+        components={"magnetization_z": magnetization, "total": total},
+    )
+    assert tuple(grid_a.components) == ("magnetization_z", "total")
+    assert tuple(grid_b.components) == ("magnetization_z", "total")
+    assert grid_a == grid_b
+    assert grid_a.digest == grid_b.digest
+
+
 def test_volumetric_grid_shape_and_periodicity_fail_closed() -> None:
     structure = _structure()
     with pytest.raises(ElectronicStructureError, match="identical"):
