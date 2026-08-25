@@ -62,8 +62,11 @@ Checkpoint date: 2026-08-25.
 - v0.6 block-4 completion-state docs sync: Issue #164 / PR #165 — complete at `308ca1243f60bd28b981e3d51dbff3532de16e28`.
 - v0.6 block 5, COHP/ICOHP parsing + explicit bonding analysis: Issue #166 / PR #167 — complete at `415f8de126bac6ad2f6086f68152c472fb4064f2`.
 - Block-5 final head `c3bcf5caea142ee4165ebc45ae5a64ef7b7b9cde` passed CI #417 / run `32822387619` and final-head reviews `5016125861`, `5016128385` before squash merge.
-- Active stage: **Issue #168 — synchronize block-5 completion state into central documentation**.
-- v0.6 block 6 (geometry–bonding correlation) starts only after #168 is complete and `main` is reverified.
+- v0.6 block-5 completion-state docs sync: Issue #168 / PR #169 — complete at `8cc7ed82497ee6245a65091b88b61eb9153128c5`.
+- v0.6 block 6, explicit geometry–bonding correlation datasets: Issue #170 / PR #171 — complete at `f66bcae9bd254cf3abe12e8f161b0a38080c7ad3`.
+- Block-6 final head `98222d17513db661ead7945ae212d665458a8d00` passed CI #424 / run `32825053421` and final-head reviews `5016939992`, `5016943168` before squash merge.
+- Active stage: **Issue #172 — synchronize block-6 completion state into central documentation**.
+- v0.6 block 7 (CHE/free-energy thermodynamics) starts only after #172 is complete and `main` is reverified.
 
 Live GitHub Issue/PR/tag state remains authoritative if this checkpoint becomes stale.
 
@@ -78,7 +81,7 @@ Detailed long-range scope is maintained in [`ROADMAP.md`](ROADMAP.md).
 | v0.3.x | FTIR, thermal analysis, basic gas sorption, ICP/composition | complete/released as v0.3.0 |
 | v0.4.x | shared fitting, XPS, EIS, quantitative BET, product calibration | complete/released as v0.4.0; GitHub Release published; PyPI deferred |
 | v0.5.x | XAS/XANES, FT/WT-EXAFS, EXAFS summaries, structures/geometry/static visualization, basic DFT energetics | complete/released as v0.5.0; GitHub Release published; PyPI deferred |
-| v0.6.x | electronic structure and catalysis thermodynamics | architecture + blocks 1–5 complete; block 6 next after #168 |
+| v0.6.x | electronic structure and catalysis thermodynamics | architecture + blocks 1–6 complete; block 7 next after #172 |
 | v0.7.x | advanced computational visualization | planned |
 | v0.8.x | operando/time-resolved analysis | planned |
 | v0.9.x | reproducible batch workflows and first interactive editor | planned |
@@ -254,9 +257,19 @@ Issue #166 / PR #167 delivered CatalysisWorkbench-owned immutable source-sign CO
 
 Block-5 final head `c3bcf5caea142ee4165ebc45ae5a64ef7b7b9cde` passed CI #417 / run `32822387619` and final-head reviews `5016125861`, `5016128385` before squash merge `415f8de126bac6ad2f6086f68152c472fb4064f2`.
 
+### Block-5 completion-state sync — complete
+
+Issue #168 / PR #169 synchronized the merged block-5 state into central documentation at `8cc7ed82497ee6245a65091b88b61eb9153128c5` before block 6 began.
+
+### Geometry–bonding correlation — complete
+
+Issue #170 / PR #171 delivered CatalysisWorkbench-owned immutable `CorrelationPoint`, `CorrelationExclusion`, and `CorrelationDataset` state with explicit x/y definitions and units, exact source keys/digests, caller-visible mapping provenance, deterministic scientific identity, and separate explicit exclusion records. The narrow ICOHP bond-length convenience path preserves source-sign ICOHP, requires explicit physical spin selection, canonicalizes an explicitly selected spin set to source order, and retains `number_of_bonds` only as provenance. No automatic atom/bond matching, silent omission, statistics/regression, ranking, or causal interpretation is introduced.
+
+Block-6 final head `98222d17513db661ead7945ae212d665458a8d00` passed CI #424 / run `32825053421` and final-head reviews `5016939992`, `5016943168` before squash merge `f66bcae9bd254cf3abe12e8f161b0a38080c7ad3`.
+
 ### Current completion-state sync
 
-Issue #168 is the docs-only synchronization checkpoint after block 5. It records merged reality in central plans without adding geometry–bonding correlation code. Block 6 begins only after #168 merges and `main` is reverified.
+Issue #172 is the docs-only synchronization checkpoint after block 6. It records merged reality in central plans without adding CHE/free-energy thermodynamics code. Block 7 begins only after #172 merges and `main` is reverified.
 
 ## Mandatory development loop
 
@@ -333,7 +346,7 @@ After squash merge, re-read `main`. When connector visibility does not expose a 
 - [`V0_5_PLAN.md`](V0_5_PLAN.md): v0.5 architecture, dependency order, scientific completion state and release handoff.
 - [`V0_5_RELEASING.md`](V0_5_RELEASING.md): v0.5 Gate A/B/C procedure and release evidence.
 - [`V0_4_PLAN.md`](V0_4_PLAN.md) / [`V0_4_RELEASING.md`](V0_4_RELEASING.md): retained v0.4 scientific/release history.
-- technique documents such as [`XAS.md`](XAS.md), [`EXAFS.md`](EXAFS.md), [`WT_EXAFS.md`](WT_EXAFS.md), [`STRUCTURE_GEOMETRY.md`](STRUCTURE_GEOMETRY.md), [`STRUCTURE_VISUALIZATION.md`](STRUCTURE_VISUALIZATION.md), and [`DFT_ENERGETICS.md`](DFT_ENERGETICS.md): reviewed domain contracts.
+- technique documents such as [`XAS.md`](XAS.md), [`EXAFS.md`](EXAFS.md), [`WT_EXAFS.md`](WT_EXAFS.md), [`STRUCTURE_GEOMETRY.md`](STRUCTURE_GEOMETRY.md), [`STRUCTURE_VISUALIZATION.md`](STRUCTURE_VISUALIZATION.md), [`DFT_ENERGETICS.md`](DFT_ENERGETICS.md), and [`GEOMETRY_BONDING_CORRELATION.md`](GEOMETRY_BONDING_CORRELATION.md): reviewed domain contracts.
 - [`REFERENCES.md`](REFERENCES.md): long-lived prior-art reference survey; release-specific architecture decisions may additionally be frozen in the corresponding `V0_X_PLAN.md`.
 - GitHub Issues: active acceptance criteria.
 - GitHub Pull Requests: concrete diff, review evidence, CI state and merge decision.
@@ -349,4 +362,4 @@ After each merged scientific Issue, update only documentation whose statements b
 - preceding Issue closure/completion;
 - version/tag/publication boundaries.
 
-Issue #168 is the active v0.6 block-5 completion-state documentation checkpoint. After it merges, reverify `main`, Issue #168 closure, immutable `v0.5.0`, immutable `v0.4.0`, distribution/runtime version `0.5.0`, and PyPI-deferred state. Then start block 6 (geometry–bonding correlation) from that exact verified `main` baseline using the frozen order in `V0_6_PLAN.md`.
+Issue #172 is the active v0.6 block-6 completion-state documentation checkpoint. After it merges, reverify `main`, Issue #172 closure, immutable `v0.5.0`, immutable `v0.4.0`, distribution/runtime version `0.5.0`, and PyPI-deferred state. Then start block 7 (CHE/free-energy thermodynamics) from that exact verified `main` baseline using the frozen order in `V0_6_PLAN.md`.
