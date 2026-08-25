@@ -68,7 +68,8 @@ def test_distance_does_not_apply_hidden_minimum_image() -> None:
 
 def test_nonperiodic_distance_and_angle() -> None:
     structure = _molecule()
-    assert site_distance(structure, SiteImage("o"), SiteImage("h1")).distance_angstrom == pytest.approx(1.0)
+    distance = site_distance(structure, SiteImage("o"), SiteImage("h1"))
+    assert distance.distance_angstrom == pytest.approx(1.0)
     result = site_angle(structure, SiteImage("h1"), SiteImage("o"), SiteImage("h2"))
     assert result.angle_degrees == pytest.approx(90.0)
 
@@ -128,7 +129,8 @@ def test_structure_comparison_identity_and_perturbation() -> None:
     )
     changed = compare_structures(reference, candidate, identity)
     np.testing.assert_allclose(changed.distances_angstrom, [0.0, 0.1, 0.2])
-    assert changed.rmsd_angstrom == pytest.approx(np.sqrt((0.0 + 0.01 + 0.04) / 3.0))
+    expected_rmsd = np.sqrt((0.0 + 0.01 + 0.04) / 3.0)
+    assert changed.rmsd_angstrom == pytest.approx(expected_rmsd)
     assert changed.max_displacement_angstrom == pytest.approx(0.2)
     assert changed.displacement_vectors_angstrom.flags.writeable is False
     assert changed.distances_angstrom.flags.writeable is False
