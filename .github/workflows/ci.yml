@@ -65,6 +65,7 @@ jobs:
           .venv-smoke/bin/python tests/installed_correlation_smoke.py
           .venv-smoke/bin/python tests/installed_thermodynamics_smoke.py
           .venv-smoke/bin/python tests/installed_free_energy_diagram_smoke.py
+          .venv-smoke/bin/python tests/installed_charge_density_difference_smoke.py
 
       - name: Audit installed v0.5 structure and v0.6 electronic/bonding adapters
         run: |
