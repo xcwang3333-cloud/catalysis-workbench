@@ -68,8 +68,11 @@ Checkpoint date: 2026-08-25.
 - v0.6 block-6 completion-state docs sync: Issue #172 / PR #173 — complete at `9d6d8e2868f38336ba1a8e25adab3fd3b787df1a`.
 - v0.6 block 7, explicit CHE/free-energy thermodynamics: Issue #174 / PR #175 — complete at `e25610d56eb414ac6aedae07874042d3f4edd194`.
 - Block-7 final head `3d008e98281ec95a4f6fd7310db18be97f8a36f3` passed CI #434 / run `32833845931` and final-head reviews `5017464310`, `5017466412` before squash merge.
-- Active stage: **Issue #176 — synchronize block-7 completion state into central documentation**.
-- v0.6 block 8 (free-energy diagrams) starts only after #176 is complete and `main` is reverified.
+- v0.6 block-7 completion-state docs sync: Issue #176 / PR #177 — complete at `917500868591fe6793172fec44d943b8a8a36930`.
+- v0.6 block 8, passive free-energy diagram state and plotting: Issue #178 / PR #179 — complete at `0d8dd67f716c47b4c611dd56cfc0cb243db3fb29`.
+- Block-8 final head `d2046565ab4ab490ed3169e02c03b2d369b4ad74` passed CI #439 / run `32836733241` and final-head reviews `5017795338`, `5017796858` before squash merge.
+- Active stage: **Issue #180 — synchronize block-8 completion state into central documentation**.
+- v0.6 block 9 (charge-density-difference calculation with strict lattice/grid/component/unit validation) starts only after #180 is complete and `main` is reverified.
 
 Live GitHub Issue/PR/tag state remains authoritative if this checkpoint becomes stale.
 
@@ -84,7 +87,7 @@ Detailed long-range scope is maintained in [`ROADMAP.md`](ROADMAP.md).
 | v0.3.x | FTIR, thermal analysis, basic gas sorption, ICP/composition | complete/released as v0.3.0 |
 | v0.4.x | shared fitting, XPS, EIS, quantitative BET, product calibration | complete/released as v0.4.0; GitHub Release published; PyPI deferred |
 | v0.5.x | XAS/XANES, FT/WT-EXAFS, EXAFS summaries, structures/geometry/static visualization, basic DFT energetics | complete/released as v0.5.0; GitHub Release published; PyPI deferred |
-| v0.6.x | electronic structure and catalysis thermodynamics | architecture + blocks 1–7 complete; block 8 next after #176 |
+| v0.6.x | electronic structure and catalysis thermodynamics | architecture + blocks 1–8 complete; block 9 next after #180 |
 | v0.7.x | advanced computational visualization | planned |
 | v0.8.x | operando/time-resolved analysis | planned |
 | v0.9.x | reproducible batch workflows and first interactive editor | planned |
@@ -280,9 +283,19 @@ Issue #174 / PR #175 delivered explicit thermodynamic entries that reference the
 
 Block-7 final head `3d008e98281ec95a4f6fd7310db18be97f8a36f3` passed CI #434 / run `32833845931` and final-head reviews `5017464310`, `5017466412` before squash merge `e25610d56eb414ac6aedae07874042d3f4edd194`.
 
+### Block-7 completion-state sync — complete
+
+Issue #176 / PR #177 synchronized the merged block-7 state into central documentation at `917500868591fe6793172fec44d943b8a8a36930` before block 8 began.
+
+### Free-energy diagrams — complete
+
+Issue #178 / PR #179 delivered CatalysisWorkbench-owned immutable ordered free-energy diagram state with exact source provenance, explicit absolute versus caller-referenced `G_i - G_ref` semantics, retained Block-7 CHE context, strict multi-series compatibility checks, detached reporting, and passive `FigureSpec`/Matplotlib rendering of retained horizontal levels and straight connectors. There is no implicit first-state zeroing, CHE/pH/potential recomputation in the renderer, pathway discovery, hidden state removal, transition-state/barrier construction, or new runtime dependency.
+
+Block-8 final head `d2046565ab4ab490ed3169e02c03b2d369b4ad74` passed CI #439 / run `32836733241` and final-head reviews `5017795338`, `5017796858` before squash merge `0d8dd67f716c47b4c611dd56cfc0cb243db3fb29`.
+
 ### Current completion-state sync
 
-Issue #176 is the docs-only synchronization checkpoint after block 7. It records merged reality in central plans without adding free-energy-diagram code. Block 8 begins only after #176 merges and `main` is reverified.
+Issue #180 is the docs-only synchronization checkpoint after block 8. It records merged reality in central plans without adding charge-density-difference code. Block 9 begins only after #180 merges and `main` is reverified.
 
 ## Mandatory development loop
 
@@ -359,7 +372,7 @@ After squash merge, re-read `main`. When connector visibility does not expose a 
 - [`V0_5_PLAN.md`](V0_5_PLAN.md): v0.5 architecture, dependency order, scientific completion state and release handoff.
 - [`V0_5_RELEASING.md`](V0_5_RELEASING.md): v0.5 Gate A/B/C procedure and release evidence.
 - [`V0_4_PLAN.md`](V0_4_PLAN.md) / [`V0_4_RELEASING.md`](V0_4_RELEASING.md): retained v0.4 scientific/release history.
-- technique documents such as [`XAS.md`](XAS.md), [`EXAFS.md`](EXAFS.md), [`WT_EXAFS.md`](WT_EXAFS.md), [`STRUCTURE_GEOMETRY.md`](STRUCTURE_GEOMETRY.md), [`STRUCTURE_VISUALIZATION.md`](STRUCTURE_VISUALIZATION.md), [`DFT_ENERGETICS.md`](DFT_ENERGETICS.md), [`GEOMETRY_BONDING_CORRELATION.md`](GEOMETRY_BONDING_CORRELATION.md), and [`CHE_THERMODYNAMICS.md`](CHE_THERMODYNAMICS.md): reviewed domain contracts.
+- technique documents such as [`XAS.md`](XAS.md), [`EXAFS.md`](EXAFS.md), [`WT_EXAFS.md`](WT_EXAFS.md), [`STRUCTURE_GEOMETRY.md`](STRUCTURE_GEOMETRY.md), [`STRUCTURE_VISUALIZATION.md`](STRUCTURE_VISUALIZATION.md), [`DFT_ENERGETICS.md`](DFT_ENERGETICS.md), [`GEOMETRY_BONDING_CORRELATION.md`](GEOMETRY_BONDING_CORRELATION.md), [`CHE_THERMODYNAMICS.md`](CHE_THERMODYNAMICS.md), and [`FREE_ENERGY_DIAGRAMS.md`](FREE_ENERGY_DIAGRAMS.md): reviewed domain contracts.
 - [`REFERENCES.md`](REFERENCES.md): long-lived prior-art reference survey; release-specific architecture decisions may additionally be frozen in the corresponding `V0_X_PLAN.md`.
 - GitHub Issues: active acceptance criteria.
 - GitHub Pull Requests: concrete diff, review evidence, CI state and merge decision.
@@ -375,4 +388,4 @@ After each merged scientific Issue, update only documentation whose statements b
 - preceding Issue closure/completion;
 - version/tag/publication boundaries.
 
-Issue #176 is the active v0.6 block-7 completion-state documentation checkpoint. After it merges, reverify `main`, Issue #176 closure, immutable `v0.5.0`, immutable `v0.4.0`, distribution/runtime version `0.5.0`, and PyPI-deferred state. Then start block 8 (free-energy diagrams) from that exact verified `main` baseline using the frozen order in `V0_6_PLAN.md`.
+Issue #180 is the active v0.6 block-8 completion-state documentation checkpoint. After it merges, reverify `main`, Issue #180 closure, immutable `v0.5.0`, immutable `v0.4.0`, distribution/runtime version `0.5.0`, and PyPI-deferred state. Then start block 9 (charge-density-difference calculation with strict lattice/grid/component/unit validation) from that exact verified `main` baseline using the frozen order in `V0_6_PLAN.md`.
