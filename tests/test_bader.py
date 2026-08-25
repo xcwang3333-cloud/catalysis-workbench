@@ -6,8 +6,8 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from catalysis_workbench.computation import (
-    AtomicStructure,
+from catalysis_workbench.computation import AtomicStructure
+from catalysis_workbench.computation.bader import (
     BaderChargeResult,
     BaderChargeSiteResult,
     BaderError,
@@ -17,7 +17,7 @@ from catalysis_workbench.computation import (
     bader_charge_frame,
     bader_result_frame,
 )
-from catalysis_workbench.io import BaderIOError, read_bader_acf
+from catalysis_workbench.io.bader import BaderIOError, read_bader_acf
 
 
 STANDARD_ACF = """#         X           Y           Z       CHARGE      MIN DIST   ATOMIC VOL
