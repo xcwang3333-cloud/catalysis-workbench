@@ -1,5 +1,6 @@
 """Publication-quality visualization for CatalysisWorkbench results."""
 
+from .band_structure import BandVisualizationError, plot_band_structure
 from .bars import BarCategory, BarData, BarSeries, render_bars
 from .curves import format_axis_label, render_curves
 from .dft import plot_relative_energies
@@ -36,6 +37,7 @@ from .volumetric_techniques import (
 
 __all__ = [
     "AnnotationSpec",
+    "BandVisualizationError",
     "BarCategory",
     "BarData",
     "BarSeries",
@@ -61,6 +63,7 @@ __all__ = [
     "format_axis_label",
     "get_preset",
     "list_presets",
+    "plot_band_structure",
     "plot_dos",
     "plot_free_energy_diagram",
     "plot_relative_energies",
