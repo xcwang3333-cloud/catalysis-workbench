@@ -270,10 +270,9 @@ def exafs_fit_diagnostics_frame(summary: EXAFSFitSummary) -> pd.DataFrame:
         rows,
         columns=["producer", "source_id", "diagnostic_label", "value", "unit"],
     )
-    frame["unit"] = pd.Series(
-        [item.unit for item in summary.diagnostics],
-        dtype=object,
-    )
+    units = np.empty(len(summary.diagnostics), dtype=object)
+    units[:] = [item.unit for item in summary.diagnostics]
+    frame["unit"] = units
     return frame
 
 
