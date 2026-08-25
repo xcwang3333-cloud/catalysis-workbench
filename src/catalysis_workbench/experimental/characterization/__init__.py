@@ -31,6 +31,19 @@ from .composition import (
     solution_concentration_to_bulk_mass_fraction,
     summarize_composition_replicates,
 )
+from .exafs import (
+    EXAFSDirection,
+    EXAFSError,
+    EXAFSFTComponent,
+    EXAFSFTResult,
+    EXAFSFTSpec,
+    EXAFSKSpaceResult,
+    EXAFSKSpaceSpec,
+    forward_ft_exafs,
+    ft_exafs_component,
+    prepare_exafs_kspace,
+    validate_exafs_series,
+)
 from .ftir import (
     FTIRBand,
     FTIRBandMeasurement,
@@ -210,6 +223,18 @@ def plot_raman(
     )
 
 
+def plot_ft_exafs(
+    data: Series | Dataset,
+    spec: FigureSpec | None = None,
+    *,
+    preset: str = "publication",
+) -> tuple[Figure, Axes]:
+    """Lazily render retained FT-EXAFS real-valued components."""
+    from .exafs_plotting import plot_ft_exafs as _plot_ft_exafs
+
+    return _plot_ft_exafs(data, spec, preset=preset)
+
+
 def plot_ftir(
     data: Series | Dataset,
     spec: FigureSpec | None = None,
@@ -350,6 +375,13 @@ __all__ = [
     "CompositionSummaryTable",
     "CompositionTable",
     "DTGSignMode",
+    "EXAFSDirection",
+    "EXAFSError",
+    "EXAFSFTComponent",
+    "EXAFSFTResult",
+    "EXAFSFTSpec",
+    "EXAFSKSpaceResult",
+    "EXAFSKSpaceSpec",
     "FTIRBand",
     "FTIRBandMeasurement",
     "FTIRBaselineFit",
@@ -410,6 +442,8 @@ __all__ = [
     "fit_bet",
     "fit_ftir_baseline",
     "fit_xps_peaks",
+    "forward_ft_exafs",
+    "ft_exafs_component",
     "id_ig_ratio",
     "linear_xps_background",
     "measure_ftir_band",
@@ -419,6 +453,7 @@ __all__ = [
     "normalize_xanes",
     "plot_bet_fit",
     "plot_composition",
+    "plot_ft_exafs",
     "plot_ftir",
     "plot_raman",
     "plot_sorption",
@@ -426,6 +461,7 @@ __all__ = [
     "plot_xanes",
     "plot_xps_fit",
     "plot_xrd",
+    "prepare_exafs_kspace",
     "prepare_sorption_series",
     "prepare_xps_region",
     "process_ftir",
@@ -458,6 +494,7 @@ __all__ = [
     "summarize_xps_fit",
     "transmittance_to_absorbance",
     "validate_dtg_series",
+    "validate_exafs_series",
     "validate_ftir_overlay",
     "validate_ftir_series",
     "validate_raman_series",
