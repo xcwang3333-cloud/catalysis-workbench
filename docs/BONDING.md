@@ -8,6 +8,8 @@ The optional `structure` dependency already provides `pymatgen-core>=2026.7.16`,
 
 The first adapter accepts only standard COHP/ICOHP output. COOP/ICOOP, COBI/ICOBI, multi-center COBI and LCFO-specific variants fail explicitly rather than being relabeled as COHP.
 
+Current pymatgen `Icohplist` requires the spin-polarization mode as a constructor argument rather than reliably inferring it from the file. `read_lobster_icohp()` therefore requires the caller to supply `is_spin_polarized: bool` explicitly and passes that state to the backend. CatalysisWorkbench does not infer ICOHP spin mode from row/column layout or filename conventions.
+
 ## Energy reference
 
 Current pymatgen documentation states that LOBSTER shifts the parsed COHP energy grid so the Fermi level is at zero. CatalysisWorkbench therefore retains the parsed axis as:
@@ -33,6 +35,7 @@ Scientific storage never uses mirrored plotting conventions.
 
 - non-spin-polarized LOBSTER output becomes one physical `total` channel;
 - collinear spin-polarized output must provide complete `up` and `down` channels;
+- ICOHPLIST spin mode is a caller-explicit parser input, not an inferred file property;
 - incomplete or unrecognized spin identity fails closed;
 - numerical spin-down COHP values are retained exactly as supplied by LOBSTER.
 
@@ -69,7 +72,7 @@ No automatic `s/p/d/f` grouping or chemistry interpretation is inferred from dis
 
 - stable bond key and original source label;
 - bond length in angstrom;
-- source `number_of_bonds` multiplicity basis;
+- source `number_of_bonds` multiplicity basis, which must be an exact positive integer and is never truncated from a fractional value;
 - source-sign physical spin values at E_F;
 - deterministic digest.
 
