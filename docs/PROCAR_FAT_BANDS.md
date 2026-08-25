@@ -26,7 +26,7 @@ Each `BandProjectionChannel` stores one physical spin channel with canonical axi
 (band, kpoint, site, orbital)
 ```
 
-The VASP/pymatgen producer order is `(kpoint, band, ion, orbital)`. The adapter performs only the explicit axis transpose needed to align the retained projection tensor with the reviewed Block-3 band axis order. Values are not normalized, clipped, broadened, smoothed, thresholded, or rescaled.
+The current `pymatgen-core` scalar projection order is `(kpoint, band, ion, orbital)`. The adapter performs only the explicit axis transpose needed to align the retained projection tensor with the reviewed Block-3 band axis order. Values are not normalized, clipped, broadened, smoothed, thresholded, or rescaled.
 
 Projection weights are retained as finite, non-negative, dimensionless `vasp-procar-projection-weight` values. CatalysisWorkbench does not reinterpret them as percentages or force their sum to one.
 
@@ -38,9 +38,9 @@ Site identity comes only from the `AtomicStructure` already attached to the asso
 - stable site key;
 - element identity.
 
-PROCAR orbital headers are retained literally and in producer order. CatalysisWorkbench does not rename orbital labels from chemistry conventions or infer orbital families.
+CatalysisWorkbench retains the orbital/component labels exposed by the reviewed `pymatgen-core.Procar` parser literally and in backend-retained source order. It does not rename orbital labels from chemistry conventions or infer orbital families.
 
-A producer `tot` column, when present, is retained as the literal source column `tot`. It is not silently removed, reconstructed, or used as an automatic normalization denominator. Explicitly selecting both `tot` and component orbitals is therefore the caller's responsibility and may intentionally double-count producer columns.
+Current `pymatgen-core.Procar` parses the raw PROCAR orbital header by removing the leading `ion` token and the trailing raw-file `tot` token before allocating scalar projection `data`. Therefore the current Block-4 adapter does **not** claim to retain the raw terminal `tot` column. It preserves exactly `parsed.orbitals` and the corresponding scalar component values exposed by the backend, and it does not reconstruct, synthesize, or use the omitted total as a normalization denominator.
 
 ## Explicit aggregation
 
@@ -59,7 +59,7 @@ The operation:
 
 1. validates the requested physical spin against the associated band state;
 2. requires a non-empty, duplicate-free site selection;
-3. requires a non-empty, duplicate-free set of exact source orbital labels;
+3. requires a non-empty, duplicate-free set of exact retained orbital labels;
 4. canonicalizes site/orbital identity to retained source order for deterministic provenance;
 5. sums only the selected retained weights over site and orbital axes;
 6. returns one immutable `(n_bands, n_kpoints)` `AggregatedBandProjection` with explicit `aggregation="sum"`.
@@ -72,7 +72,7 @@ It does **not**:
 - sum spin channels;
 - normalize to a maximum;
 - normalize to 100%;
-- normalize against `tot`;
+- normalize against an inferred or reconstructed total;
 - normalize by electron count or occupation;
 - apply a projection threshold.
 
@@ -100,7 +100,7 @@ It validates:
 
 - one PROCAR path only; the public minimum API does not concatenate multiple files;
 - scalar, non-SOC projection layout;
-- exact non-empty unique producer orbital headers;
+- exact non-empty unique backend-exposed orbital labels;
 - exact k-point count and order;
 - k-point coordinates under the caller-visible absolute `kpoint_atol`;
 - exact band count;
@@ -111,7 +111,7 @@ It validates:
 
 Current `pymatgen-core` rounds parsed PROCAR k-point coordinates to five decimal places internally. Therefore k-point compatibility is intentionally an explicit tolerance check rather than a false bitwise-equality claim. The tolerance is retained in projection metadata.
 
-The adapter never reorders k-points, selects a nearest path, drops bands, pads missing bands, replaces Block-3 band energies, or reconstructs a path from PROCAR.
+The adapter never reorders k-points, selects a nearest path, drops bands, pads missing bands, replaces Block-3 band energies, reconstructs a path from PROCAR, or reconstructs the backend-omitted raw terminal `tot` projection column.
 
 ### Physical spin
 
@@ -123,7 +123,7 @@ The physical spin contract follows the associated Block-3 band state, not a back
 
 ## SOC and non-collinear boundary
 
-Current `pymatgen-core` can expose PROCAR `xyz_data` for SOC/non-collinear vector magnetization projections. The initial Block-4 contract intentionally rejects this state.
+Current `pymatgen-core` exposes `xyz_data=None` for ordinary non-SOC PROCAR state and vector `xyz_data` for SOC/non-collinear magnetization projections. The initial Block-4 contract intentionally rejects the latter state.
 
 CatalysisWorkbench does not collapse vector/spinor projection information into misleading scalar `up/down` channels. Supporting SOC/non-collinear projected bands requires a separately reviewed future state model.
 
@@ -164,7 +164,7 @@ Projection state retains:
 - associated band-state digest and source digest;
 - PROCAR source digest;
 - exact physical spin channels;
-- exact source orbital order;
+- exact backend-exposed orbital order;
 - exact structure-coupled site identity;
 - adapter k-point and energy compatibility tolerances;
 - producer/backend metadata including current `pymatgen-core` version;
@@ -184,7 +184,8 @@ K-point weights and occupancies are not used to infer electronic character, band
 - automatic element grouping or orbital-family grouping;
 - atom selection from chemistry heuristics;
 - spin summation;
-- max/percentage/`tot`/electron-count normalization;
+- max/percentage/inferred-total/electron-count normalization;
+- reconstruction of the raw terminal PROCAR `tot` column omitted by current `pymatgen-core`;
 - automatic projection thresholds;
 - band sorting/reconnection;
 - k-point interpolation or smoothing;
