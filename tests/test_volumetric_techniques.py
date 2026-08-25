@@ -154,6 +154,9 @@ def test_electron_density_scene_uses_exact_total_component_only() -> None:
     assert np.array_equal(field.values, total)
     assert not np.array_equal(field.values, magnetization)
 
+    zero_scene = build_electron_density_scene(grid, threshold=0.0)
+    assert zero_scene.layers[0].threshold == 0.0
+
     only_magnetic = VolumetricGrid(
         structure=_structure(),
         components={"magnetization_z": magnetization},
@@ -221,7 +224,7 @@ def test_slice_renderer_uses_explicit_range_and_exact_values() -> None:
     assert mesh.get_clim() == pytest.approx((0.0, 6.0))
     coordinates = mesh.get_coordinates()
     assert coordinates.shape == (3, 3, 2)
-    assert coordinates[-1, -1] == pytest.approx((3.0, 2.0))
+    np.testing.assert_allclose(coordinates[-1, -1], np.array([3.0, 2.0]))
     assert len(figure.axes) == 2
 
 
@@ -261,5 +264,5 @@ def test_fractional_slice_rendering_uses_exact_unit_cell_edges() -> None:
         show_colorbar=False,
     )
     coordinates = ax.collections[0].get_coordinates()
-    assert coordinates[0, 0] == pytest.approx((0.0, 0.0))
-    assert coordinates[-1, -1] == pytest.approx((1.0, 1.0))
+    np.testing.assert_allclose(coordinates[0, 0], np.array([0.0, 0.0]))
+    np.testing.assert_allclose(coordinates[-1, -1], np.array([1.0, 1.0]))
