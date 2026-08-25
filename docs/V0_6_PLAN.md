@@ -60,14 +60,14 @@ The architecture order is deliberately not the original roadmap order: all later
 
 ### Pymatgen / pymatgen-core
 
-`materialsproject/pymatgen` and `materialsproject/pymatgen-core` are MIT licensed and Python 3.11+ compatible in the surveyed current releases. The project already uses optional `pymatgen-core` support for v0.5 structure adapters. Full `pymatgen` supplies mature VASP and LOBSTER I/O including `Vasprun`, `Chgcar`, `Procar`, `Cohpcar`, and `Icohplist`-class functionality.
+`materialsproject/pymatgen` and `materialsproject/pymatgen-core` are MIT licensed and Python 3.11+ compatible in the surveyed current releases. The project already uses optional `pymatgen-core` support for v0.5 structure adapters. Implementation-time verification for Issue #150 confirms that the surveyed 2026 `pymatgen-core` package itself already contains the VASP and LOBSTER I/O plus core electronic-structure classes needed by the v0.6 parser layer, including `Vasprun`, `Chgcar`, `Procar`, `Cohpcar`, `Icohplist`, `Dos`, and `CompleteDos`. Full `pymatgen` depends on `pymatgen-core` and adds higher-level analyses; it is not required for block-1 VASP parsing.
 
 v0.6 decision:
 
-- preferred optional parser/backend candidate for VASP rich output and LOBSTER output;
+- reuse the existing optional `structure = ["pymatgen-core>=2026.7.16"]` backend for block-1 VASP rich-output parsing; do not add a second `electronic` extra merely for `Vasprun`/`Chgcar`;
 - CatalysisWorkbench owns the public immutable result objects and converts backend state into them immediately;
 - do not expose `Vasprun`, `CompleteDos`, `Chgcar`, `Cohpcar`, `Icohplist`, or other mutable/backend-specific objects as authoritative public results;
-- a concrete implementation PR must validate exact full-`pymatgen` version compatibility, installed-wheel behavior, supported formats, and dependency footprint before adding an `electronic`-style optional extra.
+- later LOBSTER-specific blocks revalidate the exact `pymatgen-core` parser surface they use; full `pymatgen` is added only if a concrete missing capability requires it and a separate dependency/API review approves it.
 
 ### Sumo
 
@@ -154,7 +154,7 @@ Rules:
 
 Scientific storage uses physical channels rather than plotting conventions.
 
-Initial collinear channels are explicit `up` and `down`. Numerical DOS values remain non-negative as supplied by the source. A common mirrored DOS plot with spin-down below zero is display-only.
+Initial non-spin-polarized DOS is stored as a physical `total` channel. Collinear spin-polarized DOS uses explicit `up` and `down` channels. Numerical DOS values remain non-negative as supplied by the source. A common mirrored DOS plot with spin-down below zero is display-only.
 
 For non-collinear VASP output, total and magnetization components must remain distinguishable. A concrete adapter may initially reject unsupported non-collinear projections rather than collapsing them into misleading up/down channels.
 
@@ -182,7 +182,7 @@ Supported normalization states may include source-native extensive DOS, per-volu
 
 ### `vasprun.xml`
 
-Preferred first rich VASP DOS/PDOS source because it retains Fermi energy, structure, spin and projection metadata in a parser-friendly form. Initial implementation should use a reviewed optional full-pymatgen backend rather than hand-writing a general XML parser.
+Preferred first rich VASP DOS/PDOS source because it retains Fermi energy, structure, spin and projection metadata in a parser-friendly form. Issue #150 uses the already-reviewed optional `pymatgen-core` backend rather than hand-writing a general XML parser or adding full `pymatgen` solely for this format.
 
 ### `DOSCAR`
 
@@ -194,15 +194,17 @@ PROCAR contains band/k-point/atom/orbital projection weights, not a DOS object. 
 
 ### `CHGCAR`
 
-CHGCAR contains the structure, fine FFT-grid dimensions, total electron-number density data and, for magnetic calculations, additional magnetization blocks.
+CHGCAR contains the structure, fine FFT-grid dimensions, total electron-number-density-related grid values and, for magnetic calculations, additional magnetization blocks.
 
-Canonical v0.6 physical density convention:
+Canonical v0.6 physical density convention, refined and regression-checked in Issue #150:
 
 - retain grid shape `(nx, ny, nz)` and lattice matrix in angstrom;
-- convert the stored VASP values to electron-number density `n(r)` in `1/angstrom^3` using the documented FFT-grid and cell-volume normalization;
-- retain component identity such as total density or magnetization component;
+- current text `pymatgen-core` parsing preserves the VASP file grid numbers, whose pointwise convention is `n(r) * V_cell`; convert once as `n(r) = parsed_grid / V_cell` to obtain electron-number density in `1/angstrom^3`;
+- do **not** divide the pointwise grid by `N_grid`; the voxel volume is `V_cell / N_grid`, so the integrated total-density diagnostic is `sum(parsed_total) / N_grid`;
+- retain component identity such as total density or an explicitly supported collinear magnetization component;
 - the integral of total `n(r)` over the cell is a sanity diagnostic against electron count when producer state permits;
-- do not call the positive electron-number density a signed Coulomb charge density.
+- do not call the positive electron-number density a signed Coulomb charge density;
+- installed-backend regression fixtures must guard this parser normalization behavior so a future upstream change cannot silently cause double normalization.
 
 ### `LOCPOT`
 
