@@ -272,6 +272,16 @@ def build_correlation_dataset(
     )
 
 
+def _canonical_spins(summary: object, requested: Sequence[str]) -> tuple[str, ...]:
+    retained = tuple(getattr(summary, "spins", ()))
+    requested_set = frozenset(requested)
+    canonical = tuple(spin for spin in retained if spin in requested_set)
+    if len(canonical) != len(requested_set):
+        missing = sorted(requested_set.difference(retained))
+        raise CorrelationError("requested ICOHP spin is not retained: " + ", ".join(missing))
+    return canonical
+
+
 def icohp_length_correlation(
     result: ICOHPResult,
     *,
@@ -294,7 +304,13 @@ def icohp_length_correlation(
             source_labels=source_labels,
         )
         summed_values = tuple(
-            (summary, sum_icohp_spins(summary, spins=requested_spins))
+            (
+                summary,
+                sum_icohp_spins(
+                    summary,
+                    spins=_canonical_spins(summary, requested_spins),
+                ),
+            )
             for summary in selected
         )
     except BondingError as exc:
