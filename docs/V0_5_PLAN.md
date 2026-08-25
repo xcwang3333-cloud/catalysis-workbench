@@ -1,6 +1,6 @@
 # CatalysisWorkbench v0.5 Plan
 
-v0.5 is the XAS, atomic-structure, and basic DFT-energetics release. This document defines the architecture and dependency order before scientific implementation. GitHub remains the operational source of truth.
+v0.5 is the XAS, atomic-structure, and basic DFT-energetics release. This document defines the reviewed architecture, dependency order, scientific completion state, and release handoff. GitHub remains the operational source of truth.
 
 ## Baseline and release state
 
@@ -11,6 +11,21 @@ v0.5 is the XAS, atomic-structure, and basic DFT-energetics release. This docume
 - v0.4 GitHub Release is complete.
 - PyPI/package-registry publication is deferred. Issue #113 is closed `not_planned`; the merged trusted-publishing workflow remains dormant until a future explicit decision.
 - No v0.5 implementation may move or recreate `v0.4.0`.
+
+## Scientific completion checkpoint
+
+All eight frozen v0.5 scientific implementation blocks are complete on `main` as of 2026-08-25. The scientific-completion baseline is `a7ebd009ec83b0aeb068ad2d2f6712c17a783f1f`.
+
+1. XAS semantics + XANES preparation/normalization/comparison — Issue #117 / PR #118 — complete.
+2. EXAFS k-space + FT-EXAFS transform/plotting — Issue #119 / PR #120 — complete.
+3. WT-EXAFS transform/visualization — Issue #121 / PR #122 — complete.
+4. EXAFS fitting-result summary integration — Issue #123 / PR #124 — complete.
+5. Atomic structure model + POSCAR/CONTCAR/CIF/XYZ adapters — Issue #125 / PR #126 — complete.
+6. Geometry/coordination/structure comparison — Issue #127 / PR #129 — complete.
+7. Static publication-oriented structure visualization — Issue #130 / PR #131 — complete.
+8. Basic DFT total/relative/reaction/adsorption-energy analysis — Issue #132 / PR #133 — complete at scientific-completion commit `a7ebd009ec83b0aeb068ad2d2f6712c17a783f1f`.
+
+Issue #134 is the completion-state documentation synchronization. After that docs-only checkpoint merges and is reverified, **Gate A frozen-scope release hardening is the next phase**. Gate A must retain distribution/runtime version `0.4.0`; version finalization belongs only to Gate B.
 
 ## Architecture principles
 
@@ -27,7 +42,7 @@ The existing project rules continue to apply:
 
 ## Frozen v0.5 scope
 
-v0.5 contains eight planned scientific blocks:
+v0.5 contains eight planned scientific blocks, all now implemented and merged:
 
 1. XAS semantics plus XANES preparation, normalization, and comparison.
 2. EXAFS k-space preparation plus FT-EXAFS transform and publication plotting.
@@ -36,7 +51,7 @@ v0.5 contains eight planned scientific blocks:
 5. Atomic-structure model plus POSCAR / CONTCAR / CIF / XYZ adapters.
 6. Bond/angle/coordination analysis and structure comparison.
 7. Basic static publication-oriented structure visualization.
-8. Basic DFT total/relative/adsorption-energy analysis.
+8. Basic DFT total/relative/reaction/adsorption-energy analysis.
 
 CHE/free-energy thermodynamics, DOS/PDOS, Bader, COHP/ICOHP, charge-density difference, advanced volumetric rendering, operando mapping, GUI editing, and VASP job management remain later-release work.
 
@@ -63,10 +78,10 @@ Architecture decision:
 
 - CatalysisWorkbench owns its public immutable structure/result contracts;
 - third-party objects do not become the public API;
-- a concrete structure-I/O implementation Issue must validate `pymatgen-core` behavior, wheel compatibility, dependency weight, and exact supported formats before adding it to `pyproject.toml`;
+- the reviewed structure-I/O implementation validated `pymatgen-core` through an optional `structure` extra rather than making it a mandatory base dependency;
 - use a mature parser/PBC engine instead of hand-writing CIF/POSCAR parsing when the backend satisfies the reviewed contract.
 
-ASE remains a useful atomistic reference but its package license is LGPL-2.1-or-later; it is not added merely when the narrower MIT backend covers the required v0.5 scope.
+ASE remains a useful atomistic reference but its package license is LGPL-2.1-or-later; it was not added merely when the narrower MIT backend covered the required v0.5 scope.
 
 ### Structure visualization: pretty-lattice
 
@@ -79,7 +94,7 @@ ASE remains a useful atomistic reference but its package license is LGPL-2.1-or-
 - attractive starting defaults with explicit colors, radii, bond/material, opacity, orientation, and export controls;
 - preview/export using one visual state.
 
-CatalysisWorkbench will not copy the Three.js/browser implementation into the scientific core. v0.5 targets a basic static renderer and renderer-neutral state; interactive browser/local-GUI editing remains v0.9-v1.0.
+CatalysisWorkbench does not copy the Three.js/browser implementation into the scientific core. v0.5 provides a static renderer and renderer-neutral scene state; interactive browser/local-GUI editing remains v0.9-v1.0.
 
 ## 1. XAS semantics and XANES preparation
 
@@ -94,7 +109,7 @@ Canonical semantics:
 - source order is preserved;
 - duplicate/non-monotonic energy handling is explicit rather than silently sorted.
 
-XAS-specific immutable state may record:
+XAS-specific immutable state records reviewed state such as:
 
 - absorber/edge label when caller supplied;
 - explicit `e0_ev`;
@@ -104,180 +119,87 @@ XAS-specific immutable state may record:
 - normalization edge step and retained arrays;
 - source identity/digest and deterministic processing state.
 
-### Initial XANES operations
-
-The first implementation should support explicit caller-controlled:
-
-- validation of energy/eV and finite measured data;
-- additive energy shift without hidden calibration lookup;
-- measured-point region selection;
-- pre-edge baseline fitting;
-- post-edge normalization fitting;
-- edge-step normalization;
-- multi-sample comparison using the existing visualization model.
-
-No automatic oxidation-state assignment, white-line chemistry assignment, beamline-specific reader inference, or hidden edge database belongs in this block.
+The implementation supports caller-controlled energy/eV validation, additive energy shift, measured-point regions, pre-edge/post-edge polynomial normalization, edge-step normalization, explicit E−E0 transformation, and passive comparison plotting. It does not perform automatic oxidation-state assignment, white-line chemistry assignment, beamline-specific reader inference, or hidden edge-database lookup.
 
 ## 2. EXAFS k-space and FT-EXAFS
 
-The EXAFS layer consumes reviewed XAS/XANES state and keeps every transform convention explicit.
+The reviewed EXAFS layer keeps transform conventions explicit and retains the complex transform rather than magnitude alone.
 
-Required caller-visible state includes:
+Caller-visible state includes k range/weighting, transform window and parameters, zero-padding/FFT state, source direction and exact k grid. The implementation requires a compatible uniform k grid instead of silently interpolating and retains magnitude/real/imaginary/phase views from the authoritative complex transform. Plotting consumes retained state without recomputing the transform.
 
-- `e0_ev` used for conversion;
-- energy-to-k convention and physical constants used;
-- k range;
-- k weighting;
-- background/subtraction source when applicable;
-- transform window family and parameters;
-- zero padding / FFT grid state;
-- retained complex transform rather than magnitude only;
-- R range used only for display/summary unless an analysis step explicitly crops data.
-
-The result should retain exact k/chi and R/complex-FT arrays plus provenance. Plotting must render retained magnitude/real/imaginary channels without recomputing the transform.
-
-A full EXAFS background/fitting engine is not implied by this block.
+A full EXAFS background/fitting engine is not part of this block.
 
 ## 3. WT-EXAFS
 
-WT-EXAFS is a separate explicit numerical transform, not a plotting trick.
+WT-EXAFS is implemented as a separate explicit numerical Cauchy transform, not a plotting trick. The retained state includes source k/chi identity, k weighting, Cauchy order, explicit k/R grids, transform parameters and the authoritative complex matrix, with passive magnitude/real/imaginary/phase rendering.
 
-The API must retain:
-
-- source k/chi identity;
-- k weighting;
-- selected wavelet family;
-- scale/frequency mapping convention;
-- transform parameters;
-- exact k/R or k/frequency grid used;
-- complex transform or the minimum state needed to reproduce magnitude/phase views.
-
-No hidden wavelet defaults should be chemistry-dependent. Numerical implementation/dependency choice requires prior-art refresh and hand-verifiable regression cases before merge.
+The EXAFS phase mapping is independently regression-tested with a single-frequency `chi(k)=cos(2R0k)` ridge case. Chemistry-dependent hidden wavelet defaults are not introduced.
 
 ## 4. EXAFS fitting-result summaries
 
 v0.5 integrates already computed fitting results; it does not become an Artemis-class fitting engine.
 
-The first summary contract should represent caller/imported values such as:
-
-- path/shell stable key and display label;
-- coordination number when provided;
-- effective path length / fitted R;
-- Debye-Waller-like sigma-squared;
-- delta-E0;
-- amplitude-related state when supplied;
-- uncertainty/availability state;
-- fit R-factor / chi-square-like diagnostic labels exactly as supplied by the producing tool;
-- producing-tool/source metadata.
-
-The summary layer must not reinterpret one program's statistic as another program's identically named quantity without an explicit adapter.
+The summary contract retains path/shell stable keys, coordination number when supplied, fitted R, sigma-squared, delta-E0, optional amplitude-like state, explicit uncertainty availability, and diagnostic labels exactly as provided by the producing tool. Statistics are not reinterpreted across external fitting programs.
 
 ## 5. Atomic-structure foundation and file adapters
 
-A new immutable CatalysisWorkbench-owned structure contract is introduced under the computation layer.
+The computation layer now owns an immutable `AtomicStructure` contract with ordered species/sites, Cartesian coordinates in angstrom, optional lattice, PBC flags, deterministic site keys, detached metadata and source digest.
 
-Minimum retained state:
-
-- ordered site/species identity;
-- Cartesian coordinates in angstrom;
-- lattice matrix in angstrom when periodic;
-- periodic boundary flags;
-- deterministic site keys/indices;
-- optional site labels and lightweight source metadata;
-- deterministic source digest.
-
-Public APIs must not expose mutable third-party structure objects as authoritative state.
-
-Initial adapters:
-
-- POSCAR;
-- CONTCAR;
-- CIF;
-- XYZ.
-
-Parsing belongs in I/O/adapter code; the resulting immutable model belongs to the computation/public scientific layer.
+POSCAR, CONTCAR, CIF and XYZ adapters use the reviewed optional `pymatgen-core` backend. Third-party mutable structure objects are not public authority.
 
 ## 6. Geometry, coordination, and structure comparison
 
-Initial geometry APIs should support:
+Reviewed geometry APIs provide exact site/image distance and angle, explicit bounded-image cutoff coordination, and caller-mapped structure comparison.
 
-- bond/site distance;
-- angle;
-- explicit periodic-image distance;
-- caller-defined coordination by cutoff or reviewed explicit neighbor strategy;
-- coordination number summaries;
-- pairwise/local-geometry comparison between structures with explicit site mapping.
+Guardrails remain:
 
-Guardrails:
-
-- never infer a chemical bond merely from element labels;
-- never hide periodic-image selection;
-- never silently reorder sites to make two structures appear aligned;
-- site mapping must be caller supplied or produced by a separately reviewed deterministic mapping algorithm;
-- distances are angstrom and angles degrees unless a future generalized unit layer explicitly changes that contract.
+- no chemical bond inference merely from element labels;
+- no hidden minimum-image replacement;
+- periodic images are explicit;
+- coordination search bounds are caller-visible;
+- structure comparison does not silently reorder sites, auto-map, or Kabsch-align structures;
+- distances are angstrom and angles degrees.
 
 ## 7. Basic structure publication visualization
 
-Rendering is separate from structure analysis.
+Rendering is separate from structure analysis. v0.5 introduces a CatalysisWorkbench-owned renderer-neutral immutable `StructureScene` with exact atom/site-image records, explicit caller-supplied bonds, unit-cell geometry, presentation-only atom colors/radii, explicit camera/projection state, and passive Matplotlib 3D rendering.
 
-The first static visual state should support at minimum:
-
-- atom colors;
-- atom radii/scales;
-- bond visibility/style where bonds were explicitly supplied or generated from explicit geometry rules;
-- cell visibility/style;
-- camera/view orientation;
-- orthographic/perspective choice if supported by the renderer;
-- labels;
-- background;
-- physical output dimensions and vector/raster export where technically meaningful.
-
-An intermediate scene representation is preferred so future GUI/browser rendering can reuse the same scientific/visual state without changing geometry analysis.
+No automatic bond inference, polyhedron generation, browser GUI, or interactive structure editing is included.
 
 ## 8. Basic DFT energetics and adsorption energy
 
-The first computation-energy API consumes explicit energies rather than running VASP.
+The computation-energy API consumes explicit caller-supplied energies rather than running VASP.
 
-Required state:
+Reviewed state includes stable energy keys, finite eV values, explicit normalization bases/source IDs, deterministic ledger digest, caller-defined linear-combination coefficients, retained contribution arrays, and detached reporting tables.
 
-- stable calculation/species keys;
-- energy values with explicit eV unit;
-- reference identities and stoichiometric coefficients;
-- explicit normalization basis where relevant;
-- deterministic provenance/source identifiers.
+Initial operations include:
 
-Initial operations:
+- relative energies against an explicit same-basis reference;
+- generic reaction-energy-like explicit linear combinations;
+- transparent adsorption energy as `E(combined) - E(slab) - n*E(adsorbate)` with caller-visible `n`;
+- passive relative-energy table/plot reporting.
 
-- relative energies against an explicit reference;
-- reaction-energy-like explicit linear combinations;
-- adsorption energy from caller-supplied slab/adsorbate/combined energies and explicit coefficients;
-- comparison tables/plots as passive visualization.
+No CHE potential/pH correction, gas-phase thermochemical lookup, ZPE/entropy correction, chemical-potential inference, DOS/PDOS, Bader, COHP/ICOHP, or charge-density-difference work belongs here.
 
-No CHE potential/pH correction, gas-phase thermochemical database lookup, ZPE/entropy correction, chemical-potential inference, DOS/PDOS, Bader, COHP/ICOHP, or charge-density-difference work belongs here.
+## Dependency order and completion state
 
-## Dependency order
-
-The planned implementation order is:
-
-0. **Architecture checkpoint — Issue #115.**
-1. **XAS semantics + XANES preparation/normalization/comparison.**
-2. **EXAFS k-space + FT transform/plotting.**
-3. **WT-EXAFS transform/visualization.**
-4. **EXAFS fitting-result summary integration.**
-5. **Atomic structure model + POSCAR/CONTCAR/CIF/XYZ adapters.**
-6. **Geometry/coordination/structure comparison.**
-7. **Basic structure publication visualization.**
-8. **Basic DFT energetics/adsorption-energy analysis.**
-9. **Completion-state documentation synchronization.**
-10. **Gate A frozen-scope release hardening.**
-11. **Gate B final-version candidate.**
-12. **Gate C tag creation/reverse verification under separate authorization.**
-
-The XAS and structure stacks are mostly independent. Reordering is allowed only when the responsible Issue records a concrete dependency reason; scientific implementation must not begin before this architecture checkpoint merges.
+0. **Architecture checkpoint — Issue #115 — complete.**
+1. **XAS semantics + XANES preparation/normalization/comparison — #117/#118 — complete.**
+2. **EXAFS k-space + FT transform/plotting — #119/#120 — complete.**
+3. **WT-EXAFS transform/visualization — #121/#122 — complete.**
+4. **EXAFS fitting-result summary integration — #123/#124 — complete.**
+5. **Atomic structure model + POSCAR/CONTCAR/CIF/XYZ adapters — #125/#126 — complete.**
+6. **Geometry/coordination/structure comparison — #127/#129 — complete.**
+7. **Basic structure publication visualization — #130/#131 — complete.**
+8. **Basic DFT energetics/adsorption-energy analysis — #132/#133 — complete.**
+9. **Completion-state documentation synchronization — #134 — active.**
+10. **Gate A frozen-scope release hardening — next.**
+11. **Gate B final-version candidate — pending Gate A.**
+12. **Gate C tag creation/reverse verification — separate authorization required.**
 
 ## Mandatory feature loop
 
-Every v0.5 scientific block follows:
+Every v0.5 scientific block followed:
 
 ```text
 live main verification
@@ -301,9 +223,10 @@ CI or review evidence from an older head is stale after any head change.
 
 ## Release and publication boundaries
 
-- v0.5 development does not move `v0.4.0`.
+- v0.5 development and completion-state synchronization do not move `v0.4.0`.
 - v0.5 scientific implementation does not itself authorize a version bump.
-- Gate B will eventually synchronize distribution/runtime version only after the frozen scope passes Gate A.
+- Gate A must harden the frozen v0.5 scope while retaining distribution/runtime version `0.4.0`.
+- Gate B may synchronize distribution/runtime version to `0.5.0` only after Gate A completes and the candidate is separately reviewed.
 - Gate C tag creation remains a separate explicit authorization boundary.
 - GitHub Release creation remains separate from a Git tag.
 - PyPI/package-registry publication remains deferred unless explicitly reauthorized in a future decision.

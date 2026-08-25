@@ -4,9 +4,28 @@ All notable changes to CatalysisWorkbench are recorded here.
 
 ## [Unreleased]
 
+The frozen v0.5 scientific implementation is complete on `main` at `a7ebd009ec83b0aeb068ad2d2f6712c17a783f1f`. Completion-state documentation synchronization is tracked by Issue #134; Gate A frozen-scope release hardening is next. Distribution/runtime version intentionally remains `0.4.0` until a later reviewed Gate B, and no `v0.5.0` tag exists yet.
+
+### Added
+
+- Explicit XAS/XANES preparation with energy/eV semantics, caller-controlled energy shifts, measured-point windows, explicit E0 and pre/post-edge polynomial normalization, fail-closed edge-step state, retained provenance, and passive comparison plotting.
+- FT-EXAFS with explicit uniform k-grid/transform conventions, retained complex χ(R), magnitude/real/imaginary/phase views, no hidden interpolation, and passive publication plotting.
+- WT-EXAFS with explicit Cauchy transform parameters, authoritative complex k–R matrix, retained magnitude/real/imaginary/phase views, and hand-verifiable ridge regression.
+- Neutral EXAFS fitting-result summary contracts that preserve external path/shell parameters, uncertainty availability, and producer-specific diagnostic labels without cross-tool reinterpretation.
+- Immutable atomic-structure state with optional `pymatgen-core` adapters for POSCAR, CONTCAR, CIF, and XYZ.
+- Explicit periodic-image geometry, exact site distance/angle, caller-bounded cutoff coordination, and caller-mapped structure comparison without hidden minimum-image or auto-alignment behavior.
+- Renderer-neutral immutable `StructureScene` plus passive static Matplotlib 3D structure publication rendering with explicit atoms, bonds, unit-cell geometry, camera/projection, and presentation-only visual defaults.
+- Basic DFT energetics with immutable eV energy ledgers, explicit normalization bases/source IDs, same-basis relative energies, generic retained linear combinations, transparent adsorption-energy arithmetic, detached reporting tables, and passive relative-energy plotting.
+
+### Changed
+
+- All eight v0.5 scientific implementation blocks (#117/#118, #119/#120, #121/#122, #123/#124, #125/#126, #127/#129, #130/#131, #132/#133) are complete; scientific-completion commit is `a7ebd009ec83b0aeb068ad2d2f6712c17a783f1f`.
+- v0.5 completion-state documentation synchronization is Issue #134; Gate A is the next release phase and must retain version `0.4.0`.
+- PyPI/package-registry publication remains deferred and is not part of the v0.5 scientific-completion checkpoint.
+
 ## [0.4.0] - 2026-08-25
 
-The v0.4 release freezes the reviewed advanced experimental-analysis scope after Gate A release hardening and Gate B final-version validation. Tag `v0.4.0` was created on 2026-08-25 and reverse-verified to resolve exactly to release commit `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6`; GitHub Release creation and package-registry publication remain separate actions.
+The v0.4 release freezes the reviewed advanced experimental-analysis scope after Gate A release hardening and Gate B final-version validation. Tag `v0.4.0` was created on 2026-08-25 and reverse-verified to resolve exactly to release commit `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6`. The GitHub Release has been published from that existing immutable tag; package-registry/PyPI publication remains deferred.
 
 ### Added
 
@@ -23,7 +42,7 @@ The v0.4 release freezes the reviewed advanced experimental-analysis scope after
 - Gate A / Issue #103 / PR #104 hardened the frozen v0.4 scope while intentionally retaining version `0.3.0`; exact-head CI #302 / run `32758548117` and two formal release reviews passed before squash merge `ce06abc11559fa7679869fc83a59356735ce6824`.
 - Gate B / Issue #105 / PR #106 synchronized `[project].version` and runtime `__version__` to `0.4.0`; final head `ae3dc21b1a3a4e907d8c39eb85d3dbebefd8fbb4` passed exact-head CI #304 / run `32759679632` and reviews `5011014348`, `5011017132` before squash merge `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6`.
 - Gate C / Issue #107 completed the separately authorized Git tag operation; `v0.4.0` resolves exactly to `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6` and reads distribution/runtime version `0.4.0` through the tag.
-- `v0.3.0` remains immutable at `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`; neither the v0.4 Git tag nor post-tag documentation synchronization publishes a package registry artifact.
+- `v0.3.0` remains immutable at `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`; neither the v0.4 Git tag nor GitHub Release publishes a package-registry artifact.
 
 ## [0.3.0] - 2026-08-24
 

@@ -14,7 +14,7 @@ When documents and live repository state disagree, use this precedence order:
 4. this master plan and release-specific planning documents;
 5. README summaries and other descriptive documentation.
 
-Planning documents must be corrected when they drift from merged reality. They do not override code, Issue state, review findings, or CI.
+Planning documents must be corrected when they drift from merged reality. They do not override code, Issue state, review findings, CI, immutable release tags, or explicit release-boundary decisions.
 
 ## Current checkpoint
 
@@ -22,26 +22,25 @@ Checkpoint date: 2026-08-25.
 
 - Repository: `xcwang3333-cloud/catalysis-workbench`.
 - Stable integration branch: `main`.
-- Reviewed v0.4 release commit: `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6` (`release: finalize v0.4.0 candidate and exact-wheel audit (#106)`).
-- v0.4 architecture checkpoint: Issue #73 / PR #74 — complete at `a7fb245bd39f8aa3dc18141c2ecf6f005f02ebd1`.
-- shared constrained peak-fitting: Issue #75 / PR #76 — complete at `b6f428d96df9950373c17e5de487ac4113a2aacc`; CI #255; reviews `5008457897`, `5008470806`.
-- XPS preparation: Issue #79 / PR #80 — complete at `a13dbd541b299f79d83e47f079c4638b082a8061`; CI #261; reviews `5008700786`, `5008706395`.
-- constrained XPS fitting: Issue #83 / PR #84 — complete at `7897393e1e1e9e4d23fad774b4eeecdd70e2a90b`; final CI #267 / run `32739584536`; reviews `5009021201`, `5009026855`.
-- XPS publication plotting/diagnostics: Issue #87 / PR #88 — complete at `3eab8c8e936cf1897081b7a396306288e517a3bb`; final CI #274 / run `32741710370`; reviews `5009266827`, `5009270492`.
-- EIS: Issue #91 / PR #92 — complete at `cd8dd171a16576067934a13ad3ac41d0fb18d55a`; final CI #285 / run `32746265252`; reviews `5009748594`, `5009757335`.
-- quantitative BET: Issue #95 / PR #96 — complete at `c76a49d64e096d6db001c27c598356baa797f3a9`; final CI #294 / run `32752441329`; reviews `5010325152`, `5010328048`.
-- product calibration / inverse sample quantification: Issue #99 / PR #100 — complete at `adc0f50178d899b4f257842da6e7bac553a25254`; final head `967d495bba8c8f0102b8b37a6f880f566d776206`; CI #298 / run `32755942830`; reviews `5010636300`, `5010639945`.
-- completion-state documentation checkpoint: Issue #101 / PR #102 — complete at `a02df77d078671e24b07b37f6196204e312c9146`.
-- v0.4 scientific implementation: **complete**.
-- v0.4 Gate A / Issue #103 / PR #104 — complete at `ce06abc11559fa7679869fc83a59356735ce6824`; final head `9d79845d6fae253b01a46794c3c055e4966c6e55`; CI #302 / run `32758548117`; reviews `5010905065`, `5010908809`.
-- v0.4 Gate B / Issue #105 / PR #106 — complete at `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6`; final head `ae3dc21b1a3a4e907d8c39eb85d3dbebefd8fbb4`; CI #304 / run `32759679632`; reviews `5011014348`, `5011017132`.
-- v0.4 Gate C / Issue #107 — complete; tag `v0.4.0` was created on 2026-08-25 and reverse-verified to resolve exactly to `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6`.
-- Reviewed runtime fitting dependency: `lmfit>=1.3.4`.
-- distribution/runtime version on the reviewed release commit and through tag `v0.4.0` is `0.4.0`.
+- Current v0.5 scientific-completion baseline: `a7ebd009ec83b0aeb068ad2d2f6712c17a783f1f`.
+- Distribution/runtime version remains `0.4.0`; v0.5 scientific completion does not itself authorize a version bump.
+- Released v0.4 tag: `v0.4.0 -> bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6`, immutable and independently reverse-verified.
+- The v0.4 GitHub Release is published from the existing `v0.4.0` tag.
 - `v0.3.0` remains fixed on release commit `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`.
-- Active maintenance stage: **Issue #108 — post-tag documentation synchronization**.
-- GitHub Release creation for `v0.4.0` is authorized by the user's current `继续推进` instruction and is the next release action after #108 is merged and reverified.
-- No GitHub Release or package-registry publication has yet been performed; package publication remains a separate explicit boundary and is not authorized.
+- PyPI/package-registry publication is explicitly deferred; Issue #113 is closed `not_planned`.
+- v0.5 architecture checkpoint: Issue #115 / PR #116 — complete.
+- XAS/XANES: Issue #117 / PR #118 — complete.
+- FT-EXAFS: Issue #119 / PR #120 — complete.
+- WT-EXAFS: Issue #121 / PR #122 — complete.
+- EXAFS fitting-result summaries: Issue #123 / PR #124 — complete.
+- Atomic-structure model/adapters: Issue #125 / PR #126 — complete.
+- Geometry/coordination/structure comparison: Issue #127 / PR #129 — complete.
+- Static structure visualization: Issue #130 / PR #131 — complete.
+- Basic DFT energetics: Issue #132 / PR #133 — complete at `a7ebd009ec83b0aeb068ad2d2f6712c17a783f1f`.
+- v0.5 scientific implementation: **complete**.
+- Active maintenance stage: **Issue #134 — completion-state documentation synchronization**.
+- Next phase after #134 merges and is reverified: **v0.5 Gate A frozen-scope release hardening**.
+- Gate A must retain version `0.4.0`; Gate B owns final-version synchronization. Gate C tag creation remains a separate explicit authorization boundary.
 
 Live GitHub Issue/PR/tag state remains authoritative if this checkpoint becomes stale.
 
@@ -54,8 +53,8 @@ Detailed long-range scope is maintained in [`ROADMAP.md`](ROADMAP.md).
 | v0.1.x | common XY core, tabular I/O, reusable processing, LSV, XRD, Raman, shared publication rendering/export | complete/released |
 | v0.2.x | quantitative core electrochemistry and shared scatter/bar summaries | complete/released as v0.2.0 |
 | v0.3.x | FTIR, thermal analysis, basic gas sorption, ICP/composition | complete/released as v0.3.0 |
-| v0.4.x | shared fitting, XPS, EIS, quantitative BET, product calibration | complete/released as Git tag v0.4.0; GitHub Release pending post-tag docs sync |
-| v0.5.x | XAS, structures, basic DFT energetics | planned |
+| v0.4.x | shared fitting, XPS, EIS, quantitative BET, product calibration | complete/released as v0.4.0; GitHub Release published; PyPI deferred |
+| v0.5.x | XAS/XANES, FT/WT-EXAFS, EXAFS summaries, structures/geometry/static visualization, basic DFT energetics | scientific scope complete; docs sync active; Gate A next |
 | v0.6.x | electronic structure and catalysis thermodynamics | planned |
 | v0.7.x | advanced computational visualization | planned |
 | v0.8.x | operando/time-resolved analysis | planned |
@@ -66,118 +65,93 @@ Release numbering is a planning boundary, not permission to weaken scientific va
 
 ## Completed release baselines
 
-### v0.2
+### v0.1-v0.3
 
-The quantitative core electrochemistry release is complete. Its detailed dependency graph and scientific contracts are retained in [`V0_2_PLAN.md`](V0_2_PLAN.md), with release evidence in [`V0_2_RELEASING.md`](V0_2_RELEASING.md).
+Historical release details are retained in [`RELEASING.md`](RELEASING.md), [`V0_2_PLAN.md`](V0_2_PLAN.md), [`V0_2_RELEASING.md`](V0_2_RELEASING.md), and [`V0_3_RELEASING.md`](V0_3_RELEASING.md).
 
-Completed scope includes Tafel, Faradaic efficiency, partial current density, catalyst-/metal-mass and ECSA activity normalization, TOF/TOFapp, CV/Cdl/ECSA, stability, RRDE, and Koutecky-Levich basics.
+The reviewed `v0.3.0` tag remains `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`.
 
-### v0.3
+### v0.4
 
-The extended experimental-processing release is complete as `v0.3.0`.
+The detailed v0.4 scientific contracts and release evidence remain in [`V0_4_PLAN.md`](V0_4_PLAN.md) and [`V0_4_RELEASING.md`](V0_4_RELEASING.md).
 
-- FTIR / ATR-FTIR — Issue #50 / PR #51.
-- TGA / DTG / TPR / TPD — Issue #54 / PR #55.
-- basic gas sorption — Issue #58 / PR #59.
-- ICP / elemental composition — Issue #62 / PR #63.
-- Gate A — #66 / #67.
-- Gate B final-version candidate — #68 / #69.
-- Gate C tag verification — #70.
-- post-release docs synchronization — #71 / #72.
+Completed scientific scope:
 
-The reviewed release tag is `v0.3.0 -> 845ac4c15d399a8816c7ba66d61ea6ec4cc11293`. Quantitative BET and shared peak fitting were intentionally excluded from v0.3 and implemented in v0.4.
+- shared constrained peak fitting — #75/#76;
+- XPS preparation — #79/#80;
+- constrained XPS fitting — #83/#84;
+- XPS plotting/diagnostics — #87/#88;
+- EIS — #91/#92;
+- quantitative BET — #95/#96;
+- product calibration/inverse sample quantification — #99/#100.
 
-## v0.4 execution status
+Release gates:
 
-The detailed scientific contracts and dependency order are maintained in [`V0_4_PLAN.md`](V0_4_PLAN.md). The release procedure and evidence are maintained in [`V0_4_RELEASING.md`](V0_4_RELEASING.md).
+- Gate A — #103/#104 — frozen-scope installed-wheel/public-API hardening, merge `ce06abc11559fa7679869fc83a59356735ce6824`;
+- Gate B — #105/#106 — distribution/runtime version finalized to `0.4.0`, release commit `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6`;
+- Gate C — #107 — tag `v0.4.0` created and reverse-verified on that exact commit;
+- post-tag docs sync — #108/#111 — complete;
+- GitHub Release tracking — #112 — completed after user-confirmed publication and post-publication tag/main invariants;
+- PyPI publication — #113 — intentionally deferred/closed `not_planned`.
+
+## v0.5 execution status
+
+The reviewed architecture, frozen scope, prior-art decisions, detailed scientific contracts, and release handoff are maintained in [`V0_5_PLAN.md`](V0_5_PLAN.md).
 
 ### Architecture checkpoint — complete
 
-Issue #73 / PR #74 established the v0.4 architecture before implementation.
+Issue #115 / PR #116 froze the eight-block v0.5 scientific scope before implementation and confirmed the separation of XAS numerical state, immutable structure state, renderer-neutral visual state, and explicit DFT-energy arithmetic.
 
-Key decisions:
+### XAS/XANES — complete
 
-- generic constrained fitting and technique-specific scientific state are separate layers;
-- mature optimization is wrapped rather than reimplemented;
-- technique-specific semantics, baselines/backgrounds and physical constraints remain visible at the domain layer;
-- caller-supplied physical constraints remain explicit and auditable;
-- plotting remains separate from numerical processing/fitting;
-- scientific incompatibilities fail explicitly rather than being silently corrected.
+Issue #117 / PR #118 delivered explicit energy/eV semantics, caller-controlled energy shifts, measured-point regions, explicit E0 plus pre/post-edge polynomial normalization, fail-closed edge-step state, retained source provenance, explicit E−E0 comparison state, and passive plotting. No automatic oxidation-state or chemistry assignment is performed.
 
-### Shared constrained fitting — complete
+### FT-EXAFS — complete
 
-Issue #75 / PR #76 delivered the shared fitting foundation under `catalysis_workbench.processing`.
+Issue #119 / PR #120 delivered explicit uniform k-grid requirements, retained transform/window state, complex χ(R), magnitude/real/imaginary/phase views, and passive plotting without hidden interpolation or transform recomputation.
 
-Reviewed behavior includes explicit fit windows, stable component/parameter keys, fixed/bounded/tied parameter state, Gaussian/Lorentzian/Voigt/pseudo-Voigt/Doniach families, caller background, physical residuals, optional uncertainty/covariance state, immutable provenance, and explicit validation against backend model domains. `lmfit>=1.3.4` is the reviewed runtime backend. Full behavior is documented in [`PEAK_FITTING.md`](PEAK_FITTING.md).
+### WT-EXAFS — complete
 
-### XPS preparation — complete
+Issue #121 / PR #122 delivered a separate explicit Cauchy k–R transform with retained complex matrix, k/R grids, k weighting, wavelet order and independent ridge-regression evidence for the EXAFS phase mapping.
 
-Issue #79 / PR #80 established explicit binding-energy/eV semantics, additive energy-reference correction, measured-point region preparation, direction-safe linear background, and an independently implemented Shirley fixed-point background with explicit convergence/failure state. Numerical imports remain Matplotlib-lazy. Full behavior is documented in [`XPS.md`](XPS.md).
+### EXAFS fitting-result summaries — complete
 
-### Constrained XPS fitting — complete
+Issue #123 / PR #124 delivered a neutral interchange/summary layer for external fit path/shell parameters, uncertainty availability and producer-specific diagnostics without pretending that unlike external statistics are interchangeable.
 
-Issue #83 / PR #84 added `XPSDoubletSpec`, `XPSPeakFitResult`, and `fit_xps_peaks()` as a thin consumer of the shared fitter. Doublet separation, amplitude ratios and every remaining model-specific width/shape relation are explicit; prepared backgrounds require exact source/grid/unit/direction alignment; no textbook branching ratios, chemistry assignment or charge-correction lookup are hidden in the fitter.
+### Atomic structures and adapters — complete
 
-### XPS publication plotting and diagnostics — complete
+Issue #125 / PR #126 delivered CatalysisWorkbench-owned immutable structure state and reviewed POSCAR/CONTCAR/CIF/XYZ adapters. `pymatgen-core` is isolated behind the optional `structure` extra rather than becoming public authority or an unconditional base dependency.
 
-Issue #87 / PR #88 added passive rendering over retained XPS fit arrays plus optional physical-residual diagnostics, stable `FigureSpec` keys, display-only binding-energy orientation and immutable diagnostic summaries. Plotting does not refit or reevaluate scientific state.
+### Geometry/coordination/comparison — complete
 
-### EIS — complete
+Issue #127 / PR #129 delivered explicit `PeriodicImage` / `SiteImage` identities, exact distance/angle operations with no hidden minimum-image replacement, caller-bounded cutoff coordination, and caller-mapped structure comparison without automatic site matching or Kabsch alignment.
 
-Issue #91 / PR #92 delivered explicit complex impedance semantics, R/C/CPE typed circuit composition, real+imag SciPy least-squares fitting, fail-closed immutable fit reconstruction, diagnostics, and passive Nyquist/Bode rendering. Circuit topology, initial values, bounds, fixed/vary state and weights remain caller-visible. `impedance.py` (MIT) and `pyimpspec` (GPL-3.0) were reference-only; no EIS dependency was added. Full behavior is documented in [`EIS.md`](EIS.md).
+### Static structure visualization — complete
 
-### Quantitative BET — complete
+Issue #130 / PR #131 delivered a renderer-neutral immutable `StructureScene`, explicit atom/bond/cell state, presentation-only colors/radii, caller-visible camera/projection state and passive Matplotlib 3D rendering. `pretty-lattice` was a permissive architecture/UX reference only; no browser/Three.js implementation was copied.
 
-Issue #95 / PR #96 delivered a fail-closed quantitative consumer of the reviewed measured gas-sorption foundation.
+### Basic DFT energetics — complete
 
-Reviewed behavior includes:
+Issue #132 / PR #133 delivered immutable explicit-eV energy ledgers, explicit normalization bases/source IDs, same-basis relative energies, generic caller-defined linear combinations, transparent `E(combined)-E(slab)-nE(adsorbate)` adsorption-energy arithmetic, detached reporting tables and passive relative-energy plotting.
 
-- explicit adsorption-branch and relative-pressure fraction semantics;
-- caller-supplied measured-point `SorptionWindow`;
-- exact BET transform and OLS state;
-- independent positive-parameter, Rouquerol-transform-monotonicity and monolayer-inside-region checks;
-- explicit loading-to-mol/g conversion and caller-supplied molecular cross-sectional area;
-- fail-closed preprocessing allowlist;
-- passive retained-array BET plotting;
-- current pyGAPS, BETSI, SESAMI_web and BEaTmap repositories used as MIT references only.
+Final v0.5 scientific-completion commit: `a7ebd009ec83b0aeb068ad2d2f6712c17a783f1f`.
 
-Final evidence is exact-head CI #294 / run `32752441329` on `47aee74a5a6b16dbf60bb95c2910ccd197205f2f`, reviews `5010325152` and `5010328048`, and squash merge `c76a49d64e096d6db001c27c598356baa797f3a9`. Full behavior is documented in [`BET.md`](BET.md).
+CHE/free-energy thermodynamics, DOS/PDOS, Bader, COHP/ICOHP, charge-density difference, advanced volumetric rendering, operando mapping, GUI editing and VASP job management remain later-release work.
 
-### Product calibration and sample quantification — complete
+## v0.5 release handoff
 
-Issue #99 / PR #100 delivered the seventh and final planned v0.4 scientific block under `catalysis_workbench.experimental.product`.
+The required order after scientific completion is:
 
-Reviewed behavior includes:
+```text
+#134 completion-state docs sync
+    -> Gate A frozen-scope release hardening (retain version 0.4.0)
+    -> Gate B final-version candidate / exact-wheel audit
+    -> Gate C tag creation + reverse verification under separate authorization
+    -> GitHub Release as a separate action
+    -> package-registry publication only if separately reauthorized
+```
 
-- technique-agnostic calibration upstream of the existing `experimental.echem.fe` layer;
-- core `Series` calibration standards with explicit `calibration_quantity` and `response` units;
-- optional measured-point-only `CalibrationRange` with no synthesized boundaries;
-- explicit linear model with caller-selected free or fixed-zero intercept policy;
-- retained standards, slope/intercept, physical residual, centered R² when defined, uncertainty availability and exact fit-line state;
-- immutable fail-closed calibration-result reconstruction;
-- separate `quantify_response()` with exact response-unit matching;
-- default extrapolation rejection with explicit opt-in and retained extrapolation mask;
-- explicit ordered positive dimensionless `QuantificationFactor` values;
-- negative inferred quantities fail instead of being clipped;
-- replicate arithmetic mean, sample SD and RSD summaries with unavailable single-replicate uncertainty left unavailable;
-- lazy passive calibration plotting through existing `FigureSpec` stable keys;
-- no raw GC/HPLC/NMR parsing, baseline/peak integration/assignment, internal-standard identification, hidden response-factor library, nonlinear model/range selection, generic unit algebra, electron stoichiometry or FE calculation.
-
-Prior-art/license decisions are recorded in Issue #99 and [`PRODUCT_CALIBRATION.md`](PRODUCT_CALIBRATION.md): hplc-py (GPL-3.0) reference-only, pyGecko (MIT) reference-only, ChromStream (MIT) reference-only, and nmrglue (BSD-3-Clause) reference/later-adapter candidate. No new runtime dependency was added.
-
-Final evidence: exact head `967d495bba8c8f0102b8b37a6f880f566d776206`; CI #298 / run `32755942830` success; reviews `5010636300` and `5010639945`; behind=0 / mergeable=true / threads=0; expected-head squash merge `adc0f50178d899b4f257842da6e7bac553a25254`.
-
-## v0.4 release gates
-
-All planned v0.4 scientific blocks and the completion-state synchronization are merged.
-
-Gate A / Issue #103 / PR #104 is complete. It froze the v0.4 scientific scope, added the unified installed-wheel/public-API audit, retained version `0.3.0`, passed exact-head CI #302 / run `32758548117` and two formal release reviews, and squash-merged as `ce06abc11559fa7679869fc83a59356735ce6824`.
-
-Gate B / Issue #105 / PR #106 is complete. It synchronized distribution/runtime version to `0.4.0`; final exact head `ae3dc21b1a3a4e907d8c39eb85d3dbebefd8fbb4` passed CI #304 / run `32759679632`, reviews `5011014348` and `5011017132`, behind=0 / mergeable=true / threads=0, then expected-head squash-merged as `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6`.
-
-Gate C / Issue #107 is complete. Under separate explicit authorization, tag `v0.4.0` was created on 2026-08-25 and reverse-verified to resolve exactly to `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6`; reads through the tag report distribution/runtime version `0.4.0`, and `v0.3.0` remained unchanged.
-
-Post-tag documentation synchronization is tracked by Issue #108. After that docs-only checkpoint is merged and `main`/tag state is reverified, the authorized next action is GitHub Release creation for the existing `v0.4.0` tag. Package-registry publication remains a later separate explicit boundary and is not authorized by either the Git tag or GitHub Release.
+Gate A is not a version-bump gate. Gate B is the first phase that may synchronize distribution/runtime version to the reviewed v0.5 final candidate. Gate C must not create, move, or recreate a release tag without the user's separate explicit authorization.
 
 ## Mandatory development loop
 
@@ -250,13 +224,9 @@ After squash merge, re-read `main`. When connector visibility does not expose a 
 - [`../README.md`](../README.md): user-facing overview, installation, public capability summary and links.
 - [`MASTER_PLAN.md`](MASTER_PLAN.md): project-wide execution order, checkpoint summary, governance and quality gates.
 - [`ROADMAP.md`](ROADMAP.md): long-range release scope; not a per-commit log.
-- [`V0_4_PLAN.md`](V0_4_PLAN.md): v0.4 dependency order, scientific/API boundaries and release handoff.
-- [`V0_4_RELEASING.md`](V0_4_RELEASING.md): v0.4 Gate A/B/C procedure and release evidence.
-- [`PEAK_FITTING.md`](PEAK_FITTING.md): reviewed shared-fitting contract.
-- [`XPS.md`](XPS.md): reviewed XPS contract.
-- [`EIS.md`](EIS.md): reviewed EIS contract.
-- [`BET.md`](BET.md): reviewed quantitative BET contract.
-- [`PRODUCT_CALIBRATION.md`](PRODUCT_CALIBRATION.md): reviewed product calibration/quantification contract and module-specific prior-art/license record.
+- [`V0_5_PLAN.md`](V0_5_PLAN.md): v0.5 architecture, dependency order, scientific completion state and release handoff.
+- [`V0_4_PLAN.md`](V0_4_PLAN.md) / [`V0_4_RELEASING.md`](V0_4_RELEASING.md): retained v0.4 scientific/release history.
+- technique documents such as [`XAS.md`](XAS.md), [`EXAFS.md`](EXAFS.md), [`WT_EXAFS.md`](WT_EXAFS.md), [`STRUCTURE_GEOMETRY.md`](STRUCTURE_GEOMETRY.md), [`STRUCTURE_VISUALIZATION.md`](STRUCTURE_VISUALIZATION.md), and [`DFT_ENERGETICS.md`](DFT_ENERGETICS.md): reviewed domain contracts.
 - [`REFERENCES.md`](REFERENCES.md): long-lived prior-art reference survey.
 - GitHub Issues: active acceptance criteria.
 - GitHub Pull Requests: concrete diff, review evidence, CI state and merge decision.
@@ -272,4 +242,4 @@ After each merged scientific Issue, update only documentation whose statements b
 - preceding Issue closure/completion;
 - version/tag/publication boundaries.
 
-Issue #108 is the active v0.4 post-tag documentation checkpoint. After it merges, reverify `main` and immutable tag `v0.4.0`, then create and verify the authorized GitHub Release. Stop again before any package-registry publication unless that separate boundary is explicitly authorized.
+Issue #134 is the active v0.5 completion-state documentation checkpoint. After it merges, reverify `main`, distribution/runtime version `0.4.0`, and immutable `v0.4.0`; then enter v0.5 Gate A frozen-scope release hardening. Do not move to Gate B until Gate A is fully reviewed and merged, and do not create a v0.5 tag without separate explicit Gate C authorization.
