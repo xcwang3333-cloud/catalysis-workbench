@@ -156,6 +156,24 @@ def _bond_length(data: Mapping[str, object]) -> float | None:
     return result
 
 
+def _positive_integer_exact(value: object, *, name: str) -> int:
+    if isinstance(value, bool):
+        raise LobsterIOError(f"{name} must be an integer")
+    if isinstance(value, (int, np.integer)):
+        integer = int(value)
+    else:
+        try:
+            numeric = float(value)
+        except (TypeError, ValueError) as exc:
+            raise LobsterIOError(f"{name} must be an integer") from exc
+        if not np.isfinite(numeric) or not numeric.is_integer():
+            raise LobsterIOError(f"{name} must be an exact integer")
+        integer = int(numeric)
+    if integer <= 0:
+        raise LobsterIOError(f"{name} must be greater than zero")
+    return integer
+
+
 def _bond_data_mapping(parsed: Any) -> tuple[tuple[str, Mapping[str, object]], ...]:
     raw = getattr(parsed, "cohp_data", None)
     try:
@@ -349,15 +367,10 @@ def _convert_icohplist(
         length = _bond_length(data)
         if length is None:
             raise LobsterIOError("ICOHP bond length is required for standard ICOHPLIST")
-        raw_count = data.get("number_of_bonds")
-        if isinstance(raw_count, bool):
-            raise LobsterIOError("number_of_bonds must be an integer")
-        try:
-            number_of_bonds = int(raw_count)  # type: ignore[arg-type]
-        except (TypeError, ValueError) as exc:
-            raise LobsterIOError("number_of_bonds must be an integer") from exc
-        if number_of_bonds <= 0:
-            raise LobsterIOError("number_of_bonds must be greater than zero")
+        number_of_bonds = _positive_integer_exact(
+            data.get("number_of_bonds"),
+            name="number_of_bonds",
+        )
         spin_items = _physical_spin_items(
             data.get("icohp"),
             spin_polarized=spin_polarized,
@@ -395,15 +408,20 @@ def _convert_icohplist(
 def read_lobster_icohp(
     path: str | Path,
     *,
+    is_spin_polarized: bool,
     source_id: str | None = None,
 ) -> ICOHPResult:
-    """Parse standard LOBSTER ICOHPLIST with source-sign spin-resolved values."""
+    """Parse standard LOBSTER ICOHPLIST with caller-explicit physical spin mode."""
+    if not isinstance(is_spin_polarized, bool):
+        raise TypeError("is_spin_polarized must be a bool")
     try:
         from pymatgen.io.lobster import Icohplist
     except ImportError as exc:
         raise _backend_import_error(exc) from exc
     try:
-        parsed = Icohplist(filename=path)
+        parsed = Icohplist(filename=path, is_spin_polarized=is_spin_polarized)
     except Exception as exc:
         raise LobsterIOError(f"failed to parse ICOHPLIST: {exc}") from exc
+    if bool(getattr(parsed, "is_spin_polarized", False)) != is_spin_polarized:
+        raise LobsterIOError("backend ICOHPLIST spin state disagrees with caller request")
     return _convert_icohplist(parsed, path=path, source_id=source_id)
