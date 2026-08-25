@@ -42,7 +42,11 @@ def _frozen_vector(values: Sequence[float], *, name: str) -> NDArray[np.float64]
     return frozen
 
 
-def _frozen_matrix(values: Sequence[Sequence[float]], *, name: str) -> NDArray[np.float64]:
+def _frozen_matrix(
+    values: Sequence[Sequence[float]],
+    *,
+    name: str,
+) -> NDArray[np.float64]:
     array = np.asarray(values)
     if np.iscomplexobj(array):
         raise GeometryError(f"{name} must contain real values")
@@ -70,7 +74,7 @@ def _frozen_1d(values: Sequence[float], *, name: str) -> NDArray[np.float64]:
 
 @dataclass(frozen=True, slots=True, order=True)
 class PeriodicImage:
-    """Exact integer lattice-image offset along the retained a/b/c vectors."""
+    """Exact integer lattice-image offset along retained a/b/c row vectors."""
 
     a: int = 0
     b: int = 0
@@ -82,6 +86,7 @@ class PeriodicImage:
         object.__setattr__(self, "c", _integer(self.c, name="c"))
 
     def as_tuple(self) -> tuple[int, int, int]:
+        """Return the exact lattice-translation indices."""
         return self.a, self.b, self.c
 
 
@@ -90,7 +95,7 @@ _ZERO_IMAGE = PeriodicImage()
 
 @dataclass(frozen=True, slots=True)
 class SiteImage:
-    """One retained site key at one exact periodic image."""
+    """One stable site key at one exact periodic image."""
 
     site_key: str
     image: PeriodicImage = _ZERO_IMAGE
@@ -106,6 +111,8 @@ class SiteImage:
 
 @dataclass(frozen=True, slots=True, eq=False)
 class SiteDistanceResult:
+    """One exact caller-selected site/image displacement and distance."""
+
     first: SiteImage
     second: SiteImage
     displacement_angstrom: Sequence[float]
@@ -127,6 +134,8 @@ class SiteDistanceResult:
 
 @dataclass(frozen=True, slots=True)
 class SiteAngleResult:
+    """One exact caller-selected first-vertex-third angle in degrees."""
+
     first: SiteImage
     vertex: SiteImage
     third: SiteImage
@@ -143,6 +152,8 @@ class SiteAngleResult:
 
 @dataclass(frozen=True, slots=True)
 class CoordinationNeighbor:
+    """One geometric neighbor retained by stable key and exact periodic image."""
+
     site_key: str
     image: PeriodicImage
     distance_angstrom: float
@@ -162,6 +173,8 @@ class CoordinationNeighbor:
 
 @dataclass(frozen=True, slots=True)
 class CoordinationResult:
+    """Deterministic coordination-by-cutoff result, not a chemical bond assignment."""
+
     center_key: str
     cutoff_angstrom: float
     image_range: tuple[int, int, int]
@@ -183,8 +196,27 @@ class CoordinationResult:
         neighbors = tuple(self.neighbors)
         if not all(isinstance(item, CoordinationNeighbor) for item in neighbors):
             raise TypeError("neighbors must contain CoordinationNeighbor instances")
+        identities = [(item.site_key, item.image.as_tuple()) for item in neighbors]
+        if len(identities) != len(set(identities)):
+            raise GeometryError("neighbor site/image identities must be unique")
+        if any(item.site_key == key and item.image == _ZERO_IMAGE for item in neighbors):
+            raise GeometryError("the exact center site/image cannot be its own neighbor")
         if any(item.distance_angstrom > cutoff + 1e-12 for item in neighbors):
             raise GeometryError("neighbor distance exceeds retained cutoff")
+        expected_order = tuple(
+            sorted(
+                neighbors,
+                key=lambda item: (
+                    item.distance_angstrom,
+                    item.site_key,
+                    item.image.as_tuple(),
+                ),
+            )
+        )
+        if neighbors != expected_order:
+            raise GeometryError(
+                "neighbors must be ordered by distance, stable site key, and periodic image"
+            )
         object.__setattr__(self, "center_key", key)
         object.__setattr__(self, "cutoff_angstrom", cutoff)
         object.__setattr__(self, "image_range", image_range)
@@ -192,11 +224,14 @@ class CoordinationResult:
 
     @property
     def coordination_number(self) -> int:
+        """Return the number of retained cutoff neighbors."""
         return len(self.neighbors)
 
 
 @dataclass(frozen=True, slots=True)
 class SiteMapping:
+    """Explicit reference/candidate site mapping with explicit periodic images."""
+
     reference_key: str
     candidate_key: str
     reference_image: PeriodicImage = _ZERO_IMAGE
@@ -217,6 +252,8 @@ class SiteMapping:
 
 @dataclass(frozen=True, slots=True, eq=False)
 class StructureComparisonResult:
+    """Mapped Cartesian displacement comparison with no hidden alignment."""
+
     reference_digest: str
     candidate_digest: str
     mappings: tuple[SiteMapping, ...]
@@ -231,8 +268,17 @@ class StructureComparisonResult:
         if not reference_digest or not candidate_digest:
             raise GeometryError("structure digests must not be blank")
         mappings = tuple(self.mappings)
-        if not mappings or not all(isinstance(item, SiteMapping) for item in mappings):
+        if not mappings:
             raise GeometryError("mappings must contain at least one SiteMapping")
+        if not all(isinstance(item, SiteMapping) for item in mappings):
+            raise TypeError("mappings must contain only SiteMapping instances")
+        reference_keys = [mapping.reference_key for mapping in mappings]
+        candidate_keys = [mapping.candidate_key for mapping in mappings]
+        if len(reference_keys) != len(set(reference_keys)):
+            raise GeometryError("reference site keys must be unique in a comparison")
+        if len(candidate_keys) != len(set(candidate_keys)):
+            raise GeometryError("candidate site keys must be unique in a comparison")
+
         vectors = _frozen_matrix(
             self.displacement_vectors_angstrom,
             name="displacement_vectors_angstrom",
@@ -250,7 +296,10 @@ class StructureComparisonResult:
         if not isfinite(rmsd) or not np.isclose(rmsd, expected_rmsd, rtol=1e-12, atol=1e-12):
             raise GeometryError("rmsd_angstrom contradicts retained distances")
         if not isfinite(maximum) or not np.isclose(
-            maximum, expected_max, rtol=1e-12, atol=1e-12
+            maximum,
+            expected_max,
+            rtol=1e-12,
+            atol=1e-12,
         ):
             raise GeometryError("max_displacement_angstrom contradicts retained distances")
         object.__setattr__(self, "reference_digest", reference_digest)
@@ -306,7 +355,7 @@ def site_distance(
     first: SiteImage,
     second: SiteImage,
 ) -> SiteDistanceResult:
-    """Return the exact requested site/image distance without minimum-image replacement."""
+    """Return exact requested site/image distance without minimum-image replacement."""
     first_position = _site_position(structure, first)
     second_position = _site_position(structure, second)
     displacement = second_position - first_position
@@ -319,7 +368,7 @@ def site_angle(
     vertex: SiteImage,
     third: SiteImage,
 ) -> SiteAngleResult:
-    """Return the exact first-vertex-third angle for caller-selected periodic images."""
+    """Return exact first-vertex-third angle for caller-selected periodic images."""
     first_vector = _site_position(structure, first) - _site_position(structure, vertex)
     third_vector = _site_position(structure, third) - _site_position(structure, vertex)
     first_norm = float(np.linalg.norm(first_vector))
@@ -343,9 +392,7 @@ def _validated_image_range(
     )
     for axis, (extent, enabled) in enumerate(zip(ranges, structure.pbc, strict=True)):
         if extent and not enabled:
-            raise GeometryError(
-                f"image_range on nonperiodic axis {axis} must be zero"
-            )
+            raise GeometryError(f"image_range on nonperiodic axis {axis} must be zero")
     return ranges
 
 
@@ -356,7 +403,7 @@ def coordination_by_cutoff(
     *,
     image_range: Sequence[int],
 ) -> CoordinationResult:
-    """Enumerate cutoff neighbors only within the caller-declared image bounds."""
+    """Enumerate cutoff neighbors only within caller-declared periodic image bounds."""
     if not isinstance(structure, AtomicStructure):
         raise TypeError("structure must be an AtomicStructure")
     center_index = _site_index(structure, center_key)
@@ -370,28 +417,38 @@ def coordination_by_cutoff(
         if structure.lattice_angstrom is None
         else np.asarray(structure.lattice_angstrom, dtype=np.float64)
     )
-    records: list[tuple[float, int, tuple[int, int, int], CoordinationNeighbor]] = []
+    records: list[CoordinationNeighbor] = []
     image_axes = [range(-extent, extent + 1) for extent in ranges]
     for site_index, site_key in enumerate(structure.site_keys):
         base = np.asarray(structure.cartesian_coordinates[site_index], dtype=np.float64)
         for image_tuple in product(*image_axes):
             if site_index == center_index and image_tuple == (0, 0, 0):
                 continue
-            image = PeriodicImage(*image_tuple)
             position = base
             if image_tuple != (0, 0, 0):
                 assert lattice is not None
                 position = base + np.asarray(image_tuple, dtype=np.float64) @ lattice
             distance = float(np.linalg.norm(position - center))
             if 0.0 < distance <= cutoff + 1e-12:
-                neighbor = CoordinationNeighbor(site_key, image, distance)
-                records.append((distance, site_index, image_tuple, neighbor))
-    records.sort(key=lambda item: (item[0], item[1], item[2]))
+                records.append(
+                    CoordinationNeighbor(
+                        site_key=site_key,
+                        image=PeriodicImage(*image_tuple),
+                        distance_angstrom=distance,
+                    )
+                )
+    records.sort(
+        key=lambda item: (
+            item.distance_angstrom,
+            item.site_key,
+            item.image.as_tuple(),
+        )
+    )
     return CoordinationResult(
         center_key=str(center_key).strip(),
         cutoff_angstrom=cutoff,
         image_range=ranges,
-        neighbors=tuple(item[3] for item in records),
+        neighbors=tuple(records),
     )
 
 
@@ -400,7 +457,7 @@ def compare_structures(
     candidate: AtomicStructure,
     mappings: Sequence[SiteMapping],
 ) -> StructureComparisonResult:
-    """Compare exact caller-mapped site/image positions without alignment or auto-mapping."""
+    """Compare exact caller-mapped positions without auto-mapping or alignment."""
     if not isinstance(reference, AtomicStructure) or not isinstance(candidate, AtomicStructure):
         raise TypeError("reference and candidate must be AtomicStructure instances")
     retained_mappings = tuple(mappings)
@@ -408,18 +465,12 @@ def compare_structures(
         raise GeometryError("mappings must contain at least one SiteMapping")
     if not all(isinstance(mapping, SiteMapping) for mapping in retained_mappings):
         raise TypeError("mappings must contain only SiteMapping instances")
-    reference_identities = [
-        (mapping.reference_key, mapping.reference_image.as_tuple())
-        for mapping in retained_mappings
-    ]
-    candidate_identities = [
-        (mapping.candidate_key, mapping.candidate_image.as_tuple())
-        for mapping in retained_mappings
-    ]
-    if len(reference_identities) != len(set(reference_identities)):
-        raise GeometryError("reference site/image identities must be unique")
-    if len(candidate_identities) != len(set(candidate_identities)):
-        raise GeometryError("candidate site/image identities must be unique")
+    reference_keys = [mapping.reference_key for mapping in retained_mappings]
+    candidate_keys = [mapping.candidate_key for mapping in retained_mappings]
+    if len(reference_keys) != len(set(reference_keys)):
+        raise GeometryError("reference site keys must be unique in a comparison")
+    if len(candidate_keys) != len(set(candidate_keys)):
+        raise GeometryError("candidate site keys must be unique in a comparison")
 
     vectors: list[NDArray[np.float64]] = []
     for mapping in retained_mappings:
