@@ -29,6 +29,15 @@ from .volumetric import (
     VolumetricScene,
     VolumetricSceneError,
 )
+from .volumetric_3d import (
+    AntiAliasingMode,
+    Volumetric3DBackendError,
+    Volumetric3DRenderResult,
+    Volumetric3DRenderSpec,
+    Volumetric3DVisualizationError,
+    export_volumetric_scene_3d,
+    render_volumetric_scene_3d,
+)
 from .volumetric_techniques import (
     build_charge_density_difference_scene,
     build_electron_density_scene,
@@ -40,6 +49,7 @@ from .work_function import WorkFunctionVisualizationError, plot_planar_potential
 
 __all__ = [
     "AnnotationSpec",
+    "AntiAliasingMode",
     "BandVisualizationError",
     "BarCategory",
     "BarData",
@@ -57,6 +67,10 @@ __all__ = [
     "SeriesStyle",
     "SliceLayerSpec",
     "VisualizationError",
+    "Volumetric3DBackendError",
+    "Volumetric3DRenderResult",
+    "Volumetric3DRenderSpec",
+    "Volumetric3DVisualizationError",
     "VolumetricLayerSpec",
     "VolumetricScene",
     "VolumetricSceneError",
@@ -66,6 +80,7 @@ __all__ = [
     "build_elf_scene",
     "build_symmetric_charge_density_difference_scene",
     "export_figure",
+    "export_volumetric_scene_3d",
     "format_axis_label",
     "get_preset",
     "list_presets",
@@ -82,4 +97,5 @@ __all__ = [
     "render_bars",
     "render_curves",
     "render_scatter",
+    "render_volumetric_scene_3d",
 ]
