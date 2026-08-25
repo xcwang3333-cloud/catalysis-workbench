@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from itertools import product
 from math import acos, degrees, isfinite, sqrt
-from typing import Sequence
 
 import numpy as np
 from numpy.typing import NDArray
@@ -31,13 +31,13 @@ def _nonnegative_int(value: int, *, name: str) -> int:
 
 
 def _frozen_vector(values: Sequence[float], *, name: str) -> NDArray[np.float64]:
-    array = np.asarray(values)
-    if np.iscomplexobj(array):
+    source = np.asarray(values)
+    if np.iscomplexobj(source):
         raise GeometryError(f"{name} must contain real values")
-    result = np.asarray(values, dtype=np.float64)
-    if result.shape != (3,) or not np.isfinite(result).all():
+    array = np.asarray(values, dtype=np.float64)
+    if array.shape != (3,) or not np.isfinite(array).all():
         raise GeometryError(f"{name} must be a finite real 3-vector")
-    frozen = np.frombuffer(np.ascontiguousarray(result).tobytes(), dtype=np.float64)
+    frozen = np.frombuffer(np.ascontiguousarray(array).tobytes(), dtype=np.float64)
     frozen.setflags(write=False)
     return frozen
 
@@ -47,27 +47,27 @@ def _frozen_matrix(
     *,
     name: str,
 ) -> NDArray[np.float64]:
-    array = np.asarray(values)
-    if np.iscomplexobj(array):
+    source = np.asarray(values)
+    if np.iscomplexobj(source):
         raise GeometryError(f"{name} must contain real values")
-    result = np.asarray(values, dtype=np.float64)
-    if result.ndim != 2 or result.shape[1:] != (3,) or not np.isfinite(result).all():
+    array = np.asarray(values, dtype=np.float64)
+    if array.ndim != 2 or array.shape[1:] != (3,) or not np.isfinite(array).all():
         raise GeometryError(f"{name} must be a finite real N x 3 matrix")
-    frozen = np.frombuffer(np.ascontiguousarray(result).tobytes(), dtype=np.float64).reshape(
-        result.shape
+    frozen = np.frombuffer(np.ascontiguousarray(array).tobytes(), dtype=np.float64).reshape(
+        array.shape
     )
     frozen.setflags(write=False)
     return frozen
 
 
 def _frozen_1d(values: Sequence[float], *, name: str) -> NDArray[np.float64]:
-    array = np.asarray(values)
-    if np.iscomplexobj(array):
+    source = np.asarray(values)
+    if np.iscomplexobj(source):
         raise GeometryError(f"{name} must contain real values")
-    result = np.asarray(values, dtype=np.float64)
-    if result.ndim != 1 or not np.isfinite(result).all():
+    array = np.asarray(values, dtype=np.float64)
+    if array.ndim != 1 or not np.isfinite(array).all():
         raise GeometryError(f"{name} must be a finite real one-dimensional array")
-    frozen = np.frombuffer(np.ascontiguousarray(result).tobytes(), dtype=np.float64)
+    frozen = np.frombuffer(np.ascontiguousarray(array).tobytes(), dtype=np.float64)
     frozen.setflags(write=False)
     return frozen
 
@@ -203,20 +203,6 @@ class CoordinationResult:
             raise GeometryError("the exact center site/image cannot be its own neighbor")
         if any(item.distance_angstrom > cutoff + 1e-12 for item in neighbors):
             raise GeometryError("neighbor distance exceeds retained cutoff")
-        expected_order = tuple(
-            sorted(
-                neighbors,
-                key=lambda item: (
-                    item.distance_angstrom,
-                    item.site_key,
-                    item.image.as_tuple(),
-                ),
-            )
-        )
-        if neighbors != expected_order:
-            raise GeometryError(
-                "neighbors must be ordered by distance, stable site key, and periodic image"
-            )
         object.__setattr__(self, "center_key", key)
         object.__setattr__(self, "cutoff_angstrom", cutoff)
         object.__setattr__(self, "image_range", image_range)
@@ -272,13 +258,16 @@ class StructureComparisonResult:
             raise GeometryError("mappings must contain at least one SiteMapping")
         if not all(isinstance(item, SiteMapping) for item in mappings):
             raise TypeError("mappings must contain only SiteMapping instances")
-        reference_keys = [mapping.reference_key for mapping in mappings]
-        candidate_keys = [mapping.candidate_key for mapping in mappings]
-        if len(reference_keys) != len(set(reference_keys)):
-            raise GeometryError("reference site keys must be unique in a comparison")
-        if len(candidate_keys) != len(set(candidate_keys)):
-            raise GeometryError("candidate site keys must be unique in a comparison")
-
+        reference_identities = [
+            (mapping.reference_key, mapping.reference_image.as_tuple()) for mapping in mappings
+        ]
+        candidate_identities = [
+            (mapping.candidate_key, mapping.candidate_image.as_tuple()) for mapping in mappings
+        ]
+        if len(reference_identities) != len(set(reference_identities)):
+            raise GeometryError("reference site/image identities must be unique")
+        if len(candidate_identities) != len(set(candidate_identities)):
+            raise GeometryError("candidate site/image identities must be unique")
         vectors = _frozen_matrix(
             self.displacement_vectors_angstrom,
             name="displacement_vectors_angstrom",
@@ -417,7 +406,7 @@ def coordination_by_cutoff(
         if structure.lattice_angstrom is None
         else np.asarray(structure.lattice_angstrom, dtype=np.float64)
     )
-    records: list[CoordinationNeighbor] = []
+    records: list[tuple[float, int, tuple[int, int, int], CoordinationNeighbor]] = []
     image_axes = [range(-extent, extent + 1) for extent in ranges]
     for site_index, site_key in enumerate(structure.site_keys):
         base = np.asarray(structure.cartesian_coordinates[site_index], dtype=np.float64)
@@ -430,25 +419,18 @@ def coordination_by_cutoff(
                 position = base + np.asarray(image_tuple, dtype=np.float64) @ lattice
             distance = float(np.linalg.norm(position - center))
             if 0.0 < distance <= cutoff + 1e-12:
-                records.append(
-                    CoordinationNeighbor(
-                        site_key=site_key,
-                        image=PeriodicImage(*image_tuple),
-                        distance_angstrom=distance,
-                    )
+                neighbor = CoordinationNeighbor(
+                    site_key=site_key,
+                    image=PeriodicImage(*image_tuple),
+                    distance_angstrom=distance,
                 )
-    records.sort(
-        key=lambda item: (
-            item.distance_angstrom,
-            item.site_key,
-            item.image.as_tuple(),
-        )
-    )
+                records.append((distance, site_index, image_tuple, neighbor))
+    records.sort(key=lambda item: (item[0], item[1], item[2]))
     return CoordinationResult(
         center_key=str(center_key).strip(),
         cutoff_angstrom=cutoff,
         image_range=ranges,
-        neighbors=tuple(records),
+        neighbors=tuple(item[3] for item in records),
     )
 
 
@@ -465,13 +447,18 @@ def compare_structures(
         raise GeometryError("mappings must contain at least one SiteMapping")
     if not all(isinstance(mapping, SiteMapping) for mapping in retained_mappings):
         raise TypeError("mappings must contain only SiteMapping instances")
-    reference_keys = [mapping.reference_key for mapping in retained_mappings]
-    candidate_keys = [mapping.candidate_key for mapping in retained_mappings]
-    if len(reference_keys) != len(set(reference_keys)):
-        raise GeometryError("reference site keys must be unique in a comparison")
-    if len(candidate_keys) != len(set(candidate_keys)):
-        raise GeometryError("candidate site keys must be unique in a comparison")
-
+    reference_identities = [
+        (mapping.reference_key, mapping.reference_image.as_tuple())
+        for mapping in retained_mappings
+    ]
+    candidate_identities = [
+        (mapping.candidate_key, mapping.candidate_image.as_tuple())
+        for mapping in retained_mappings
+    ]
+    if len(reference_identities) != len(set(reference_identities)):
+        raise GeometryError("reference site/image identities must be unique")
+    if len(candidate_identities) != len(set(candidate_identities)):
+        raise GeometryError("candidate site/image identities must be unique")
     vectors: list[NDArray[np.float64]] = []
     for mapping in retained_mappings:
         reference_position = _site_position(
