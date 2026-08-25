@@ -125,6 +125,10 @@ class IsosurfaceLayerSpec:
         return self.scalar_field.value_unit
 
     @property
+    def source_field_digest(self) -> str:
+        return self.scalar_field.digest
+
+    @property
     def structure_digest(self) -> str:
         return self.scalar_field.structure.digest
 
@@ -209,6 +213,10 @@ class SliceLayerSpec:
         return self.scalar_slice.value_unit
 
     @property
+    def source_field_digest(self) -> str:
+        return self.scalar_slice.source_field_digest
+
+    @property
     def structure_digest(self) -> str:
         return self.scalar_slice.structure_digest
 
@@ -242,12 +250,13 @@ VolumetricLayerSpec = IsosurfaceLayerSpec | SliceLayerSpec
 
 def _layer_geometry(
     layer: VolumetricLayerSpec,
-) -> tuple[str, tuple[int, int, int], str | None, np.ndarray]:
+) -> tuple[str, str, tuple[int, int, int], str | None, np.ndarray]:
     if not isinstance(layer, (IsosurfaceLayerSpec, SliceLayerSpec)):
         raise TypeError(
             "layers must contain only IsosurfaceLayerSpec or SliceLayerSpec"
         )
     return (
+        layer.source_field_digest,
         layer.structure_digest,
         layer.grid_shape,
         layer.registration_id,
@@ -273,14 +282,19 @@ class VolumetricScene:
                 "scene requires at least one volumetric layer"
             )
         (
+            first_source,
             first_structure,
             first_shape,
             first_registration,
             first_lattice,
         ) = _layer_geometry(layers[0])
+        source_digests = {first_source}
 
         for layer in layers[1:]:
-            structure, shape, registration, lattice = _layer_geometry(layer)
+            source, structure, shape, registration, lattice = _layer_geometry(
+                layer
+            )
+            source_digests.add(source)
             if structure != first_structure:
                 raise VolumetricSceneError(
                     "all layers require the same retained structure_digest"
@@ -298,6 +312,11 @@ class VolumetricScene:
                     "all layers require the same exact retained lattice; "
                     "no alignment or transformation is performed"
                 )
+
+        if len(source_digests) > 1 and first_registration is None:
+            raise VolumetricSceneError(
+                "multiple source fields require an explicit shared registration_id"
+            )
 
         if self.structure_scene is not None:
             if not isinstance(self.structure_scene, StructureScene):
