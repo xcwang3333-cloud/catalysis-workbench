@@ -53,19 +53,13 @@ jobs:
           .venv-smoke/bin/python -m pip install dist/catalysis_workbench-*.whl
           .venv-smoke/bin/python -m pip check
 
-      - name: Audit installed public API and frozen v0.5 scientific scope
+      - name: Audit installed public API and frozen v0.6 scientific scope
         run: |
           .venv-smoke/bin/python tests/installed_api_smoke.py
           .venv-smoke/bin/python tests/installed_thermal_smoke.py
           .venv-smoke/bin/python tests/installed_sorption_smoke.py
           .venv-smoke/bin/python tests/installed_composition_smoke.py
-          CATALYSIS_WORKBENCH_EXPECTED_VERSION=0.5.0 .venv-smoke/bin/python tests/installed_v05_release_smoke.py
-          .venv-smoke/bin/python tests/installed_dos_smoke.py
-          .venv-smoke/bin/python tests/installed_bader_smoke.py
-          .venv-smoke/bin/python tests/installed_correlation_smoke.py
-          .venv-smoke/bin/python tests/installed_thermodynamics_smoke.py
-          .venv-smoke/bin/python tests/installed_free_energy_diagram_smoke.py
-          .venv-smoke/bin/python tests/installed_charge_density_difference_smoke.py
+          CATALYSIS_WORKBENCH_EXPECTED_VERSION=0.5.0 .venv-smoke/bin/python tests/installed_v06_release_smoke.py
 
       - name: Audit installed v0.5 structure and v0.6 electronic/bonding adapters
         run: |
