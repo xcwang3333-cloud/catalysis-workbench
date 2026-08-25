@@ -19,7 +19,6 @@ from .electronic_structure import (
 )
 from .structure import StructureIOError, _convert_site_collection
 
-
 _ELFCAR_DIRECT_SPIN_KEY_CHANGE = (2026, 8, 13)
 
 
