@@ -6,6 +6,7 @@ from catalysis_workbench.computation import (
     CHEState,
     DFTEnergyEntry,
     DFTEnergyLedger,
+    FreeEnergyContribution,
     FreeEnergyCorrection,
     FreeEnergyEvaluation,
     FreeEnergyRecipe,
@@ -25,6 +26,7 @@ from catalysis_workbench.computation import (
 )
 
 assert ThermodynamicsError is not None
+assert FreeEnergyContribution is not None
 assert FreeEnergyEvaluation is not None
 assert CHEProtonElectronResult is not None
 assert ReactionFreeEnergyTerm is not None
