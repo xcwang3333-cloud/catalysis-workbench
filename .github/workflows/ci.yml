@@ -60,6 +60,7 @@ jobs:
           .venv-smoke/bin/python tests/installed_sorption_smoke.py
           .venv-smoke/bin/python tests/installed_composition_smoke.py
           CATALYSIS_WORKBENCH_EXPECTED_VERSION=0.5.0 .venv-smoke/bin/python tests/installed_v05_release_smoke.py
+          .venv-smoke/bin/python tests/installed_dos_smoke.py
 
       - name: Audit installed v0.5 structure and v0.6 electronic adapters
         run: |
