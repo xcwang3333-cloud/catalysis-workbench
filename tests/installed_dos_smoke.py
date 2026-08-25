@@ -6,7 +6,9 @@ import numpy as np
 
 from catalysis_workbench.computation import (
     DOSChannel,
+    DOSProcessingError,
     DOSProjection,
+    DOSTrace,
     ElectronicDOS,
     ElectronicEnergyAxis,
     aggregate_dos,
@@ -19,10 +21,17 @@ from catalysis_workbench.computation import (
 
 assert "matplotlib.pyplot" not in sys.modules
 
-from catalysis_workbench.visualization import plot_dos  # noqa: E402
+from catalysis_workbench.visualization import (  # noqa: E402
+    DOSVisualizationError,
+    plot_dos,
+)
 
 
 def main() -> None:
+    assert issubclass(DOSProcessingError, ValueError)
+    assert issubclass(DOSVisualizationError, ValueError)
+    assert DOSTrace.__name__ == "DOSTrace"
+
     energy = ElectronicEnergyAxis(
         (-2.0, 0.0, 2.0, 4.0),
         source_fermi_ev=1.0,
