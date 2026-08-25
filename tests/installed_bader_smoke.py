@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-from pathlib import Path
-from tempfile import TemporaryDirectory
+import pathlib
+import tempfile
 
-from catalysis_workbench import computation
-from catalysis_workbench import io as cw_io
+import catalysis_workbench.computation as computation
+import catalysis_workbench.io as cw_io
 
+Path = pathlib.Path
+TemporaryDirectory = tempfile.TemporaryDirectory
 
 ACF = """# X Y Z CHARGE MIN DIST ATOMIC VOL
 ------------------------------------------------------------
