@@ -15,6 +15,7 @@ from .specs import (
     SeriesStyle,
     VisualizationError,
 )
+from .structure import plot_structure
 
 __all__ = [
     "AnnotationSpec",
@@ -33,6 +34,7 @@ __all__ = [
     "format_axis_label",
     "get_preset",
     "list_presets",
+    "plot_structure",
     "register_preset",
     "render_bars",
     "render_curves",

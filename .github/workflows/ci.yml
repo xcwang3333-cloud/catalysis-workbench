@@ -79,6 +79,9 @@ jobs:
       - name: Audit installed v0.5 structure geometry surface
         run: .venv-smoke/bin/python tests/installed_structure_geometry_smoke.py
 
+      - name: Audit installed v0.5 structure visualization surface
+        run: .venv-smoke/bin/python tests/installed_structure_visualization_smoke.py
+
       - name: Audit installed v0.5 structure adapters with optional backend
         run: |
           python -m venv .venv-structure
