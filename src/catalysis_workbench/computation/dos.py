@@ -127,9 +127,7 @@ class DOSTrace:
         operations = tuple(_required_text(value, name="operation") for value in self.operations)
         if not channel_digests or not operations:
             raise DOSProcessingError("source channels and operation history must not be empty")
-        if not (
-            len(channel_digests) == len(projection_keys) == len(spins)
-        ):
+        if not (len(channel_digests) == len(projection_keys) == len(spins)):
             raise DOSProcessingError("source channel/projection/spin provenance must align")
         if len(channel_digests) != len(set(channel_digests)):
             raise DOSProcessingError("source channel digests must be unique")
@@ -255,12 +253,15 @@ def _trace_from_channels(
         raise DOSProcessingError("at least one source DOS channel is required")
     if not all(isinstance(channel, DOSChannel) for channel in retained):
         raise TypeError("channels must contain only DOSChannel instances")
-    if len({channel.digest for channel in retained}) != len(retained):
+    requested_digests = tuple(channel.digest for channel in retained)
+    if len(set(requested_digests)) != len(retained):
         raise DOSProcessingError("the same source DOS channel cannot be included twice")
 
     available = {channel.digest for channel in dos.channels}
-    if any(channel.digest not in available for channel in retained):
+    if any(digest not in available for digest in requested_digests):
         raise DOSProcessingError("all selected channels must belong to the supplied ElectronicDOS")
+    requested = frozenset(requested_digests)
+    retained = tuple(channel for channel in dos.channels if channel.digest in requested)
 
     units = {channel.density_unit for channel in retained}
     normalizations = {channel.normalization_basis for channel in retained}
