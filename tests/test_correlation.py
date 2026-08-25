@@ -194,7 +194,7 @@ def test_frames_are_detached() -> None:
     )
     frame = correlation_points_frame(dataset)
     frame.loc[0, "x_value"] = 99.0
-    frame.loc[0, "metadata"] = {"changed": "yes"}
+    frame.at[0, "metadata"]["changed"] = "yes"
     assert dataset.points[0].x_value == pytest.approx(2.1)
     assert dict(dataset.points[0].metadata) == {"kind": "hand-fixture"}
 
