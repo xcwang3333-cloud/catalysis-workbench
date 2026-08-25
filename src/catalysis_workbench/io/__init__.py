@@ -9,6 +9,7 @@ from .electronic_structure import (
 )
 from .elf import read_elfcar_field
 from .lobster import LobsterIOError, read_lobster_cohp, read_lobster_icohp
+from .locpot import read_locpot_field
 from .procar import read_procar_projection
 from .structure import (
     StructureIOError,
@@ -34,6 +35,7 @@ __all__ = [
     "read_excel",
     "read_lobster_cohp",
     "read_lobster_icohp",
+    "read_locpot_field",
     "read_poscar",
     "read_procar_projection",
     "read_tabular",
