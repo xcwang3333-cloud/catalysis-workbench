@@ -257,6 +257,13 @@ class DOSChannel:
         digest.update(b"CatalysisWorkbench.DOSChannel.v1\0")
         _update_digest_string(digest, self.projection.key)
         _update_digest_string(digest, self.projection.kind)
+        _update_digest_string(
+            digest,
+            None if self.projection.site_index is None else str(self.projection.site_index),
+        )
+        _update_digest_string(digest, self.projection.site_key)
+        _update_digest_string(digest, self.projection.element)
+        _update_digest_string(digest, self.projection.orbital)
         _update_digest_string(digest, spin)
         _update_digest_string(digest, density_unit)
         _update_digest_string(digest, normalization)
