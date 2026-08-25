@@ -6,12 +6,12 @@ import numpy as np
 import pytest
 
 from catalysis_workbench.computation import (
+    BondingError,
     COHPChannel,
     COHPResult,
+    ElectronicEnergyAxis,
     ICOHPBondSummary,
     ICOHPResult,
-    BondingError,
-    ElectronicEnergyAxis,
     cohp_channels_frame,
     icohp_bonds_frame,
     select_cohp_channels,
