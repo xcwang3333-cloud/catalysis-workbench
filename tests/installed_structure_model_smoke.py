@@ -14,7 +14,6 @@ from catalysis_workbench.io import (
     read_xyz_structure,
 )
 
-
 subprocess.run(
     [
         sys.executable,
