@@ -42,6 +42,8 @@ def _freeze_value(value: Any) -> Any:
         )
     if isinstance(value, (list, tuple)):
         return tuple(_freeze_value(item) for item in value)
+    if isinstance(value, (set, frozenset)):
+        return frozenset(_freeze_value(item) for item in value)
     if isinstance(value, np.ndarray):
         array = np.array(value, copy=True)
         array.setflags(write=False)
@@ -61,6 +63,8 @@ def _thaw_value(value: Any) -> Any:
         return {key: _thaw_value(item) for key, item in value.items()}
     if isinstance(value, tuple):
         return [_thaw_value(item) for item in value]
+    if isinstance(value, frozenset):
+        return {_thaw_value(item) for item in value}
     if isinstance(value, np.ndarray):
         return np.array(value, copy=True)
     return deepcopy(value)
@@ -102,6 +106,23 @@ def _frozen_lattice(values: Any) -> NDArray[np.float64]:
     if np.linalg.matrix_rank(lattice) != 3:
         raise ScalarFieldError("lattice_angstrom must be nonsingular")
     return lattice
+
+
+def _positive_grid_shape(values: Sequence[int]) -> tuple[int, int, int]:
+    if len(values) != 3:
+        raise ScalarFieldError("grid_shape must contain exactly three integers")
+    retained: list[int] = []
+    for raw in values:
+        if isinstance(raw, (bool, np.bool_)) or not isinstance(
+            raw,
+            (int, np.integer),
+        ):
+            raise TypeError("grid_shape values must be integers")
+        value = int(raw)
+        if value <= 0:
+            raise ScalarFieldError("grid_shape values must be positive")
+        retained.append(value)
+    return retained[0], retained[1], retained[2]
 
 
 def _digest_text(digest: Any, value: str | None) -> None:
@@ -256,11 +277,7 @@ class ScalarFieldSlice:
             _nonblank(self.structure_digest, name="structure_digest")
         )
         lattice = _frozen_lattice(self.lattice_angstrom)
-        shape = tuple(int(value) for value in self.grid_shape)
-        if len(shape) != 3 or any(value <= 0 for value in shape):
-            raise ScalarFieldError(
-                "grid_shape must contain three positive integers"
-            )
+        shape = _positive_grid_shape(self.grid_shape)
         field_kind = str(_nonblank(self.field_kind, name="field_kind"))
         value_unit = str(_nonblank(self.value_unit, name="value_unit"))
         registration_id = _nonblank(
@@ -292,7 +309,17 @@ class ScalarFieldSlice:
             raise ScalarFieldError(
                 "fractional_coordinate must equal index / source axis size"
             )
-        axes = tuple(int(value) for value in self.in_plane_axes)
+        if len(self.in_plane_axes) != 2:
+            raise ScalarFieldError("in_plane_axes must contain exactly two integers")
+        retained_axes: list[int] = []
+        for raw in self.in_plane_axes:
+            if isinstance(raw, (bool, np.bool_)) or not isinstance(
+                raw,
+                (int, np.integer),
+            ):
+                raise TypeError("in_plane_axes values must be integers")
+            retained_axes.append(int(raw))
+        axes = retained_axes[0], retained_axes[1]
         expected_axes = tuple(value for value in range(3) if value != axis)
         if axes != expected_axes:
             raise ScalarFieldError(
