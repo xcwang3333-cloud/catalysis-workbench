@@ -416,7 +416,9 @@ def vacuum_level_from_profile(
         if isinstance(value, bool) or not isinstance(value, int):
             raise TypeError(f"{name} must be an integer")
     if start_index < 0 or stop_index > profile.potential_ev.size or stop_index <= start_index:
-        raise WorkFunctionError("vacuum window must be non-empty and within retained profile bounds")
+        raise WorkFunctionError(
+            "vacuum window must be non-empty and within retained profile bounds"
+        )
     retained_statistic = str(_nonblank(statistic, name="statistic")).lower()
     if retained_statistic != "mean":
         raise WorkFunctionError("Block-5 vacuum statistic must be explicit 'mean'")
