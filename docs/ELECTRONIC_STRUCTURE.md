@@ -56,7 +56,7 @@ A site/orbital projection retains:
 
 The attached structure is checked against the projection identity. Block 2 `select_dos_channels()` can filter by stable projection key, projection kind, site index/key, element, orbital, and physical spin while preserving the retained source order. An empty match fails explicitly.
 
-Element/site/orbital aggregation is never triggered merely by labels. `aggregate_dos()` sums only the exact channels supplied by the caller and retains every contributing channel digest, projection key, and spin identity.
+Element/site/orbital aggregation is never triggered merely by labels. `aggregate_dos()` sums only the exact channels supplied by the caller and retains every contributing channel digest, projection key, and spin identity. Because summation is commutative, contributing channels are canonicalized back to their order in the source `ElectronicDOS`; reversing caller input cannot change the retained scientific digest.
 
 ## DOS units and normalization
 
@@ -97,7 +97,7 @@ No Gaussian broadening, smoothing, interpolation, resampling, automatic orbital 
 
 `plot_dos()` consumes only retained `DOSTrace` arrays and the existing `FigureSpec` rendering model. It does not reselect channels, aggregate, shift energies, crop, normalize, broaden, smooth, or interpolate.
 
-Overlay compatibility is fail-closed: all traces on one DOS axes must have matching energy-reference kind, density unit, and normalization basis. These semantics are also copied into shared `Axis.metadata`, so the generic curve-renderer compatibility gate remains active.
+Overlay compatibility is fail-closed: all traces on one DOS axes must have matching energy-reference kind, density unit, and normalization basis. In addition, source-native traces may be overlaid only when they retain the same `source_dos_digest`; independent source-native VASP energy zeros are not treated as a common comparison reference. Cross-source comparison must first use an explicit common transform such as Fermi referencing. These semantics are also copied into shared `Axis.metadata`, so the generic curve-renderer compatibility gate remains active.
 
 An optional Fermi marker is derived from retained state only:
 
