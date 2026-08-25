@@ -5,6 +5,7 @@ from .curves import format_axis_label, render_curves
 from .dft import plot_relative_energies
 from .dos import DOSVisualizationError, plot_dos
 from .export import export_figure
+from .free_energy import plot_free_energy_diagram
 from .presets import get_preset, list_presets, register_preset
 from .scatter import ScatterError, render_scatter
 from .specs import (
@@ -38,6 +39,7 @@ __all__ = [
     "get_preset",
     "list_presets",
     "plot_dos",
+    "plot_free_energy_diagram",
     "plot_relative_energies",
     "plot_structure",
     "register_preset",
