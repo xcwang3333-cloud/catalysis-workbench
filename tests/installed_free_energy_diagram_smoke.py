@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 from catalysis_workbench.computation import (
+    CHEState,
+    DFTEnergyEntry,
+    DFTEnergyLedger,
     FreeEnergyDiagramContext,
     FreeEnergyDiagramError,
     FreeEnergyDiagramSeries,
@@ -10,15 +13,10 @@ from catalysis_workbench.computation import (
     build_free_energy_diagram_series,
     diagram_context_from_che,
     diagram_state_from_free_energy,
-    free_energy_diagram_frame,
-    validate_free_energy_diagram_series_compatibility,
-)
-from catalysis_workbench.computation import (
-    CHEState,
-    DFTEnergyEntry,
-    DFTEnergyLedger,
     evaluate_che_proton_electron,
     evaluate_free_energy,
+    free_energy_diagram_frame,
+    validate_free_energy_diagram_series_compatibility,
 )
 from catalysis_workbench.visualization import plot_free_energy_diagram
 
