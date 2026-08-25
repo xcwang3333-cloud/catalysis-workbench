@@ -59,8 +59,11 @@ Checkpoint date: 2026-08-25.
 - v0.6 block-3 completion-state docs sync: Issue #160 / PR #161 — complete at `c1a6ed407f3081dec2da535e4e7d5b571f9a8012`.
 - v0.6 block 4, Bader-result parsing + explicit charge accounting: Issue #162 / PR #163 — complete at `e2b38c243a664913fb31fca6ed31744e7190d957`.
 - Block-4 final head `f436186df908a8185e196f120d90ae392ee62fc6` passed CI #405 / run `32818958204` and final-head reviews `5015794214`, `5015796101` before squash merge.
-- Active stage: **Issue #164 — synchronize block-4 completion state into central documentation**.
-- v0.6 block 5 (COHP/ICOHP parsing + bonding analysis) starts only after #164 is complete and `main` is reverified.
+- v0.6 block-4 completion-state docs sync: Issue #164 / PR #165 — complete at `308ca1243f60bd28b981e3d51dbff3532de16e28`.
+- v0.6 block 5, COHP/ICOHP parsing + explicit bonding analysis: Issue #166 / PR #167 — complete at `415f8de126bac6ad2f6086f68152c472fb4064f2`.
+- Block-5 final head `c3bcf5caea142ee4165ebc45ae5a64ef7b7b9cde` passed CI #417 / run `32822387619` and final-head reviews `5016125861`, `5016128385` before squash merge.
+- Active stage: **Issue #168 — synchronize block-5 completion state into central documentation**.
+- v0.6 block 6 (geometry–bonding correlation) starts only after #168 is complete and `main` is reverified.
 
 Live GitHub Issue/PR/tag state remains authoritative if this checkpoint becomes stale.
 
@@ -75,7 +78,7 @@ Detailed long-range scope is maintained in [`ROADMAP.md`](ROADMAP.md).
 | v0.3.x | FTIR, thermal analysis, basic gas sorption, ICP/composition | complete/released as v0.3.0 |
 | v0.4.x | shared fitting, XPS, EIS, quantitative BET, product calibration | complete/released as v0.4.0; GitHub Release published; PyPI deferred |
 | v0.5.x | XAS/XANES, FT/WT-EXAFS, EXAFS summaries, structures/geometry/static visualization, basic DFT energetics | complete/released as v0.5.0; GitHub Release published; PyPI deferred |
-| v0.6.x | electronic structure and catalysis thermodynamics | architecture + blocks 1–4 complete; block 5 next after #164 |
+| v0.6.x | electronic structure and catalysis thermodynamics | architecture + blocks 1–5 complete; block 6 next after #168 |
 | v0.7.x | advanced computational visualization | planned |
 | v0.8.x | operando/time-resolved analysis | planned |
 | v0.9.x | reproducible batch workflows and first interactive editor | planned |
@@ -241,9 +244,19 @@ Issue #162 / PR #163 delivered CatalysisWorkbench-owned immutable raw and refere
 
 Block-4 final head `f436186df908a8185e196f120d90ae392ee62fc6` passed CI #405 / run `32818958204` and final-head reviews `5015794214`, `5015796101` before squash merge `e2b38c243a664913fb31fca6ed31744e7190d957`.
 
+### Block-4 completion-state sync — complete
+
+Issue #164 / PR #165 synchronized the merged block-4 state into central documentation at `308ca1243f60bd28b981e3d51dbff3532de16e28` before block 5 began.
+
+### COHP/ICOHP parsing + explicit bonding analysis — complete
+
+Issue #166 / PR #167 delivered CatalysisWorkbench-owned immutable source-sign COHP/ICOHP state plus lazy `pymatgen-core` LOBSTER adapters. LOBSTER energies remain explicitly already Fermi-referenced with numerical zero at `E_F`; no second Fermi shift or hidden `-COHP/-ICOHP` inversion occurs. Physical `total` versus `up/down` spin state, deterministic bond/orbital identities, exact `number_of_bonds` multiplicity, explicit ICOHP spin summation, source-order selectors, and detached reporting remain auditable. Unsupported COOP/COBI/multi-center/LCFO variants and incomplete spin state fail closed; no strongest-bond threshold or chemistry inference is introduced.
+
+Block-5 final head `c3bcf5caea142ee4165ebc45ae5a64ef7b7b9cde` passed CI #417 / run `32822387619` and final-head reviews `5016125861`, `5016128385` before squash merge `415f8de126bac6ad2f6086f68152c472fb4064f2`.
+
 ### Current completion-state sync
 
-Issue #164 is the docs-only synchronization checkpoint after block 4. It records merged reality in central plans without adding COHP/ICOHP parsing or bonding-analysis code. Block 5 begins only after #164 merges and `main` is reverified.
+Issue #168 is the docs-only synchronization checkpoint after block 5. It records merged reality in central plans without adding geometry–bonding correlation code. Block 6 begins only after #168 merges and `main` is reverified.
 
 ## Mandatory development loop
 
@@ -336,4 +349,4 @@ After each merged scientific Issue, update only documentation whose statements b
 - preceding Issue closure/completion;
 - version/tag/publication boundaries.
 
-Issue #164 is the active v0.6 block-4 completion-state documentation checkpoint. After it merges, reverify `main`, Issue #164 closure, immutable `v0.5.0`, immutable `v0.4.0`, distribution/runtime version `0.5.0`, and PyPI-deferred state. Then start block 5 (COHP/ICOHP parsing + bonding analysis) from that exact verified `main` baseline using the frozen order in `V0_6_PLAN.md`.
+Issue #168 is the active v0.6 block-5 completion-state documentation checkpoint. After it merges, reverify `main`, Issue #168 closure, immutable `v0.5.0`, immutable `v0.4.0`, distribution/runtime version `0.5.0`, and PyPI-deferred state. Then start block 6 (geometry–bonding correlation) from that exact verified `main` baseline using the frozen order in `V0_6_PLAN.md`.
