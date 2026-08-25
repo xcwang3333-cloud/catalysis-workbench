@@ -35,6 +35,7 @@ from .volumetric_techniques import (
     build_symmetric_charge_density_difference_scene,
     plot_scalar_field_slice,
 )
+from .work_function import WorkFunctionVisualizationError, plot_planar_potential
 
 __all__ = [
     "AnnotationSpec",
@@ -57,6 +58,7 @@ __all__ = [
     "VolumetricLayerSpec",
     "VolumetricScene",
     "VolumetricSceneError",
+    "WorkFunctionVisualizationError",
     "build_charge_density_difference_scene",
     "build_electron_density_scene",
     "build_elf_scene",
@@ -69,6 +71,7 @@ __all__ = [
     "plot_dos",
     "plot_fat_band",
     "plot_free_energy_diagram",
+    "plot_planar_potential",
     "plot_relative_energies",
     "plot_scalar_field_slice",
     "plot_structure",
