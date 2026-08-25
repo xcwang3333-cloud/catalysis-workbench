@@ -351,8 +351,18 @@ def test_che_rhe_conversion_uses_general_she_equation_and_cancels_ph() -> None:
     "kwargs",
     [
         {"temperature_k": 0.0, "ph": 0.0, "potential_v": 0.0, "potential_reference": "SHE"},
-        {"temperature_k": 298.15, "ph": float("nan"), "potential_v": 0.0, "potential_reference": "SHE"},
-        {"temperature_k": 298.15, "ph": 0.0, "potential_v": float("inf"), "potential_reference": "SHE"},
+        {
+            "temperature_k": 298.15,
+            "ph": float("nan"),
+            "potential_v": 0.0,
+            "potential_reference": "SHE",
+        },
+        {
+            "temperature_k": 298.15,
+            "ph": 0.0,
+            "potential_v": float("inf"),
+            "potential_reference": "SHE",
+        },
         {"temperature_k": 298.15, "ph": 0.0, "potential_v": 0.0, "potential_reference": "NHE"},
     ],
 )
