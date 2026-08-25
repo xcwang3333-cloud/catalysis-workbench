@@ -53,7 +53,7 @@ jobs:
           .venv-smoke/bin/python -m pip install dist/catalysis_workbench-*.whl
           .venv-smoke/bin/python -m pip check
 
-      - name: Audit installed public API and reviewed v0.6 plus v0.7 Block-1/2 scope
+      - name: Audit installed public API and reviewed v0.6 plus v0.7 Block-1/2/3 scope
         run: |
           .venv-smoke/bin/python tests/installed_api_smoke.py
           .venv-smoke/bin/python tests/installed_thermal_smoke.py
@@ -62,8 +62,9 @@ jobs:
           CATALYSIS_WORKBENCH_EXPECTED_VERSION=0.6.0 .venv-smoke/bin/python tests/installed_v06_release_smoke.py
           .venv-smoke/bin/python tests/installed_v07_block1_smoke.py
           .venv-smoke/bin/python tests/installed_v07_block2_smoke.py
+          .venv-smoke/bin/python tests/installed_v07_block3_smoke.py
 
-      - name: Audit installed structure/electronic/bonding and ELFCAR adapters
+      - name: Audit installed structure/electronic/bonding/ELFCAR/band adapters
         run: |
           python -m venv .venv-structure
           .venv-structure/bin/python -m pip install --upgrade pip
@@ -74,6 +75,7 @@ jobs:
           .venv-structure/bin/python tests/installed_electronic_structure_smoke.py
           .venv-structure/bin/python tests/installed_bonding_smoke.py
           .venv-structure/bin/python tests/installed_elf_smoke.py
+          .venv-structure/bin/python tests/installed_band_structure_smoke.py
 
       - name: Run documented LSV/XRD/Raman/FTIR/thermal/sorption/composition examples from installed wheel
         run: |
