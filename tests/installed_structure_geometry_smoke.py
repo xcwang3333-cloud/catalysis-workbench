@@ -4,7 +4,6 @@ import numpy as np
 
 import catalysis_workbench.computation as cw
 
-
 structure = cw.AtomicStructure(
     species=("C", "O"),
     elements=("C", "O"),
