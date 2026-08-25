@@ -25,6 +25,9 @@ def main() -> None:
     assert hasattr(Procar, "_parse_kpoint_line")
     parse_source = inspect.getsource(Procar._parse_kpoint_line)
     assert "round(float(val), 5)" in parse_source
+    read_source = inspect.getsource(Procar.read)
+    assert "headers.pop(0)" in read_source
+    assert "headers.pop(-1)" in read_source
 
     structure = AtomicStructure(
         species=("H",),
@@ -62,7 +65,7 @@ def main() -> None:
     parsed = SimpleNamespace(
         is_soc=False,
         xyz_data=None,
-        orbitals=["s", "tot"],
+        orbitals=["s", "pz"],
         kpoints=np.array([[0.0, 0.0, 0.0], [0.33333, 0.0, 0.0]]),
         data={1: source_projection},
         eigenvalues={1: band.channel("total").energies_ev.T},
@@ -79,7 +82,8 @@ def main() -> None:
         energy_atol_ev=1e-4,
         backend_version=version("pymatgen-core"),
     )
-    assert state.orbitals == ("s", "tot")
+    assert state.orbitals == ("s", "pz")
+    assert "tot" not in state.orbitals
     assert state.channels[0].spin == "total"
     assert np.array_equal(
         state.channels[0].weights,
