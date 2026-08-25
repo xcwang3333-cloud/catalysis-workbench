@@ -85,11 +85,41 @@ def test_image_state_retains_exact_energy_provenance_and_optional_structure() ->
 @pytest.mark.parametrize(
     "kwargs",
     [
-        {"key": " ", "energy_ev": 0.0, "source_key": "s", "source_type": "t", "source_digest": "d"},
-        {"key": "i", "energy_ev": np.nan, "source_key": "s", "source_type": "t", "source_digest": "d"},
-        {"key": "i", "energy_ev": 0.0, "source_key": " ", "source_type": "t", "source_digest": "d"},
-        {"key": "i", "energy_ev": 0.0, "source_key": "s", "source_type": " ", "source_digest": "d"},
-        {"key": "i", "energy_ev": 0.0, "source_key": "s", "source_type": "t", "source_digest": " "},
+        {
+            "key": " ",
+            "energy_ev": 0.0,
+            "source_key": "s",
+            "source_type": "t",
+            "source_digest": "d",
+        },
+        {
+            "key": "i",
+            "energy_ev": np.nan,
+            "source_key": "s",
+            "source_type": "t",
+            "source_digest": "d",
+        },
+        {
+            "key": "i",
+            "energy_ev": 0.0,
+            "source_key": " ",
+            "source_type": "t",
+            "source_digest": "d",
+        },
+        {
+            "key": "i",
+            "energy_ev": 0.0,
+            "source_key": "s",
+            "source_type": " ",
+            "source_digest": "d",
+        },
+        {
+            "key": "i",
+            "energy_ev": 0.0,
+            "source_key": "s",
+            "source_type": "t",
+            "source_digest": " ",
+        },
     ],
 )
 def test_image_state_rejects_ambiguous_or_nonfinite_input(kwargs: dict[str, object]) -> None:
