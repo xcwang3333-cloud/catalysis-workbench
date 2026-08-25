@@ -256,6 +256,8 @@ def _convert_procar_result(
             "parser_kpoint_precision_note": (
                 "current pymatgen-core rounds PROCAR kpoints to 5 decimals"
             ),
+            "orbital_source_semantics": "pymatgen-core parsed.orbitals",
+            "raw_terminal_tot_retained": False,
             "band_state_digest": band_structure.digest,
             "band_source_digest": band_structure.source_digest,
             "occupancies_available": getattr(parsed, "occupancies", None) is not None,
