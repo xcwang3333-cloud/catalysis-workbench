@@ -116,13 +116,9 @@ Release-gate evidence:
 - GitHub Release / #144: `CatalysisWorkbench v0.5.0` publicly published from the existing tag with populated release notes.
 - Final post-release documentation synchronization / #143: complete at `bed5c6e750a6066baa8daa21492aa9eb90e8bca8`.
 
-All nine v0.6 scientific blocks are now complete, including charge-density-difference arithmetic with strict co-registration validation. Charge-density-difference visualization remains v0.7, and VASP/HPC job management remains outside the current project scope.
+## v0.6.0 — Electronic structure and catalysis thermodynamics — released 2026-08-25
 
-## v0.6.x — Electronic structure and catalysis thermodynamics
-
-The architecture-first v0.6 scope, scientific semantics, dependency boundaries, prior-art/license decisions, test strategy, and implementation order are frozen in [`V0_6_PLAN.md`](V0_6_PLAN.md). Architecture checkpoint Issue #146 / PR #147 is complete at merge `3803e014376a7edb22d6a9a5b6480541742499be`, the architecture central-doc synchronization Issue #148 / PR #149 is complete at `aac05d4426c15c8932c608d07ef42e4dc07b09ce`, scientific block 1 is complete through Issue #150 / PR #151 at merge `58023070bf7f642748b69e99281a5ed7ed4d40df`, block-1 completion-state synchronization #152 / #153 is complete at `39df1101d1ed7dde5c4ab6d264b8796c27c97620`, scientific block 2 is complete through Issue #154 / PR #155 at merge `09e63e72e1b79d8c151c97769d4bfbd2fb6a366f`, block-2 completion-state synchronization #156 / #157 is complete at `c597fdaba7509a0c6c4cf6088c7367c94cec0547`, scientific block 3 is complete through Issue #158 / PR #159 at merge `cdbc4822592cf43033af1f0242793d5912098b7c`, block-3 completion-state synchronization #160 / #161 is complete at `c1a6ed407f3081dec2da535e4e7d5b571f9a8012`, scientific block 4 is complete through Issue #162 / PR #163 at merge `e2b38c243a664913fb31fca6ed31744e7190d957`, block-4 completion-state synchronization #164 / #165 is complete at `308ca1243f60bd28b981e3d51dbff3532de16e28`, scientific block 5 is complete through Issue #166 / PR #167 at merge `415f8de126bac6ad2f6086f68152c472fb4064f2`, block-5 completion-state synchronization #168 / #169 is complete at `8cc7ed82497ee6245a65091b88b61eb9153128c5`, and scientific block 6 is complete through Issue #170 / PR #171 at merge `f66bcae9bd254cf3abe12e8f161b0a38080c7ad3`, block-6 completion-state synchronization #172 / #173 is complete at `9d6d8e2868f38336ba1a8e25adab3fd3b787df1a`, and scientific block 7 is complete through Issue #174 / PR #175 at merge `e25610d56eb414ac6aedae07874042d3f4edd194`, block-7 completion-state synchronization #176 / #177 is complete at `917500868591fe6793172fec44d943b8a8a36930`, and scientific block 8 is complete through Issue #178 / PR #179 at merge `0d8dd67f716c47b4c611dd56cfc0cb243db3fb29`, block-8 completion-state synchronization #180 / #181 is complete at `cec7a9eae1ae256a82ee72b74a80039c6b164bda`, and scientific block 9 is complete through Issue #182 / PR #183 at merge `f47d2165f282c8fe2745d1bd50ed32886b0f2054`. Issue #184 is the current docs-only scientific-completion synchronization before Gate A begins.
-
-Frozen implementation order:
+The architecture-first v0.6 scope, scientific semantics, dependency boundaries, prior-art/license decisions, test strategy, and implementation order are frozen in [`V0_6_PLAN.md`](V0_6_PLAN.md), with release evidence in [`V0_6_RELEASING.md`](V0_6_RELEASING.md). All nine scientific blocks, completion-state synchronization, Gate A frozen-scope hardening, Gate B exact-wheel final-version validation, Gate C tag verification, and public GitHub Release publication are complete. Tag `v0.6.0` resolves exactly to reviewed release commit `c7793b309f41d174c14534bd6d4acdacc2a57636`, and distribution/runtime version through the tag is `0.6.0`. The public GitHub Release `CatalysisWorkbench v0.6.0` is published from that existing tag. PyPI/package publication remains deferred.
 
 1. **Electronic-structure + volumetric semantics/adapters — complete through #150 / #151.**
    - CatalysisWorkbench-owned immutable energy/DOS/volumetric state, lazy `pymatgen-core` VASP adapters, explicit source-energy/Fermi/spin/projection semantics, and regression-verified CHGCAR `1/angstrom^3` conversion.
@@ -143,7 +139,15 @@ Frozen implementation order:
 9. **Charge-density-difference calculation with lattice/grid/component validation — complete through #182 / #183.**
    - immutable explicit combined/reference volumetric state with caller-visible coefficients, common registration identity, exact grid/unit/component checks, direct lattice-tolerance validation, provenance-rich difference state and detached reporting; no hidden interpolation, resampling, alignment, remapping, unit/component conversion, or CHGCAR re-normalization.
 
-The ordering deliberately establishes shared energy-reference, spin, orbital/site projection, normalization, provenance, lattice/grid and volumetric-component semantics before descriptor-specific processing. CHE extends the reviewed v0.5 explicit DFT-energy foundation rather than creating a parallel energy model. PyPI/package-registry publication remains deferred.
+Release-gate evidence:
+
+- Gate A / #186 / #187: final head `a72be9f227f92b94df11b40c0bd77bd97933ecdb`, CI #451 / run `32844596642`, reviews `5018578746`, `5018579676`, squash merge `c70481e34f6e3f2bf81724f4a30370fec58c1e7b`, version retained at `0.5.0`.
+- Gate B / #188 / #189: final head `4544a464ab54e13408e3db23a68acf565f764328`, CI #453 / run `32845155122`, reviews `5018619904`, `5018620923`, squash merge/reviewed release commit `c7793b309f41d174c14534bd6d4acdacc2a57636`, distribution/runtime version finalized to `0.6.0`.
+- Gate C / #192: tag `v0.6.0` created and reverse-verified exactly on `c7793b309f41d174c14534bd6d4acdacc2a57636`; distribution/runtime through the tag is `0.6.0`.
+- GitHub Release / #193: `CatalysisWorkbench v0.6.0` publicly published from the existing tag with reviewed release notes.
+- Final post-release documentation synchronization / #195: current docs-only closeout; it does not alter the release tag or release commit.
+
+Charge-density-difference visualization remains v0.7, and VASP/HPC job management remains outside the current project scope.
 
 ## v0.7.x — Advanced computational visualization
 

@@ -4,6 +4,34 @@ All notable changes to CatalysisWorkbench are recorded here.
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-08-25
+
+The v0.6 release freezes the reviewed electronic-structure and catalysis-thermodynamics scope after Gate A release hardening, Gate B final-version exact-wheel validation, Gate C tag verification, and public GitHub Release publication. Tag `v0.6.0` resolves exactly to reviewed Gate-B release commit `c7793b309f41d174c14534bd6d4acdacc2a57636`, and distribution/runtime version through the tag is `0.6.0`. The GitHub Release `CatalysisWorkbench v0.6.0` is published from that existing tag with reviewed release notes. PyPI/package-registry publication remains deferred.
+
+### Added
+
+- Electronic-structure and volumetric semantics/adapters with immutable retained state, explicit energy/Fermi/spin/projection/component conventions, and reviewed optional VASP adapters.
+- DOS/PDOS processing and passive publication plotting with explicit energy referencing, compatible retained-channel aggregation, source-grid-only cropping, and no hidden resampling.
+- Band-center / DOS first-moment analysis with caller-selected windows/tolerances and retained numerical provenance.
+- Bader-result parsing and explicit charge accounting without hidden POTCAR/ZVAL/oxidation-state inference.
+- COHP/ICOHP parsing and explicit bonding analysis with source-sign semantics, deterministic bond/orbital identities, and retained multiplicity/provenance.
+- Explicit geometry–bonding correlation datasets without hidden matching, statistics, ranking, or causal interpretation.
+- CHE/free-energy thermodynamics with explicit correction/reference/potential/pH bookkeeping and no hidden chemistry/pathway lookup.
+- Passive free-energy-diagram state and plotting with explicit caller ordering/reference semantics and no hidden CHE recomputation.
+- Charge-density-difference arithmetic `Δn(r)=n_combined(r)-Σc_i n_reference_i(r)` with strict grid/lattice/unit/component/common-registration validation and no hidden interpolation, resampling, alignment, supercell conversion, component conversion, or renormalization.
+- Unified v0.6 fresh-wheel installed/public-API release audit covering representative reviewed computation exports, optional structure/electronic/bonding adapters, and documented quickstarts.
+
+### Changed
+
+- All nine v0.6 scientific implementation blocks (#150/#151 through #182/#183) are complete; final scientific implementation merge is `f47d2165f282c8fe2745d1bd50ed32886b0f2054`.
+- Scientific-completion documentation synchronization #184/#185 merged as `f364e51de5eb2119a2495e93135572605dd8f926`.
+- Gate A / Issue #186 / PR #187 hardened the frozen v0.6 scope while retaining version `0.5.0`; final head `a72be9f227f92b94df11b40c0bd77bd97933ecdb` passed CI #451 / run `32844596642` and reviews `5018578746`, `5018579676` before squash merge `c70481e34f6e3f2bf81724f4a30370fec58c1e7b`.
+- Gate B / Issue #188 / PR #189 synchronized `[project].version`, runtime `__version__`, and the exact-wheel expected version to `0.6.0`; final head `4544a464ab54e13408e3db23a68acf565f764328` passed CI #453 / run `32845155122` and reviews `5018619904`, `5018620923` before squash merge/reviewed release commit `c7793b309f41d174c14534bd6d4acdacc2a57636`.
+- Gate C / Issue #192 created and reverse-verified `v0.6.0` exactly on `c7793b309f41d174c14534bd6d4acdacc2a57636`; distribution/runtime version through the tag is `0.6.0`.
+- GitHub Release tracking Issue #193 completed after the public `CatalysisWorkbench v0.6.0` Release was published from the existing tag with populated release notes.
+- `v0.5.0` remains immutable at `9400ac0044ac333d2cae228554c08d955a816a4c`; `v0.4.0` remains immutable at `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6`.
+- PyPI/package-registry publication remains deferred.
+
 ## [0.5.0] - 2026-08-25
 
 The v0.5 release freezes the reviewed XAS, structure, and basic DFT-energetics scope after Gate A release hardening, Gate B final-version validation, Gate C tag verification, and public GitHub Release publication. Tag `v0.5.0` resolves exactly to reviewed Gate-B release commit `9400ac0044ac333d2cae228554c08d955a816a4c`, and distribution/runtime version through the tag is `0.5.0`. The GitHub Release `CatalysisWorkbench v0.5.0` is published from that existing immutable tag with reviewed release notes. PyPI/package-registry publication remains deferred.
