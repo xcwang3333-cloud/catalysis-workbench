@@ -48,6 +48,18 @@ def _spec() -> XANESNormalizationSpec:
     )
 
 
+def _with_key(series: Series, key: str) -> Series:
+    return Series(
+        x=series.x,
+        y=series.y,
+        label=series.label,
+        key=key,
+        x_axis=series.x_axis,
+        y_axis=series.y_axis,
+        metadata=series.metadata_dict(),
+    )
+
+
 def test_validate_xas_and_exact_energy_shift() -> None:
     source = _series()
     validate_xas_series(source)
@@ -260,8 +272,10 @@ def test_plot_overlay_rejects_mixed_reference_or_normalization_state() -> None:
     from catalysis_workbench.experimental.characterization.xas_plotting import plot_xanes
 
     result = normalize_xanes(_series(), _spec())
-    relative = xanes_relative_energy(result)
+    relative = _with_key(xanes_relative_energy(result), "relative")
     with pytest.raises(XASError, match="energy-reference"):
         plot_xanes(Dataset((result.normalized, relative)))
+
+    raw = _with_key(_series(), "raw")
     with pytest.raises(XASError, match="raw and normalized"):
-        plot_xanes(Dataset((_series(), result.normalized)))
+        plot_xanes(Dataset((raw, result.normalized)))
