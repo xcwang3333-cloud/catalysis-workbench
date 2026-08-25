@@ -22,6 +22,7 @@ from catalysis_workbench.io.lobster import (
     LobsterIOError,
     _convert_cohpcar,
     _convert_icohplist,
+    read_lobster_icohp,
 )
 
 
@@ -305,6 +306,13 @@ def test_convert_icohplist_retains_multiplicity_and_source_sign() -> None:
     assert result.source_id == "fixture"
 
 
+def test_convert_icohplist_rejects_fractional_multiplicity() -> None:
+    parsed = _fake_icohplist()
+    parsed.icohplist["1"]["number_of_bonds"] = 1.5
+    with pytest.raises(LobsterIOError, match="exact integer"):
+        _convert_icohplist(parsed, path="ICOHPLIST.lobster", source_id=None)
+
+
 def test_convert_icohplist_spin_state_and_explicit_sum() -> None:
     result = _convert_icohplist(
         _fake_icohplist(spin_polarized=True),
@@ -315,6 +323,11 @@ def test_convert_icohplist_spin_state_and_explicit_sum() -> None:
     assert summary.spins == ("up", "down")
     summed = sum_icohp_spins(summary, spins=("up", "down"))
     assert summed.value == pytest.approx(-2.0)
+
+
+def test_read_icohp_requires_boolean_spin_mode_before_backend_import() -> None:
+    with pytest.raises(TypeError, match="is_spin_polarized must be a bool"):
+        read_lobster_icohp("does-not-matter", is_spin_polarized=1)  # type: ignore[arg-type]
 
 
 def test_convert_icohplist_rejects_non_cohp_variant() -> None:
