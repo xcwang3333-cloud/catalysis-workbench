@@ -12,12 +12,12 @@ from .bader import (
 )
 from .band_center import BandCenterError, BandCenterResult, calculate_band_center
 from .bonding import (
+    BondingError,
     COHPChannel,
     COHPResult,
     ICOHPBondSummary,
     ICOHPResult,
     ICOHPSpinSum,
-    BondingError,
     cohp_channels_frame,
     icohp_bonds_frame,
     select_cohp_channels,
