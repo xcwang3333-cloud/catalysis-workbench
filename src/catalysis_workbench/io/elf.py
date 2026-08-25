@@ -13,9 +13,9 @@ import numpy as np
 from catalysis_workbench.computation import ScalarField, ScalarFieldError
 
 from .electronic_structure import (
+    ElectronicStructureIOError,
     _backend_import_error,
     _source_metadata,
-    ElectronicStructureIOError,
 )
 from .structure import StructureIOError, _convert_site_collection
 
