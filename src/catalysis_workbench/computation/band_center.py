@@ -243,9 +243,13 @@ def calculate_band_center(
 
     energies = trace.energy.values_ev
     if energies.ndim != 1 or energies.size < 2 or not np.all(np.diff(energies) > 0):
-        raise BandCenterError("retained energy grid must be one-dimensional and strictly increasing")
+        raise BandCenterError(
+            "retained energy grid must be one-dimensional and strictly increasing"
+        )
     if low < float(energies[0]) or high > float(energies[-1]):
-        raise BandCenterError("requested integration window must lie inside the retained energy axis")
+        raise BandCenterError(
+            "requested integration window must lie inside the retained energy axis"
+        )
 
     mask = (energies >= low) & (energies <= high)
     point_count = int(np.count_nonzero(mask))
