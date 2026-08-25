@@ -18,6 +18,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+structure = [
+  "pymatgen-core>=2026.7.16",
+]
 dev = [
   "pytest>=8.3",
   "pytest-cov>=5.0",
