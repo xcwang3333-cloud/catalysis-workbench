@@ -73,6 +73,18 @@ jobs:
       - name: Audit installed v0.5 EXAFS fit-summary surface
         run: .venv-smoke/bin/python tests/installed_exafs_fit_summary_smoke.py
 
+      - name: Audit installed v0.5 atomic-structure base surface
+        run: .venv-smoke/bin/python tests/installed_structure_model_smoke.py
+
+      - name: Audit installed v0.5 structure adapters with optional backend
+        run: |
+          python -m venv .venv-structure
+          .venv-structure/bin/python -m pip install --upgrade pip
+          wheel_path="$(realpath "$(ls dist/catalysis_workbench-*.whl)")"
+          .venv-structure/bin/python -m pip install "catalysis-workbench[structure] @ file://${wheel_path}"
+          .venv-structure/bin/python -m pip check
+          .venv-structure/bin/python tests/installed_structure_smoke.py
+
       - name: Run documented LSV/XRD/Raman/FTIR/thermal/sorption/composition examples from installed wheel
         run: |
           .venv-smoke/bin/python examples/lsv_quickstart.py
