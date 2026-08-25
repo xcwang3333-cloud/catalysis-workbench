@@ -56,8 +56,11 @@ Checkpoint date: 2026-08-25.
 - v0.6 block-2 completion-state docs sync: Issue #156 / PR #157 — complete at `c597fdaba7509a0c6c4cf6088c7367c94cec0547`.
 - v0.6 block 3, band-center / DOS first-moment analysis: Issue #158 / PR #159 — complete at `cdbc4822592cf43033af1f0242793d5912098b7c`.
 - Block-3 final head `415258a2ff7547af4fd9b2717404d06c341c0de1` passed CI #397 / run `32814966504` and final-head reviews `5015455765`, `5015456841` before squash merge.
-- Active stage: **Issue #160 — synchronize block-3 completion state into central documentation**.
-- v0.6 block 4 (Bader-result parsing + explicit charge accounting) starts only after #160 is complete and `main` is reverified.
+- v0.6 block-3 completion-state docs sync: Issue #160 / PR #161 — complete at `c1a6ed407f3081dec2da535e4e7d5b571f9a8012`.
+- v0.6 block 4, Bader-result parsing + explicit charge accounting: Issue #162 / PR #163 — complete at `e2b38c243a664913fb31fca6ed31744e7190d957`.
+- Block-4 final head `f436186df908a8185e196f120d90ae392ee62fc6` passed CI #405 / run `32818958204` and final-head reviews `5015794214`, `5015796101` before squash merge.
+- Active stage: **Issue #164 — synchronize block-4 completion state into central documentation**.
+- v0.6 block 5 (COHP/ICOHP parsing + bonding analysis) starts only after #164 is complete and `main` is reverified.
 
 Live GitHub Issue/PR/tag state remains authoritative if this checkpoint becomes stale.
 
@@ -72,7 +75,7 @@ Detailed long-range scope is maintained in [`ROADMAP.md`](ROADMAP.md).
 | v0.3.x | FTIR, thermal analysis, basic gas sorption, ICP/composition | complete/released as v0.3.0 |
 | v0.4.x | shared fitting, XPS, EIS, quantitative BET, product calibration | complete/released as v0.4.0; GitHub Release published; PyPI deferred |
 | v0.5.x | XAS/XANES, FT/WT-EXAFS, EXAFS summaries, structures/geometry/static visualization, basic DFT energetics | complete/released as v0.5.0; GitHub Release published; PyPI deferred |
-| v0.6.x | electronic structure and catalysis thermodynamics | architecture + blocks 1–3 complete; block 4 next after #160 |
+| v0.6.x | electronic structure and catalysis thermodynamics | architecture + blocks 1–4 complete; block 5 next after #164 |
 | v0.7.x | advanced computational visualization | planned |
 | v0.8.x | operando/time-resolved analysis | planned |
 | v0.9.x | reproducible batch workflows and first interactive editor | planned |
@@ -228,9 +231,19 @@ Issue #158 / PR #159 delivered CatalysisWorkbench-owned immutable `BandCenterRes
 
 Block-3 final head `415258a2ff7547af4fd9b2717404d06c341c0de1` passed CI #397 / run `32814966504` and final-head reviews `5015455765`, `5015456841` before squash merge `cdbc4822592cf43033af1f0242793d5912098b7c`.
 
+### Block-3 completion-state sync — complete
+
+Issue #160 / PR #161 synchronized the merged block-3 state into central documentation at `c1a6ed407f3081dec2da535e4e7d5b571f9a8012` before block 4 began.
+
+### Bader result parsing + explicit charge accounting — complete
+
+Issue #162 / PR #163 delivered CatalysisWorkbench-owned immutable raw and reference-derived Bader state plus a narrow standard `ACF.dat` reader. Raw producer `CHARGE` values are retained explicitly as `bader_electrons`; optional `AtomicStructure` mapping is direct-order only with a caller-supplied Cartesian tolerance; and charge accounting derives `electron_transfer = N_Bader - N_reference` and `partial_charge = N_reference - N_Bader` only from caller-supplied reference populations and provenance. No external partitioner is executed, no POTCAR/ZVAL or oxidation state is inferred, and malformed/reordered/incompatible state fails closed.
+
+Block-4 final head `f436186df908a8185e196f120d90ae392ee62fc6` passed CI #405 / run `32818958204` and final-head reviews `5015794214`, `5015796101` before squash merge `e2b38c243a664913fb31fca6ed31744e7190d957`.
+
 ### Current completion-state sync
 
-Issue #160 is the docs-only synchronization checkpoint after block 3. It records merged reality in central plans without adding Bader parsing or charge-accounting code. Block 4 begins only after #160 merges and `main` is reverified.
+Issue #164 is the docs-only synchronization checkpoint after block 4. It records merged reality in central plans without adding COHP/ICOHP parsing or bonding-analysis code. Block 5 begins only after #164 merges and `main` is reverified.
 
 ## Mandatory development loop
 
@@ -323,4 +336,4 @@ After each merged scientific Issue, update only documentation whose statements b
 - preceding Issue closure/completion;
 - version/tag/publication boundaries.
 
-Issue #160 is the active v0.6 block-3 completion-state documentation checkpoint. After it merges, reverify `main`, Issue #160 closure, immutable `v0.5.0`, immutable `v0.4.0`, distribution/runtime version `0.5.0`, and PyPI-deferred state. Then start block 4 (Bader-result parsing + explicit charge accounting) from that exact verified `main` baseline using the frozen order in `V0_6_PLAN.md`.
+Issue #164 is the active v0.6 block-4 completion-state documentation checkpoint. After it merges, reverify `main`, Issue #164 closure, immutable `v0.5.0`, immutable `v0.4.0`, distribution/runtime version `0.5.0`, and PyPI-deferred state. Then start block 5 (COHP/ICOHP parsing + bonding analysis) from that exact verified `main` baseline using the frozen order in `V0_6_PLAN.md`.
