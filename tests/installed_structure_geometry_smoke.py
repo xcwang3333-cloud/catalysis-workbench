@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-import numpy as np
-
 import catalysis_workbench.computation as cw
+import numpy as np
 
 
 structure = cw.AtomicStructure(
