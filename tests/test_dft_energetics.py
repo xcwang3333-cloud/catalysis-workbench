@@ -129,7 +129,7 @@ def test_generic_linear_combination_retains_fractional_negative_and_zero_terms()
     assert result.value_ev == pytest.approx(-5.0)
     assert result.terms[-1].coefficient == 0.0
 
-    with pytest.raises(DFTEnergeticsError, match="unique entry keys"):
+    with pytest.raises(DFTEnergeticsError, match="entry keys must be unique"):
         EnergyCombinationResult(
             ledger_digest=ledger.digest,
             terms=(EnergyTerm("x", 1.0), EnergyTerm("x", -1.0)),
