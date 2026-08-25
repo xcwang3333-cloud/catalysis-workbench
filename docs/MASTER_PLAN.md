@@ -22,61 +22,20 @@ Checkpoint date: 2026-08-25.
 
 - Repository: `xcwang3333-cloud/catalysis-workbench`.
 - Stable integration branch: `main`.
-- Current v0.6 architecture baseline: `3803e014376a7edb22d6a9a5b6480541742499be` after Issue #146 / PR #147.
-- v0.5 scientific-completion baseline: `a7ebd009ec83b0aeb068ad2d2f6712c17a783f1f`.
-- Completion-state docs merge: `8c958ffc29a36afa9340cada2239b51520c87a3d` (#134/#135).
-- v0.5 Gate A: #136/#137 — complete at `0ffcd7e4a89340d993468039ba83b44bc7638050`.
-- v0.5 Gate B: #138/#139 — complete at release commit `9400ac0044ac333d2cae228554c08d955a816a4c`.
-- Gate-B final head `b95841ed472aff1fa4d05af7335547ee5c3cd611` passed CI #360 / run `32800514038` and reviews `5014348449`, `5014349058`.
-- Distribution/runtime version is `0.5.0`.
-- Gate C / Issue #142 is complete; tag `v0.5.0` resolves exactly to `9400ac0044ac333d2cae228554c08d955a816a4c` and reads distribution/runtime version `0.5.0` through the tag.
-- The public GitHub Release `CatalysisWorkbench v0.5.0` is published from the existing verified tag; Issue #144 is complete.
-- Final v0.5 post-release documentation synchronization Issue #143 is complete/closed; its merge is `bed5c6e750a6066baa8daa21492aa9eb90e8bca8`.
-- Released v0.4 tag: `v0.4.0 -> bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6`, immutable and independently reverse-verified.
-- The v0.4 GitHub Release is published from the existing `v0.4.0` tag.
-- `v0.3.0` remains fixed on release commit `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`.
-- PyPI/package-registry publication is explicitly deferred; Issue #113 is closed `not_planned`.
-- v0.5 architecture checkpoint: Issue #115 / PR #116 — complete.
-- XAS/XANES: Issue #117 / PR #118 — complete.
-- FT-EXAFS: Issue #119 / PR #120 — complete.
-- WT-EXAFS: Issue #121 / PR #122 — complete.
-- EXAFS fitting-result summaries: Issue #123 / PR #124 — complete.
-- Atomic-structure model/adapters: Issue #125 / PR #126 — complete.
-- Geometry/coordination/structure comparison: Issue #127 / PR #129 — complete.
-- Static structure visualization: Issue #130 / PR #131 — complete.
-- Basic DFT energetics: Issue #132 / PR #133 — complete.
-- v0.5 scientific implementation: **complete**.
-- v0.6 architecture checkpoint: Issue #146 / PR #147 — complete at `3803e014376a7edb22d6a9a5b6480541742499be`.
-- v0.6 architecture central-document synchronization: Issue #148 / PR #149 — complete at `aac05d4426c15c8932c608d07ef42e4dc07b09ce`.
-- v0.6 block 1, electronic-structure + volumetric semantics/adapters: Issue #150 / PR #151 — complete at `58023070bf7f642748b69e99281a5ed7ed4d40df`.
-- Block-1 final head `229fa5c3ec9225bde8afd1931cefe0dea521eabe` passed CI #376 / run `32808329764` and final-head reviews `5014903632`, `5014904435` before squash merge.
-- v0.6 block-1 completion-state docs sync: Issue #152 / PR #153 — complete at `39df1101d1ed7dde5c4ab6d264b8796c27c97620`.
-- v0.6 block 2, DOS/PDOS processing + passive plotting: Issue #154 / PR #155 — complete at `09e63e72e1b79d8c151c97769d4bfbd2fb6a366f`.
-- Block-2 final head `1e18c838f0ce0203ae0f841fbde3786c00970d16` passed CI #388 / run `32810513894` and final-head reviews `5015058136`, `5015059007` before squash merge.
-- v0.6 block-2 completion-state docs sync: Issue #156 / PR #157 — complete at `c597fdaba7509a0c6c4cf6088c7367c94cec0547`.
-- v0.6 block 3, band-center / DOS first-moment analysis: Issue #158 / PR #159 — complete at `cdbc4822592cf43033af1f0242793d5912098b7c`.
-- Block-3 final head `415258a2ff7547af4fd9b2717404d06c341c0de1` passed CI #397 / run `32814966504` and final-head reviews `5015455765`, `5015456841` before squash merge.
-- v0.6 block-3 completion-state docs sync: Issue #160 / PR #161 — complete at `c1a6ed407f3081dec2da535e4e7d5b571f9a8012`.
-- v0.6 block 4, Bader-result parsing + explicit charge accounting: Issue #162 / PR #163 — complete at `e2b38c243a664913fb31fca6ed31744e7190d957`.
-- Block-4 final head `f436186df908a8185e196f120d90ae392ee62fc6` passed CI #405 / run `32818958204` and final-head reviews `5015794214`, `5015796101` before squash merge.
-- v0.6 block-4 completion-state docs sync: Issue #164 / PR #165 — complete at `308ca1243f60bd28b981e3d51dbff3532de16e28`.
-- v0.6 block 5, COHP/ICOHP parsing + explicit bonding analysis: Issue #166 / PR #167 — complete at `415f8de126bac6ad2f6086f68152c472fb4064f2`.
-- Block-5 final head `c3bcf5caea142ee4165ebc45ae5a64ef7b7b9cde` passed CI #417 / run `32822387619` and final-head reviews `5016125861`, `5016128385` before squash merge.
-- v0.6 block-5 completion-state docs sync: Issue #168 / PR #169 — complete at `8cc7ed82497ee6245a65091b88b61eb9153128c5`.
-- v0.6 block 6, explicit geometry–bonding correlation datasets: Issue #170 / PR #171 — complete at `f66bcae9bd254cf3abe12e8f161b0a38080c7ad3`.
-- Block-6 final head `98222d17513db661ead7945ae212d665458a8d00` passed CI #424 / run `32825053421` and final-head reviews `5016939992`, `5016943168` before squash merge.
-- v0.6 block-6 completion-state docs sync: Issue #172 / PR #173 — complete at `9d6d8e2868f38336ba1a8e25adab3fd3b787df1a`.
-- v0.6 block 7, explicit CHE/free-energy thermodynamics: Issue #174 / PR #175 — complete at `e25610d56eb414ac6aedae07874042d3f4edd194`.
-- Block-7 final head `3d008e98281ec95a4f6fd7310db18be97f8a36f3` passed CI #434 / run `32833845931` and final-head reviews `5017464310`, `5017466412` before squash merge.
-- v0.6 block-7 completion-state docs sync: Issue #176 / PR #177 — complete at `917500868591fe6793172fec44d943b8a8a36930`.
-- v0.6 block 8, passive free-energy diagram state and plotting: Issue #178 / PR #179 — complete at `0d8dd67f716c47b4c611dd56cfc0cb243db3fb29`.
-- Block-8 final head `d2046565ab4ab490ed3169e02c03b2d369b4ad74` passed CI #439 / run `32836733241` and final-head reviews `5017795338`, `5017796858` before squash merge.
-- v0.6 block-8 completion-state docs sync: Issue #180 / PR #181 — complete at `cec7a9eae1ae256a82ee72b74a80039c6b164bda`.
-- v0.6 block 9, charge-density difference with strict co-registration validation: Issue #182 / PR #183 — complete at `f47d2165f282c8fe2745d1bd50ed32886b0f2054`.
-- Block-9 final head `5312c16cfd877a6fab1346c31e9f0a252be45f57` passed CI #447 / run `32839258539` and final-head reviews `5018036286`, `5018037530` before squash merge.
-- All nine v0.6 scientific implementation blocks are complete.
-- Active stage: **Issue #184 — synchronize v0.6 scientific completion state before Gate A**.
-- Gate A frozen-scope release hardening starts only after #184 is complete and `main` is reverified.
+- Exact pre-sync baseline: `a854b5d4ab6168d857f9f783c9b4c1827e064972`, the squash merge of v0.7 architecture Issue #197 / PR #198.
+- Distribution/runtime version is `0.6.0`.
+- Released tag `v0.6.0 -> c7793b309f41d174c14534bd6d4acdacc2a57636` is immutable.
+- The public GitHub Release `CatalysisWorkbench v0.6.0` is published from that existing tag.
+- Final v0.6 post-release documentation synchronization is complete at `fcc8c0ce73953c8d7468a58dcb0c172e520c4202` through Issue #195 / PR #196.
+- All nine v0.6 scientific blocks, Gate A, Gate B, Gate C, GitHub Release publication, and final post-release documentation synchronization are complete.
+- `v0.5.0 -> 9400ac0044ac333d2cae228554c08d955a816a4c` remains immutable; its public GitHub Release is complete.
+- `v0.4.0 -> bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6` remains immutable; its public GitHub Release is complete.
+- PyPI/package-registry publication remains explicitly deferred.
+- v0.7 architecture checkpoint: Issue #197 / PR #198 — complete at `a854b5d4ab6168d857f9f783c9b4c1827e064972`.
+- Architecture final head `d15fd0ab0d86901846c46d7cd09837c9dbf8d9d7` passed CI #460 / run `32850343815` and exact-head reviews `5019179196`, `5019180975`; unresolved review threads were zero before merge.
+- [`V0_7_PLAN.md`](V0_7_PLAN.md) is the release-specific authority for the frozen seven-block v0.7 scope, scientific/visualization contracts, dependency order, prior-art/license decisions, testing strategy, and release boundaries.
+- Active stage: **Issue #199 — synchronize the completed v0.7 architecture checkpoint into central documentation**.
+- v0.7 Block 1, shared scalar-field state plus renderer-neutral volumetric scene/slice/isosurface specifications, begins only after #199 merges and `main` plus release boundaries are reverified.
 
 Live GitHub Issue/PR/tag state remains authoritative if this checkpoint becomes stale.
 
@@ -91,8 +50,8 @@ Detailed long-range scope is maintained in [`ROADMAP.md`](ROADMAP.md).
 | v0.3.x | FTIR, thermal analysis, basic gas sorption, ICP/composition | complete/released as v0.3.0 |
 | v0.4.x | shared fitting, XPS, EIS, quantitative BET, product calibration | complete/released as v0.4.0; GitHub Release published; PyPI deferred |
 | v0.5.x | XAS/XANES, FT/WT-EXAFS, EXAFS summaries, structures/geometry/static visualization, basic DFT energetics | complete/released as v0.5.0; GitHub Release published; PyPI deferred |
-| v0.6.x | electronic structure and catalysis thermodynamics | all nine scientific blocks complete; completion-state sync #184 active before Gate A |
-| v0.7.x | advanced computational visualization | planned |
+| v0.6.x | electronic structure and catalysis thermodynamics | complete/released as v0.6.0; GitHub Release published; PyPI deferred |
+| v0.7.x | advanced computational visualization | architecture frozen through #197/#198; central sync #199 active before Block 1 |
 | v0.8.x | operando/time-resolved analysis | planned |
 | v0.9.x | reproducible batch workflows and first interactive editor | planned |
 | v1.0.0 | stable personal catalysis data workbench and local GUI | planned |
@@ -307,9 +266,31 @@ Issue #182 / PR #183 delivered explicit co-registered volumetric difference arit
 
 Block-9 final head `5312c16cfd877a6fab1346c31e9f0a252be45f57` passed CI #447 / run `32839258539` and final-head reviews `5018036286`, `5018037530` before squash merge `f47d2165f282c8fe2745d1bd50ed32886b0f2054`.
 
-### Current scientific-completion sync
+### v0.6 release completion — complete
 
-Issue #184 is the docs-only checkpoint after all nine v0.6 scientific blocks. It records merged scientific completion before Gate A. Gate A begins only after #184 merges and `main` plus release boundaries are reverified.
+All nine v0.6 scientific blocks were synchronized through #184/#185 before release hardening. Gate A #186/#187, Gate B #188/#189, Gate C #192, GitHub Release #193, and final post-release documentation synchronization #195/#196 are complete. The released tag remains `v0.6.0 -> c7793b309f41d174c14534bd6d4acdacc2a57636`; distribution/runtime version is `0.6.0`; the public GitHub Release is published; PyPI remains deferred.
+
+## v0.7 execution status
+
+The reviewed v0.7 architecture, scientific/visualization semantics, dependency boundaries, implementation order, prior-art/license decisions, testing strategy, and release handoff are maintained in [`V0_7_PLAN.md`](V0_7_PLAN.md).
+
+### Architecture checkpoint — complete
+
+Issue #197 / PR #198 froze the seven-block v0.7 architecture before implementation and merged at `a854b5d4ab6168d857f9f783c9b4c1827e064972`. Final head `d15fd0ab0d86901846c46d7cd09837c9dbf8d9d7` passed CI #460 / run `32850343815` and exact-head architecture/scientific plus API/compatibility/license reviews `5019179196`, `5019180975`.
+
+The frozen implementation order is:
+
+1. shared scalar-field state + renderer-neutral volumetric scene/slice/isosurface specifications;
+2. charge-density-difference + electron-density + ELF visualization;
+3. band-structure state/adapters + passive band plotting;
+4. PROCAR projection processing + fat-band plotting;
+5. LOCPOT planar-potential/work-function processing + plotting;
+6. NEB/barrier retained state + passive plotting;
+7. advanced volumetric 3D backend/rendering/export.
+
+### Architecture central-document sync — active
+
+Issue #199 is the docs-only synchronization checkpoint after architecture merge #198. Block 1 begins only after #199 merges and `main`, `v0.6.0`, distribution/runtime `0.6.0`, and PyPI-deferred state are reverified.
 
 ## Mandatory development loop
 
@@ -382,7 +363,9 @@ After squash merge, re-read `main`. When connector visibility does not expose a 
 - [`../README.md`](../README.md): user-facing overview, installation, public capability summary and links.
 - [`MASTER_PLAN.md`](MASTER_PLAN.md): project-wide execution order, checkpoint summary, governance and quality gates.
 - [`ROADMAP.md`](ROADMAP.md): long-range release scope; not a per-commit log.
-- [`V0_6_PLAN.md`](V0_6_PLAN.md): v0.6 architecture, frozen dependency order, scientific/API semantics, prior-art/license decisions, test strategy, and v0.7 handoff.
+- [`V0_7_PLAN.md`](V0_7_PLAN.md): v0.7 architecture, frozen seven-block dependency order, scientific/visualization semantics, prior-art/license decisions, testing strategy, and release handoff.
+- [`V0_6_PLAN.md`](V0_6_PLAN.md): retained v0.6 architecture, frozen dependency order, scientific/API semantics, prior-art/license decisions, test strategy, and v0.7 handoff.
+- [`V0_6_RELEASING.md`](V0_6_RELEASING.md): retained v0.6 Gate A/B/C procedure and release evidence.
 - [`V0_5_PLAN.md`](V0_5_PLAN.md): v0.5 architecture, dependency order, scientific completion state and release handoff.
 - [`V0_5_RELEASING.md`](V0_5_RELEASING.md): v0.5 Gate A/B/C procedure and release evidence.
 - [`V0_4_PLAN.md`](V0_4_PLAN.md) / [`V0_4_RELEASING.md`](V0_4_RELEASING.md): retained v0.4 scientific/release history.
@@ -402,4 +385,4 @@ After each merged scientific Issue, update only documentation whose statements b
 - preceding Issue closure/completion;
 - version/tag/publication boundaries.
 
-Issue #184 is the active v0.6 scientific-completion documentation checkpoint. After it merges, reverify `main`, Issue #184 closure, immutable `v0.5.0`, immutable `v0.4.0`, distribution/runtime version `0.5.0`, and PyPI-deferred state. Then start Gate A frozen-scope release hardening from that exact verified `main` baseline. Gate A must retain version `0.5.0`; Gate B is the later final-version candidate; Gate C tag creation remains a separate explicit user-authorization boundary.
+Issue #199 is the active v0.7 architecture central-document synchronization checkpoint. After it merges, reverify `main`, Issue #199 closure, immutable `v0.6.0 -> c7793b309f41d174c14534bd6d4acdacc2a57636`, distribution/runtime version `0.6.0`, public v0.6 GitHub Release state, and PyPI-deferred state. Then start v0.7 Block 1 from that exact verified `main` baseline. Block 1 must follow [`V0_7_PLAN.md`](V0_7_PLAN.md) and may not broaden into Block 2+ functionality or release/version/tag actions.

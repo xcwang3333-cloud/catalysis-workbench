@@ -145,20 +145,23 @@ Release-gate evidence:
 - Gate B / #188 / #189: final head `4544a464ab54e13408e3db23a68acf565f764328`, CI #453 / run `32845155122`, reviews `5018619904`, `5018620923`, squash merge/reviewed release commit `c7793b309f41d174c14534bd6d4acdacc2a57636`, distribution/runtime version finalized to `0.6.0`.
 - Gate C / #192: tag `v0.6.0` created and reverse-verified exactly on `c7793b309f41d174c14534bd6d4acdacc2a57636`; distribution/runtime through the tag is `0.6.0`.
 - GitHub Release / #193: `CatalysisWorkbench v0.6.0` publicly published from the existing tag with reviewed release notes.
-- Final post-release documentation synchronization / #195: current docs-only closeout; it does not alter the release tag or release commit.
+- Final post-release documentation synchronization / #195 / #196: complete at `fcc8c0ce73953c8d7468a58dcb0c172e520c4202`; it does not alter the release tag or release commit.
 
 Charge-density-difference visualization remains v0.7, and VASP/HPC job management remains outside the current project scope.
 
 ## v0.7.x — Advanced computational visualization
 
-- Charge-density-difference isosurfaces and slices.
-- ELF / charge-density visualization.
-- Band-structure and fat-band / PROCAR plotting.
-- Work-function / LOCPOT processing.
-- NEB / barrier plots.
-- Advanced volumetric rendering.
+The reviewed v0.7 architecture, scientific/visualization contracts, dependency order, prior-art/license decisions, and testing strategy are frozen in [`V0_7_PLAN.md`](V0_7_PLAN.md). Architecture checkpoint Issue #197 / PR #198 is complete at squash merge `a854b5d4ab6168d857f9f783c9b4c1827e064972`; final head `d15fd0ab0d86901846c46d7cd09837c9dbf8d9d7` passed CI #460 / run `32850343815` and exact-head reviews `5019179196`, `5019180975`. Issue #199 is the current docs-only central synchronization checkpoint. No v0.7 implementation block is complete yet.
 
-HPC/VASP job submission and complete workflow management remain outside the current project scope.
+1. **Shared scalar-field state + renderer-neutral volumetric scene/slice/isosurface specifications — next Block 1 after #199.**
+2. **Charge-density-difference + electron-density + ELF visualization.**
+3. **Band-structure state/adapters + passive band plotting.**
+4. **PROCAR projection processing + fat-band plotting.**
+5. **LOCPOT planar-potential/work-function processing + plotting.**
+6. **NEB/barrier retained state + passive plotting.**
+7. **Advanced volumetric 3D backend/rendering/export.**
+
+VASP/HPC job submission and complete workflow management remain outside the current project scope.
 
 ## v0.8.x — Operando and time-resolved data
 
