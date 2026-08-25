@@ -122,6 +122,12 @@ from .thermal import (
     validate_tga_series,
     validate_thermal_overlay,
 )
+from .wt_exafs import (
+    EXAFSWTComponent,
+    EXAFSWTResult,
+    EXAFSWTSpec,
+    cauchy_wt_exafs,
+)
 from .xas import (
     XANESNormalizationResult,
     XANESNormalizationSpec,
@@ -233,6 +239,32 @@ def plot_ft_exafs(
     from .exafs_plotting import plot_ft_exafs as _plot_ft_exafs
 
     return _plot_ft_exafs(data, spec, preset=preset)
+
+
+def plot_wt_exafs(
+    result: EXAFSWTResult,
+    spec: FigureSpec | None = None,
+    *,
+    component: EXAFSWTComponent = "magnitude",
+    preset: str = "publication",
+    cmap: str | None = None,
+    vmin: float | None = None,
+    vmax: float | None = None,
+    show_colorbar: bool = False,
+) -> tuple[Figure, Axes]:
+    """Lazily render one retained WT-EXAFS k-R map component."""
+    from .wt_exafs_plotting import plot_wt_exafs as _plot_wt_exafs
+
+    return _plot_wt_exafs(
+        result,
+        spec,
+        component=component,
+        preset=preset,
+        cmap=cmap,
+        vmin=vmin,
+        vmax=vmax,
+        show_colorbar=show_colorbar,
+    )
 
 
 def plot_ftir(
@@ -382,6 +414,9 @@ __all__ = [
     "EXAFSFTSpec",
     "EXAFSKSpaceResult",
     "EXAFSKSpaceSpec",
+    "EXAFSWTComponent",
+    "EXAFSWTResult",
+    "EXAFSWTSpec",
     "FTIRBand",
     "FTIRBandMeasurement",
     "FTIRBaselineFit",
@@ -433,6 +468,7 @@ __all__ = [
     "XRDError",
     "XRDProcessingConfig",
     "XRDReferencePattern",
+    "cauchy_wt_exafs",
     "convert_composition_table",
     "convert_composition_unit",
     "convert_relative_pressure",
@@ -458,6 +494,7 @@ __all__ = [
     "plot_raman",
     "plot_sorption",
     "plot_thermal",
+    "plot_wt_exafs",
     "plot_xanes",
     "plot_xps_fit",
     "plot_xrd",
