@@ -36,6 +36,16 @@ Checkpoint date: 2026-08-25.
 - The v0.4 GitHub Release is published from the existing `v0.4.0` tag.
 - `v0.3.0` remains fixed on release commit `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`.
 - PyPI/package-registry publication is explicitly deferred; Issue #113 is closed `not_planned`.
+- v0.5 architecture checkpoint: Issue #115 / PR #116 — complete.
+- XAS/XANES: Issue #117 / PR #118 — complete.
+- FT-EXAFS: Issue #119 / PR #120 — complete.
+- WT-EXAFS: Issue #121 / PR #122 — complete.
+- EXAFS fitting-result summaries: Issue #123 / PR #124 — complete.
+- Atomic-structure model/adapters: Issue #125 / PR #126 — complete.
+- Geometry/coordination/structure comparison: Issue #127 / PR #129 — complete.
+- Static structure visualization: Issue #130 / PR #131 — complete.
+- Basic DFT energetics: Issue #132 / PR #133 — complete.
+- v0.5 scientific implementation: **complete**.
 - v0.6 architecture checkpoint: Issue #146 / PR #147 — complete at `3803e014376a7edb22d6a9a5b6480541742499be`.
 - Active stage: **Issue #148 — synchronize the completed v0.6 architecture into central documentation before scientific implementation block 1**.
 - No v0.6 scientific implementation block starts until #148 is complete and `main` is reverified.
