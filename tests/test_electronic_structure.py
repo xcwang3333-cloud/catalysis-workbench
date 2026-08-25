@@ -111,6 +111,39 @@ def test_projection_must_match_attached_structure() -> None:
         )
 
 
+def test_channel_digest_includes_full_projection_identity() -> None:
+    structure = _structure()
+    projection_a = DOSProjection(
+        key="shared-display-key",
+        kind="site-orbital",
+        site_index=0,
+        site_key=structure.site_keys[0],
+        element="Fe",
+        orbital="dxy",
+    )
+    projection_b = DOSProjection(
+        key="shared-display-key",
+        kind="site-orbital",
+        site_index=1,
+        site_key=structure.site_keys[1],
+        element="O",
+        orbital="dxy",
+    )
+    channel_a = DOSChannel(
+        projection_a,
+        "total",
+        [1.0, 2.0],
+        normalization_basis="site",
+    )
+    channel_b = DOSChannel(
+        projection_b,
+        "total",
+        [1.0, 2.0],
+        normalization_basis="site",
+    )
+    assert channel_a.digest != channel_b.digest
+
+
 def test_volumetric_grid_retains_physical_units_and_exact_integrals() -> None:
     structure = _structure()
     grid = VolumetricGrid(
