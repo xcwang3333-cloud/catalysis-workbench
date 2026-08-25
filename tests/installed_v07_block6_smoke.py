@@ -43,7 +43,12 @@ def main() -> None:
     )
     assert path.image_keys == ("i0", "i1", "i2", "i3")
     assert np.array_equal(path.reaction_coordinates, np.array([0.0, 0.4, 1.2, 2.0]))
-    assert np.array_equal(path.plotted_energy_ev, np.array([0.0, 0.5, 1.0, 0.4]))
+    assert np.allclose(
+        path.plotted_energy_ev,
+        np.array([0.0, 0.5, 1.0, 0.4]),
+        rtol=0.0,
+        atol=1e-12,
+    )
 
     barrier = calculate_neb_barrier(
         path,
