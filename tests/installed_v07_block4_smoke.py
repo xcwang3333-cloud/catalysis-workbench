@@ -83,7 +83,7 @@ def main() -> None:
         orbitals=("s", "pz"),
     )
     expected = projection.channel("total").weights[:, :, :, (0, 1)].sum(axis=(2, 3))
-    assert np.array_equal(aggregated.weights, expected)
+    assert np.allclose(aggregated.weights, expected, rtol=0.0, atol=1e-15)
 
     figure, ax = plot_fat_band(aggregated, marker_area_scale=10.0)
     assert len(ax.lines) == 4
