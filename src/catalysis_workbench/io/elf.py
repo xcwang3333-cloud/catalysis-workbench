@@ -13,9 +13,9 @@ import numpy as np
 from catalysis_workbench.computation import ScalarField, ScalarFieldError
 
 from .electronic_structure import (
-    ElectronicStructureIOError,
     _backend_import_error,
     _source_metadata,
+    ElectronicStructureIOError,
 )
 from .structure import StructureIOError, _convert_site_collection
 
@@ -41,7 +41,8 @@ def _version_tuple(text: str) -> tuple[int, int, int]:
         raise ElectronicStructureIOError(
             "pymatgen-core version must begin with a numeric YYYY.M.D triplet"
         )
-    return tuple(int(value) for value in match.groups())  # type: ignore[return-value]
+    first, second, third = match.groups()
+    return int(first), int(second), int(third)
 
 
 def _spin_token(value: object) -> str:
