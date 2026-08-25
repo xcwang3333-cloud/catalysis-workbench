@@ -11,6 +11,16 @@ from .bader import (
     bader_result_frame,
 )
 from .band_center import BandCenterError, BandCenterResult, calculate_band_center
+from .band_structure import (
+    BandEnergyChannel,
+    BandPathCoordinates,
+    BandPathDistanceSegment,
+    BandPathSegment,
+    BandStructureError,
+    BandStructureState,
+    band_path_coordinates,
+    reference_band_structure_to_fermi,
+)
 from .bonding import (
     BondingError,
     COHPChannel,
@@ -161,6 +171,12 @@ __all__ = [
     "BaderSiteResult",
     "BandCenterError",
     "BandCenterResult",
+    "BandEnergyChannel",
+    "BandPathCoordinates",
+    "BandPathDistanceSegment",
+    "BandPathSegment",
+    "BandStructureError",
+    "BandStructureState",
     "BondingError",
     "CHEProtonElectronResult",
     "CHEState",
@@ -231,6 +247,7 @@ __all__ = [
     "aggregate_dos",
     "bader_charge_frame",
     "bader_result_frame",
+    "band_path_coordinates",
     "build_correlation_dataset",
     "build_free_energy_diagram_series",
     "build_structure_scene",
@@ -264,6 +281,7 @@ __all__ = [
     "icohp_length_correlation",
     "reaction_free_energy",
     "reaction_free_energy_frame",
+    "reference_band_structure_to_fermi",
     "reference_dos_to_fermi",
     "relative_energies",
     "relative_energy_frame",
