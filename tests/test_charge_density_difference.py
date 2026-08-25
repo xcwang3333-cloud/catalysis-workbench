@@ -98,7 +98,7 @@ def test_hand_verifiable_2x2x2_difference_and_integral() -> None:
     assert result.grid_shape == (2, 2, 2)
     assert result.cell_volume_angstrom3 == pytest.approx(8.0)
     assert result.voxel_volume_angstrom3 == pytest.approx(1.0)
-    assert result.integrated_difference_electrons == pytest.approx(float(expected.sum()))
+    assert result.integrated_difference == pytest.approx(float(expected.sum()))
     assert result.density_unit == "1/angstrom^3"
     assert result.source_component == "total"
 

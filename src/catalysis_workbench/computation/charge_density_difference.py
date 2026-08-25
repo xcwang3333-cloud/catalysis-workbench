@@ -288,7 +288,7 @@ class ChargeDensityDifferenceResult:
         return self.difference_grid.voxel_volume_angstrom3
 
     @property
-    def integrated_difference_electrons(self) -> float:
+    def integrated_difference(self) -> float:
         return self.difference_grid.component_integrals["difference"]
 
     @property
@@ -352,7 +352,7 @@ def charge_density_difference_frame(
         "grid_shape": result.grid_shape,
         "cell_volume_angstrom3": result.cell_volume_angstrom3,
         "voxel_volume_angstrom3": result.voxel_volume_angstrom3,
-        "integrated_difference_electrons": result.integrated_difference_electrons,
+        "integrated_difference": result.integrated_difference,
         "lattice_tolerance_angstrom": result.lattice_tolerance_angstrom,
     }
     rows = [

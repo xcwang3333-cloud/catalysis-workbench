@@ -53,7 +53,7 @@ result = calculate_charge_density_difference(
     lattice_tolerance_angstrom=0.0,
 )
 assert np.array_equal(result.difference, np.full((2, 2, 2), 3.0))
-assert np.isclose(result.integrated_difference_electrons, 24.0)
+assert np.isclose(result.integrated_difference, 24.0)
 frame = charge_density_difference_frame(result)
 assert list(frame["role"]) == ["combined", "reference"]
 assert list(frame["formula_coefficient"]) == [1.0, -1.0]
