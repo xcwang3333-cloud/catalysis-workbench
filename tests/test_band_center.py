@@ -194,6 +194,20 @@ def test_result_is_immutable_deterministic_and_retains_source_provenance() -> No
         first.center_ev = 99.0  # type: ignore[misc]
 
 
+def test_trace_display_key_does_not_change_scientific_band_center_digest() -> None:
+    first_trace = _trace((-1.0, 0.0, 1.0), (1.0, 2.0, 1.0), key="first-display")
+    second_trace = _trace((-1.0, 0.0, 1.0), (1.0, 2.0, 1.0), key="second-display")
+
+    assert first_trace.digest == second_trace.digest
+    first = calculate_band_center(first_trace, -1.0, 1.0, denominator_tolerance=1e-12)
+    second = calculate_band_center(second_trace, -1.0, 1.0, denominator_tolerance=1e-12)
+
+    assert first.source_trace_key == "first-display"
+    assert second.source_trace_key == "second-display"
+    assert first.source_trace_digest == second.source_trace_digest
+    assert first.digest == second.digest
+
+
 def test_preaggregated_spin_trace_is_integrated_without_hidden_recombination() -> None:
     dos = ElectronicDOS(
         energy=ElectronicEnergyAxis((-1.0, 0.0, 1.0), source_fermi_ev=0.0),
@@ -230,10 +244,8 @@ def test_density_scaling_changes_integrals_but_not_center() -> None:
     assert second.digest != first.digest
 
 
-def test_direct_result_reconstruction_rejects_inconsistent_center() -> None:
-    trace = _trace((-1.0, 0.0, 1.0), (1.0, 2.0, 1.0))
-    result = calculate_band_center(trace, -1.0, 1.0, denominator_tolerance=1e-12)
-    kwargs = {
+def _reconstruction_kwargs(result: BandCenterResult) -> dict[str, object]:
+    return {
         field: getattr(result, field)
         for field in (
             "source_trace_key",
@@ -256,8 +268,25 @@ def test_direct_result_reconstruction_rejects_inconsistent_center() -> None:
             "denominator_tolerance",
         )
     }
+
+
+def test_direct_result_reconstruction_rejects_inconsistent_center() -> None:
+    trace = _trace((-1.0, 0.0, 1.0), (1.0, 2.0, 1.0))
+    result = calculate_band_center(trace, -1.0, 1.0, denominator_tolerance=1e-12)
+    kwargs = _reconstruction_kwargs(result)
+
     with pytest.raises(BandCenterError, match="numerator / denominator"):
         BandCenterResult(**kwargs, center_ev=result.center_ev + 1.0)
+
+
+def test_direct_result_reconstruction_rejects_unknown_energy_reference_kind() -> None:
+    trace = _trace((-1.0, 0.0, 1.0), (1.0, 2.0, 1.0))
+    result = calculate_band_center(trace, -1.0, 1.0, denominator_tolerance=1e-12)
+    kwargs = _reconstruction_kwargs(result)
+    kwargs["energy_reference_kind"] = "unreviewed-reference"
+
+    with pytest.raises(BandCenterError, match="energy_reference_kind"):
+        BandCenterResult(**kwargs, center_ev=result.center_ev)
 
 
 def test_band_center_module_remains_matplotlib_lazy_in_fresh_interpreter() -> None:
