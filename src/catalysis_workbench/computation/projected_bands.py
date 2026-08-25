@@ -277,6 +277,8 @@ class AggregatedBandProjection:
             raise BandProjectionError("site_indices must not contain duplicates")
         if any(index >= self.band_structure.structure.site_count for index in site_indices):
             raise BandProjectionError("site_indices exceed the associated structure")
+        if site_indices != tuple(sorted(site_indices)):
+            raise BandProjectionError("site_indices must follow retained source order")
 
         site_keys = tuple(_nonblank(value, name="site_key") for value in self.site_keys)
         elements = tuple(_nonblank(value, name="element") for value in self.elements)
@@ -284,6 +286,13 @@ class AggregatedBandProjection:
         if len(site_keys) != len(site_indices) or len(elements) != len(site_indices):
             raise BandProjectionError(
                 "site_keys and elements must match the explicit site_indices length"
+            )
+        structure = self.band_structure.structure
+        expected_site_keys = tuple(structure.site_keys[index] for index in site_indices)
+        expected_elements = tuple(structure.elements[index] for index in site_indices)
+        if site_keys != expected_site_keys or elements != expected_elements:
+            raise BandProjectionError(
+                "site_keys and elements must exactly match the associated structure sites"
             )
         if not orbitals or len(set(orbitals)) != len(orbitals):
             raise BandProjectionError("orbitals must be a non-empty unique explicit selection")
