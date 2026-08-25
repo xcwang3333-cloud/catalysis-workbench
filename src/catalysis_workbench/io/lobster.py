@@ -2,18 +2,18 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 
 from catalysis_workbench.computation.bonding import (
+    BondingError,
     COHPChannel,
     COHPResult,
     ICOHPBondSummary,
     ICOHPResult,
-    BondingError,
 )
 from catalysis_workbench.computation.electronic_structure import (
     ElectronicEnergyAxis,
@@ -32,20 +32,18 @@ def _backend_import_error(exc: ImportError) -> LobsterIOError:
     )
 
 
-def _required_text(value: object, *, name: str) -> str:
-    text = str(value).strip()
-    if not text:
+def _text(value: object, *, name: str) -> str:
+    result = str(value).strip()
+    if not result:
         raise LobsterIOError(f"{name} must not be blank")
-    return text
+    return result
 
 
 def _source_id(value: str | None) -> str | None:
-    if value is None:
-        return None
-    return _required_text(value, name="source_id")
+    return None if value is None else _text(value, name="source_id")
 
 
-def _reject_non_cohp_variant(parsed: Any) -> None:
+def _reject_variant(parsed: Any) -> None:
     flags = {
         "COOP": bool(getattr(parsed, "are_coops", False)),
         "COBI": bool(getattr(parsed, "are_cobis", False)),
@@ -62,15 +60,11 @@ def _reject_non_cohp_variant(parsed: Any) -> None:
 
 def _spin_token(value: object) -> str:
     name = getattr(value, "name", None)
-    if name is not None:
-        text = str(name).strip().lower()
-        if text in {"up", "down"}:
-            return text
-    raw_value = getattr(value, "value", None)
-    if raw_value == 1:
-        return "up"
-    if raw_value == -1:
-        return "down"
+    if name is not None and str(name).strip().lower() in {"up", "down"}:
+        return str(name).strip().lower()
+    raw = getattr(value, "value", None)
+    if raw in {1, -1}:
+        return "up" if raw == 1 else "down"
     text = str(value).strip().lower()
     if text in {"1", "spin.up", "up"}:
         return "up"
@@ -79,7 +73,7 @@ def _spin_token(value: object) -> str:
     raise LobsterIOError(f"unsupported LOBSTER spin identity {value!r}")
 
 
-def _physical_spin_items(
+def _spin_items(
     values: object,
     *,
     spin_polarized: bool,
@@ -106,7 +100,7 @@ def _physical_spin_items(
     return (("up", mapped["up"]), ("down", mapped["down"]))
 
 
-def _site_indices(values: object | None) -> tuple[int, ...]:
+def _site_pair(values: object | None) -> tuple[int, ...]:
     if values is None:
         return ()
     try:
@@ -114,8 +108,8 @@ def _site_indices(values: object | None) -> tuple[int, ...]:
     except TypeError as exc:
         raise LobsterIOError("LOBSTER bond sites must be iterable") from exc
     result: list[int] = []
-    for value in items:
-        raw = getattr(value, "index", value)
+    for item in items:
+        raw = getattr(item, "index", item)
         if isinstance(raw, bool):
             raise LobsterIOError("LOBSTER bond site indices must be integers")
         try:
@@ -130,20 +124,21 @@ def _site_indices(values: object | None) -> tuple[int, ...]:
     return tuple(result)
 
 
-def _orbital_descriptors(values: object) -> tuple[str, ...]:
+def _descriptors(values: object) -> tuple[str, ...]:
     if isinstance(values, str):
-        return (_required_text(values, name="orbital descriptor"),)
-    try:
-        items = tuple(values)  # type: ignore[arg-type]
-    except TypeError:
         items = (values,)
-    descriptors = tuple(_required_text(item, name="orbital descriptor") for item in items)
-    if not descriptors:
+    else:
+        try:
+            items = tuple(values)  # type: ignore[arg-type]
+        except TypeError:
+            items = (values,)
+    result = tuple(_text(item, name="orbital descriptor") for item in items)
+    if not result:
         raise LobsterIOError("orbital descriptors must not be empty")
-    return descriptors
+    return result
 
 
-def _bond_length(data: Mapping[str, object]) -> float | None:
+def _length(data: Mapping[str, object]) -> float | None:
     value = data.get("length")
     if value is None:
         return None
@@ -156,11 +151,11 @@ def _bond_length(data: Mapping[str, object]) -> float | None:
     return result
 
 
-def _positive_integer_exact(value: object, *, name: str) -> int:
+def _exact_positive_int(value: object, *, name: str) -> int:
     if isinstance(value, bool):
         raise LobsterIOError(f"{name} must be an integer")
     if isinstance(value, (int, np.integer)):
-        integer = int(value)
+        result = int(value)
     else:
         try:
             numeric = float(value)
@@ -168,53 +163,51 @@ def _positive_integer_exact(value: object, *, name: str) -> int:
             raise LobsterIOError(f"{name} must be an integer") from exc
         if not np.isfinite(numeric) or not numeric.is_integer():
             raise LobsterIOError(f"{name} must be an exact integer")
-        integer = int(numeric)
-    if integer <= 0:
+        result = int(numeric)
+    if result <= 0:
         raise LobsterIOError(f"{name} must be greater than zero")
-    return integer
+    return result
 
 
-def _bond_data_mapping(parsed: Any) -> tuple[tuple[str, Mapping[str, object]], ...]:
-    raw = getattr(parsed, "cohp_data", None)
+def _mapping(value: object, *, name: str) -> tuple[tuple[object, object], ...]:
     try:
-        items = tuple(dict(raw).items())
+        items = tuple(dict(value).items())
     except (TypeError, ValueError) as exc:
-        raise LobsterIOError("Cohpcar backend does not expose cohp_data mapping") from exc
-    concrete: list[tuple[str, Mapping[str, object]]] = []
-    for raw_label, raw_data in items:
-        label = _required_text(raw_label, name="COHP source label")
+        raise LobsterIOError(f"{name} must be mapping-like") from exc
+    if not items:
+        raise LobsterIOError(f"{name} must not be empty")
+    return items
+
+
+def _cohp_bonds(parsed: Any) -> tuple[tuple[str, Mapping[str, object]], ...]:
+    result: list[tuple[str, Mapping[str, object]]] = []
+    for raw_label, raw_data in _mapping(parsed.cohp_data, name="cohp_data"):
+        label = _text(raw_label, name="COHP source label")
         if label.lower() == "average":
             continue
         if not isinstance(raw_data, Mapping):
             raise LobsterIOError("COHP bond data must be mapping-like")
-        concrete.append((label, raw_data))
-    if not concrete:
+        result.append((label, raw_data))
+    if not result:
         raise LobsterIOError("COHPCAR contains no concrete bond entries")
-    labels = tuple(label for label, _ in concrete)
-    if len(set(labels)) != len(labels):
-        raise LobsterIOError("COHP source labels must be unique")
-    return tuple(concrete)
+    return tuple(result)
 
 
-def _channel_pairs(
+def _cohp_spin_pairs(
     data: Mapping[str, object],
     *,
     spin_polarized: bool,
 ) -> tuple[tuple[str, object, object], ...]:
-    cohp_items = _physical_spin_items(
-        data.get("COHP"),
-        spin_polarized=spin_polarized,
-        name="COHP",
-    )
-    icohp_items = _physical_spin_items(
+    cohp = _spin_items(data.get("COHP"), spin_polarized=spin_polarized, name="COHP")
+    integrated = _spin_items(
         data.get("ICOHP"),
         spin_polarized=spin_polarized,
         name="integrated COHP",
     )
-    icohp_map = dict(icohp_items)
-    if tuple(spin for spin, _ in cohp_items) != tuple(spin for spin, _ in icohp_items):
+    if tuple(spin for spin, _ in cohp) != tuple(spin for spin, _ in integrated):
         raise LobsterIOError("COHP and integrated COHP spin identities must match")
-    return tuple((spin, values, icohp_map[spin]) for spin, values in cohp_items)
+    integrated_map = dict(integrated)
+    return tuple((spin, values, integrated_map[spin]) for spin, values in cohp)
 
 
 def _convert_cohpcar(
@@ -223,23 +216,26 @@ def _convert_cohpcar(
     path: str | Path,
     source_id: str | None,
 ) -> COHPResult:
-    _reject_non_cohp_variant(parsed)
+    _reject_variant(parsed)
     try:
         energies = np.asarray(parsed.energies, dtype=np.float64)
         producer_fermi = float(parsed.efermi)
         spin_polarized = bool(parsed.is_spin_polarized)
     except (AttributeError, TypeError, ValueError) as exc:
-        raise LobsterIOError("Cohpcar backend does not expose valid energy/Fermi/spin state") from exc
+        raise LobsterIOError(
+            "Cohpcar backend does not expose valid energy/Fermi/spin state"
+        ) from exc
     if not np.isfinite(producer_fermi):
         raise LobsterIOError("LOBSTER producer Fermi value must be finite")
 
     channels: list[COHPChannel] = []
-    concrete = _bond_data_mapping(parsed)
-    for label, data in concrete:
+    bonds = _cohp_bonds(parsed)
+    for label, data in bonds:
         bond_key = f"bond:{label}"
-        length = _bond_length(data)
-        sites = _site_indices(data.get("sites"))
-        for spin, cohp, integrated in _channel_pairs(data, spin_polarized=spin_polarized):
+        for spin, cohp, integrated in _cohp_spin_pairs(
+            data,
+            spin_polarized=spin_polarized,
+        ):
             channels.append(
                 COHPChannel(
                     key=f"{bond_key}:spin:{spin}",
@@ -248,38 +244,30 @@ def _convert_cohpcar(
                     spin=spin,
                     cohp=cohp,
                     integrated_cohp=integrated,
-                    bond_length_angstrom=length,
-                    source_site_indices=sites,
+                    bond_length_angstrom=_length(data),
+                    source_site_indices=_site_pair(data.get("sites")),
                 )
             )
 
     orbital_state = getattr(parsed, "orb_res_cohp", None)
     if orbital_state:
-        try:
-            orbital_bonds = dict(orbital_state)
-        except (TypeError, ValueError) as exc:
-            raise LobsterIOError("orb_res_cohp must be mapping-like") from exc
-        concrete_labels = {label for label, _ in concrete}
-        for raw_label, raw_orbitals in orbital_bonds.items():
-            label = _required_text(raw_label, name="orbital-resolved bond label")
+        concrete_labels = {label for label, _ in bonds}
+        for raw_label, raw_orbitals in _mapping(orbital_state, name="orb_res_cohp"):
+            label = _text(raw_label, name="orbital-resolved bond label")
             if label not in concrete_labels:
                 raise LobsterIOError(
                     "orbital-resolved COHP label does not match a concrete bond entry"
                 )
-            try:
-                orbital_items = tuple(dict(raw_orbitals).items())
-            except (TypeError, ValueError) as exc:
-                raise LobsterIOError("orbital-resolved COHP state must be mapping-like") from exc
             bond_key = f"bond:{label}"
-            for raw_orbital_label, raw_data in orbital_items:
-                orbital_label = _required_text(raw_orbital_label, name="orbital label")
+            for raw_orbital_label, raw_data in _mapping(
+                raw_orbitals,
+                name="orbital-resolved COHP state",
+            ):
                 if not isinstance(raw_data, Mapping):
                     raise LobsterIOError("orbital-resolved COHP data must be mapping-like")
-                descriptors = _orbital_descriptors(raw_data.get("orbitals"))
+                orbital_label = _text(raw_orbital_label, name="orbital label")
                 orbital_key = f"orbital:{orbital_label}"
-                length = _bond_length(raw_data)
-                sites = _site_indices(raw_data.get("sites"))
-                for spin, cohp, integrated in _channel_pairs(
+                for spin, cohp, integrated in _cohp_spin_pairs(
                     raw_data,
                     spin_polarized=spin_polarized,
                 ):
@@ -291,11 +279,11 @@ def _convert_cohpcar(
                             spin=spin,
                             cohp=cohp,
                             integrated_cohp=integrated,
-                            bond_length_angstrom=length,
-                            source_site_indices=sites,
+                            bond_length_angstrom=_length(raw_data),
+                            source_site_indices=_site_pair(raw_data.get("sites")),
                             orbital_key=orbital_key,
                             orbital_label=orbital_label,
-                            orbital_descriptors=descriptors,
+                            orbital_descriptors=_descriptors(raw_data.get("orbitals")),
                         )
                     )
 
@@ -322,7 +310,7 @@ def read_lobster_cohp(
     *,
     source_id: str | None = None,
 ) -> COHPResult:
-    """Parse standard LOBSTER COHPCAR without changing source sign or Fermi reference."""
+    """Parse standard LOBSTER COHPCAR without changing source sign or reference."""
     try:
         from pymatgen.io.lobster import Cohpcar
     except ImportError as exc:
@@ -334,23 +322,13 @@ def read_lobster_cohp(
     return _convert_cohpcar(parsed, path=path, source_id=source_id)
 
 
-def _icohp_mapping(parsed: Any) -> tuple[tuple[str, Mapping[str, object]], ...]:
-    raw = getattr(parsed, "icohplist", None)
-    try:
-        items = tuple(dict(raw).items())
-    except (TypeError, ValueError) as exc:
-        raise LobsterIOError("Icohplist backend does not expose icohplist mapping") from exc
+def _icohp_bonds(parsed: Any) -> tuple[tuple[str, Mapping[str, object]], ...]:
     result: list[tuple[str, Mapping[str, object]]] = []
-    for raw_label, raw_data in items:
-        label = _required_text(raw_label, name="ICOHP source label")
+    for raw_label, raw_data in _mapping(parsed.icohplist, name="icohplist"):
+        label = _text(raw_label, name="ICOHP source label")
         if not isinstance(raw_data, Mapping):
             raise LobsterIOError("ICOHP bond data must be mapping-like")
         result.append((label, raw_data))
-    if not result:
-        raise LobsterIOError("ICOHPLIST contains no bond entries")
-    labels = tuple(label for label, _ in result)
-    if len(set(labels)) != len(labels):
-        raise LobsterIOError("ICOHP source labels must be unique")
     return tuple(result)
 
 
@@ -360,24 +338,23 @@ def _convert_icohplist(
     path: str | Path,
     source_id: str | None,
 ) -> ICOHPResult:
-    _reject_non_cohp_variant(parsed)
+    _reject_variant(parsed)
     spin_polarized = bool(getattr(parsed, "is_spin_polarized", False))
     bonds: list[ICOHPBondSummary] = []
-    for label, data in _icohp_mapping(parsed):
-        length = _bond_length(data)
+    for label, data in _icohp_bonds(parsed):
+        length = _length(data)
         if length is None:
             raise LobsterIOError("ICOHP bond length is required for standard ICOHPLIST")
-        number_of_bonds = _positive_integer_exact(
+        number_of_bonds = _exact_positive_int(
             data.get("number_of_bonds"),
             name="number_of_bonds",
         )
-        spin_items = _physical_spin_items(
+        values: dict[str, float] = {}
+        for spin, raw_value in _spin_items(
             data.get("icohp"),
             spin_polarized=spin_polarized,
             name="ICOHP(E_F)",
-        )
-        values: dict[str, float] = {}
-        for spin, raw_value in spin_items:
+        ):
             try:
                 value = float(raw_value)
             except (TypeError, ValueError) as exc:
@@ -411,7 +388,7 @@ def read_lobster_icohp(
     is_spin_polarized: bool,
     source_id: str | None = None,
 ) -> ICOHPResult:
-    """Parse standard LOBSTER ICOHPLIST with caller-explicit physical spin mode."""
+    """Parse ICOHPLIST with caller-explicit physical spin mode and source sign."""
     if not isinstance(is_spin_polarized, bool):
         raise TypeError("is_spin_polarized must be a bool")
     try:
