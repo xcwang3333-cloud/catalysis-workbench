@@ -22,7 +22,7 @@ Checkpoint date: 2026-08-25.
 
 - Repository: `xcwang3333-cloud/catalysis-workbench`.
 - Stable integration branch: `main`.
-- Exact pre-sync baseline: `a854b5d4ab6168d857f9f783c9b4c1827e064972`, the squash merge of v0.7 architecture Issue #197 / PR #198.
+- Exact pre-sync baseline: `4a101337f7822c4d687dd2edf3cc12168278619b`, the squash merge of v0.7 Block-1 Issue #202 / PR #203.
 - Distribution/runtime version is `0.6.0`.
 - Released tag `v0.6.0 -> c7793b309f41d174c14534bd6d4acdacc2a57636` is immutable.
 - The public GitHub Release `CatalysisWorkbench v0.6.0` is published from that existing tag.
@@ -32,10 +32,13 @@ Checkpoint date: 2026-08-25.
 - `v0.4.0 -> bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6` remains immutable; its public GitHub Release is complete.
 - PyPI/package-registry publication remains explicitly deferred.
 - v0.7 architecture checkpoint: Issue #197 / PR #198 — complete at `a854b5d4ab6168d857f9f783c9b4c1827e064972`.
-- Architecture final head `d15fd0ab0d86901846c46d7cd09837c9dbf8d9d7` passed CI #460 / run `32850343815` and exact-head reviews `5019179196`, `5019180975`; unresolved review threads were zero before merge.
-- [`V0_7_PLAN.md`](V0_7_PLAN.md) is the release-specific authority for the frozen seven-block v0.7 scope, scientific/visualization contracts, dependency order, prior-art/license decisions, testing strategy, and release boundaries.
-- Active stage: **Issue #199 — synchronize the completed v0.7 architecture checkpoint into central documentation**.
-- v0.7 Block 1, shared scalar-field state plus renderer-neutral volumetric scene/slice/isosurface specifications, begins only after #199 merges and `main` plus release boundaries are reverified.
+- v0.7 architecture central-document synchronization: Issue #199 / PR #201 — complete at `7f04e1312a67417ea9b1ddd10482722c599040d4`.
+- v0.7 Block 1, shared scalar-field + renderer-neutral volumetric scene foundation: Issue #202 / PR #203 — complete at `4a101337f7822c4d687dd2edf3cc12168278619b`.
+- Block-1 final head `db0526cfca5b6cc540ac8198b9fd2a02754ba391` passed CI #474 / run `32855491587` and exact-head reviews `5019699984`, `5019702262`; unresolved review threads were zero and the PR was behind=0 / mergeable=true before squash merge.
+- [`V0_7_PLAN.md`](V0_7_PLAN.md) remains the release-specific authority for the frozen seven-block v0.7 scope, scientific/visualization contracts, dependency order, prior-art/license decisions, testing strategy, and release boundaries.
+- [`VOLUMETRIC_VISUALIZATION.md`](VOLUMETRIC_VISUALIZATION.md) records the reviewed Block-1 scalar-field, exact-source-grid slice/geometry, and renderer-neutral volumetric-scene contract.
+- Active stage: **Issue #204 — synchronize the completed v0.7 Block-1 state into central documentation**.
+- v0.7 Block 2, charge-density-difference + electron-density + ELF visualization, begins only after #204 merges and `main` plus release boundaries are reverified.
 
 Live GitHub Issue/PR/tag state remains authoritative if this checkpoint becomes stale.
 
@@ -51,7 +54,7 @@ Detailed long-range scope is maintained in [`ROADMAP.md`](ROADMAP.md).
 | v0.4.x | shared fitting, XPS, EIS, quantitative BET, product calibration | complete/released as v0.4.0; GitHub Release published; PyPI deferred |
 | v0.5.x | XAS/XANES, FT/WT-EXAFS, EXAFS summaries, structures/geometry/static visualization, basic DFT energetics | complete/released as v0.5.0; GitHub Release published; PyPI deferred |
 | v0.6.x | electronic structure and catalysis thermodynamics | complete/released as v0.6.0; GitHub Release published; PyPI deferred |
-| v0.7.x | advanced computational visualization | architecture frozen through #197/#198; central sync #199 active before Block 1 |
+| v0.7.x | advanced computational visualization | architecture + Block 1 complete; completion sync #204 active before Block 2 |
 | v0.8.x | operando/time-resolved analysis | planned |
 | v0.9.x | reproducible batch workflows and first interactive editor | planned |
 | v1.0.0 | stable personal catalysis data workbench and local GUI | planned |
@@ -288,9 +291,19 @@ The frozen implementation order is:
 6. NEB/barrier retained state + passive plotting;
 7. advanced volumetric 3D backend/rendering/export.
 
-### Architecture central-document sync — active
+### Architecture central-document sync — complete
 
-Issue #199 is the docs-only synchronization checkpoint after architecture merge #198. Block 1 begins only after #199 merges and `main`, `v0.6.0`, distribution/runtime `0.6.0`, and PyPI-deferred state are reverified.
+Issue #199 / PR #201 synchronized the completed v0.7 architecture checkpoint into central documentation at `7f04e1312a67417ea9b1ddd10482722c599040d4` before Block 1 began.
+
+### Shared scalar-field + renderer-neutral volumetric scene foundation — complete
+
+Issue #202 / PR #203 delivered immutable unit-generic `ScalarField` state, exact source-grid `ScalarFieldSlice` state, full-lattice fractional-to-Cartesian grid/slice geometry including skew cells, narrow released-v0.6 adapters from `VolumetricGrid` and `ChargeDensityDifferenceResult`, deeply frozen provenance/metadata, explicit renderer-neutral `IsosurfaceLayerSpec`, `SliceLayerSpec`, and `VolumetricScene`, plus installed-wheel/public-API smoke and domain documentation in [`VOLUMETRIC_VISUALIZATION.md`](VOLUMETRIC_VISUALIZATION.md). The implementation performs no hidden normalization, unit conversion, interpolation, averaging, resampling, alignment, origin shift, threshold inference, mesh extraction, or renderer-backend import.
+
+Block-1 final head `db0526cfca5b6cc540ac8198b9fd2a02754ba391` passed CI #474 / run `32855491587` and final-head reviews `5019699984`, `5019702262` before expected-head squash merge `4a101337f7822c4d687dd2edf3cc12168278619b`.
+
+### Current Block-1 completion-state sync
+
+Issue #204 is the docs-only checkpoint after Block 1. It records merged Block-1 reality in central documentation without adding Block-2 implementation. Block 2 begins only after #204 merges and `main`, immutable `v0.6.0`, distribution/runtime `0.6.0`, public v0.6 GitHub Release, and PyPI-deferred state are reverified.
 
 ## Mandatory development loop
 
@@ -364,6 +377,7 @@ After squash merge, re-read `main`. When connector visibility does not expose a 
 - [`MASTER_PLAN.md`](MASTER_PLAN.md): project-wide execution order, checkpoint summary, governance and quality gates.
 - [`ROADMAP.md`](ROADMAP.md): long-range release scope; not a per-commit log.
 - [`V0_7_PLAN.md`](V0_7_PLAN.md): v0.7 architecture, frozen seven-block dependency order, scientific/visualization semantics, prior-art/license decisions, testing strategy, and release handoff.
+- [`VOLUMETRIC_VISUALIZATION.md`](VOLUMETRIC_VISUALIZATION.md): reviewed v0.7 scalar-field/source-grid geometry and renderer-neutral volumetric visualization foundation.
 - [`V0_6_PLAN.md`](V0_6_PLAN.md): retained v0.6 architecture, frozen dependency order, scientific/API semantics, prior-art/license decisions, test strategy, and v0.7 handoff.
 - [`V0_6_RELEASING.md`](V0_6_RELEASING.md): retained v0.6 Gate A/B/C procedure and release evidence.
 - [`V0_5_PLAN.md`](V0_5_PLAN.md): v0.5 architecture, dependency order, scientific completion state and release handoff.
@@ -385,4 +399,4 @@ After each merged scientific Issue, update only documentation whose statements b
 - preceding Issue closure/completion;
 - version/tag/publication boundaries.
 
-Issue #199 is the active v0.7 architecture central-document synchronization checkpoint. After it merges, reverify `main`, Issue #199 closure, immutable `v0.6.0 -> c7793b309f41d174c14534bd6d4acdacc2a57636`, distribution/runtime version `0.6.0`, public v0.6 GitHub Release state, and PyPI-deferred state. Then start v0.7 Block 1 from that exact verified `main` baseline. Block 1 must follow [`V0_7_PLAN.md`](V0_7_PLAN.md) and may not broaden into Block 2+ functionality or release/version/tag actions.
+Issue #204 is the active v0.7 Block-1 completion-state documentation checkpoint. After it merges, reverify `main`, Issue #204 closure, immutable `v0.6.0 -> c7793b309f41d174c14534bd6d4acdacc2a57636`, distribution/runtime version `0.6.0`, public v0.6 GitHub Release state, and PyPI-deferred state. Then start v0.7 Block 2 (charge-density-difference + electron-density + ELF visualization) from that exact verified `main` baseline using [`V0_7_PLAN.md`](V0_7_PLAN.md) and the Block-1 foundation in [`VOLUMETRIC_VISUALIZATION.md`](VOLUMETRIC_VISUALIZATION.md).

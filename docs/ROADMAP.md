@@ -151,10 +151,11 @@ Charge-density-difference visualization remains v0.7, and VASP/HPC job managemen
 
 ## v0.7.x — Advanced computational visualization
 
-The reviewed v0.7 architecture, scientific/visualization contracts, dependency order, prior-art/license decisions, and testing strategy are frozen in [`V0_7_PLAN.md`](V0_7_PLAN.md). Architecture checkpoint Issue #197 / PR #198 is complete at squash merge `a854b5d4ab6168d857f9f783c9b4c1827e064972`; final head `d15fd0ab0d86901846c46d7cd09837c9dbf8d9d7` passed CI #460 / run `32850343815` and exact-head reviews `5019179196`, `5019180975`. Issue #199 is the current docs-only central synchronization checkpoint. No v0.7 implementation block is complete yet.
+The reviewed v0.7 architecture, scientific/visualization contracts, dependency order, prior-art/license decisions, and testing strategy are frozen in [`V0_7_PLAN.md`](V0_7_PLAN.md). Architecture checkpoint Issue #197 / PR #198 is complete at squash merge `a854b5d4ab6168d857f9f783c9b4c1827e064972`; final head `d15fd0ab0d86901846c46d7cd09837c9dbf8d9d7` passed CI #460 / run `32850343815` and exact-head reviews `5019179196`, `5019180975`. Architecture central-document sync Issue #199 / PR #201 is complete at `7f04e1312a67417ea9b1ddd10482722c599040d4`. Block 1 is complete through Issue #202 / PR #203 at squash merge `4a101337f7822c4d687dd2edf3cc12168278619b`; final head `db0526cfca5b6cc540ac8198b9fd2a02754ba391` passed CI #474 / run `32855491587` and exact-head reviews `5019699984`, `5019702262`. Issue #204 is the current docs-only completion-state synchronization before Block 2 begins.
 
-1. **Shared scalar-field state + renderer-neutral volumetric scene/slice/isosurface specifications — next Block 1 after #199.**
-2. **Charge-density-difference + electron-density + ELF visualization.**
+1. **Shared scalar-field state + renderer-neutral volumetric scene/slice/isosurface specifications — complete through #202 / #203.**
+   - immutable unit-generic `ScalarField`, exact source-grid `ScalarFieldSlice`, full-lattice fractional/Cartesian grid geometry including skew cells, narrow v0.6 density/difference adapters, explicit renderer-neutral isosurface/slice/scene state, strict compatibility and no hidden normalization/interpolation/resampling/alignment/mesh extraction; reviewed domain contract in [`VOLUMETRIC_VISUALIZATION.md`](VOLUMETRIC_VISUALIZATION.md).
+2. **Charge-density-difference + electron-density + ELF visualization — next after #204; not yet implemented.**
 3. **Band-structure state/adapters + passive band plotting.**
 4. **PROCAR projection processing + fat-band plotting.**
 5. **LOCPOT planar-potential/work-function processing + plotting.**
