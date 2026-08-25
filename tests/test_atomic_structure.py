@@ -84,6 +84,8 @@ def test_site_order_and_explicit_keys_are_retained() -> None:
     [
         ({"species": ("Fe",)}, "lengths"),
         ({"elements": ("Fe",)}, "lengths"),
+        ({"elements": ("FE", "O")}, "canonical"),
+        ({"elements": ("Xx", "O")}, "canonical"),
         ({"site_keys": ("same", "same")}, "unique"),
         ({"site_keys": ("", "o")}, "nonblank"),
         ({"pbc": (True, False, False), "lattice_angstrom": None}, "require"),
