@@ -226,7 +226,7 @@ Block-2 final head `1e18c838f0ce0203ae0f841fbde3786c00970d16` passed CI #388 / r
 
 ### Block-2 completion-state sync — complete
 
-Issue #156 / PR #157 synchronized the merged block-2 state into central documentation at `c597fdaba7509a0c6c4cf608d07ef42e4dc07b09ce` before block 3 began.
+Issue #156 / PR #157 synchronized the merged block-2 state into central documentation at `c597fdaba7509a0c6c4cf6088c7367c94cec0547` before block 3 began.
 
 ### Band-center / DOS first-moment analysis — complete
 
