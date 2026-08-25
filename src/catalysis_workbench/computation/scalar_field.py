@@ -366,12 +366,12 @@ def scalar_field_from_volumetric_grid(
         key = f"volumetric:{retained_component}"
     else:
         key = str(_nonblank(source_key, name="source_key"))
-    provenance = {
+    provenance: dict[str, Any] = {
         "volumetric_grid_digest": grid.digest,
         "component": retained_component,
     }
-    if metadata:
-        provenance.update(dict(metadata))
+    if metadata is not None:
+        provenance["adapter_metadata"] = dict(metadata)
     return ScalarField(
         structure=grid.structure,
         values=grid.components[retained_component],
@@ -395,13 +395,13 @@ def scalar_field_from_charge_density_difference(
     """Expose the already-computed signed difference as an immutable field."""
     if not isinstance(result, ChargeDensityDifferenceResult):
         raise TypeError("result must be a ChargeDensityDifferenceResult")
-    provenance = {
+    provenance: dict[str, Any] = {
         "result_digest": result.digest,
         "difference_grid_digest": result.difference_grid.digest,
         "source_component": result.source_component,
     }
-    if metadata:
-        provenance.update(dict(metadata))
+    if metadata is not None:
+        provenance["adapter_metadata"] = dict(metadata)
     return ScalarField(
         structure=result.difference_grid.structure,
         values=result.difference,
