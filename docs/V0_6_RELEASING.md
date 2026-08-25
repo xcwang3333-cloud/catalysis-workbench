@@ -59,11 +59,11 @@ Gate A established a unified fresh-wheel v0.6 release audit that:
 | `v0.5.0` invariant | `9400ac0044ac333d2cae228554c08d955a816a4c` |
 | `v0.4.0` invariant | `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6` |
 
-## Gate B — final-version candidate — in progress
+## Gate B — final-version candidate — complete
 
-Tracking: Issue #188. Branch: `release/v0.6-gate-b`. Exact base: `c70481e34f6e3f2bf81724f4a30370fec58c1e7b`.
+Tracking: Issue #188 / PR #189. Branch: `release/v0.6-gate-b`. Exact base: `c70481e34f6e3f2bf81724f4a30370fec58c1e7b`.
 
-Gate B synchronizes `[project].version`, runtime `__version__`, and the unified installed-wheel expected version from `0.5.0` to the reviewed release candidate `0.6.0`, then validates the exact candidate wheel in fresh environments without changing the frozen scientific/API/dependency scope.
+Gate B synchronized `[project].version`, runtime `__version__`, and the unified installed-wheel expected version from `0.5.0` to the reviewed release candidate `0.6.0`, then validated the exact candidate wheel in fresh environments without changing the frozen scientific/API/dependency scope.
 
 ### Gate B evidence
 
@@ -71,28 +71,32 @@ Gate B synchronizes `[project].version`, runtime `__version__`, and the unified 
 | --- | --- |
 | exact base | `c70481e34f6e3f2bf81724f4a30370fec58c1e7b` |
 | candidate version | `0.6.0` |
-| final Gate-B head | pending |
-| exact-head CI | pending |
-| release/API/packaging review | pending |
-| compatibility/release-boundary review | pending |
-| merge gate | pending |
-| squash merge / post-merge main | pending |
+| final Gate-B head | `4544a464ab54e13408e3db23a68acf565f764328` |
+| exact-head CI | CI #453 / run `32845155122` — success |
+| release/API/packaging review | `5018619904` — pass |
+| compatibility/release-boundary review | `5018620923` — pass |
+| merge gate | behind=0; mergeable=true; unresolved threads=0 |
+| squash merge / reviewed release commit | `c7793b309f41d174c14534bd6d4acdacc2a57636` |
+| distribution/runtime version after Gate B | `0.6.0` |
 | `v0.5.0` invariant | `9400ac0044ac333d2cae228554c08d955a816a4c` |
 | `v0.4.0` invariant | `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6` |
+| `v0.6.0` tag before Gate C | absent |
 
-Gate B does **not** create a tag, GitHub Release, or package-registry artifact. Final Gate-B SHA/CI/review/merge evidence is synchronized after the merge so recording the evidence cannot mutate the exact head it describes.
+Gate B created no tag, GitHub Release, or package-registry artifact. The exact reviewed release candidate commit for Gate C is `c7793b309f41d174c14534bd6d4acdacc2a57636`. Later docs-only synchronization commits are not a substitute release target.
 
-## Gate C — tag creation and reverse verification — separate authorization required
+## Gate C — tag creation and reverse verification — pending separate authorization
 
-Gate C remains a separate explicit user-authorization boundary. No `v0.6.0` tag may be created, moved, or recreated during Gate A or Gate B.
+Gate C remains a separate explicit user-authorization boundary. No `v0.6.0` tag has been created, moved, or recreated during Gate A, Gate B, or the post-Gate-B evidence synchronization.
 
-After authorization, Gate C must create the release tag only on the exact reviewed Gate-B release commit and reverse-verify tag target, distribution version, runtime version, prior-tag invariants, and repository state.
+If separately authorized, Gate C must create `v0.6.0` only on reviewed Gate-B release commit `c7793b309f41d174c14534bd6d4acdacc2a57636`, then reverse-verify the tag target, distribution version `0.6.0`, runtime version `0.6.0`, prior-tag invariants, and repository state. The tag must not target a later docs-only commit.
 
 ## GitHub Release and package publication
 
 Publishing a GitHub Release is a separate action after Gate C and does not authorize tag mutation or package-registry publication.
 
 PyPI/package-registry publication remains deferred unless explicitly reauthorized in a future decision.
+
+README, CHANGELOG, MASTER_PLAN, ROADMAP, and other overview documents should not be promoted to a released-v0.6 state until the tag/Release boundary is resolved; final overview synchronization occurs after the relevant release action.
 
 ## Mandatory evidence discipline
 
