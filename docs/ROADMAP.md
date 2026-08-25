@@ -120,7 +120,7 @@ CHE/free-energy thermodynamics, DOS/PDOS, Bader, COHP/ICOHP, charge-density diff
 
 ## v0.6.x — Electronic structure and catalysis thermodynamics
 
-The architecture-first v0.6 scope, scientific semantics, dependency boundaries, prior-art/license decisions, test strategy, and implementation order are frozen in [`V0_6_PLAN.md`](V0_6_PLAN.md). Architecture checkpoint Issue #146 / PR #147 is complete at merge `3803e014376a7edb22d6a9a5b6480541742499be`, the architecture central-doc synchronization Issue #148 / PR #149 is complete at `aac05d4426c15c8932c608d07ef42e4dc07b09ce`, scientific block 1 is complete through Issue #150 / PR #151 at merge `58023070bf7f642748b69e99281a5ed7ed4d40df`, block-1 completion-state synchronization #152 / #153 is complete at `39df1101d1ed7dde5c4ab6d264b8796c27c97620`, and scientific block 2 is complete through Issue #154 / PR #155 at merge `09e63e72e1b79d8c151c97769d4bfbd2fb6a366f`. Issue #156 is the current docs-only completion-state synchronization before block 3 begins.
+The architecture-first v0.6 scope, scientific semantics, dependency boundaries, prior-art/license decisions, test strategy, and implementation order are frozen in [`V0_6_PLAN.md`](V0_6_PLAN.md). Architecture checkpoint Issue #146 / PR #147 is complete at merge `3803e014376a7edb22d6a9a5b6480541742499be`, the architecture central-doc synchronization Issue #148 / PR #149 is complete at `aac05d4426c15c8932c608d07ef42e4dc07b09ce`, scientific block 1 is complete through Issue #150 / PR #151 at merge `58023070bf7f642748b69e99281a5ed7ed4d40df`, block-1 completion-state synchronization #152 / #153 is complete at `39df1101d1ed7dde5c4ab6d264b8796c27c97620`, scientific block 2 is complete through Issue #154 / PR #155 at merge `09e63e72e1b79d8c151c97769d4bfbd2fb6a366f`, block-2 completion-state synchronization #156 / #157 is complete at `c597fdaba7509a0c6c4cf6088c7367c94cec0547`, and scientific block 3 is complete through Issue #158 / PR #159 at merge `cdbc4822592cf43033af1f0242793d5912098b7c`. Issue #160 is the current docs-only completion-state synchronization before block 4 begins.
 
 Frozen implementation order:
 
@@ -128,8 +128,9 @@ Frozen implementation order:
    - CatalysisWorkbench-owned immutable energy/DOS/volumetric state, lazy `pymatgen-core` VASP adapters, explicit source-energy/Fermi/spin/projection semantics, and regression-verified CHGCAR `1/angstrom^3` conversion.
 2. **DOS / PDOS processing + passive publication plotting — complete through #154 / #155.**
    - immutable `DOSTrace`, exact retained-channel selection, compatible explicit aggregation, explicit idempotent `E-E_F` referencing, source-grid-only crop, detached reporting, passive `FigureSpec` plotting, renderer-only spin-down mirroring, canonical aggregation provenance, and fail-closed cross-source source-native overlays.
-3. **Band-center analysis — next after #156; not yet implemented.**
-4. **Bader-result parsing + explicit charge accounting.**
+3. **Band-center analysis — complete through #158 / #159.**
+   - immutable `BandCenterResult`, explicit retained-grid trapezoidal first moment, caller-selected numeric window and denominator tolerance, auditable numerator/denominator/reference/normalization/projection/spin provenance, and no hidden projection, spin, reference, interpolation, smoothing, broadening or normalization transform.
+4. **Bader-result parsing + explicit charge accounting — next after #160; not yet implemented.**
 5. **COHP / ICOHP parsing + bonding analysis.**
 6. **Geometry–bonding correlations.**
 7. **CHE / free-energy thermodynamics.**
