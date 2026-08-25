@@ -50,8 +50,11 @@ Checkpoint date: 2026-08-25.
 - v0.6 architecture central-document synchronization: Issue #148 / PR #149 — complete at `aac05d4426c15c8932c608d07ef42e4dc07b09ce`.
 - v0.6 block 1, electronic-structure + volumetric semantics/adapters: Issue #150 / PR #151 — complete at `58023070bf7f642748b69e99281a5ed7ed4d40df`.
 - Block-1 final head `229fa5c3ec9225bde8afd1931cefe0dea521eabe` passed CI #376 / run `32808329764` and final-head reviews `5014903632`, `5014904435` before squash merge.
-- Active stage: **Issue #152 — synchronize block-1 completion state into central documentation**.
-- v0.6 block 2 (DOS/PDOS processing + passive plotting) starts only after #152 is complete and `main` is reverified.
+- v0.6 block-1 completion-state docs sync: Issue #152 / PR #153 — complete at `39df1101d1ed7dde5c4ab6d264b8796c27c97620`.
+- v0.6 block 2, DOS/PDOS processing + passive plotting: Issue #154 / PR #155 — complete at `09e63e72e1b79d8c151c97769d4bfbd2fb6a366f`.
+- Block-2 final head `1e18c838f0ce0203ae0f841fbde3786c00970d16` passed CI #388 / run `32810513894` and final-head reviews `5015058136`, `5015059007` before squash merge.
+- Active stage: **Issue #156 — synchronize block-2 completion state into central documentation**.
+- v0.6 block 3 (band-center analysis) starts only after #156 is complete and `main` is reverified.
 
 Live GitHub Issue/PR/tag state remains authoritative if this checkpoint becomes stale.
 
@@ -66,7 +69,7 @@ Detailed long-range scope is maintained in [`ROADMAP.md`](ROADMAP.md).
 | v0.3.x | FTIR, thermal analysis, basic gas sorption, ICP/composition | complete/released as v0.3.0 |
 | v0.4.x | shared fitting, XPS, EIS, quantitative BET, product calibration | complete/released as v0.4.0; GitHub Release published; PyPI deferred |
 | v0.5.x | XAS/XANES, FT/WT-EXAFS, EXAFS summaries, structures/geometry/static visualization, basic DFT energetics | complete/released as v0.5.0; GitHub Release published; PyPI deferred |
-| v0.6.x | electronic structure and catalysis thermodynamics | architecture + block 1 complete; block 2 next after #152 |
+| v0.6.x | electronic structure and catalysis thermodynamics | architecture + blocks 1–2 complete; block 3 next after #156 |
 | v0.7.x | advanced computational visualization | planned |
 | v0.8.x | operando/time-resolved analysis | planned |
 | v0.9.x | reproducible batch workflows and first interactive editor | planned |
@@ -202,9 +205,19 @@ Issue #150 / PR #151 delivered CatalysisWorkbench-owned immutable `ElectronicEne
 
 Block-1 final head `229fa5c3ec9225bde8afd1931cefe0dea521eabe` passed CI #376 / run `32808329764` and final-head reviews `5014903632`, `5014904435` before squash merge `58023070bf7f642748b69e99281a5ed7ed4d40df`.
 
+### Block-1 completion-state sync — complete
+
+Issue #152 / PR #153 synchronized the merged block-1 state into central documentation at `39df1101d1ed7dde5c4ab6d264b8796c27c97620` before block 2 began.
+
+### DOS/PDOS processing + passive plotting — complete
+
+Issue #154 / PR #155 delivered immutable `DOSTrace` derived state, explicit channel selection and compatible aggregation, explicit idempotent `E-E_F` referencing, source-grid-only crop, detached reporting, and passive `FigureSpec` DOS plotting. Scientific densities remain non-negative; spin-down mirroring is renderer-only. Cross-source source-native overlays fail closed, and aggregation provenance is canonicalized to source channel order.
+
+Block-2 final head `1e18c838f0ce0203ae0f841fbde3786c00970d16` passed CI #388 / run `32810513894` and final-head reviews `5015058136`, `5015059007` before squash merge `09e63e72e1b79d8c151c97769d4bfbd2fb6a366f`.
+
 ### Current completion-state sync
 
-Issue #152 is the docs-only synchronization checkpoint after block 1. It records merged reality in central plans without adding DOS processing or plotting. Block 2 begins only after #152 merges and `main` is reverified.
+Issue #156 is the docs-only synchronization checkpoint after block 2. It records merged reality in central plans without adding band-center analysis. Block 3 begins only after #156 merges and `main` is reverified.
 
 ## Mandatory development loop
 
@@ -297,4 +310,4 @@ After each merged scientific Issue, update only documentation whose statements b
 - preceding Issue closure/completion;
 - version/tag/publication boundaries.
 
-Issue #152 is the active v0.6 block-1 completion-state documentation checkpoint. After it merges, reverify `main`, Issue #152 closure, immutable `v0.5.0`, immutable `v0.4.0`, distribution/runtime version `0.5.0`, and PyPI-deferred state. Then start block 2 (DOS/PDOS processing + passive plotting) from that exact verified `main` baseline using the frozen order in `V0_6_PLAN.md`.
+Issue #156 is the active v0.6 block-2 completion-state documentation checkpoint. After it merges, reverify `main`, Issue #156 closure, immutable `v0.5.0`, immutable `v0.4.0`, distribution/runtime version `0.5.0`, and PyPI-deferred state. Then start block 3 (band-center analysis) from that exact verified `main` baseline using the frozen order in `V0_6_PLAN.md`.
