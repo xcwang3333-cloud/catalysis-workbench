@@ -8,6 +8,7 @@ from .dos import DOSVisualizationError, plot_dos
 from .export import export_figure
 from .free_energy import plot_free_energy_diagram
 from .presets import get_preset, list_presets, register_preset
+from .projected_bands import ProjectedBandVisualizationError, plot_fat_band
 from .scatter import ScatterError, render_scatter
 from .specs import (
     AnnotationSpec,
@@ -48,6 +49,7 @@ __all__ = [
     "IsosurfaceLayerSpec",
     "LayoutSpec",
     "PlotStyle",
+    "ProjectedBandVisualizationError",
     "ScatterError",
     "SeriesStyle",
     "SliceLayerSpec",
@@ -65,6 +67,7 @@ __all__ = [
     "list_presets",
     "plot_band_structure",
     "plot_dos",
+    "plot_fat_band",
     "plot_free_energy_diagram",
     "plot_relative_energies",
     "plot_scalar_field_slice",

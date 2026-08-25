@@ -110,6 +110,13 @@ from .geometry import (
     site_angle,
     site_distance,
 )
+from .projected_bands import (
+    AggregatedBandProjection,
+    BandProjectionChannel,
+    BandProjectionError,
+    BandProjectionState,
+    aggregate_band_projection,
+)
 from .scalar_field import (
     ScalarField,
     ScalarFieldError,
@@ -162,6 +169,7 @@ from .thermodynamics import (
 )
 
 __all__ = [
+    "AggregatedBandProjection",
     "AtomicStructure",
     "BOLTZMANN_EV_PER_K",
     "BaderChargeResult",
@@ -175,6 +183,9 @@ __all__ = [
     "BandPathCoordinates",
     "BandPathDistanceSegment",
     "BandPathSegment",
+    "BandProjectionChannel",
+    "BandProjectionError",
+    "BandProjectionState",
     "BandStructureError",
     "BandStructureState",
     "BondingError",
@@ -244,6 +255,7 @@ __all__ = [
     "VolumetricGrid",
     "account_bader_charges",
     "adsorption_energy",
+    "aggregate_band_projection",
     "aggregate_dos",
     "bader_charge_frame",
     "bader_result_frame",

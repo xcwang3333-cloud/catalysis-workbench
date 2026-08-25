@@ -53,7 +53,7 @@ jobs:
           .venv-smoke/bin/python -m pip install dist/catalysis_workbench-*.whl
           .venv-smoke/bin/python -m pip check
 
-      - name: Audit installed public API and reviewed v0.6 plus v0.7 Block-1/2/3 scope
+      - name: Audit installed public API and reviewed v0.6 plus v0.7 Block-1/2/3/4 scope
         run: |
           .venv-smoke/bin/python tests/installed_api_smoke.py
           .venv-smoke/bin/python tests/installed_thermal_smoke.py
@@ -63,8 +63,9 @@ jobs:
           .venv-smoke/bin/python tests/installed_v07_block1_smoke.py
           .venv-smoke/bin/python tests/installed_v07_block2_smoke.py
           .venv-smoke/bin/python tests/installed_v07_block3_smoke.py
+          .venv-smoke/bin/python tests/installed_v07_block4_smoke.py
 
-      - name: Audit installed structure/electronic/bonding/ELFCAR/band adapters
+      - name: Audit installed structure/electronic/bonding/ELFCAR/band/PROCAR adapters
         run: |
           python -m venv .venv-structure
           .venv-structure/bin/python -m pip install --upgrade pip
@@ -76,6 +77,7 @@ jobs:
           .venv-structure/bin/python tests/installed_bonding_smoke.py
           .venv-structure/bin/python tests/installed_elf_smoke.py
           .venv-structure/bin/python tests/installed_band_structure_smoke.py
+          .venv-structure/bin/python tests/installed_procar_smoke.py
 
       - name: Run documented LSV/XRD/Raman/FTIR/thermal/sorption/composition examples from installed wheel
         run: |
