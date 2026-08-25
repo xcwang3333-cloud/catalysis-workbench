@@ -1,14 +1,12 @@
 from __future__ import annotations
 
+import subprocess
 import sys
 
 import numpy as np
 
-
-assert "pymatgen" not in sys.modules
-
-from catalysis_workbench.computation import AtomicStructure, StructureError  # noqa: E402
-from catalysis_workbench.io import (  # noqa: E402
+from catalysis_workbench.computation import AtomicStructure, StructureError
+from catalysis_workbench.io import (
     StructureIOError,
     read_cif_structure,
     read_contcar,
@@ -16,7 +14,21 @@ from catalysis_workbench.io import (  # noqa: E402
     read_xyz_structure,
 )
 
-assert "pymatgen" not in sys.modules
+
+subprocess.run(
+    [
+        sys.executable,
+        "-c",
+        (
+            "import sys; "
+            "assert 'pymatgen' not in sys.modules; "
+            "import catalysis_workbench.computation; "
+            "import catalysis_workbench.io; "
+            "assert 'pymatgen' not in sys.modules"
+        ),
+    ],
+    check=True,
+)
 
 structure = AtomicStructure(
     species=("Pt", "O"),
@@ -42,5 +54,3 @@ for symbol in (
     read_xyz_structure,
 ):
     assert symbol is not None
-
-assert "pymatgen" not in sys.modules
