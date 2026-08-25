@@ -97,7 +97,7 @@ No Gaussian broadening, smoothing, interpolation, resampling, automatic orbital 
 
 `plot_dos()` consumes only retained `DOSTrace` arrays and the existing `FigureSpec` rendering model. It does not reselect channels, aggregate, shift energies, crop, normalize, broaden, smooth, or interpolate.
 
-Overlay compatibility is fail-closed: all traces on one DOS axes must have matching energy-reference kind, density unit, and normalization basis. In addition, source-native traces may be overlaid only when they retain the same `source_dos_digest`; independent source-native VASP energy zeros are not treated as a common comparison reference. Cross-source comparison must first use an explicit common transform such as Fermi referencing. These semantics are also copied into shared `Axis.metadata`, so the generic curve-renderer compatibility gate remains active.
+Overlay compatibility is fail-closed: all traces on one DOS axes must have matching energy-reference kind, density unit, and normalization basis. In addition, source-native traces may be overlaid only when they retain the same `source_dos_digest`; independent source-native VASP energy zeros are not treated as a common comparison reference. Cross-source comparison therefore requires an explicit reviewed common reference transform; block 2 provides Fermi referencing (`E-E_F`) for this purpose. These semantics are also copied into shared `Axis.metadata`, so the generic curve-renderer compatibility gate remains active.
 
 An optional Fermi marker is derived from retained state only:
 
