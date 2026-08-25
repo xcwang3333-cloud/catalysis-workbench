@@ -1,5 +1,6 @@
 """Post-processing for atomistic and DFT calculation results."""
 
+from .band_center import BandCenterError, BandCenterResult, calculate_band_center
 from .dft_energetics import (
     DFTEnergeticsError,
     DFTEnergyEntry,
@@ -66,6 +67,8 @@ from .structure_scene import (
 
 __all__ = [
     "AtomicStructure",
+    "BandCenterError",
+    "BandCenterResult",
     "CoordinationNeighbor",
     "CoordinationResult",
     "DFTEnergeticsError",
@@ -103,6 +106,7 @@ __all__ = [
     "adsorption_energy",
     "aggregate_dos",
     "build_structure_scene",
+    "calculate_band_center",
     "combine_energies",
     "compare_structures",
     "coordination_by_cutoff",
