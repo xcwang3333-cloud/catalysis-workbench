@@ -20,6 +20,8 @@ The contract is unit-generic but never unit-converting. No normalization, clippi
 
 `scalar_field_from_charge_density_difference(...)` exposes the already-computed signed `ChargeDensityDifferenceResult.difference` as a scalar field. It preserves the result digest, difference-grid digest and explicit registration identity. It does not repeat charge-density-difference arithmetic.
 
+Adapter-owned provenance keys are reserved and cannot be overwritten by caller metadata. Optional caller metadata is retained separately under `adapter_metadata`.
+
 ## Source-grid coordinates
 
 The retained periodic grid convention is
@@ -53,6 +55,8 @@ Neither class extracts a mesh or invokes Matplotlib, PyVista, VTK or scikit-imag
 ## VolumetricScene compatibility
 
 `VolumetricScene` preserves caller-declared layer order. Multiple volumetric layers fail closed unless they retain the same structure digest, exact grid shape, exact lattice matrix and identical registration-id semantics. No alignment or resampling is attempted.
+
+Multiple layers derived from one exact source field may omit `registration_id`, because their co-registration is intrinsic to the retained source-field identity. A scene that combines distinct source-field digests requires the same explicit nonblank `registration_id`; two independently sourced fields are never treated as co-registered merely because both omit registration metadata.
 
 An optional existing `StructureScene` may be attached only when its `structure_digest` exactly matches the volumetric layers. Bonds and coordination are never rebuilt automatically.
 
