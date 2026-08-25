@@ -22,7 +22,7 @@ Checkpoint date: 2026-08-26.
 
 - Repository: `xcwang3333-cloud/catalysis-workbench`.
 - Stable integration branch: `main`.
-- Exact pre-sync baseline: `ab4b8c6f5445920124c2a61799e189ae25b8d404`, the expected-head squash merge of v0.7 Block-5 Issue #219 / PR #220.
+- Exact pre-sync baseline: `7a80b99bc513b7a6b33d1a9481ff25c1c4d95b85`, the expected-head squash merge of v0.7 Block-6 Issue #223 / PR #224.
 - Distribution/runtime version is `0.6.0`.
 - Released tag `v0.6.0 -> c7793b309f41d174c14534bd6d4acdacc2a57636` is immutable.
 - The public GitHub Release `CatalysisWorkbench v0.6.0` is published from that existing tag.
@@ -47,13 +47,17 @@ Checkpoint date: 2026-08-26.
 - v0.7 Block-4 completion-state synchronization: Issue #217 / PR #218 — complete at `d1bd5d710f4353b76bf1dd3f3e0a9a49a288353d`.
 - v0.7 Block 5, LOCPOT planar-potential/work-function processing + plotting: Issue #219 / PR #220 — complete at `ab4b8c6f5445920124c2a61799e189ae25b8d404`.
 - Block-5 final head `34cf2253bf9744149d498edecf186d5fe04e6afe` passed CI #515 / run `32876765592` (Ruff, 1057 tests, fresh-wheel/public-API smoke through v0.7 Block 5, optional structure/electronic/bonding/ELFCAR/band/PROCAR/LOCPOT adapter audits including current `pymatgen-core.Locpot` exact-value round-trip and skew-cell normal-coordinate behavior, and documented examples) and exact-head reviews `5021836289`, `5021837599`; unresolved review threads were zero and the PR was behind=0 / mergeable=true before expected-head squash merge.
+- v0.7 Block-5 completion-state synchronization: Issue #221 / PR #222 — complete at `51b04e9b7a63b200c6679d83730e49451f9bee64`.
+- v0.7 Block 6, explicit NEB image-energy state + discrete barrier plotting: Issue #223 / PR #224 — complete at `7a80b99bc513b7a6b33d1a9481ff25c1c4d95b85`.
+- Block-6 final head `5aa1926e7125c49950589553b8463e5ecfb936fd` passed CI #521 / run `32879644216` (Ruff, full pytest, fresh-wheel/public-API smoke through v0.7 Block 6, all prior optional structure/electronic/bonding/ELFCAR/band/PROCAR/LOCPOT audits, and documented examples) and exact-head reviews `5022088404`, `5022089761`; unresolved review threads were zero and the PR was behind=0 / mergeable=true before expected-head squash merge.
 - [`V0_7_PLAN.md`](V0_7_PLAN.md) remains the release-specific authority for the frozen seven-block v0.7 scope, scientific/visualization contracts, dependency order, prior-art/license decisions, testing strategy, and release boundaries.
 - [`VOLUMETRIC_VISUALIZATION.md`](VOLUMETRIC_VISUALIZATION.md) records the reviewed Block-1 scalar-field/source-grid/renderer-neutral foundation and Block-2 charge-density-difference, electron-density, ELFCAR/ELF, and exact-slice visualization contracts.
 - [`BAND_STRUCTURE.md`](BAND_STRUCTURE.md) records the reviewed Block-3 reciprocal-space, physical-spin, explicit Fermi-reference, VASP line-mode adapter, path-discontinuity, and passive band-plotting contract.
 - [`PROCAR_FAT_BANDS.md`](PROCAR_FAT_BANDS.md) records the reviewed Block-4 projection-state, current-backend orbital semantics, explicit site/orbital aggregation, caller-visible compatibility tolerances, SOC/vector fail-closed boundary, and presentation-only fat-band contract.
 - [`LOCPOT_WORK_FUNCTION.md`](LOCPOT_WORK_FUNCTION.md) records the reviewed Block-5 local-potential scalar-field, skew-cell planar-average geometry, explicit vacuum-window/Fermi compatibility, transparent work-function arithmetic, passive plotting, and optional-backend boundaries.
-- Active stage: **Issue #221 — synchronize the completed v0.7 Block-5 state into central documentation**.
-- v0.7 Block 6, NEB/barrier retained state + passive plotting, begins only after #221 merges and `main` plus release boundaries are reverified.
+- [`NEB_BARRIERS.md`](NEB_BARRIERS.md) records the reviewed Block-6 exact image-order/path state, ordinal/explicit reaction coordinates, explicit-reference energies, discrete retained-image barrier arithmetic, passive plotting, and no-spline/no-optimizer boundaries.
+- Active stage: **Issue #225 — synchronize the completed v0.7 Block-6 state into central documentation**.
+- v0.7 Block 7, advanced volumetric 3D backend/rendering/export, begins only after #225 merges and `main` plus release boundaries are reverified.
 
 Live GitHub Issue/PR/tag state remains authoritative if this checkpoint becomes stale.
 
@@ -69,7 +73,7 @@ Detailed long-range scope is maintained in [`ROADMAP.md`](ROADMAP.md).
 | v0.4.x | shared fitting, XPS, EIS, quantitative BET, product calibration | complete/released as v0.4.0; GitHub Release published; PyPI deferred |
 | v0.5.x | XAS/XANES, FT/WT-EXAFS, EXAFS summaries, structures/geometry/static visualization, basic DFT energetics | complete/released as v0.5.0; GitHub Release published; PyPI deferred |
 | v0.6.x | electronic structure and catalysis thermodynamics | complete/released as v0.6.0; GitHub Release published; PyPI deferred |
-| v0.7.x | advanced computational visualization | architecture + Blocks 1-5 complete; completion sync #221 active before Block 6 |
+| v0.7.x | advanced computational visualization | architecture + Blocks 1-6 complete; completion sync #225 active before Block 7 |
 | v0.8.x | operando/time-resolved analysis | planned |
 | v0.9.x | reproducible batch workflows and first interactive editor | planned |
 | v1.0.0 | stable personal catalysis data workbench and local GUI | planned |
@@ -364,9 +368,21 @@ Explicit `FermiLevelSource` state retains finite eV, provenance and mandatory no
 
 Block-5 final head `34cf2253bf9744149d498edecf186d5fe04e6afe` passed CI #515 / run `32876765592` with Ruff, 1057 tests, fresh-wheel/public-API audits, current optional-backend LOCPOT exact-value/skew-cell smoke and documented examples, plus final-head reviews `5021836289`, `5021837599`, before expected-head squash merge `ab4b8c6f5445920124c2a61799e189ae25b8d404`.
 
-### Current Block-5 completion-state sync
+### Block-5 completion-state sync — complete
 
-Issue #221 is the docs-only checkpoint after Block 5. It records merged Block-5 reality in central documentation without adding Block-6 implementation. Block 6 begins only after #221 merges and `main`, immutable `v0.6.0`, distribution/runtime `0.6.0`, public v0.6 GitHub Release, and PyPI-deferred state are reverified.
+Issue #221 / PR #222 synchronized the merged Block-5 state into central documentation at `51b04e9b7a63b200c6679d83730e49451f9bee64` before Block 6 began.
+
+### Explicit NEB image-energy state + discrete barrier plotting — complete
+
+Issue #223 / PR #224 delivered CatalysisWorkbench-owned immutable `NEBImageState`, exact ordered `NEBPath`, and explicit `NEBBarrierResult` state for post-processing already-generated image energies. Each image retains literal finite absolute energy in eV, nonblank source provenance and optional immutable `AtomicStructure` provenance. Paths preserve exact caller/source image order, unique stable image keys, explicit ordinal coordinates or caller-supplied finite reaction coordinates, and absolute or explicit-reference-relative `E_i - E_ref` plotting energies. Attached structures never trigger hidden atom mapping, reordering, MIC remapping, Kabsch alignment, IDPP, geometry fitting or reaction-coordinate inference.
+
+`calculate_neb_barrier(...)` requires explicit retained initial, saddle and final image keys, validates source order as initial before saddle before final, and performs only `E_saddle - E_initial` / `E_saddle - E_final` on retained absolute energies. Negative arithmetic is retained rather than clipped. No highest-energy saddle selection, spline maximum, smoothing, interpolation, polynomial fitting or continuous transition-state inference is introduced. Passive `plot_neb_path(...)` renders retained x/y values with straight source-order point-to-point connections and highlights a saddle only from an explicitly supplied compatible barrier result. The reviewed domain contract is recorded in [`NEB_BARRIERS.md`](NEB_BARRIERS.md); full pymatgen and ASE remain reference-only, and no new runtime dependency was added.
+
+Block-6 final head `5aa1926e7125c49950589553b8463e5ecfb936fd` passed CI #521 / run `32879644216` with Ruff, full pytest, fresh-wheel/public-API audits through v0.7 Block 6, all existing optional-backend audits and documented examples, plus final-head reviews `5022088404`, `5022089761`, before expected-head squash merge `7a80b99bc513b7a6b33d1a9481ff25c1c4d95b85`.
+
+### Current Block-6 completion-state sync
+
+Issue #225 is the docs-only checkpoint after Block 6. It records merged Block-6 reality in central documentation without adding Block-7 implementation. Block 7 begins only after #225 merges and `main`, immutable `v0.6.0`, distribution/runtime `0.6.0`, public v0.6 GitHub Release, and PyPI-deferred state are reverified.
 
 ## Mandatory development loop
 
@@ -444,6 +460,7 @@ After squash merge, re-read `main`. When connector visibility does not expose a 
 - [`BAND_STRUCTURE.md`](BAND_STRUCTURE.md): reviewed v0.7 Block-3 ordinary band-state, reciprocal-path/`2*pi`, physical-spin, explicit Fermi-reference, VASP line-mode adapter and passive plotting contract.
 - [`PROCAR_FAT_BANDS.md`](PROCAR_FAT_BANDS.md): reviewed v0.7 Block-4 projection-state, backend orbital semantics, explicit aggregation/site identity, compatibility-tolerance, SOC/vector boundary and passive fat-band contract.
 - [`LOCPOT_WORK_FUNCTION.md`](LOCPOT_WORK_FUNCTION.md): reviewed v0.7 Block-5 local-potential scalar-field, skew-cell planar averaging, explicit vacuum/Fermi compatibility, transparent work-function arithmetic and passive plotting contract.
+- [`NEB_BARRIERS.md`](NEB_BARRIERS.md): reviewed v0.7 Block-6 exact image/path order, ordinal/explicit reaction coordinates, explicit reference-relative energy semantics, discrete barrier arithmetic and passive no-spline rendering contract.
 - [`V0_6_PLAN.md`](V0_6_PLAN.md): retained v0.6 architecture, frozen dependency order, scientific/API semantics, prior-art/license decisions, test strategy, and v0.7 handoff.
 - [`V0_6_RELEASING.md`](V0_6_RELEASING.md): retained v0.6 Gate A/B/C procedure and release evidence.
 - [`V0_5_PLAN.md`](V0_5_PLAN.md): v0.5 architecture, dependency order, scientific completion state and release handoff.
@@ -465,4 +482,4 @@ After each merged scientific Issue, update only documentation whose statements b
 - preceding Issue closure/completion;
 - version/tag/publication boundaries.
 
-Issue #221 is the active v0.7 Block-5 completion-state documentation checkpoint. After it merges, reverify `main`, Issue #221 closure, immutable `v0.6.0 -> c7793b309f41d174c14534bd6d4acdacc2a57636`, distribution/runtime version `0.6.0`, public v0.6 GitHub Release state, and PyPI-deferred state. Then start v0.7 Block 6 (NEB/barrier retained state + passive plotting) from that exact verified `main` baseline using [`V0_7_PLAN.md`](V0_7_PLAN.md) and the completed v0.7 foundations.
+Issue #225 is the active v0.7 Block-6 completion-state documentation checkpoint. After it merges, reverify `main`, Issue #225 closure, immutable `v0.6.0 -> c7793b309f41d174c14534bd6d4acdacc2a57636`, distribution/runtime version `0.6.0`, public v0.6 GitHub Release state, and PyPI-deferred state. Then start v0.7 Block 7 (advanced volumetric 3D backend/rendering/export) from that exact verified `main` baseline using [`V0_7_PLAN.md`](V0_7_PLAN.md), [`VOLUMETRIC_VISUALIZATION.md`](VOLUMETRIC_VISUALIZATION.md), and the completed v0.7 foundations.
