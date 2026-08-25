@@ -53,7 +53,7 @@ jobs:
           .venv-smoke/bin/python -m pip install dist/catalysis_workbench-*.whl
           .venv-smoke/bin/python -m pip check
 
-      - name: Audit installed public API and reviewed v0.6 plus v0.7 Block-1/2/3/4/5 scope
+      - name: Audit installed public API and reviewed v0.6 plus v0.7 Block-1/2/3/4/5/6 scope
         run: |
           .venv-smoke/bin/python tests/installed_api_smoke.py
           .venv-smoke/bin/python tests/installed_thermal_smoke.py
@@ -65,6 +65,7 @@ jobs:
           .venv-smoke/bin/python tests/installed_v07_block3_smoke.py
           .venv-smoke/bin/python tests/installed_v07_block4_smoke.py
           .venv-smoke/bin/python tests/installed_v07_block5_smoke.py
+          .venv-smoke/bin/python tests/installed_v07_block6_smoke.py
 
       - name: Audit installed structure/electronic/bonding/ELFCAR/band/PROCAR/LOCPOT adapters
         run: |

@@ -7,6 +7,7 @@ from .dft import plot_relative_energies
 from .dos import DOSVisualizationError, plot_dos
 from .export import export_figure
 from .free_energy import plot_free_energy_diagram
+from .neb import NEBVisualizationError, plot_neb_path
 from .presets import get_preset, list_presets, register_preset
 from .projected_bands import ProjectedBandVisualizationError, plot_fat_band
 from .scatter import ScatterError, render_scatter
@@ -49,6 +50,7 @@ __all__ = [
     "FigureSpec",
     "IsosurfaceLayerSpec",
     "LayoutSpec",
+    "NEBVisualizationError",
     "PlotStyle",
     "ProjectedBandVisualizationError",
     "ScatterError",
@@ -71,6 +73,7 @@ __all__ = [
     "plot_dos",
     "plot_fat_band",
     "plot_free_energy_diagram",
+    "plot_neb_path",
     "plot_planar_potential",
     "plot_relative_energies",
     "plot_scalar_field_slice",
