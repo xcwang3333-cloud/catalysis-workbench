@@ -1,5 +1,6 @@
 """Readers and writers for tabular and scientific data formats."""
 
+from .bader import BaderIOError, read_bader_acf
 from .electronic_structure import (
     ElectronicStructureIOError,
     read_chgcar_density,
@@ -15,9 +16,11 @@ from .structure import (
 from .tabular import TabularReadError, read_csv, read_excel, read_tabular, read_txt
 
 __all__ = [
+    "BaderIOError",
     "ElectronicStructureIOError",
     "StructureIOError",
     "TabularReadError",
+    "read_bader_acf",
     "read_chgcar_density",
     "read_cif_structure",
     "read_contcar",
