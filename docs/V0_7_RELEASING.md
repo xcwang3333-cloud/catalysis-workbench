@@ -6,8 +6,9 @@ This document records release-hardening procedure and evidence for the frozen v0
 
 - Final v0.7 scientific implementation merge: `24d3a8e67e4ef996125e575308b88ab6f9532448` (Issue #227 / PR #228).
 - Scientific-completion documentation merge and Gate-A exact baseline: `8dc651fd87c18b1710258a26b88aaf76878240a8` (Issue #229 / PR #230).
-- Distribution version before Gate A: `0.6.0`.
-- Runtime `__version__` before Gate A: `0.6.0`.
+- Gate-A merge and Gate-B exact baseline: `d718df1338b5a84d71c43a09a41c855c43cbacda` (Issue #231 / PR #232).
+- Distribution/runtime version after Gate A: `0.6.0`.
+- Gate-B release candidate version: `0.7.0`.
 - Prior release tag: `v0.6.0 -> c7793b309f41d174c14534bd6d4acdacc2a57636`, immutable.
 - The public `CatalysisWorkbench v0.6.0` GitHub Release is published from that existing tag.
 - PyPI/package-registry publication remains deferred.
@@ -22,15 +23,15 @@ The frozen v0.7 implementation blocks are:
 6. Explicit NEB image-energy state + discrete barrier plotting — #223 / #224.
 7. Advanced volumetric 3-D rendering + static export — #227 / #228.
 
-All seven blocks and scientific-completion synchronization are complete before Gate A. Operando/time-resolved work remains the v0.8 boundary.
+All seven blocks and scientific-completion synchronization are complete. Operando/time-resolved work remains the v0.8 boundary.
 
-## Gate A — frozen-scope release hardening — in progress
+## Gate A — frozen-scope release hardening — complete
 
-Tracking: Issue #231. Branch: `release/v0.7-gate-a`. Exact base: `8dc651fd87c18b1710258a26b88aaf76878240a8`.
+Tracking: Issue #231 / PR #232. Exact base: `8dc651fd87c18b1710258a26b88aaf76878240a8`.
 
-Gate A deliberately does not change the version. Distribution metadata, runtime `__version__`, and the Gate-A expected installed version remain `0.6.0`.
+Gate A deliberately did not change the version. Distribution metadata, runtime `__version__`, and the Gate-A expected installed version remained `0.6.0`.
 
-Gate A establishes a unified fresh-wheel v0.7 release audit that:
+Gate A established a unified fresh-wheel v0.7 release audit that:
 
 - proves imports come from the installed wheel rather than repository `src/`;
 - verifies distribution metadata version == runtime `__version__` == the gate-supplied expected version;
@@ -48,20 +49,41 @@ Gate A establishes a unified fresh-wheel v0.7 release audit that:
 | Evidence | State |
 | --- | --- |
 | exact base | `8dc651fd87c18b1710258a26b88aaf76878240a8` |
-| final Gate-A head | pending |
-| exact-head CI | pending |
-| release/API/packaging review | pending |
-| compatibility/dependency-boundary review | pending |
-| merge gate | pending |
-| squash merge / post-merge main | pending |
+| final Gate-A head | `af2b5736558d436c6a5464f21d31debaa94b2f3f` |
+| exact-head CI | CI #530 / run `32884936791` — success |
+| release/API/packaging review | `5025441754` — no blockers |
+| compatibility/dependency-boundary review | `5025442740` — no blockers |
+| merge gate | behind=0, mergeable=true, unresolved review threads=0 |
+| squash merge / post-merge main | `d718df1338b5a84d71c43a09a41c855c43cbacda` |
 | version after Gate A | `0.6.0` |
 | `v0.6.0` invariant | `c7793b309f41d174c14534bd6d4acdacc2a57636` |
 
-If Gate A exposes a genuine frozen-scope compatibility or packaging blocker, only that blocker may be fixed in Gate A, with regression coverage and fresh exact-head evidence after any head change.
+## Gate B — final-version candidate — in progress
 
-## Gate B — final-version candidate — pending
+Tracking: Issue #233. Branch: `release/v0.7-gate-b`. Exact base: `d718df1338b5a84d71c43a09a41c855c43cbacda`.
 
-Gate B begins only after Gate A is merged and reverse-verified. Gate B owns synchronization of `[project].version`, runtime `__version__`, and the unified v0.7 release-audit expected version to the reviewed v0.7 candidate version, followed by exact-wheel validation in fresh base and optional-backend environments.
+Gate B owns only final candidate synchronization and exact-wheel validation:
+
+- `[project].version`: `0.6.0` -> `0.7.0`;
+- runtime `__version__`: `0.6.0` -> `0.7.0`;
+- unified v0.7 release-audit expected version in CI: `0.6.0` -> `0.7.0`;
+- no scientific/API/dependency/optional-backend expansion.
+
+The exact Gate-B candidate must pass Ruff/full pytest, fresh exact `0.7.0` base-wheel build/install/`pip check`, the unified v0.7 release audit, the retained fresh `[structure]` adapter audit, the retained separate `[volumetric3d]` PyVista/VTK headless rendering/PNG-export audit, and documented quickstarts.
+
+### Gate B evidence
+
+| Evidence | State |
+| --- | --- |
+| exact base | `d718df1338b5a84d71c43a09a41c855c43cbacda` |
+| candidate version | `0.7.0` |
+| final Gate-B head | pending |
+| exact-head CI | pending |
+| release/API/packaging review | pending |
+| compatibility/release-boundary review | pending |
+| merge gate | pending |
+| squash merge / reviewed release commit | pending |
+| `v0.6.0` invariant | `c7793b309f41d174c14534bd6d4acdacc2a57636` |
 
 Gate B must not create a tag, GitHub Release, or package-registry artifact.
 
