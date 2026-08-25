@@ -25,13 +25,13 @@ The frozen v0.5 scientific blocks are:
 
 Issue #128 was a stale duplicate of the completed geometry block and was closed `duplicate` before Gate A.
 
-## Gate A — frozen-scope release hardening
+## Gate A — frozen-scope release hardening — complete
 
-Tracking: Issue #136. Branch: `release/v0.5-gate-a`. Exact base: `8c958ffc29a36afa9340cada2239b51520c87a3d`.
+Tracking: Issue #136 / PR #137. Branch: `release/v0.5-gate-a`. Exact base: `8c958ffc29a36afa9340cada2239b51520c87a3d`.
 
-Gate A is deliberately **not** a version-bump gate. Both distribution and runtime version remain `0.4.0` throughout Gate A.
+Gate A deliberately did not change the version. Both distribution and runtime version remained `0.4.0`.
 
-Gate A must establish a unified fresh-wheel audit that:
+Gate A established a unified fresh-wheel audit that:
 
 - proves imports come from the installed wheel rather than repository `src/`;
 - verifies distribution metadata version == runtime `__version__` == the gate-supplied expected version;
@@ -42,39 +42,53 @@ Gate A must establish a unified fresh-wheel audit that:
 - retains the optional `[structure]` adapter audit in a separate fresh environment;
 - retains the documented LSV/XRD/Raman/FTIR/thermal/sorption/composition quickstarts.
 
-A real compatibility or packaging defect exposed by Gate A may be fixed on the Gate-A branch with regression coverage, but any head change invalidates older CI/review evidence.
-
 ### Gate A evidence
 
 | Evidence | State |
 | --- | --- |
 | exact base | `8c958ffc29a36afa9340cada2239b51520c87a3d` |
-| final Gate-A head | pending |
-| exact-head CI | pending |
-| release/API/packaging review | pending |
-| second final-head review | pending |
-| merge gate | pending |
-| squash merge / post-merge main | pending |
-| version after Gate A | must remain `0.4.0` |
-| `v0.4.0` invariant | must remain `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6` |
+| final Gate-A head | `fb13cdbf633366a0840f5f2e21af215bee47b133` |
+| exact-head CI | CI #358 / run `32799486710` — success |
+| release/API/packaging review | `5014277750` — pass |
+| second final-head review | `5014278425` — pass |
+| merge gate | behind=0; mergeable=true; unresolved threads=0 |
+| squash merge / post-merge main | `0ffcd7e4a89340d993468039ba83b44bc7638050` |
+| version after Gate A | `0.4.0` |
+| `v0.4.0` invariant | `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6` |
 
-## Gate B — final-version candidate
+## Gate B — final-version candidate — active
 
-Gate B begins only after Gate A is fully merged and reverified.
+Tracking: Issue #138. Branch: `release/v0.5-gate-b`. Exact base: `0ffcd7e4a89340d993468039ba83b44bc7638050`.
 
-Gate B owns final candidate version synchronization. The intended v0.5 final candidate is `0.5.0`, but Gate B must still verify the live release state before changing anything.
+Gate B is explicitly authorized and owns final candidate version synchronization to `0.5.0`.
 
-Gate B should:
+Gate B core actions:
 
-- update `[project].version` and runtime `__version__` together;
-- update the Gate-A expected-version value in CI to the final candidate;
-- update release/changelog/documentation candidate state consistently;
+- synchronize `[project].version` and runtime `__version__` to `0.5.0`;
+- update the unified v0.5 expected-version value in CI to `0.5.0`;
+- update direct release/changelog candidate state;
 - build the exact candidate wheel in a fresh environment;
 - run the unified v0.5 release audit, optional structure adapter audit, full tests, Ruff, `pip check`, and documented quickstarts;
 - perform formal release/API/packaging review on the final exact head;
 - merge only with behind=0, mergeable=true, unresolved review threads=0, and expected-head protection.
 
+Broad README/MASTER_PLAN/ROADMAP/V0_5_PLAN overview-state synchronization is handled as a routine docs-only checkpoint immediately after Gate B merges and before Gate C.
+
 Gate B does **not** create a tag, GitHub Release, or package-registry artifact.
+
+### Gate B evidence
+
+| Evidence | State |
+| --- | --- |
+| exact base | `0ffcd7e4a89340d993468039ba83b44bc7638050` |
+| candidate version | `0.5.0` |
+| final Gate-B head | pending |
+| exact-head CI | pending |
+| release/API/packaging review | pending |
+| second final-head review | pending |
+| merge gate | pending |
+| squash merge / post-merge main | pending |
+| `v0.4.0` invariant | must remain `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6` |
 
 ## Gate C — tag creation and reverse verification
 
