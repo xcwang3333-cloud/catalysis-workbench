@@ -120,12 +120,13 @@ CHE/free-energy thermodynamics, DOS/PDOS, Bader, COHP/ICOHP, charge-density diff
 
 ## v0.6.x — Electronic structure and catalysis thermodynamics
 
-The architecture-first v0.6 scope, scientific semantics, dependency boundaries, prior-art/license decisions, test strategy, and implementation order are frozen in [`V0_6_PLAN.md`](V0_6_PLAN.md). Architecture checkpoint Issue #146 / PR #147 is complete at merge `3803e014376a7edb22d6a9a5b6480541742499be`. Scientific implementation has not yet begun; central-document synchronization is tracked by Issue #148 and must complete first.
+The architecture-first v0.6 scope, scientific semantics, dependency boundaries, prior-art/license decisions, test strategy, and implementation order are frozen in [`V0_6_PLAN.md`](V0_6_PLAN.md). Architecture checkpoint Issue #146 / PR #147 is complete at merge `3803e014376a7edb22d6a9a5b6480541742499be`, and the architecture central-doc synchronization Issue #148 / PR #149 is complete at `aac05d4426c15c8932c608d07ef42e4dc07b09ce`. Scientific block 1 is complete through Issue #150 / PR #151 at merge `58023070bf7f642748b69e99281a5ed7ed4d40df`. Issue #152 is the current docs-only completion-state synchronization before block 2 begins.
 
 Frozen implementation order:
 
-1. **Electronic-structure + volumetric semantics/adapters.**
-2. **DOS / PDOS processing + passive publication plotting.**
+1. **Electronic-structure + volumetric semantics/adapters — complete through #150 / #151.**
+   - CatalysisWorkbench-owned immutable energy/DOS/volumetric state, lazy `pymatgen-core` VASP adapters, explicit source-energy/Fermi/spin/projection semantics, and regression-verified CHGCAR `1/angstrom^3` conversion.
+2. **DOS / PDOS processing + passive publication plotting — next after #152; not yet implemented.**
 3. **Band-center analysis.**
 4. **Bader-result parsing + explicit charge accounting.**
 5. **COHP / ICOHP parsing + bonding analysis.**

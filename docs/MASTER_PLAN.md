@@ -47,8 +47,11 @@ Checkpoint date: 2026-08-25.
 - Basic DFT energetics: Issue #132 / PR #133 — complete.
 - v0.5 scientific implementation: **complete**.
 - v0.6 architecture checkpoint: Issue #146 / PR #147 — complete at `3803e014376a7edb22d6a9a5b6480541742499be`.
-- Active stage: **Issue #148 — synchronize the completed v0.6 architecture into central documentation before scientific implementation block 1**.
-- No v0.6 scientific implementation block starts until #148 is complete and `main` is reverified.
+- v0.6 architecture central-document synchronization: Issue #148 / PR #149 — complete at `aac05d4426c15c8932c608d07ef42e4dc07b09ce`.
+- v0.6 block 1, electronic-structure + volumetric semantics/adapters: Issue #150 / PR #151 — complete at `58023070bf7f642748b69e99281a5ed7ed4d40df`.
+- Block-1 final head `229fa5c3ec9225bde8afd1931cefe0dea521eabe` passed CI #376 / run `32808329764` and final-head reviews `5014903632`, `5014904435` before squash merge.
+- Active stage: **Issue #152 — synchronize block-1 completion state into central documentation**.
+- v0.6 block 2 (DOS/PDOS processing + passive plotting) starts only after #152 is complete and `main` is reverified.
 
 Live GitHub Issue/PR/tag state remains authoritative if this checkpoint becomes stale.
 
@@ -63,7 +66,7 @@ Detailed long-range scope is maintained in [`ROADMAP.md`](ROADMAP.md).
 | v0.3.x | FTIR, thermal analysis, basic gas sorption, ICP/composition | complete/released as v0.3.0 |
 | v0.4.x | shared fitting, XPS, EIS, quantitative BET, product calibration | complete/released as v0.4.0; GitHub Release published; PyPI deferred |
 | v0.5.x | XAS/XANES, FT/WT-EXAFS, EXAFS summaries, structures/geometry/static visualization, basic DFT energetics | complete/released as v0.5.0; GitHub Release published; PyPI deferred |
-| v0.6.x | electronic structure and catalysis thermodynamics | architecture complete; scientific implementation pending |
+| v0.6.x | electronic structure and catalysis thermodynamics | architecture + block 1 complete; block 2 next after #152 |
 | v0.7.x | advanced computational visualization | planned |
 | v0.8.x | operando/time-resolved analysis | planned |
 | v0.9.x | reproducible batch workflows and first interactive editor | planned |
@@ -189,9 +192,19 @@ The frozen scientific implementation order is:
 
 The architecture establishes shared energy-reference, spin, site/orbital projection, normalization, provenance, lattice/grid and component semantics before descriptor-specific processing. CHE extends the reviewed v0.5 DFT-energy foundation instead of creating a second incompatible energy model.
 
-### Current pre-implementation sync
+### Architecture central-document sync — complete
 
-Issue #148 synchronizes the completed architecture checkpoint into central docs. No v0.6 numerical implementation, runtime dependency addition, version change, tag action, GitHub Release action, or PyPI action belongs in this step. Scientific block 1 begins only after #148 merges and `main` is reverified.
+Issue #148 / PR #149 synchronized the completed architecture checkpoint into central documentation at `aac05d4426c15c8932c608d07ef42e4dc07b09ce` before scientific implementation began.
+
+### Electronic-structure + volumetric semantics/adapters — complete
+
+Issue #150 / PR #151 delivered CatalysisWorkbench-owned immutable `ElectronicEnergyAxis`, `DOSProjection`, `DOSChannel`, `ElectronicDOS`, and `VolumetricGrid` state plus lazy `pymatgen-core` `vasprun.xml`/CHGCAR adapters. Source-native energy/Fermi state, non-spin `total` versus collinear `up`/`down`, deterministic site/orbital projection identity, canonical volumetric component ordering, and CHGCAR electron-number-density conversion are explicit. The installed optional-backend regression verified current `pymatgen-core` parser grid semantics before applying the reviewed `parsed_grid / V_cell` conversion.
+
+Block-1 final head `229fa5c3ec9225bde8afd1931cefe0dea521eabe` passed CI #376 / run `32808329764` and final-head reviews `5014903632`, `5014904435` before squash merge `58023070bf7f642748b69e99281a5ed7ed4d40df`.
+
+### Current completion-state sync
+
+Issue #152 is the docs-only synchronization checkpoint after block 1. It records merged reality in central plans without adding DOS processing or plotting. Block 2 begins only after #152 merges and `main` is reverified.
 
 ## Mandatory development loop
 
@@ -284,4 +297,4 @@ After each merged scientific Issue, update only documentation whose statements b
 - preceding Issue closure/completion;
 - version/tag/publication boundaries.
 
-Issue #148 is the active pre-implementation v0.6 central-document synchronization checkpoint. After it merges, reverify `main`, immutable `v0.5.0`, immutable `v0.4.0`, distribution/runtime version `0.5.0`, and PyPI-deferred state. Then start v0.6 scientific block 1 from the exact verified `main` baseline using the frozen order in `V0_6_PLAN.md`.
+Issue #152 is the active v0.6 block-1 completion-state documentation checkpoint. After it merges, reverify `main`, Issue #152 closure, immutable `v0.5.0`, immutable `v0.4.0`, distribution/runtime version `0.5.0`, and PyPI-deferred state. Then start block 2 (DOS/PDOS processing + passive plotting) from that exact verified `main` baseline using the frozen order in `V0_6_PLAN.md`.
