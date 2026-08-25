@@ -131,7 +131,10 @@ class PlanarPotentialProfile:
         structure = str(_nonblank(self.structure_digest, name="structure_digest"))
         calculation_id = _nonblank(self.calculation_id, name="calculation_id", optional=True)
         axis = _axis(self.axis)
-        shape = tuple(_integer(size, name="grid_shape value", minimum=1) for size in self.grid_shape)
+        shape = tuple(
+            _integer(size, name="grid_shape value", minimum=1)
+            for size in self.grid_shape
+        )
         if len(shape) != 3:
             raise WorkFunctionError("grid_shape must contain exactly three positive integers")
         height = _finite(self.normal_height_angstrom, name="normal_height_angstrom")
@@ -230,7 +233,9 @@ class VacuumLevelResult:
         normal_start = _finite(self.normal_start_angstrom, name="normal_start_angstrom")
         normal_stop = _finite(self.normal_stop_angstrom, name="normal_stop_angstrom")
         if not np.isclose(normal_start, expected_fractional_start * height, rtol=0.0, atol=1e-14):
-            raise WorkFunctionError("normal_start_angstrom must match retained source-grid geometry")
+            raise WorkFunctionError(
+                "normal_start_angstrom must match retained source-grid geometry"
+            )
         if not np.isclose(normal_stop, expected_fractional_stop * height, rtol=0.0, atol=1e-14):
             raise WorkFunctionError("normal_stop_angstrom must match retained source-grid geometry")
         statistic = str(_nonblank(self.statistic, name="statistic")).lower()
