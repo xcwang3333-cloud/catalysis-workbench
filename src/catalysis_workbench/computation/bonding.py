@@ -20,55 +20,51 @@ class BondingError(ValueError):
     """Raised when COHP/ICOHP bonding state is scientifically inconsistent."""
 
 
-def _required_text(value: object, *, name: str) -> str:
-    text = str(value).strip()
-    if not text:
-        raise BondingError(f"{name} must not be blank")
-    return text
-
-
-def _optional_text(value: object | None, *, name: str) -> str | None:
-    if value is None:
+def _text(value: object, *, name: str, optional: bool = False) -> str | None:
+    if value is None and optional:
         return None
-    return _required_text(value, name=name)
+    result = str(value).strip()
+    if not result:
+        raise BondingError(f"{name} must not be blank")
+    return result
 
 
-def _finite_float(value: object, *, name: str) -> float:
+def _float(value: object, *, name: str) -> float:
     try:
-        number = float(value)
+        result = float(value)
     except (TypeError, ValueError) as exc:
         raise TypeError(f"{name} must be a finite float") from exc
-    if not np.isfinite(number):
+    if not np.isfinite(result):
         raise BondingError(f"{name} must be finite")
-    return number
+    return result
 
 
-def _optional_positive_float(value: object | None, *, name: str) -> float | None:
+def _positive_float(value: object | None, *, name: str) -> float | None:
     if value is None:
         return None
-    number = _finite_float(value, name=name)
-    if number <= 0:
+    result = _float(value, name=name)
+    if result <= 0:
         raise BondingError(f"{name} must be greater than zero")
-    return number
+    return result
 
 
 def _positive_int(value: object, *, name: str) -> int:
     if isinstance(value, bool) or not isinstance(value, (int, np.integer)):
         raise TypeError(f"{name} must be an integer")
-    integer = int(value)
-    if integer <= 0:
+    result = int(value)
+    if result <= 0:
         raise BondingError(f"{name} must be greater than zero")
-    return integer
+    return result
 
 
 def _spin(value: object) -> str:
-    text = _required_text(value, name="spin").lower()
-    if text not in _ALLOWED_SPINS:
+    result = str(_text(value, name="spin")).lower()
+    if result not in _ALLOWED_SPINS:
         raise BondingError("spin must be one of: total, up, down")
-    return text
+    return result
 
 
-def _frozen_array(values: object, *, name: str) -> NDArray[np.float64]:
+def _array(values: object, *, name: str) -> NDArray[np.float64]:
     try:
         source = np.asarray(values)
     except (TypeError, ValueError) as exc:
@@ -81,33 +77,32 @@ def _frozen_array(values: object, *, name: str) -> NDArray[np.float64]:
         raise TypeError(f"{name} must contain real numeric values") from exc
     if array.ndim != 1 or array.size == 0 or not np.isfinite(array).all():
         raise BondingError(f"{name} must be a non-empty finite one-dimensional array")
-    contiguous = np.ascontiguousarray(array, dtype=np.float64)
-    frozen = np.frombuffer(contiguous.tobytes(order="C"), dtype=np.float64)
+    raw = np.ascontiguousarray(array, dtype=np.float64).tobytes(order="C")
+    frozen = np.frombuffer(raw, dtype=np.float64)
     frozen.setflags(write=False)
     return frozen
 
 
-def _site_indices(values: Sequence[int] | None) -> tuple[int, ...]:
+def _site_pair(values: Sequence[int] | None) -> tuple[int, ...]:
     if values is None:
         return ()
     result: list[int] = []
     for value in values:
         if isinstance(value, bool) or not isinstance(value, (int, np.integer)):
             raise TypeError("source_site_indices must contain integers")
-        integer = int(value)
-        if integer < 0:
+        index = int(value)
+        if index < 0:
             raise BondingError("source_site_indices must be non-negative")
-        result.append(integer)
+        result.append(index)
     if result and len(result) != 2:
         raise BondingError("source_site_indices must contain exactly two sites when supplied")
     return tuple(result)
 
 
-def _orbital_descriptors(values: Sequence[object] | None) -> tuple[str, ...]:
+def _descriptors(values: Sequence[object] | None) -> tuple[str, ...]:
     if values is None:
         return ()
-    result = tuple(_required_text(value, name="orbital descriptor") for value in values)
-    return result
+    return tuple(str(_text(value, name="orbital descriptor")) for value in values)
 
 
 def _digest_text(digest: object, value: str | None) -> None:
@@ -129,7 +124,7 @@ def _digest_float(digest: object, value: float | None) -> None:
 
 @dataclass(frozen=True, slots=True, eq=False)
 class COHPChannel:
-    """One physical-spin COHP channel for a concrete LOBSTER bond/orbital identity."""
+    """One physical-spin COHP channel for a concrete bond/orbital identity."""
 
     key: str
     bond_key: str
@@ -145,22 +140,19 @@ class COHPChannel:
     digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        key = _required_text(self.key, name="key")
-        bond_key = _required_text(self.bond_key, name="bond_key")
-        label = _required_text(self.source_label, name="source_label")
+        key = str(_text(self.key, name="key"))
+        bond_key = str(_text(self.bond_key, name="bond_key"))
+        source_label = str(_text(self.source_label, name="source_label"))
         spin = _spin(self.spin)
-        cohp = _frozen_array(self.cohp, name="cohp")
-        integrated = _frozen_array(self.integrated_cohp, name="integrated_cohp")
+        cohp = _array(self.cohp, name="cohp")
+        integrated = _array(self.integrated_cohp, name="integrated_cohp")
         if cohp.shape != integrated.shape:
             raise BondingError("cohp and integrated_cohp must have identical shapes")
-        length = _optional_positive_float(
-            self.bond_length_angstrom,
-            name="bond_length_angstrom",
-        )
-        sites = _site_indices(self.source_site_indices)
-        orbital_key = _optional_text(self.orbital_key, name="orbital_key")
-        orbital_label = _optional_text(self.orbital_label, name="orbital_label")
-        descriptors = _orbital_descriptors(self.orbital_descriptors)
+        length = _positive_float(self.bond_length_angstrom, name="bond_length_angstrom")
+        sites = _site_pair(self.source_site_indices)
+        orbital_key = _text(self.orbital_key, name="orbital_key", optional=True)
+        orbital_label = _text(self.orbital_label, name="orbital_label", optional=True)
+        descriptors = _descriptors(self.orbital_descriptors)
         orbital_fields = (orbital_key is not None, orbital_label is not None, bool(descriptors))
         if any(orbital_fields) and not all(orbital_fields):
             raise BondingError(
@@ -169,7 +161,7 @@ class COHPChannel:
 
         digest = hashlib.sha256()
         digest.update(b"CatalysisWorkbench.COHPChannel.v1\0")
-        for value in (key, bond_key, label, spin, orbital_key, orbital_label):
+        for value in (key, bond_key, source_label, spin, orbital_key, orbital_label):
             _digest_text(digest, value)
         _digest_float(digest, length)
         for index in sites:
@@ -181,7 +173,7 @@ class COHPChannel:
 
         object.__setattr__(self, "key", key)
         object.__setattr__(self, "bond_key", bond_key)
-        object.__setattr__(self, "source_label", label)
+        object.__setattr__(self, "source_label", source_label)
         object.__setattr__(self, "spin", spin)
         object.__setattr__(self, "cohp", cohp)
         object.__setattr__(self, "integrated_cohp", integrated)
@@ -203,7 +195,7 @@ class COHPChannel:
 
 @dataclass(frozen=True, slots=True, eq=False)
 class COHPResult:
-    """Immutable concrete-bond COHP state on one already-Fermi-referenced energy grid."""
+    """Immutable concrete-bond COHP state on an already-Fermi-referenced grid."""
 
     energy: ElectronicEnergyAxis
     channels: Sequence[COHPChannel]
@@ -221,20 +213,19 @@ class COHPResult:
                 "LOBSTER COHP energy must be retained as already Fermi-referenced with zero at E_F"
             )
         channels = tuple(self.channels)
-        if not channels or not all(isinstance(channel, COHPChannel) for channel in channels):
+        if not channels or not all(isinstance(item, COHPChannel) for item in channels):
             raise BondingError("channels must contain at least one COHPChannel")
-        keys = tuple(channel.key for channel in channels)
-        if len(set(keys)) != len(keys):
+        if len({item.key for item in channels}) != len(channels):
             raise BondingError("COHP channel keys must be unique")
-        for channel in channels:
-            if channel.cohp.size != self.energy.values_ev.size:
-                raise BondingError("COHP channel arrays must align exactly with the energy grid")
+        if any(item.cohp.size != self.energy.values_ev.size for item in channels):
+            raise BondingError("COHP channel arrays must align exactly with the energy grid")
+
         producer_fermi = None
         if self.producer_fermi_ev is not None:
-            producer_fermi = _finite_float(self.producer_fermi_ev, name="producer_fermi_ev")
-        source_format = _required_text(self.source_format, name="source_format")
-        source_path = _optional_text(self.source_path, name="source_path")
-        source_id = _optional_text(self.source_id, name="source_id")
+            producer_fermi = _float(self.producer_fermi_ev, name="producer_fermi_ev")
+        source_format = str(_text(self.source_format, name="source_format"))
+        source_path = _text(self.source_path, name="source_path", optional=True)
+        source_id = _text(self.source_id, name="source_id", optional=True)
 
         digest = hashlib.sha256()
         digest.update(b"CatalysisWorkbench.COHPResult.v1\0")
@@ -276,45 +267,42 @@ class ICOHPBondSummary:
     digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        bond_key = _required_text(self.bond_key, name="bond_key")
-        label = _required_text(self.source_label, name="source_label")
-        length = _optional_positive_float(
-            self.bond_length_angstrom,
-            name="bond_length_angstrom",
-        )
+        bond_key = str(_text(self.bond_key, name="bond_key"))
+        source_label = str(_text(self.source_label, name="source_label"))
+        length = _positive_float(self.bond_length_angstrom, name="bond_length_angstrom")
         assert length is not None
         number_of_bonds = _positive_int(self.number_of_bonds, name="number_of_bonds")
         try:
-            source_items = tuple(dict(self.icohp_by_spin).items())
+            items = tuple(dict(self.icohp_by_spin).items())
         except (TypeError, ValueError) as exc:
             raise TypeError("icohp_by_spin must be mapping-like") from exc
-        if not source_items:
+        if not items:
             raise BondingError("icohp_by_spin must not be empty")
         parsed: dict[str, float] = {}
-        for raw_spin, raw_value in source_items:
+        for raw_spin, raw_value in items:
             spin = _spin(raw_spin)
             if spin in parsed:
                 raise BondingError("icohp_by_spin contains duplicate spin identities")
-            parsed[spin] = _finite_float(raw_value, name=f"icohp_by_spin[{spin}]")
+            parsed[spin] = _float(raw_value, name=f"icohp_by_spin[{spin}]")
         if "total" in parsed and len(parsed) != 1:
             raise BondingError("physical total cannot coexist with up/down ICOHP values")
         if "total" not in parsed and set(parsed) != {"up", "down"}:
             raise BondingError("spin-polarized ICOHP state must contain both up and down")
-        ordered_keys = ("total",) if "total" in parsed else ("up", "down")
-        frozen_map = MappingProxyType({key: parsed[key] for key in ordered_keys})
+        order = ("total",) if "total" in parsed else ("up", "down")
+        frozen_map = MappingProxyType({spin: parsed[spin] for spin in order})
 
         digest = hashlib.sha256()
         digest.update(b"CatalysisWorkbench.ICOHPBondSummary.v1\0")
-        for value in (bond_key, label):
+        for value in (bond_key, source_label):
             _digest_text(digest, value)
         _digest_float(digest, length)
         digest.update(number_of_bonds.to_bytes(8, "little", signed=False))
-        for spin in ordered_keys:
+        for spin in order:
             _digest_text(digest, spin)
             _digest_float(digest, parsed[spin])
 
         object.__setattr__(self, "bond_key", bond_key)
-        object.__setattr__(self, "source_label", label)
+        object.__setattr__(self, "source_label", source_label)
         object.__setattr__(self, "bond_length_angstrom", length)
         object.__setattr__(self, "number_of_bonds", number_of_bonds)
         object.__setattr__(self, "icohp_by_spin", frozen_map)
@@ -330,7 +318,7 @@ class ICOHPBondSummary:
 
 @dataclass(frozen=True, slots=True, eq=False)
 class ICOHPResult:
-    """Immutable list of source-sign ICOHP(E_F) bond summaries."""
+    """Immutable source-order collection of ICOHP(E_F) bond summaries."""
 
     bonds: Sequence[ICOHPBondSummary]
     source_format: str = "ICOHPLIST.lobster"
@@ -340,15 +328,15 @@ class ICOHPResult:
 
     def __post_init__(self) -> None:
         bonds = tuple(self.bonds)
-        if not bonds or not all(isinstance(bond, ICOHPBondSummary) for bond in bonds):
+        if not bonds or not all(isinstance(item, ICOHPBondSummary) for item in bonds):
             raise BondingError("bonds must contain at least one ICOHPBondSummary")
-        keys = tuple(bond.bond_key for bond in bonds)
-        labels = tuple(bond.source_label for bond in bonds)
-        if len(set(keys)) != len(keys) or len(set(labels)) != len(labels):
-            raise BondingError("ICOHP bond keys and source labels must be unique")
-        source_format = _required_text(self.source_format, name="source_format")
-        source_path = _optional_text(self.source_path, name="source_path")
-        source_id = _optional_text(self.source_id, name="source_id")
+        if len({item.bond_key for item in bonds}) != len(bonds):
+            raise BondingError("ICOHP bond keys must be unique")
+        if len({item.source_label for item in bonds}) != len(bonds):
+            raise BondingError("ICOHP source labels must be unique")
+        source_format = str(_text(self.source_format, name="source_format"))
+        source_path = _text(self.source_path, name="source_path", optional=True)
+        source_id = _text(self.source_id, name="source_id", optional=True)
 
         digest = hashlib.sha256()
         digest.update(b"CatalysisWorkbench.ICOHPResult.v1\0")
@@ -375,7 +363,7 @@ class ICOHPResult:
 
 @dataclass(frozen=True, slots=True)
 class ICOHPSpinSum:
-    """Explicit source-sign sum of selected physical ICOHP(E_F) spin channels."""
+    """Explicit source-sign sum of caller-selected ICOHP(E_F) spin channels."""
 
     bond_key: str
     source_label: str
@@ -385,29 +373,34 @@ class ICOHPSpinSum:
     digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        bond_key = _required_text(self.bond_key, name="bond_key")
-        label = _required_text(self.source_label, name="source_label")
+        bond_key = str(_text(self.bond_key, name="bond_key"))
+        source_label = str(_text(self.source_label, name="source_label"))
         spins = tuple(_spin(spin) for spin in self.contributing_spins)
         if not spins or len(set(spins)) != len(spins):
             raise BondingError("contributing_spins must be a non-empty unique sequence")
-        value = _finite_float(self.value, name="value")
-        source_digest = _required_text(
-            self.source_summary_digest,
-            name="source_summary_digest",
-        )
+        value = _float(self.value, name="value")
+        source_digest = str(_text(self.source_summary_digest, name="source_summary_digest"))
+
         digest = hashlib.sha256()
         digest.update(b"CatalysisWorkbench.ICOHPSpinSum.v1\0")
-        for text in (bond_key, label, source_digest):
+        for text in (bond_key, source_label, source_digest):
             _digest_text(digest, text)
         for spin in spins:
             _digest_text(digest, spin)
         _digest_float(digest, value)
+
         object.__setattr__(self, "bond_key", bond_key)
-        object.__setattr__(self, "source_label", label)
+        object.__setattr__(self, "source_label", source_label)
         object.__setattr__(self, "contributing_spins", spins)
         object.__setattr__(self, "value", value)
         object.__setattr__(self, "source_summary_digest", source_digest)
         object.__setattr__(self, "digest", digest.hexdigest())
+
+
+def _filter(values: Sequence[str] | None, *, name: str) -> frozenset[str] | None:
+    if values is None:
+        return None
+    return frozenset(str(_text(value, name=name)) for value in values)
 
 
 def select_cohp_channels(
@@ -421,14 +414,10 @@ def select_cohp_channels(
     """Select exact retained COHP channels while preserving source order."""
     if not isinstance(result, COHPResult):
         raise TypeError("result must be a COHPResult")
-    key_filter = None if bond_keys is None else frozenset(_required_text(v, name="bond_key") for v in bond_keys)
-    label_filter = None if source_labels is None else frozenset(
-        _required_text(v, name="source_label") for v in source_labels
-    )
-    spin_filter = None if spins is None else frozenset(_spin(v) for v in spins)
-    orbital_filter = None if orbital_keys is None else frozenset(
-        _required_text(v, name="orbital_key") for v in orbital_keys
-    )
+    key_filter = _filter(bond_keys, name="bond_key")
+    label_filter = _filter(source_labels, name="source_label")
+    spin_filter = None if spins is None else frozenset(_spin(value) for value in spins)
+    orbital_filter = _filter(orbital_keys, name="orbital_key")
     selected = tuple(
         channel
         for channel in result.channels
@@ -451,10 +440,8 @@ def select_icohp_bonds(
     """Select exact ICOHP summaries while preserving source order."""
     if not isinstance(result, ICOHPResult):
         raise TypeError("result must be an ICOHPResult")
-    key_filter = None if bond_keys is None else frozenset(_required_text(v, name="bond_key") for v in bond_keys)
-    label_filter = None if source_labels is None else frozenset(
-        _required_text(v, name="source_label") for v in source_labels
-    )
+    key_filter = _filter(bond_keys, name="bond_key")
+    label_filter = _filter(source_labels, name="source_label")
     selected = tuple(
         bond
         for bond in result.bonds
@@ -480,18 +467,17 @@ def sum_icohp_spins(
     missing = [spin for spin in selected if spin not in summary.icohp_by_spin]
     if missing:
         raise BondingError("requested ICOHP spin is not retained: " + ", ".join(missing))
-    value = float(sum(summary.icohp_by_spin[spin] for spin in selected))
     return ICOHPSpinSum(
         bond_key=summary.bond_key,
         source_label=summary.source_label,
         contributing_spins=selected,
-        value=value,
+        value=float(sum(summary.icohp_by_spin[spin] for spin in selected)),
         source_summary_digest=summary.digest,
     )
 
 
 def cohp_channels_frame(result: COHPResult) -> pd.DataFrame:
-    """Return a detached point-wise table of retained source-sign COHP channels."""
+    """Return a detached point-wise table of source-sign COHP channels."""
     rows: list[dict[str, object]] = []
     for channel in result.channels:
         for energy, cohp, integrated in zip(
@@ -524,9 +510,8 @@ def cohp_channels_frame(result: COHPResult) -> pd.DataFrame:
 
 def icohp_bonds_frame(result: ICOHPResult) -> pd.DataFrame:
     """Return a detached one-row-per-bond table with explicit spin columns."""
-    rows: list[dict[str, object]] = []
-    for bond in result.bonds:
-        rows.append(
+    return pd.DataFrame(
+        [
             {
                 "result_digest": result.digest,
                 "summary_digest": bond.digest,
@@ -538,5 +523,6 @@ def icohp_bonds_frame(result: ICOHPResult) -> pd.DataFrame:
                 "icohp_up": bond.icohp_by_spin.get("up"),
                 "icohp_down": bond.icohp_by_spin.get("down"),
             }
-        )
-    return pd.DataFrame(rows)
+            for bond in result.bonds
+        ]
+    )
