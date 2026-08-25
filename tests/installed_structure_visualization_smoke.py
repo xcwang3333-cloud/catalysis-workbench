@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+from importlib import import_module
 
 import numpy as np
 
@@ -30,8 +31,7 @@ assert len(scene.bonds) == 1
 assert len(scene.cell_edges_angstrom) == 12
 assert scene.atoms[0].position_angstrom.flags.writeable is False
 
-from catalysis_workbench.visualization import plot_structure
-
+plot_structure = import_module("catalysis_workbench.visualization").plot_structure
 figure, ax = plot_structure(scene)
 assert ax.name == "3d"
 assert len(ax.collections) == 2
