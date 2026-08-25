@@ -99,11 +99,15 @@ The minimum scientific slice operation selects retained source-grid planes expli
 
 No hidden trilinear interpolation or arbitrary-plane resampling occurs in the minimum slice operation. Arbitrary resampled planes, if ever added, require a separate explicit processing contract.
 
+For a skew periodic cell, slice and mesh geometry must use the full lattice matrix. Grid-index positions are interpreted in fractional cell coordinates and then transformed to Cartesian coordinates by the retained lattice; implementations must not approximate a general cell by multiplying grid fractions by three independent lattice-vector norms.
+
 ### Isosurface specification
 
 An isosurface request retains an explicit physical threshold in the source field unit. A signed field may expose multiple independently specified layers, for example positive and negative charge-density-difference thresholds.
 
 Mesh extraction inherently estimates geometric surface positions between sampled voxels. That interpolation is renderer/mesh geometry only: it does not create, store, or replace a new scientific scalar grid and must not mutate source values. The threshold and extraction provenance remain visible.
+
+Mesh vertices returned in array/grid coordinates must be converted through fractional coordinates and the full retained lattice matrix before Cartesian rendering. Axis-length-only `spacing` is not scientifically sufficient for a non-orthogonal cell. Automatic periodic wrapping, seam welding, or supercell replication is not performed; any displayed periodic image copies are explicit presentation transforms.
 
 ### Renderer-neutral scene
 
@@ -155,6 +159,7 @@ Rules:
 Introduce backend-neutral immutable band-structure state with at least:
 
 - exact ordered k points in source reciprocal coordinates;
+- explicit reciprocal-lattice matrix, reciprocal-coordinate convention, and whether the Cartesian reciprocal basis includes the conventional `2*pi` factor;
 - explicit path segment boundaries and high-symmetry labels only when supplied by the source/path definition;
 - band energies in eV with physical spin identity;
 - exact band index/order as supplied;
@@ -172,7 +177,9 @@ Scientific rules:
 - no scissor correction;
 - no hidden Fermi shift;
 - no automatic band-gap/direct-gap/metallicity inference in the minimum visualization block;
-- path distance, when used for plotting, is derived only from retained k points, reciprocal lattice, and explicit segment boundaries; discontinuous path segments are not joined as if physically continuous.
+- path distance, when used for plotting, is derived only from retained k points, the explicitly retained reciprocal-lattice convention, and explicit segment boundaries;
+- plotted reciprocal path distance has an explicit physical unit, normally `1/angstrom` for a Cartesian reciprocal basis, and implementations must not introduce or omit a `2*pi` factor silently;
+- discontinuous path segments are not joined as if physically continuous.
 
 Passive plotting consumes retained band energies/reference/path state only. Fermi-referenced plotting requires an explicit retained transformation analogous to the v0.6 DOS reference rules.
 
@@ -338,6 +345,8 @@ The following are hard boundaries across v0.7:
 - no weakening of released `VolumetricGrid` density-unit semantics;
 - no second charge-density-difference arithmetic implementation;
 - no hidden field normalization, clipping, smoothing, interpolation to a new scientific grid, resampling, alignment, atom remapping, lattice reduction, or supercell conversion;
+- no axis-length-only approximation of skew-cell scalar-field/slice/isosurface geometry;
+- no hidden reciprocal-lattice or `2*pi` convention change in band-path coordinates;
 - no hidden k-path generation, band reconnection, projection grouping, Fermi shift, or fat-band normalization;
 - no hidden LOCPOT vacuum detection, dipole correction, potential alignment, or cross-calculation mixing;
 - no hidden NEB spline, saddle inference, atom correspondence, or path optimization;
@@ -352,17 +361,19 @@ Minimum release-wide coverage includes:
 
 1. scalar-field unit/kind/grid/lattice/registration validation, immutability, digest stability, and exact adapters from v0.6 density/difference state;
 2. discrete slice fixtures proving exact retained source values and no hidden interpolation;
-3. signed isosurface threshold state proving thresholds are explicit and source arrays unchanged;
-4. ELF and LOCPOT parser fixtures whose units/grid/source behavior are verified against the exact optional backend used;
-5. band fixtures with explicit k-point order, segment breaks, labels, spin/reference state and no hidden shift/interpolation;
-6. PROCAR fixtures with exact site/orbital/spin projection weights, explicit aggregation, and renderer-only width scaling;
-7. skew-cell planar-potential geometry fixture verifying `h = V/A_face`;
-8. explicit vacuum-region and `Phi = V_vacuum - E_F` work-function fixtures plus cross-calculation mismatch failures;
-9. NEB discrete image/ref/saddle fixtures with exact forward/reverse barrier arithmetic and no spline;
-10. passive-renderer tests proving retained arrays/state are not mutated;
-11. optional 3D backend tests isolated from the base numerical import path and, if a heavy backend is added, headless fresh-wheel smoke in CI;
-12. installed-wheel public-API smoke covering every new reviewed public module;
-13. the complete v0.1-v0.6 regression suite remains green.
+3. skew-cell slice/isosurface geometry fixtures proving full-lattice fractional-to-Cartesian transforms rather than axis-length spacing;
+4. signed isosurface threshold state proving thresholds are explicit and source arrays unchanged;
+5. ELF and LOCPOT parser fixtures whose units/grid/source behavior are verified against the exact optional backend used;
+6. band fixtures with explicit k-point order, segment breaks, labels, spin/reference state and no hidden shift/interpolation;
+7. reciprocal-space path fixtures proving the retained reciprocal-basis convention and absence of silent `2*pi` errors;
+8. PROCAR fixtures with exact site/orbital/spin projection weights, explicit aggregation, and renderer-only width scaling;
+9. skew-cell planar-potential geometry fixture verifying `h = V/A_face`;
+10. explicit vacuum-region and `Phi = V_vacuum - E_F` work-function fixtures plus cross-calculation mismatch failures;
+11. NEB discrete image/ref/saddle fixtures with exact forward/reverse barrier arithmetic and no spline;
+12. passive-renderer tests proving retained arrays/state are not mutated;
+13. optional 3D backend tests isolated from the base numerical import path and, if a heavy backend is added, headless fresh-wheel smoke in CI;
+14. installed-wheel public-API smoke covering every new reviewed public module;
+15. the complete v0.1-v0.6 regression suite remains green.
 
 Visual regression testing should assert stable scene data, artist/mesh inputs, geometry counts/thresholds, labels, and export dimensions where possible rather than relying only on brittle pixel-perfect screenshots.
 
