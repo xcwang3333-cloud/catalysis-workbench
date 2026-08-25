@@ -39,13 +39,20 @@ def _finite(value: object, *, name: str) -> float:
     return result
 
 
+def _integer(value: object, *, name: str, minimum: int = 0) -> int:
+    if isinstance(value, (bool, np.bool_)) or not isinstance(value, (int, np.integer)):
+        raise TypeError(f"{name} must be an integer")
+    result = int(value)
+    if result < minimum:
+        raise WorkFunctionError(f"{name} must be >= {minimum}")
+    return result
+
+
 def _axis(value: object) -> int:
-    if isinstance(value, bool) or not isinstance(value, (int, np.integer)):
-        raise TypeError("axis must be an integer")
-    axis = int(value)
-    if axis not in (0, 1, 2):
+    result = _integer(value, name="axis")
+    if result not in (0, 1, 2):
         raise WorkFunctionError("axis must be 0, 1, or 2")
-    return axis
+    return result
 
 
 def _frozen_1d(values: Any, *, name: str) -> NDArray[np.float64]:
@@ -71,7 +78,7 @@ def _frozen_1d(values: Any, *, name: str) -> NDArray[np.float64]:
 
 def _freeze_value(value: Any) -> Any:
     if isinstance(value, Mapping):
-        return MappingProxyType({str(key): _freeze_value(item) for key, item in value.items()})
+        return MappingProxyType({str(k): _freeze_value(v) for k, v in value.items()})
     if isinstance(value, (list, tuple)):
         return tuple(_freeze_value(item) for item in value)
     if isinstance(value, (set, frozenset)):
@@ -85,7 +92,7 @@ def _freeze_value(value: Any) -> Any:
 
 def _freeze_metadata(metadata: Mapping[str, Any] | None) -> Mapping[str, Any]:
     source = {} if metadata is None else dict(metadata)
-    return MappingProxyType({str(key): _freeze_value(value) for key, value in source.items()})
+    return MappingProxyType({str(k): _freeze_value(v) for k, v in source.items()})
 
 
 def _digest_text(digest: Any, value: str | None) -> None:
@@ -122,47 +129,38 @@ class PlanarPotentialProfile:
     def __post_init__(self) -> None:
         source = str(_nonblank(self.source_field_digest, name="source_field_digest"))
         structure = str(_nonblank(self.structure_digest, name="structure_digest"))
-        calculation_id = _nonblank(
-            self.calculation_id, name="calculation_id", optional=True
-        )
+        calculation_id = _nonblank(self.calculation_id, name="calculation_id", optional=True)
         axis = _axis(self.axis)
-        shape = tuple(self.grid_shape)
-        if len(shape) != 3 or any(
-            isinstance(size, bool) or not isinstance(size, int) or size <= 0 for size in shape
-        ):
-            raise WorkFunctionError("grid_shape must contain three positive integers")
+        shape = tuple(_integer(size, name="grid_shape value", minimum=1) for size in self.grid_shape)
+        if len(shape) != 3:
+            raise WorkFunctionError("grid_shape must contain exactly three positive integers")
         height = _finite(self.normal_height_angstrom, name="normal_height_angstrom")
         if height <= 0.0:
             raise WorkFunctionError("normal_height_angstrom must be positive")
-
         fractional = _frozen_1d(self.fractional_coordinates, name="fractional_coordinates")
-        normal = _frozen_1d(
-            self.normal_coordinates_angstrom, name="normal_coordinates_angstrom"
-        )
+        normal = _frozen_1d(self.normal_coordinates_angstrom, name="normal_coordinates_angstrom")
         potential = _frozen_1d(self.potential_ev, name="potential_ev")
-        expected_size = shape[axis]
-        if not (fractional.size == normal.size == potential.size == expected_size):
+        size = shape[axis]
+        if fractional.size != size or normal.size != size or potential.size != size:
             raise WorkFunctionError("profile arrays must match the selected source-grid axis size")
-        expected_fractional = np.arange(expected_size, dtype=np.float64) / expected_size
+        expected_fractional = np.arange(size, dtype=np.float64) / size
         if not np.array_equal(fractional, expected_fractional):
             raise WorkFunctionError("fractional coordinates must equal exact source indices i/n")
         if not np.allclose(normal, fractional * height, rtol=0.0, atol=1e-14):
             raise WorkFunctionError(
                 "normal coordinates must equal fractional coordinates times normal height"
             )
-
         digest = hashlib.sha256()
         digest.update(b"CatalysisWorkbench.PlanarPotentialProfile.v1\0")
         for text in (source, structure, calculation_id):
             _digest_text(digest, text)
         digest.update(axis.to_bytes(1, "little", signed=False))
-        for size in shape:
-            digest.update(size.to_bytes(8, "little", signed=False))
+        for item in shape:
+            digest.update(item.to_bytes(8, "little", signed=False))
         digest.update(np.float64(height).tobytes())
         digest.update(fractional.tobytes(order="C"))
         digest.update(normal.tobytes(order="C"))
         digest.update(potential.tobytes(order="C"))
-
         object.__setattr__(self, "source_field_digest", source)
         object.__setattr__(self, "structure_digest", structure)
         object.__setattr__(self, "calculation_id", calculation_id)
@@ -190,6 +188,8 @@ class VacuumLevelResult:
     source_field_digest: str
     calculation_id: str | None
     side_id: str | None
+    profile_size: int
+    normal_height_angstrom: float
     start_index: int
     stop_index: int
     selected_indices: tuple[int, ...]
@@ -204,53 +204,57 @@ class VacuumLevelResult:
     def __post_init__(self) -> None:
         profile = str(_nonblank(self.profile_digest, name="profile_digest"))
         source = str(_nonblank(self.source_field_digest, name="source_field_digest"))
-        calculation_id = _nonblank(
-            self.calculation_id, name="calculation_id", optional=True
-        )
+        calculation_id = _nonblank(self.calculation_id, name="calculation_id", optional=True)
         side_id = _nonblank(self.side_id, name="side_id", optional=True)
-        for value, name in (
-            (self.start_index, "start_index"),
-            (self.stop_index, "stop_index"),
-        ):
-            if isinstance(value, bool) or not isinstance(value, int) or value < 0:
-                raise WorkFunctionError(f"{name} must be a non-negative integer")
-        if self.stop_index <= self.start_index:
+        profile_size = _integer(self.profile_size, name="profile_size", minimum=1)
+        height = _finite(self.normal_height_angstrom, name="normal_height_angstrom")
+        if height <= 0.0:
+            raise WorkFunctionError("normal_height_angstrom must be positive")
+        start = _integer(self.start_index, name="start_index")
+        stop = _integer(self.stop_index, name="stop_index")
+        if stop <= start:
             raise WorkFunctionError("stop_index must be greater than start_index")
-        expected_indices = tuple(range(self.start_index, self.stop_index))
+        if stop > profile_size:
+            raise WorkFunctionError("vacuum window exceeds retained profile size")
+        expected_indices = tuple(range(start, stop))
         if tuple(self.selected_indices) != expected_indices:
             raise WorkFunctionError("selected_indices must exactly match the half-open window")
         fractional_start = _finite(self.fractional_start, name="fractional_start")
         fractional_stop = _finite(self.fractional_stop, name="fractional_stop")
+        expected_fractional_start = start / profile_size
+        expected_fractional_stop = stop / profile_size
+        if not np.isclose(fractional_start, expected_fractional_start, rtol=0.0, atol=1e-14):
+            raise WorkFunctionError("fractional_start must equal start_index / profile_size")
+        if not np.isclose(fractional_stop, expected_fractional_stop, rtol=0.0, atol=1e-14):
+            raise WorkFunctionError("fractional_stop must equal stop_index / profile_size")
         normal_start = _finite(self.normal_start_angstrom, name="normal_start_angstrom")
         normal_stop = _finite(self.normal_stop_angstrom, name="normal_stop_angstrom")
-        if not 0.0 <= fractional_start < fractional_stop <= 1.0:
-            raise WorkFunctionError("fractional vacuum bounds must satisfy 0 <= start < stop <= 1")
-        if normal_start < 0.0 or normal_stop <= normal_start:
-            raise WorkFunctionError("normal vacuum bounds must be ordered and non-negative")
+        if not np.isclose(normal_start, expected_fractional_start * height, rtol=0.0, atol=1e-14):
+            raise WorkFunctionError("normal_start_angstrom must match retained source-grid geometry")
+        if not np.isclose(normal_stop, expected_fractional_stop * height, rtol=0.0, atol=1e-14):
+            raise WorkFunctionError("normal_stop_angstrom must match retained source-grid geometry")
         statistic = str(_nonblank(self.statistic, name="statistic")).lower()
         if statistic != "mean":
             raise WorkFunctionError("Block-5 vacuum statistic must be explicit 'mean'")
         vacuum = _finite(self.vacuum_ev, name="vacuum_ev")
-
         digest = hashlib.sha256()
         digest.update(b"CatalysisWorkbench.VacuumLevelResult.v1\0")
         for text in (profile, source, calculation_id, side_id, statistic):
             _digest_text(digest, text)
+        digest.update(profile_size.to_bytes(8, "little", signed=False))
+        digest.update(np.float64(height).tobytes())
         for index in expected_indices:
             digest.update(index.to_bytes(8, "little", signed=False))
-        for value in (
-            fractional_start,
-            fractional_stop,
-            normal_start,
-            normal_stop,
-            vacuum,
-        ):
+        for value in (fractional_start, fractional_stop, normal_start, normal_stop, vacuum):
             digest.update(np.float64(value).tobytes())
-
         object.__setattr__(self, "profile_digest", profile)
         object.__setattr__(self, "source_field_digest", source)
         object.__setattr__(self, "calculation_id", calculation_id)
         object.__setattr__(self, "side_id", side_id)
+        object.__setattr__(self, "profile_size", profile_size)
+        object.__setattr__(self, "normal_height_angstrom", height)
+        object.__setattr__(self, "start_index", start)
+        object.__setattr__(self, "stop_index", stop)
         object.__setattr__(self, "selected_indices", expected_indices)
         object.__setattr__(self, "fractional_start", fractional_start)
         object.__setattr__(self, "fractional_stop", fractional_stop)
@@ -281,13 +285,11 @@ class FermiLevelSource:
         calculation_id = str(_nonblank(self.calculation_id, name="calculation_id"))
         source_type = str(_nonblank(self.source_type, name="source_type"))
         metadata = _freeze_metadata(self.metadata)
-
         digest = hashlib.sha256()
         digest.update(b"CatalysisWorkbench.FermiLevelSource.v1\0")
         digest.update(np.float64(fermi).tobytes())
         for text in (source, calculation_id, source_type):
             _digest_text(digest, text)
-
         object.__setattr__(self, "fermi_ev", fermi)
         object.__setattr__(self, "source_digest", source)
         object.__setattr__(self, "calculation_id", calculation_id)
@@ -315,25 +317,17 @@ class WorkFunctionResult:
     digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        vacuum_result = str(
-            _nonblank(self.vacuum_result_digest, name="vacuum_result_digest")
-        )
-        vacuum_profile = str(
-            _nonblank(self.vacuum_profile_digest, name="vacuum_profile_digest")
-        )
-        vacuum_field = str(
-            _nonblank(self.vacuum_field_digest, name="vacuum_field_digest")
-        )
+        vacuum_result = str(_nonblank(self.vacuum_result_digest, name="vacuum_result_digest"))
+        vacuum_profile = str(_nonblank(self.vacuum_profile_digest, name="vacuum_profile_digest"))
+        vacuum_field = str(_nonblank(self.vacuum_field_digest, name="vacuum_field_digest"))
         fermi_source = str(_nonblank(self.fermi_source_digest, name="fermi_source_digest"))
         calculation_id = str(_nonblank(self.calculation_id, name="calculation_id"))
         side_id = _nonblank(self.side_id, name="side_id", optional=True)
         vacuum = _finite(self.vacuum_ev, name="vacuum_ev")
         fermi = _finite(self.fermi_ev, name="fermi_ev")
         work_function = _finite(self.work_function_ev, name="work_function_ev")
-        expected = vacuum - fermi
-        if not np.isclose(work_function, expected, rtol=0.0, atol=1e-14):
+        if not np.isclose(work_function, vacuum - fermi, rtol=0.0, atol=1e-14):
             raise WorkFunctionError("work_function_ev must equal vacuum_ev - fermi_ev")
-
         digest = hashlib.sha256()
         digest.update(b"CatalysisWorkbench.WorkFunctionResult.v1\0")
         for text in (
@@ -347,7 +341,6 @@ class WorkFunctionResult:
             _digest_text(digest, text)
         for value in (vacuum, fermi, work_function):
             digest.update(np.float64(value).tobytes())
-
         object.__setattr__(self, "vacuum_result_digest", vacuum_result)
         object.__setattr__(self, "vacuum_profile_digest", vacuum_profile)
         object.__setattr__(self, "vacuum_field_digest", vacuum_field)
@@ -384,8 +377,8 @@ def planar_average_potential(field: ScalarField, *, axis: int) -> PlanarPotentia
     if not np.isfinite(face_area) or face_area <= 0.0 or not np.isfinite(volume) or volume <= 0.0:
         raise WorkFunctionError("lattice must define positive finite volume and face area")
     height = volume / face_area
-    n_axis = field.grid_shape[retained_axis]
-    fractional = np.arange(n_axis, dtype=np.float64) / n_axis
+    size = field.grid_shape[retained_axis]
+    fractional = np.arange(size, dtype=np.float64) / size
     normal = fractional * height
     potential = np.mean(field.values, axis=other_axes, dtype=np.float64)
     return PlanarPotentialProfile(
@@ -412,31 +405,31 @@ def vacuum_level_from_profile(
     """Compute a vacuum level from one explicit half-open retained profile window."""
     if not isinstance(profile, PlanarPotentialProfile):
         raise TypeError("profile must be a PlanarPotentialProfile")
-    for value, name in ((start_index, "start_index"), (stop_index, "stop_index")):
-        if isinstance(value, bool) or not isinstance(value, int):
-            raise TypeError(f"{name} must be an integer")
-    if start_index < 0 or stop_index > profile.potential_ev.size or stop_index <= start_index:
+    start = _integer(start_index, name="start_index")
+    stop = _integer(stop_index, name="stop_index")
+    size = int(profile.potential_ev.size)
+    if stop <= start or stop > size:
         raise WorkFunctionError(
             "vacuum window must be non-empty and within retained profile bounds"
         )
     retained_statistic = str(_nonblank(statistic, name="statistic")).lower()
     if retained_statistic != "mean":
         raise WorkFunctionError("Block-5 vacuum statistic must be explicit 'mean'")
-    selected = profile.potential_ev[start_index:stop_index]
-    vacuum = float(np.mean(selected, dtype=np.float64))
-    size = profile.potential_ev.size
+    vacuum = float(np.mean(profile.potential_ev[start:stop], dtype=np.float64))
     return VacuumLevelResult(
         profile_digest=profile.digest,
         source_field_digest=profile.source_field_digest,
         calculation_id=profile.calculation_id,
         side_id=side_id,
-        start_index=start_index,
-        stop_index=stop_index,
-        selected_indices=tuple(range(start_index, stop_index)),
-        fractional_start=start_index / size,
-        fractional_stop=stop_index / size,
-        normal_start_angstrom=start_index / size * profile.normal_height_angstrom,
-        normal_stop_angstrom=stop_index / size * profile.normal_height_angstrom,
+        profile_size=size,
+        normal_height_angstrom=profile.normal_height_angstrom,
+        start_index=start,
+        stop_index=stop,
+        selected_indices=tuple(range(start, stop)),
+        fractional_start=start / size,
+        fractional_stop=stop / size,
+        normal_start_angstrom=start / size * profile.normal_height_angstrom,
+        normal_stop_angstrom=stop / size * profile.normal_height_angstrom,
         statistic=retained_statistic,
         vacuum_ev=vacuum,
     )
@@ -478,7 +471,6 @@ def calculate_work_function(
         raise WorkFunctionError("vacuum level requires nonblank calculation_id for work function")
     if vacuum_level.calculation_id != fermi_source.calculation_id:
         raise WorkFunctionError("vacuum and Fermi sources must share the same calculation_id")
-    value = vacuum_level.vacuum_ev - fermi_source.fermi_ev
     return WorkFunctionResult(
         vacuum_result_digest=vacuum_level.digest,
         vacuum_profile_digest=vacuum_level.profile_digest,
@@ -488,7 +480,7 @@ def calculate_work_function(
         side_id=vacuum_level.side_id,
         vacuum_ev=vacuum_level.vacuum_ev,
         fermi_ev=fermi_source.fermi_ev,
-        work_function_ev=value,
+        work_function_ev=vacuum_level.vacuum_ev - fermi_source.fermi_ev,
     )
 
 
