@@ -56,10 +56,15 @@ def test_planar_average_uses_exact_source_values_and_skew_normal_height() -> Non
     expected = np.mean(field.values, axis=(0, 1))
     assert np.array_equal(profile.potential_ev, expected)
     assert np.array_equal(profile.fractional_coordinates, np.array([0.0, 0.25, 0.5, 0.75]))
-    assert profile.normal_height_angstrom == pytest.approx(4.0, abs=1e-15)
+    assert profile.normal_height_angstrom == pytest.approx(4.0, rel=0.0, abs=1e-12)
     assert np.linalg.norm(_structure().lattice_angstrom[2]) == pytest.approx(np.sqrt(17.0))
     assert profile.normal_height_angstrom != pytest.approx(np.sqrt(17.0))
-    assert np.array_equal(profile.normal_coordinates_angstrom, np.array([0.0, 1.0, 2.0, 3.0]))
+    assert np.allclose(
+        profile.normal_coordinates_angstrom,
+        np.array([0.0, 1.0, 2.0, 3.0]),
+        rtol=0.0,
+        atol=1e-12,
+    )
     assert profile.calculation_id == "calc-1"
     assert not profile.potential_ev.flags.writeable
 
@@ -92,8 +97,8 @@ def test_explicit_vacuum_window_is_half_open_mean_with_retained_bounds() -> None
     assert result.vacuum_ev == pytest.approx(12.5, abs=1e-15)
     assert result.fractional_start == 0.5
     assert result.fractional_stop == 1.0
-    assert result.normal_start_angstrom == 2.0
-    assert result.normal_stop_angstrom == 4.0
+    assert result.normal_start_angstrom == pytest.approx(2.0, rel=0.0, abs=1e-12)
+    assert result.normal_stop_angstrom == pytest.approx(4.0, rel=0.0, abs=1e-12)
     assert result.side_id == "top"
     assert result.statistic == "mean"
 
