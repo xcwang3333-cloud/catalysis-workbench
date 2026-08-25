@@ -1,0 +1,54 @@
+name: Temporary block-8 wiring fixer
+
+on:
+  push:
+    branches:
+      - feat/v0.6-free-energy-diagrams
+
+permissions:
+  contents: write
+
+jobs:
+  wire:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/v0.6-free-energy-diagrams
+      - name: Apply exact Block-8 audit and CI wiring
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('src/catalysis_workbench/computation/free_energy_diagram.py')
+          text = path.read_text()
+          old = '                "che_context_digest": None if context is None else context.che_source_digest,\n'
+          new = (
+              '                "diagram_context_digest": None if context is None else context.digest,\n'
+              '                "che_source_digest": None if context is None else context.che_source_digest,\n'
+          )
+          if old not in text:
+              raise SystemExit('free-energy diagram reporting target missing')
+          path.write_text(text.replace(old, new, 1))
+
+          path = Path('.github/workflows/ci.yml')
+          text = path.read_text()
+          old = '          .venv-smoke/bin/python tests/installed_thermodynamics_smoke.py\n'
+          new = old + '          .venv-smoke/bin/python tests/installed_free_energy_diagram_smoke.py\n'
+          if old not in text:
+              raise SystemExit('CI installed smoke insertion target missing')
+          path.write_text(text.replace(old, new, 1))
+          PY
+          git diff --check
+          git diff -- src/catalysis_workbench/computation/free_energy_diagram.py .github/workflows/ci.yml
+      - name: Commit exact Block-8 wiring
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/catalysis_workbench/computation/free_energy_diagram.py .github/workflows/ci.yml
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "test: wire block-8 audit and installed smoke"
+          git push origin HEAD:feat/v0.6-free-energy-diagrams
