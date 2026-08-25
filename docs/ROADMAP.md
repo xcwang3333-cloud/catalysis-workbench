@@ -89,7 +89,7 @@ Gate B / Issue #105 / PR #106 finalized distribution/runtime version `0.4.0`; fi
 
 ## v0.5.0 — XAS, structures, and basic DFT energetics — released 2026-08-25
 
-The reviewed dependency order and scientific contracts are maintained in [`V0_5_PLAN.md`](V0_5_PLAN.md), with release evidence in [`V0_5_RELEASING.md`](V0_5_RELEASING.md). All eight scientific blocks, completion-state synchronization, Gate A frozen-scope hardening, Gate B final-version exact-wheel validation, Gate C tag verification, and GitHub Release publication are complete. Distribution/runtime version is `0.5.0`. Tag `v0.5.0` resolves exactly to reviewed release commit `9400ac0044ac333d2cae228554c08d955a816a4c`, and the public GitHub Release `CatalysisWorkbench v0.5.0` is published from that existing tag. PyPI/package publication remains deferred.
+The reviewed dependency order and scientific contracts are maintained in [`V0_5_PLAN.md`](V0_5_PLAN.md), with release evidence in [`V0_5_RELEASING.md`](V0_5_RELEASING.md). All eight scientific blocks, completion-state synchronization, Gate A frozen-scope hardening, Gate B final-version exact-wheel validation, Gate C tag verification, GitHub Release publication, and final post-release documentation synchronization are complete. Distribution/runtime version is `0.5.0`. Tag `v0.5.0` resolves exactly to reviewed release commit `9400ac0044ac333d2cae228554c08d955a816a4c`, and the public GitHub Release `CatalysisWorkbench v0.5.0` is published from that existing tag. PyPI/package publication remains deferred.
 
 1. **XAS/XANES — #117 / #118 — complete.**
    - explicit energy/eV semantics, caller-controlled energy shifts, measured-point regions, explicit E0 and pre/post-edge polynomial normalization, positive edge-step validation, retained provenance and passive comparison plotting.
@@ -114,26 +114,38 @@ Release-gate evidence:
 - Gate B / #138 / #139: final head `b95841ed472aff1fa4d05af7335547ee5c3cd611`, CI #360 / run `32800514038`, reviews `5014348449`, `5014349058`, squash merge `9400ac0044ac333d2cae228554c08d955a816a4c`, distribution/runtime version finalized to `0.5.0`.
 - Gate C / #142: tag `v0.5.0` created and reverse-verified exactly on `9400ac0044ac333d2cae228554c08d955a816a4c`; distribution/runtime through the tag is `0.5.0`.
 - GitHub Release / #144: `CatalysisWorkbench v0.5.0` publicly published from the existing tag with populated release notes.
+- Final post-release documentation synchronization / #143: complete at `bed5c6e750a6066baa8daa21492aa9eb90e8bca8`.
 
 CHE/free-energy thermodynamics, DOS/PDOS, Bader, COHP/ICOHP, charge-density difference and VASP job management remain v0.6+ work.
 
 ## v0.6.x — Electronic structure and catalysis thermodynamics
 
-- CHE and free-energy analysis.
-- Free-energy diagrams.
-- DOS / PDOS processing and band-center analysis.
-- Bader charge analysis.
-- COHP / ICOHP analysis.
-- Geometry–bonding correlations.
-- Charge-density-difference calculation with lattice/grid validation.
+The architecture-first v0.6 scope, scientific semantics, dependency boundaries, prior-art/license decisions, test strategy, and implementation order are frozen in [`V0_6_PLAN.md`](V0_6_PLAN.md). Architecture checkpoint Issue #146 / PR #147 is complete at merge `3803e014376a7edb22d6a9a5b6480541742499be`. Scientific implementation has not yet begun; central-document synchronization is tracked by Issue #148 and must complete first.
+
+Frozen implementation order:
+
+1. **Electronic-structure + volumetric semantics/adapters.**
+2. **DOS / PDOS processing + passive publication plotting.**
+3. **Band-center analysis.**
+4. **Bader-result parsing + explicit charge accounting.**
+5. **COHP / ICOHP parsing + bonding analysis.**
+6. **Geometry–bonding correlations.**
+7. **CHE / free-energy thermodynamics.**
+8. **Free-energy diagrams.**
+9. **Charge-density-difference calculation with lattice/grid/component validation.**
+
+The ordering deliberately establishes shared energy-reference, spin, orbital/site projection, normalization, provenance, lattice/grid and volumetric-component semantics before descriptor-specific processing. CHE extends the reviewed v0.5 explicit DFT-energy foundation rather than creating a parallel energy model. PyPI/package-registry publication remains deferred.
 
 ## v0.7.x — Advanced computational visualization
 
 - Charge-density-difference isosurfaces and slices.
 - ELF / charge-density visualization.
-- Band-structure plotting.
-- Work-function processing.
+- Band-structure and fat-band / PROCAR plotting.
+- Work-function / LOCPOT processing.
 - NEB / barrier plots.
+- Advanced volumetric rendering.
+
+HPC/VASP job submission and complete workflow management remain outside the current project scope.
 
 ## v0.8.x — Operando and time-resolved data
 
