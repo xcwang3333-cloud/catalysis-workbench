@@ -84,19 +84,43 @@ Gate B synchronized `[project].version`, runtime `__version__`, and the unified 
 
 Gate B created no tag, GitHub Release, or package-registry artifact. The exact reviewed release candidate commit for Gate C is `c7793b309f41d174c14534bd6d4acdacc2a57636`. Later docs-only synchronization commits are not a substitute release target.
 
-## Gate C — tag creation and reverse verification — pending separate authorization
+## Gate C — tag creation and reverse verification — complete
 
-Gate C remains a separate explicit user-authorization boundary. No `v0.6.0` tag has been created, moved, or recreated during Gate A, Gate B, or the post-Gate-B evidence synchronization.
+Tracking: Issue #192. Gate C was separately authorized on 2026-08-25.
 
-If separately authorized, Gate C must create `v0.6.0` only on reviewed Gate-B release commit `c7793b309f41d174c14534bd6d4acdacc2a57636`, then reverse-verify the tag target, distribution version `0.6.0`, runtime version `0.6.0`, prior-tag invariants, and repository state. The tag must not target a later docs-only commit.
+The lightweight tag `v0.6.0` was created only on the reviewed Gate-B release commit `c7793b309f41d174c14534bd6d4acdacc2a57636` and then reverse-verified. The later docs-only main commit was not used as the release target.
 
-## GitHub Release and package publication
+### Gate C evidence
 
-Publishing a GitHub Release is a separate action after Gate C and does not authorize tag mutation or package-registry publication.
+| Evidence | State |
+| --- | --- |
+| tag | `v0.6.0` |
+| exact tag target | `c7793b309f41d174c14534bd6d4acdacc2a57636` |
+| distribution version through tag | `0.6.0` |
+| runtime `__version__` through tag | `0.6.0` |
+| `v0.5.0` invariant | `9400ac0044ac333d2cae228554c08d955a816a4c` |
+| `v0.4.0` invariant | `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6` |
+| tracking issue | #192 — completed |
 
-PyPI/package-registry publication remains deferred unless explicitly reauthorized in a future decision.
+## GitHub Release — complete
 
-README, CHANGELOG, MASTER_PLAN, ROADMAP, and other overview documents should not be promoted to a released-v0.6 state until the tag/Release boundary is resolved; final overview synchronization occurs after the relevant release action.
+Tracking: Issue #193.
+
+The public GitHub Release `CatalysisWorkbench v0.6.0` was published on 2026-08-25 from the existing verified `v0.6.0` tag. The Release is not a prerelease and does not move or recreate the tag. Post-publication verification confirmed that `v0.6.0` still resolves exactly to `c7793b309f41d174c14534bd6d4acdacc2a57636`, that distribution/runtime version through the tag remains `0.6.0`, and that prior release tags remain unchanged.
+
+PyPI/package-registry publication is intentionally deferred and is not part of the v0.6 GitHub Release.
+
+## Final v0.6 release state
+
+v0.6 scientific implementation, Gate A, Gate B, Gate C, and GitHub Release publication are complete. The final public/current-state documentation synchronization is tracked separately as Issue #195 and does not change the immutable release tag or reviewed release commit.
+
+Release identity:
+
+- version: `0.6.0`;
+- tag: `v0.6.0`;
+- reviewed release commit: `c7793b309f41d174c14534bd6d4acdacc2a57636`;
+- GitHub Release: `CatalysisWorkbench v0.6.0`;
+- package registry / PyPI: deferred.
 
 ## Mandatory evidence discipline
 
