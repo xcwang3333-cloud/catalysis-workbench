@@ -82,6 +82,9 @@ jobs:
       - name: Audit installed v0.5 structure visualization surface
         run: .venv-smoke/bin/python tests/installed_structure_visualization_smoke.py
 
+      - name: Audit installed v0.5 DFT energetics surface
+        run: .venv-smoke/bin/python tests/installed_dft_energetics_smoke.py
+
       - name: Audit installed v0.5 structure adapters with optional backend
         run: |
           python -m venv .venv-structure
