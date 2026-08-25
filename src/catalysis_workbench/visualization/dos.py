@@ -46,12 +46,32 @@ def _validate_trace_compatibility(traces: Sequence[DOSTrace]) -> None:
                 "DOS overlays require matching energy-reference, density-unit, and "
                 "normalization-basis semantics"
             )
+    if first.energy.reference_kind == "source-native" and any(
+        trace.source_dos_digest != first.source_dos_digest for trace in traces[1:]
+    ):
+        raise DOSVisualizationError(
+            "source-native DOS overlays must come from the same ElectronicDOS source; "
+            "cross-source comparison requires an explicit common energy reference"
+        )
 
 
 def _fermi_position(trace: DOSTrace) -> float:
     if trace.energy.source_fermi_ev is None:
         raise DOSVisualizationError("Fermi marker requires retained source_fermi_ev")
     return float(trace.energy.source_fermi_ev + trace.energy.applied_shift_ev)
+
+
+def _shared_fermi_position(traces: Sequence[DOSTrace]) -> float:
+    positions = tuple(_fermi_position(trace) for trace in traces)
+    first_position = positions[0]
+    if not all(
+        np.isclose(value, first_position, rtol=0.0, atol=1e-12)
+        for value in positions[1:]
+    ):
+        raise DOSVisualizationError(
+            "one Fermi marker cannot represent traces with different retained positions"
+        )
+    return first_position
 
 
 def plot_dos(
@@ -65,6 +85,7 @@ def plot_dos(
     """Render retained DOS traces without changing scientific processing state."""
     retained = _trace_tuple(traces)
     _validate_trace_compatibility(retained)
+    fermi_position = _shared_fermi_position(retained) if show_fermi else None
     before_energy = tuple(np.array(trace.energy.values_ev, copy=True) for trace in retained)
     before_density = tuple(np.array(trace.density, copy=True) for trace in retained)
 
@@ -107,17 +128,8 @@ def plot_dos(
         preset=preset,
     )
 
-    if show_fermi:
-        positions = tuple(_fermi_position(trace) for trace in retained)
-        first_position = positions[0]
-        if not all(
-            np.isclose(value, first_position, rtol=0.0, atol=1e-12)
-            for value in positions[1:]
-        ):
-            raise DOSVisualizationError(
-                "one Fermi marker cannot represent traces with different retained positions"
-            )
-        ax.axvline(first_position, linestyle="--", linewidth=1.0, label="_nolegend_")
+    if fermi_position is not None:
+        ax.axvline(fermi_position, linestyle="--", linewidth=1.0, label="_nolegend_")
 
     for trace, energy_before, density_before in zip(
         retained,
