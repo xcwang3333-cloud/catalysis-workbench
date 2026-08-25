@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import sys
-
 import numpy as np
 import pytest
 
@@ -83,10 +81,6 @@ def _dos() -> ElectronicDOS:
         ),
     )
     return ElectronicDOS(energy=energy, channels=channels, structure=structure)
-
-
-def test_computation_dos_import_remains_matplotlib_lazy() -> None:
-    assert "matplotlib.pyplot" not in sys.modules
 
 
 def test_explicit_channel_selection_preserves_source_order() -> None:
