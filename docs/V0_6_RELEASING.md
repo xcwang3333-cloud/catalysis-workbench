@@ -25,15 +25,15 @@ The frozen v0.6 scientific blocks are:
 8. Passive free-energy diagram state and plotting — #178 / #179.
 9. Charge-density difference with strict co-registration validation — #182 / #183.
 
-All nine blocks are complete before Gate A. Advanced computational visualization remains a v0.7 boundary.
+All nine blocks were complete before Gate A. Advanced computational visualization remains a v0.7 boundary.
 
-## Gate A — frozen-scope release hardening — in progress
+## Gate A — frozen-scope release hardening — complete
 
-Tracking: Issue #186. Branch: `release/v0.6-gate-a`. Exact base: `f364e51de5eb2119a2495e93135572605dd8f926`.
+Tracking: Issue #186 / PR #187. Branch: `release/v0.6-gate-a`. Exact base: `f364e51de5eb2119a2495e93135572605dd8f926`.
 
-Gate A deliberately does not change the version. Distribution metadata, runtime `__version__`, and the Gate-A expected installed version remain `0.5.0`.
+Gate A deliberately did not change the version. Distribution metadata, runtime `__version__`, and the Gate-A expected installed version remained `0.5.0`.
 
-Gate A establishes a unified fresh-wheel v0.6 release audit that:
+Gate A established a unified fresh-wheel v0.6 release audit that:
 
 - proves imports come from the installed wheel rather than repository `src/`;
 - verifies distribution metadata version == runtime `__version__` == the gate-supplied expected version;
@@ -49,23 +49,38 @@ Gate A establishes a unified fresh-wheel v0.6 release audit that:
 | Evidence | State |
 | --- | --- |
 | exact base | `f364e51de5eb2119a2495e93135572605dd8f926` |
-| final Gate-A head | pending |
-| exact-head CI | pending |
-| release/API/packaging review | pending |
-| second final-head review | pending |
-| merge gate | pending |
-| squash merge / post-merge main | pending |
+| final Gate-A head | `a72be9f227f92b94df11b40c0bd77bd97933ecdb` |
+| exact-head CI | CI #451 / run `32844596642` — success |
+| release/API/packaging review | `5018578746` — pass |
+| compatibility/release-boundary review | `5018579676` — pass |
+| merge gate | behind=0; mergeable=true; unresolved threads=0 |
+| squash merge / post-merge main | `c70481e34f6e3f2bf81724f4a30370fec58c1e7b` |
 | version after Gate A | `0.5.0` |
 | `v0.5.0` invariant | `9400ac0044ac333d2cae228554c08d955a816a4c` |
 | `v0.4.0` invariant | `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6` |
 
-If Gate A exposes a genuine frozen-scope compatibility or packaging blocker, only that blocker may be fixed in Gate A, with regression coverage and fresh exact-head evidence after any head change.
+## Gate B — final-version candidate — in progress
 
-## Gate B — final-version candidate — pending
+Tracking: Issue #188. Branch: `release/v0.6-gate-b`. Exact base: `c70481e34f6e3f2bf81724f4a30370fec58c1e7b`.
 
-Gate B begins only after Gate A is merged and reverse-verified. Gate B owns synchronization of `[project].version`, runtime `__version__`, and the unified release-audit expected version to the reviewed v0.6 candidate version, followed by exact-wheel validation in a fresh environment.
+Gate B synchronizes `[project].version`, runtime `__version__`, and the unified installed-wheel expected version from `0.5.0` to the reviewed release candidate `0.6.0`, then validates the exact candidate wheel in fresh environments without changing the frozen scientific/API/dependency scope.
 
-Gate B must not create a tag, GitHub Release, or package-registry artifact.
+### Gate B evidence
+
+| Evidence | State |
+| --- | --- |
+| exact base | `c70481e34f6e3f2bf81724f4a30370fec58c1e7b` |
+| candidate version | `0.6.0` |
+| final Gate-B head | pending |
+| exact-head CI | pending |
+| release/API/packaging review | pending |
+| compatibility/release-boundary review | pending |
+| merge gate | pending |
+| squash merge / post-merge main | pending |
+| `v0.5.0` invariant | `9400ac0044ac333d2cae228554c08d955a816a4c` |
+| `v0.4.0` invariant | `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6` |
+
+Gate B does **not** create a tag, GitHub Release, or package-registry artifact. Final Gate-B SHA/CI/review/merge evidence is synchronized after the merge so recording the evidence cannot mutate the exact head it describes.
 
 ## Gate C — tag creation and reverse verification — separate authorization required
 
