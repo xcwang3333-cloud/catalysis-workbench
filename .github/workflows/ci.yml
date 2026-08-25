@@ -53,7 +53,7 @@ jobs:
           .venv-smoke/bin/python -m pip install dist/catalysis_workbench-*.whl
           .venv-smoke/bin/python -m pip check
 
-      - name: Audit installed public API and reviewed v0.6 plus v0.7 Block-1/2/3/4/5/6 scope
+      - name: Audit installed public API and reviewed v0.6 plus v0.7 Block-1/2/3/4/5/6/7 base scope
         run: |
           .venv-smoke/bin/python tests/installed_api_smoke.py
           .venv-smoke/bin/python tests/installed_thermal_smoke.py
@@ -66,6 +66,7 @@ jobs:
           .venv-smoke/bin/python tests/installed_v07_block4_smoke.py
           .venv-smoke/bin/python tests/installed_v07_block5_smoke.py
           .venv-smoke/bin/python tests/installed_v07_block6_smoke.py
+          .venv-smoke/bin/python tests/installed_v07_block7_base_smoke.py
 
       - name: Audit installed structure/electronic/bonding/ELFCAR/band/PROCAR/LOCPOT adapters
         run: |
@@ -91,3 +92,38 @@ jobs:
           .venv-smoke/bin/python examples/thermal_quickstart.py
           .venv-smoke/bin/python examples/sorption_quickstart.py
           .venv-smoke/bin/python examples/composition_quickstart.py
+
+  volumetric3d-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install VTK headless runtime libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libopengl0 libgl1 libegl1 libxrender1
+
+      - name: Build wheel
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip wheel . --no-deps --wheel-dir dist
+
+      - name: Install wheel with optional volumetric3d backend
+        run: |
+          python -m venv .venv-volumetric3d
+          .venv-volumetric3d/bin/python -m pip install --upgrade pip
+          wheel_path="$(realpath "$(ls dist/catalysis_workbench-*.whl)")"
+          .venv-volumetric3d/bin/python -m pip install "catalysis-workbench[volumetric3d] @ file://${wheel_path}"
+          .venv-volumetric3d/bin/python -m pip check
+
+      - name: Audit installed headless skew-cell 3D rendering and PNG export
+        env:
+          PYVISTA_OFF_SCREEN: "true"
+        run: .venv-volumetric3d/bin/python tests/installed_volumetric3d_smoke.py
