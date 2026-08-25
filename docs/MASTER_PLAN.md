@@ -23,12 +23,13 @@ Checkpoint date: 2026-08-25.
 - Repository: `xcwang3333-cloud/catalysis-workbench`.
 - Stable integration branch: `main`.
 - v0.5 scientific-completion baseline: `a7ebd009ec83b0aeb068ad2d2f6712c17a783f1f`.
-- completion-state docs merge: `8c958ffc29a36afa9340cada2239b51520c87a3d` (#134/#135).
+- Completion-state docs merge: `8c958ffc29a36afa9340cada2239b51520c87a3d` (#134/#135).
 - v0.5 Gate A: #136/#137 — complete at `0ffcd7e4a89340d993468039ba83b44bc7638050`.
-- v0.5 Gate B: #138/#139 — complete at `9400ac0044ac333d2cae228554c08d955a816a4c`.
+- v0.5 Gate B: #138/#139 — complete at release commit `9400ac0044ac333d2cae228554c08d955a816a4c`.
 - Gate-B final head `b95841ed472aff1fa4d05af7335547ee5c3cd611` passed CI #360 / run `32800514038` and reviews `5014348449`, `5014349058`.
 - Distribution/runtime version is `0.5.0`.
-- No `v0.5.0` tag exists yet; Gate C remains a separate explicit authorization boundary.
+- Gate C / Issue #142 is complete; tag `v0.5.0` resolves exactly to `9400ac0044ac333d2cae228554c08d955a816a4c` and reads distribution/runtime version `0.5.0` through the tag.
+- The public GitHub Release `CatalysisWorkbench v0.5.0` is published from the existing verified tag; Issue #144 is complete.
 - Released v0.4 tag: `v0.4.0 -> bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6`, immutable and independently reverse-verified.
 - The v0.4 GitHub Release is published from the existing `v0.4.0` tag.
 - `v0.3.0` remains fixed on release commit `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`.
@@ -43,8 +44,8 @@ Checkpoint date: 2026-08-25.
 - Static structure visualization: Issue #130 / PR #131 — complete.
 - Basic DFT energetics: Issue #132 / PR #133 — complete.
 - v0.5 scientific implementation: **complete**.
-- Active maintenance stage: **Issue #140 — post-Gate-B documentation synchronization**.
-- Next true release boundary after #140 merges and is reverified: **v0.5 Gate C tag creation/reverse verification**, requiring separate explicit user authorization.
+- Active maintenance stage: **Issue #143 — final post-release documentation synchronization**.
+- After #143 merges and is reverified, the v0.5 GitHub release cycle is complete. The next scientific release is v0.6; package-registry/PyPI publication remains a separate future authorization decision.
 
 Live GitHub Issue/PR/tag state remains authoritative if this checkpoint becomes stale.
 
@@ -58,7 +59,7 @@ Detailed long-range scope is maintained in [`ROADMAP.md`](ROADMAP.md).
 | v0.2.x | quantitative core electrochemistry and shared scatter/bar summaries | complete/released as v0.2.0 |
 | v0.3.x | FTIR, thermal analysis, basic gas sorption, ICP/composition | complete/released as v0.3.0 |
 | v0.4.x | shared fitting, XPS, EIS, quantitative BET, product calibration | complete/released as v0.4.0; GitHub Release published; PyPI deferred |
-| v0.5.x | XAS/XANES, FT/WT-EXAFS, EXAFS summaries, structures/geometry/static visualization, basic DFT energetics | science + Gate A/B complete at version 0.5.0; Gate C tag pending separate authorization |
+| v0.5.x | XAS/XANES, FT/WT-EXAFS, EXAFS summaries, structures/geometry/static visualization, basic DFT energetics | complete/released as v0.5.0; GitHub Release published; PyPI deferred |
 | v0.6.x | electronic structure and catalysis thermodynamics | planned |
 | v0.7.x | advanced computational visualization | planned |
 | v0.8.x | operando/time-resolved analysis | planned |
@@ -150,17 +151,18 @@ Completed release steps:
 #134/#135 completion-state docs sync — complete
     -> Gate A #136/#137 — complete, version retained at 0.4.0
     -> Gate B #138/#139 — complete, exact-wheel candidate finalized at 0.5.0
-    -> #140 post-Gate-B docs sync — active
-    -> Gate C tag creation + reverse verification — separate authorization required
-    -> GitHub Release — separate action
+    -> #140/#141 post-Gate-B docs sync — complete
+    -> Gate C #142 — complete; v0.5.0 reverse-verified
+    -> GitHub Release #144 — complete; CatalysisWorkbench v0.5.0 published
+    -> #143 final post-release docs sync — active
     -> package-registry publication — only if separately reauthorized
 ```
 
 Gate A final head `fb13cdbf633366a0840f5f2e21af215bee47b133` passed CI #358 / run `32799486710` and reviews `5014277750`, `5014278425` before squash merge `0ffcd7e4a89340d993468039ba83b44bc7638050`.
 
-Gate B final head `b95841ed472aff1fa4d05af7335547ee5c3cd611` passed CI #360 / run `32800514038` and reviews `5014348449`, `5014349058` before squash merge `9400ac0044ac333d2cae228554c08d955a816a4c`. Distribution/runtime version is now `0.5.0`.
+Gate B final head `b95841ed472aff1fa4d05af7335547ee5c3cd611` passed CI #360 / run `32800514038` and reviews `5014348449`, `5014349058` before squash merge `9400ac0044ac333d2cae228554c08d955a816a4c`. Distribution/runtime version is `0.5.0`.
 
-Gate C must not create, move, or recreate `v0.5.0` without the user's separate explicit authorization.
+Gate C / #142 created and reverse-verified `v0.5.0` exactly on `9400ac0044ac333d2cae228554c08d955a816a4c`; the tag must not be moved or recreated. GitHub Release / #144 is publicly published from that existing tag. PyPI/package-registry publication remains deferred.
 
 ## Mandatory development loop
 
@@ -252,4 +254,4 @@ After each merged scientific Issue, update only documentation whose statements b
 - preceding Issue closure/completion;
 - version/tag/publication boundaries.
 
-Issue #140 is the active v0.5 post-Gate-B documentation checkpoint. After it merges, reverify `main`, distribution/runtime version `0.5.0`, and immutable `v0.4.0`. Stop at the Gate C boundary until the user separately authorizes creation and reverse verification of `v0.5.0`.
+Issue #143 is the active final v0.5 post-release documentation checkpoint. After it merges, reverify `main`, immutable `v0.5.0`, immutable `v0.4.0`, and the published GitHub Release. Then the v0.5 GitHub release cycle is complete; PyPI remains deferred unless separately reauthorized.
