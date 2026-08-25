@@ -52,7 +52,7 @@ def main() -> None:
         metadata={"calculation_id": "calc-installed"},
     )
     profile = planar_average_potential(field, axis=2)
-    assert profile.normal_height_angstrom == 4.0
+    assert np.isclose(profile.normal_height_angstrom, 4.0, rtol=0.0, atol=1e-12)
     assert np.array_equal(profile.potential_ev, np.array([10.0, 11.0, 12.0, 13.0]))
     vacuum = vacuum_level_from_profile(profile, start_index=2, stop_index=4, side_id="top")
     fermi = FermiLevelSource(
