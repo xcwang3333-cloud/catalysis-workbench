@@ -10,7 +10,7 @@ from types import MappingProxyType
 import numpy as np
 import pandas as pd
 
-from .bonding import ICOHPResult, select_icohp_bonds, sum_icohp_spins
+from .bonding import BondingError, ICOHPResult, select_icohp_bonds, sum_icohp_spins
 
 
 class CorrelationError(ValueError):
@@ -287,14 +287,21 @@ def icohp_length_correlation(
     requested_spins = tuple(str(_text(spin, name="spin")).lower() for spin in spins)
     if not requested_spins or len(set(requested_spins)) != len(requested_spins):
         raise CorrelationError("spins must be a non-empty unique sequence")
-    selected = select_icohp_bonds(
-        result,
-        bond_keys=bond_keys,
-        source_labels=source_labels,
-    )
+    try:
+        selected = select_icohp_bonds(
+            result,
+            bond_keys=bond_keys,
+            source_labels=source_labels,
+        )
+        summed_values = tuple(
+            (summary, sum_icohp_spins(summary, spins=requested_spins))
+            for summary in selected
+        )
+    except BondingError as exc:
+        raise CorrelationError(f"invalid ICOHP correlation request: {exc}") from exc
+
     points: list[CorrelationPoint] = []
-    for summary in selected:
-        summed = sum_icohp_spins(summary, spins=requested_spins)
+    for summary, summed in summed_values:
         points.append(
             CorrelationPoint(
                 key=summary.bond_key,
@@ -321,7 +328,7 @@ def icohp_length_correlation(
         x_definition="LOBSTER ICOHP bond length",
         x_unit="angstrom",
         y_definition="source-sign ICOHP(E_F)",
-        y_unit="source-native ICOHP",
+        y_unit="eV",
         provenance_id=provenance_id,
         points=points,
         source_label=source_label,
