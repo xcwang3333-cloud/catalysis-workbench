@@ -109,6 +109,16 @@ from .thermal import (
     validate_tga_series,
     validate_thermal_overlay,
 )
+from .xas import (
+    XANESNormalizationResult,
+    XANESNormalizationSpec,
+    XASError,
+    XASWindow,
+    normalize_xanes,
+    shift_xas_energy,
+    validate_xas_series,
+    xanes_relative_energy,
+)
 from .xps import (
     XPSBackgroundMethod,
     XPSBackgroundResult,
@@ -286,6 +296,18 @@ def plot_composition(
     return _plot_composition(data, spec, error=error, preset=preset)
 
 
+def plot_xanes(
+    data: Series | Dataset,
+    spec: FigureSpec | None = None,
+    *,
+    preset: str = "publication",
+) -> tuple[Figure, Axes]:
+    """Lazily render already-prepared compatible XAS/XANES traces."""
+    from .xas_plotting import plot_xanes as _plot_xanes
+
+    return _plot_xanes(data, spec, preset=preset)
+
+
 def plot_xps_fit(
     result: XPSPeakFitResult,
     spec: FigureSpec | None = None,
@@ -364,6 +386,10 @@ __all__ = [
     "ThermalTechnique",
     "ThermalWindow",
     "ThermalWindowMeasurement",
+    "XANESNormalizationResult",
+    "XANESNormalizationSpec",
+    "XASError",
+    "XASWindow",
     "XPSBackgroundMethod",
     "XPSBackgroundResult",
     "XPSDirection",
@@ -390,12 +416,14 @@ __all__ = [
     "measure_raman_band",
     "measure_thermal_window",
     "normalize_tga_mass",
+    "normalize_xanes",
     "plot_bet_fit",
     "plot_composition",
     "plot_ftir",
     "plot_raman",
     "plot_sorption",
     "plot_thermal",
+    "plot_xanes",
     "plot_xps_fit",
     "plot_xrd",
     "prepare_sorption_series",
@@ -415,6 +443,7 @@ __all__ = [
     "read_composition_excel",
     "select_composition",
     "select_sorption_branch",
+    "shift_xas_energy",
     "shift_xps_binding_energy",
     "shirley_xps_background",
     "solution_concentration_to_bulk_mass_fraction",
@@ -437,6 +466,8 @@ __all__ = [
     "validate_temperature_programmed_series",
     "validate_tga_series",
     "validate_thermal_overlay",
+    "validate_xas_series",
     "validate_xps_series",
     "validate_xrd_series",
+    "xanes_relative_energy",
 ]
