@@ -12,7 +12,7 @@ from typing import Any, Literal
 import numpy as np
 from numpy.typing import NDArray
 
-from .geometry import GeometryError, PeriodicImage, SiteImage
+from .geometry import SiteImage
 from .structure import AtomicStructure
 
 Projection = Literal["orthographic", "perspective"]
@@ -57,7 +57,9 @@ def _frozen_vector(values: Sequence[float], *, name: str) -> NDArray[np.float64]
 
 def _freeze_value(value: Any) -> Any:
     if isinstance(value, Mapping):
-        return MappingProxyType({str(key): _freeze_value(item) for key, item in value.items()})
+        return MappingProxyType(
+            {str(key): _freeze_value(item) for key, item in value.items()}
+        )
     if isinstance(value, (list, tuple)):
         return tuple(_freeze_value(item) for item in value)
     if isinstance(value, np.ndarray):
@@ -69,7 +71,9 @@ def _freeze_value(value: Any) -> Any:
 
 def _freeze_metadata(metadata: Mapping[str, Any] | None) -> Mapping[str, Any]:
     source = {} if metadata is None else dict(metadata)
-    return MappingProxyType({str(key): _freeze_value(value) for key, value in source.items()})
+    return MappingProxyType(
+        {str(key): _freeze_value(value) for key, value in source.items()}
+    )
 
 
 # Presentation-only defaults. They are never used for bonding/coordination analysis.
@@ -151,7 +155,11 @@ class StructureBondStyle:
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "color", _color(self.color, name="bond color"))
-        object.__setattr__(self, "linewidth", _positive(self.linewidth, name="linewidth"))
+        object.__setattr__(
+            self,
+            "linewidth",
+            _positive(self.linewidth, name="linewidth"),
+        )
         object.__setattr__(self, "alpha", _alpha(self.alpha))
 
 
@@ -165,7 +173,11 @@ class StructureCellStyle:
     def __post_init__(self) -> None:
         object.__setattr__(self, "visible", bool(self.visible))
         object.__setattr__(self, "color", _color(self.color, name="cell color"))
-        object.__setattr__(self, "linewidth", _positive(self.linewidth, name="linewidth"))
+        object.__setattr__(
+            self,
+            "linewidth",
+            _positive(self.linewidth, name="linewidth"),
+        )
         object.__setattr__(self, "alpha", _alpha(self.alpha))
 
 
@@ -234,8 +246,14 @@ class StructureBondVisual:
             raise StructureSceneError("bond endpoints must be distinct site/image identities")
         if not isinstance(self.style, StructureBondStyle):
             raise TypeError("style must be a StructureBondStyle")
-        first = _frozen_vector(self.first_position_angstrom, name="first_position_angstrom")
-        second = _frozen_vector(self.second_position_angstrom, name="second_position_angstrom")
+        first = _frozen_vector(
+            self.first_position_angstrom,
+            name="first_position_angstrom",
+        )
+        second = _frozen_vector(
+            self.second_position_angstrom,
+            name="second_position_angstrom",
+        )
         if np.allclose(first, second, rtol=0.0, atol=1e-15):
             raise StructureSceneError("bond endpoints must not occupy the same position")
         object.__setattr__(self, "first_position_angstrom", first)
@@ -281,7 +299,9 @@ class StructureScene:
             for first, second in self.cell_edges_angstrom
         )
         if edges and len(edges) != 12:
-            raise StructureSceneError("periodic cell geometry must contain exactly 12 edges")
+            raise StructureSceneError(
+                "periodic cell geometry must contain exactly 12 edges"
+            )
         if not isinstance(self.cell_style, StructureCellStyle):
             raise TypeError("cell_style must be a StructureCellStyle")
         if not isinstance(self.camera, StructureCameraSpec):
@@ -290,7 +310,11 @@ class StructureScene:
         object.__setattr__(self, "atoms", atoms)
         object.__setattr__(self, "bonds", bonds)
         object.__setattr__(self, "cell_edges_angstrom", edges)
-        object.__setattr__(self, "background", _color(self.background, name="background"))
+        object.__setattr__(
+            self,
+            "background",
+            _color(self.background, name="background"),
+        )
         object.__setattr__(self, "metadata", _freeze_metadata(self.metadata))
 
 
@@ -319,7 +343,9 @@ def _site_index(structure: AtomicStructure, key: str) -> int:
 def _position(structure: AtomicStructure, site: SiteImage) -> NDArray[np.float64]:
     index = _site_index(structure, site.site_key)
     offsets = site.image.as_tuple()
-    for axis, (offset, enabled) in enumerate(zip(offsets, structure.pbc, strict=True)):
+    for axis, (offset, enabled) in enumerate(
+        zip(offsets, structure.pbc, strict=True)
+    ):
         if offset and not enabled:
             raise StructureSceneError(
                 f"periodic image offset on nonperiodic axis {axis} is not allowed"
@@ -335,7 +361,9 @@ def _position(structure: AtomicStructure, site: SiteImage) -> NDArray[np.float64
     return position
 
 
-def _cell_edges(structure: AtomicStructure) -> tuple[tuple[NDArray[np.float64], NDArray[np.float64]], ...]:
+def _cell_edges(
+    structure: AtomicStructure,
+) -> tuple[tuple[NDArray[np.float64], NDArray[np.float64]], ...]:
     if structure.lattice_angstrom is None:
         return ()
     lattice = np.asarray(structure.lattice_angstrom, dtype=np.float64)
@@ -387,18 +415,20 @@ def build_structure_scene(
     if not all(isinstance(site, SiteImage) for site in retained_images):
         raise TypeError("atom_images must contain only SiteImage instances")
     if len(retained_images) != len(set(retained_images)):
-        raise StructureSceneError("atom_images must contain unique SiteImage identities")
+        raise StructureSceneError(
+            "atom_images must contain unique SiteImage identities"
+        )
 
-    element_styles = {} if element_styles is None else dict(element_styles)
-    site_styles = {} if site_styles is None else dict(site_styles)
-    labels = {} if labels is None else dict(labels)
+    resolved_element_styles = {} if element_styles is None else dict(element_styles)
+    resolved_site_styles = {} if site_styles is None else dict(site_styles)
+    resolved_labels = {} if labels is None else dict(labels)
     atoms: list[StructureAtomVisual] = []
     for site in retained_images:
         index = _site_index(structure, site.site_key)
         element = structure.elements[index]
-        style = site_styles.get(site.site_key)
+        style = resolved_site_styles.get(site.site_key)
         if style is None:
-            style = element_styles.get(element)
+            style = resolved_element_styles.get(element)
         if style is None:
             style = StructureAtomStyle(
                 color=default_element_color(element),
@@ -412,7 +442,7 @@ def build_structure_scene(
                 element=element,
                 position_angstrom=_position(structure, site),
                 style=style,
-                label=labels.get(site.site_key),
+                label=resolved_labels.get(site.site_key),
             )
         )
 
@@ -422,7 +452,9 @@ def build_structure_scene(
         if not isinstance(bond, StructureBondSpec):
             raise TypeError("bonds must contain only StructureBondSpec instances")
         if bond.first not in atom_set or bond.second not in atom_set:
-            raise StructureSceneError("bond endpoints must be explicitly present in atom_images")
+            raise StructureSceneError(
+                "bond endpoints must be explicitly present in atom_images"
+            )
         resolved_bonds.append(
             StructureBondVisual(
                 first=bond.first,
@@ -433,13 +465,19 @@ def build_structure_scene(
             )
         )
 
+    resolved_cell_style = StructureCellStyle() if cell_style is None else cell_style
+    resolved_camera = StructureCameraSpec() if camera is None else camera
+    if not isinstance(resolved_cell_style, StructureCellStyle):
+        raise TypeError("cell_style must be a StructureCellStyle")
+    if not isinstance(resolved_camera, StructureCameraSpec):
+        raise TypeError("camera must be a StructureCameraSpec")
     return StructureScene(
         structure_digest=structure.digest,
         atoms=tuple(atoms),
         bonds=tuple(resolved_bonds),
         cell_edges_angstrom=_cell_edges(structure),
-        cell_style=StructureCellStyle() if cell_style is None else cell_style,
-        camera=StructureCameraSpec() if camera is None else camera,
+        cell_style=resolved_cell_style,
+        camera=resolved_camera,
         background=background,
         metadata={} if metadata is None else metadata,
     )
