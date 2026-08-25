@@ -5,8 +5,19 @@ from pathlib import Path
 
 import numpy as np
 
-from catalysis_workbench.computation import ElectronicDOS, VolumetricGrid
-from catalysis_workbench.io import read_chgcar_density
+from catalysis_workbench.computation import (
+    DOSChannel,
+    DOSProjection,
+    ElectronicDOS,
+    ElectronicEnergyAxis,
+    ElectronicStructureError,
+    VolumetricGrid,
+)
+from catalysis_workbench.io import (
+    ElectronicStructureIOError,
+    read_chgcar_density,
+    read_vasprun_dos,
+)
 
 CHGCAR = """Known density
 1.0
@@ -26,10 +37,22 @@ Direct
 def main() -> None:
     from pymatgen.io.vasp.outputs import Chgcar, Vasprun
 
+    public_surface = (
+        DOSChannel,
+        DOSProjection,
+        ElectronicDOS,
+        ElectronicEnergyAxis,
+        ElectronicStructureError,
+        VolumetricGrid,
+        ElectronicStructureIOError,
+        read_chgcar_density,
+        read_vasprun_dos,
+    )
+    assert all(item is not None for item in public_surface)
+    assert callable(read_chgcar_density)
+    assert callable(read_vasprun_dos)
     assert Vasprun is not None
     assert Chgcar is not None
-    assert ElectronicDOS is not None
-    assert VolumetricGrid is not None
 
     with tempfile.TemporaryDirectory() as tmp:
         path = Path(tmp) / "CHGCAR"
