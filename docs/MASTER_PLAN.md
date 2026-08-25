@@ -22,7 +22,7 @@ Checkpoint date: 2026-08-26.
 
 - Repository: `xcwang3333-cloud/catalysis-workbench`.
 - Stable integration branch: `main`.
-- Exact pre-sync baseline: `28852bb7ef6f7c23319d5a6442659f55516eed59`, the expected-head squash merge of v0.7 Block-4 Issue #214 / PR #216.
+- Exact pre-sync baseline: `ab4b8c6f5445920124c2a61799e189ae25b8d404`, the expected-head squash merge of v0.7 Block-5 Issue #219 / PR #220.
 - Distribution/runtime version is `0.6.0`.
 - Released tag `v0.6.0 -> c7793b309f41d174c14534bd6d4acdacc2a57636` is immutable.
 - The public GitHub Release `CatalysisWorkbench v0.6.0` is published from that existing tag.
@@ -44,12 +44,16 @@ Checkpoint date: 2026-08-26.
 - v0.7 Block-3 completion-state synchronization: Issue #212 / PR #213 — complete at `fa29a40f465fa41afa7620d1dad9cce22720ee06`.
 - v0.7 Block 4, PROCAR projection processing + fat-band plotting: Issue #214 / PR #216 — complete at `28852bb7ef6f7c23319d5a6442659f55516eed59`.
 - Block-4 final head `fef79825073ecb6bf5be834db8bd441c69f99191` passed CI #504 / run `32872508844` (Ruff, full pytest, fresh-wheel/public-API smoke, v0.6 + v0.7 Block-1/2/3/4 installed audits, optional structure/electronic/bonding/ELFCAR/band/PROCAR adapter audits including current `pymatgen-core.Procar` five-decimal k-point and raw terminal-`tot` omission behavior, and documented examples) and exact-head reviews `5021426413`, `5021427725`; unresolved review threads were zero and the PR was behind=0 / mergeable=true before expected-head squash merge.
+- v0.7 Block-4 completion-state synchronization: Issue #217 / PR #218 — complete at `d1bd5d710f4353b76bf1dd3f3e0a9a49a288353d`.
+- v0.7 Block 5, LOCPOT planar-potential/work-function processing + plotting: Issue #219 / PR #220 — complete at `ab4b8c6f5445920124c2a61799e189ae25b8d404`.
+- Block-5 final head `34cf2253bf9744149d498edecf186d5fe04e6afe` passed CI #515 / run `32876765592` (Ruff, 1057 tests, fresh-wheel/public-API smoke through v0.7 Block 5, optional structure/electronic/bonding/ELFCAR/band/PROCAR/LOCPOT adapter audits including current `pymatgen-core.Locpot` exact-value round-trip and skew-cell normal-coordinate behavior, and documented examples) and exact-head reviews `5021836289`, `5021837599`; unresolved review threads were zero and the PR was behind=0 / mergeable=true before expected-head squash merge.
 - [`V0_7_PLAN.md`](V0_7_PLAN.md) remains the release-specific authority for the frozen seven-block v0.7 scope, scientific/visualization contracts, dependency order, prior-art/license decisions, testing strategy, and release boundaries.
 - [`VOLUMETRIC_VISUALIZATION.md`](VOLUMETRIC_VISUALIZATION.md) records the reviewed Block-1 scalar-field/source-grid/renderer-neutral foundation and Block-2 charge-density-difference, electron-density, ELFCAR/ELF, and exact-slice visualization contracts.
 - [`BAND_STRUCTURE.md`](BAND_STRUCTURE.md) records the reviewed Block-3 reciprocal-space, physical-spin, explicit Fermi-reference, VASP line-mode adapter, path-discontinuity, and passive band-plotting contract.
 - [`PROCAR_FAT_BANDS.md`](PROCAR_FAT_BANDS.md) records the reviewed Block-4 projection-state, current-backend orbital semantics, explicit site/orbital aggregation, caller-visible compatibility tolerances, SOC/vector fail-closed boundary, and presentation-only fat-band contract.
-- Active stage: **Issue #217 — synchronize the completed v0.7 Block-4 state into central documentation**.
-- v0.7 Block 5, LOCPOT planar-potential/work-function processing + plotting, begins only after #217 merges and `main` plus release boundaries are reverified.
+- [`LOCPOT_WORK_FUNCTION.md`](LOCPOT_WORK_FUNCTION.md) records the reviewed Block-5 local-potential scalar-field, skew-cell planar-average geometry, explicit vacuum-window/Fermi compatibility, transparent work-function arithmetic, passive plotting, and optional-backend boundaries.
+- Active stage: **Issue #221 — synchronize the completed v0.7 Block-5 state into central documentation**.
+- v0.7 Block 6, NEB/barrier retained state + passive plotting, begins only after #221 merges and `main` plus release boundaries are reverified.
 
 Live GitHub Issue/PR/tag state remains authoritative if this checkpoint becomes stale.
 
@@ -65,7 +69,7 @@ Detailed long-range scope is maintained in [`ROADMAP.md`](ROADMAP.md).
 | v0.4.x | shared fitting, XPS, EIS, quantitative BET, product calibration | complete/released as v0.4.0; GitHub Release published; PyPI deferred |
 | v0.5.x | XAS/XANES, FT/WT-EXAFS, EXAFS summaries, structures/geometry/static visualization, basic DFT energetics | complete/released as v0.5.0; GitHub Release published; PyPI deferred |
 | v0.6.x | electronic structure and catalysis thermodynamics | complete/released as v0.6.0; GitHub Release published; PyPI deferred |
-| v0.7.x | advanced computational visualization | architecture + Blocks 1-4 complete; completion sync #217 active before Block 5 |
+| v0.7.x | advanced computational visualization | architecture + Blocks 1-5 complete; completion sync #221 active before Block 6 |
 | v0.8.x | operando/time-resolved analysis | planned |
 | v0.9.x | reproducible batch workflows and first interactive editor | planned |
 | v1.0.0 | stable personal catalysis data workbench and local GUI | planned |
@@ -346,9 +350,23 @@ Passive `plot_fat_band(...)` obtains x coordinates only from Block-3 `band_path_
 
 Block-4 final head `fef79825073ecb6bf5be834db8bd441c69f99191` passed CI #504 / run `32872508844` with Ruff, full pytest, fresh-wheel/public-API audits, current optional-backend PROCAR parser/conversion smoke and documented examples, plus final-head reviews `5021426413`, `5021427725`, before expected-head squash merge `28852bb7ef6f7c23319d5a6442659f55516eed59`.
 
-### Current Block-4 completion-state sync
+### Block-4 completion-state sync — complete
 
-Issue #217 is the docs-only checkpoint after Block 4. It records merged Block-4 reality in central documentation without adding Block-5 implementation. Block 5 begins only after #217 merges and `main`, immutable `v0.6.0`, distribution/runtime `0.6.0`, public v0.6 GitHub Release, and PyPI-deferred state are reverified.
+Issue #217 / PR #218 synchronized the merged Block-4 state into central documentation at `d1bd5d710f4353b76bf1dd3f3e0a9a49a288353d` before Block 5 began.
+
+### LOCPOT planar potential + explicit work-function processing — complete
+
+Issue #219 / PR #220 delivered exact local-potential processing on the reviewed Block-1 scalar-field foundation. The lazy optional `read_locpot_field(...)` preserves one finite VASP LOCPOT scalar grid exactly as `ScalarField(field_kind="local-potential", value_unit="eV")`, retains parser/source provenance and optional caller-visible `calculation_id`, and performs no CHGCAR-style volume normalization, unit conversion, smoothing, clipping, electrostatic-zero shift, dipole correction, interpolation, resampling or alignment. Current optional-backend smoke verifies `pymatgen-core.Locpot` write/read and exact-value preservation.
+
+`planar_average_potential(...)` performs only the arithmetic mean over the two source-grid axes orthogonal to the caller-selected lattice/grid axis. Fractional coordinates remain exact source indices `i/n`; for skew cells the physical normal repeat height is `V_cell / A_opposite_face`, not the norm of the selected lattice vector. `vacuum_level_from_profile(...)` uses only an explicit caller-supplied half-open retained-source index window and initially supports the explicit `mean` statistic; the immutable result self-validates source indices, fractional bounds and physical normal bounds against retained profile size/height. There is no automatic vacuum plateau, surface-side, dipole-region or flatness inference, and no macroscopic averaging or smoothing.
+
+Explicit `FermiLevelSource` state retains finite eV, provenance and mandatory nonblank `calculation_id`; the Block-3 convenience path uses retained `source_fermi_ev`, not plotted reference state or inferred band extrema. `calculate_work_function(...)` requires matching calculation identity and performs only transparent `Phi = V_vacuum - E_F`, preserving unexpected negative values rather than clipping them. Passive `plot_planar_potential(...)` renders retained profile/vacuum/Fermi/work-function state without scientific recomputation. The reviewed domain contract is recorded in [`LOCPOT_WORK_FUNCTION.md`](LOCPOT_WORK_FUNCTION.md); no new runtime dependency was added.
+
+Block-5 final head `34cf2253bf9744149d498edecf186d5fe04e6afe` passed CI #515 / run `32876765592` with Ruff, 1057 tests, fresh-wheel/public-API audits, current optional-backend LOCPOT exact-value/skew-cell smoke and documented examples, plus final-head reviews `5021836289`, `5021837599`, before expected-head squash merge `ab4b8c6f5445920124c2a61799e189ae25b8d404`.
+
+### Current Block-5 completion-state sync
+
+Issue #221 is the docs-only checkpoint after Block 5. It records merged Block-5 reality in central documentation without adding Block-6 implementation. Block 6 begins only after #221 merges and `main`, immutable `v0.6.0`, distribution/runtime `0.6.0`, public v0.6 GitHub Release, and PyPI-deferred state are reverified.
 
 ## Mandatory development loop
 
@@ -425,6 +443,7 @@ After squash merge, re-read `main`. When connector visibility does not expose a 
 - [`VOLUMETRIC_VISUALIZATION.md`](VOLUMETRIC_VISUALIZATION.md): reviewed v0.7 Block-1 scalar-field/source-grid/renderer-neutral foundation and Block-2 density/ELF/exact-slice visualization contracts.
 - [`BAND_STRUCTURE.md`](BAND_STRUCTURE.md): reviewed v0.7 Block-3 ordinary band-state, reciprocal-path/`2*pi`, physical-spin, explicit Fermi-reference, VASP line-mode adapter and passive plotting contract.
 - [`PROCAR_FAT_BANDS.md`](PROCAR_FAT_BANDS.md): reviewed v0.7 Block-4 projection-state, backend orbital semantics, explicit aggregation/site identity, compatibility-tolerance, SOC/vector boundary and passive fat-band contract.
+- [`LOCPOT_WORK_FUNCTION.md`](LOCPOT_WORK_FUNCTION.md): reviewed v0.7 Block-5 local-potential scalar-field, skew-cell planar averaging, explicit vacuum/Fermi compatibility, transparent work-function arithmetic and passive plotting contract.
 - [`V0_6_PLAN.md`](V0_6_PLAN.md): retained v0.6 architecture, frozen dependency order, scientific/API semantics, prior-art/license decisions, test strategy, and v0.7 handoff.
 - [`V0_6_RELEASING.md`](V0_6_RELEASING.md): retained v0.6 Gate A/B/C procedure and release evidence.
 - [`V0_5_PLAN.md`](V0_5_PLAN.md): v0.5 architecture, dependency order, scientific completion state and release handoff.
@@ -446,4 +465,4 @@ After each merged scientific Issue, update only documentation whose statements b
 - preceding Issue closure/completion;
 - version/tag/publication boundaries.
 
-Issue #217 is the active v0.7 Block-4 completion-state documentation checkpoint. After it merges, reverify `main`, Issue #217 closure, immutable `v0.6.0 -> c7793b309f41d174c14534bd6d4acdacc2a57636`, distribution/runtime version `0.6.0`, public v0.6 GitHub Release state, and PyPI-deferred state. Then start v0.7 Block 5 (LOCPOT planar-potential/work-function processing + plotting) from that exact verified `main` baseline using [`V0_7_PLAN.md`](V0_7_PLAN.md), [`BAND_STRUCTURE.md`](BAND_STRUCTURE.md), and the completed v0.7 foundations.
+Issue #221 is the active v0.7 Block-5 completion-state documentation checkpoint. After it merges, reverify `main`, Issue #221 closure, immutable `v0.6.0 -> c7793b309f41d174c14534bd6d4acdacc2a57636`, distribution/runtime version `0.6.0`, public v0.6 GitHub Release state, and PyPI-deferred state. Then start v0.7 Block 6 (NEB/barrier retained state + passive plotting) from that exact verified `main` baseline using [`V0_7_PLAN.md`](V0_7_PLAN.md) and the completed v0.7 foundations.
