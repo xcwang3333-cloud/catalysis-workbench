@@ -22,7 +22,7 @@ Checkpoint date: 2026-08-26.
 
 - Repository: `xcwang3333-cloud/catalysis-workbench`.
 - Stable integration branch: `main`.
-- Exact pre-sync baseline: `7a80b99bc513b7a6b33d1a9481ff25c1c4d95b85`, the expected-head squash merge of v0.7 Block-6 Issue #223 / PR #224.
+- Exact pre-sync baseline: `24d3a8e67e4ef996125e575308b88ab6f9532448`, the expected-head squash merge of v0.7 Block-7 Issue #227 / PR #228.
 - Distribution/runtime version is `0.6.0`.
 - Released tag `v0.6.0 -> c7793b309f41d174c14534bd6d4acdacc2a57636` is immutable.
 - The public GitHub Release `CatalysisWorkbench v0.6.0` is published from that existing tag.
@@ -50,14 +50,19 @@ Checkpoint date: 2026-08-26.
 - v0.7 Block-5 completion-state synchronization: Issue #221 / PR #222 — complete at `51b04e9b7a63b200c6679d83730e49451f9bee64`.
 - v0.7 Block 6, explicit NEB image-energy state + discrete barrier plotting: Issue #223 / PR #224 — complete at `7a80b99bc513b7a6b33d1a9481ff25c1c4d95b85`.
 - Block-6 final head `5aa1926e7125c49950589553b8463e5ecfb936fd` passed CI #521 / run `32879644216` (Ruff, full pytest, fresh-wheel/public-API smoke through v0.7 Block 6, all prior optional structure/electronic/bonding/ELFCAR/band/PROCAR/LOCPOT audits, and documented examples) and exact-head reviews `5022088404`, `5022089761`; unresolved review threads were zero and the PR was behind=0 / mergeable=true before expected-head squash merge.
+- v0.7 Block-6 completion-state synchronization: Issue #225 / PR #226 — complete at `0e433d55f7d08632e590a9be495cb10128a7a0d6`.
+- v0.7 Block 7, advanced volumetric 3D rendering + static export: Issue #227 / PR #228 — complete at `24d3a8e67e4ef996125e575308b88ab6f9532448`.
+- Block-7 final head `6dc1472b9157151d67b20f8b359542e103d5f6c2` passed CI #526 / run `32882938623` (Ruff, full pytest, base fresh-wheel/public-API smoke through v0.7 Block 7, all prior optional structure/electronic/bonding/ELFCAR/band/PROCAR/LOCPOT audits, documented examples, and separate fresh-wheel `[volumetric3d]` PyVista/VTK headless skew-cell render/export smoke) and exact-head reviews `5022437132`, `5022439286`; unresolved review threads were zero and the PR was behind=0 / mergeable=true before expected-head squash merge.
 - [`V0_7_PLAN.md`](V0_7_PLAN.md) remains the release-specific authority for the frozen seven-block v0.7 scope, scientific/visualization contracts, dependency order, prior-art/license decisions, testing strategy, and release boundaries.
 - [`VOLUMETRIC_VISUALIZATION.md`](VOLUMETRIC_VISUALIZATION.md) records the reviewed Block-1 scalar-field/source-grid/renderer-neutral foundation and Block-2 charge-density-difference, electron-density, ELFCAR/ELF, and exact-slice visualization contracts.
 - [`BAND_STRUCTURE.md`](BAND_STRUCTURE.md) records the reviewed Block-3 reciprocal-space, physical-spin, explicit Fermi-reference, VASP line-mode adapter, path-discontinuity, and passive band-plotting contract.
 - [`PROCAR_FAT_BANDS.md`](PROCAR_FAT_BANDS.md) records the reviewed Block-4 projection-state, current-backend orbital semantics, explicit site/orbital aggregation, caller-visible compatibility tolerances, SOC/vector fail-closed boundary, and presentation-only fat-band contract.
 - [`LOCPOT_WORK_FUNCTION.md`](LOCPOT_WORK_FUNCTION.md) records the reviewed Block-5 local-potential scalar-field, skew-cell planar-average geometry, explicit vacuum-window/Fermi compatibility, transparent work-function arithmetic, passive plotting, and optional-backend boundaries.
 - [`NEB_BARRIERS.md`](NEB_BARRIERS.md) records the reviewed Block-6 exact image-order/path state, ordinal/explicit reaction coordinates, explicit-reference energies, discrete retained-image barrier arithmetic, passive plotting, and no-spline/no-optimizer boundaries.
-- Active stage: **Issue #225 — synchronize the completed v0.7 Block-6 state into central documentation**.
-- v0.7 Block 7, advanced volumetric 3D backend/rendering/export, begins only after #225 merges and `main` plus release boundaries are reverified.
+- [`VOLUMETRIC_3D.md`](VOLUMETRIC_3D.md) records the reviewed Block-7 optional PyVista/VTK backend, full-lattice skew-cell geometry, explicit isosurface/exact-slice/fractional-clipping semantics, retained structure/camera mapping, backend-hidden result state, and static headless PNG-export boundary.
+- All seven v0.7 implementation blocks are complete.
+- Active stage: **Issue #229 — synchronize the completed v0.7 scientific state before Gate A**.
+- Gate A frozen-scope release hardening begins only after #229 merges and `main` plus release boundaries are reverified; Gate A retains distribution/runtime version `0.6.0`.
 
 Live GitHub Issue/PR/tag state remains authoritative if this checkpoint becomes stale.
 
@@ -73,7 +78,7 @@ Detailed long-range scope is maintained in [`ROADMAP.md`](ROADMAP.md).
 | v0.4.x | shared fitting, XPS, EIS, quantitative BET, product calibration | complete/released as v0.4.0; GitHub Release published; PyPI deferred |
 | v0.5.x | XAS/XANES, FT/WT-EXAFS, EXAFS summaries, structures/geometry/static visualization, basic DFT energetics | complete/released as v0.5.0; GitHub Release published; PyPI deferred |
 | v0.6.x | electronic structure and catalysis thermodynamics | complete/released as v0.6.0; GitHub Release published; PyPI deferred |
-| v0.7.x | advanced computational visualization | architecture + Blocks 1-6 complete; completion sync #225 active before Block 7 |
+| v0.7.x | advanced computational visualization | architecture + Blocks 1-7 complete; scientific-completion sync #229 active before Gate A |
 | v0.8.x | operando/time-resolved analysis | planned |
 | v0.9.x | reproducible batch workflows and first interactive editor | planned |
 | v1.0.0 | stable personal catalysis data workbench and local GUI | planned |
@@ -380,9 +385,21 @@ Issue #223 / PR #224 delivered CatalysisWorkbench-owned immutable `NEBImageState
 
 Block-6 final head `5aa1926e7125c49950589553b8463e5ecfb936fd` passed CI #521 / run `32879644216` with Ruff, full pytest, fresh-wheel/public-API audits through v0.7 Block 6, all existing optional-backend audits and documented examples, plus final-head reviews `5022088404`, `5022089761`, before expected-head squash merge `7a80b99bc513b7a6b33d1a9481ff25c1c4d95b85`.
 
-### Current Block-6 completion-state sync
+### Block-6 completion-state sync — complete
 
-Issue #225 is the docs-only checkpoint after Block 6. It records merged Block-6 reality in central documentation without adding Block-7 implementation. Block 7 begins only after #225 merges and `main`, immutable `v0.6.0`, distribution/runtime `0.6.0`, public v0.6 GitHub Release, and PyPI-deferred state are reverified.
+Issue #225 / PR #226 synchronized the merged Block-6 state into central documentation at `0e433d55f7d08632e590a9be495cb10128a7a0d6` before Block 7 began.
+
+### Advanced volumetric 3D rendering + static export — complete
+
+Issue #227 / PR #228 delivered a publication-oriented static 3-D backend while preserving the reviewed renderer-neutral `VolumetricScene` as authority. The heavy PyVista/VTK stack is isolated behind the lazy optional `volumetric3d` extra, so the base wheel neither requires nor imports it. `Volumetric3DRenderSpec` retains explicit presentation/export controls, while `Volumetric3DRenderResult` retains only an immutable uint8 screenshot, scene/render digests and backend versions; no Plotter, actor, mesh or other backend object becomes public state.
+
+Full 3-D field geometry uses exact source-grid fractional coordinates `f=(i/n0,j/n1,k/n2)` followed by the complete lattice transform `r=f@L`, including skew cells; source values are mapped into VTK `StructuredGrid` point order explicitly. Isosurfaces use only caller-retained thresholds, with contour interpolation treated solely as presentation mesh geometry. Exact slices consume the existing `ScalarFieldSlice` Cartesian points and values rather than backend scientific slicing. Optional fractional clipping is explicit presentation geometry using `f=r@L^-1`; retained `StructureScene` atoms, explicit bonds, cell edges and camera state are rendered without new chemical inference, alignment or atom remapping. Scientific arrays/digests are verified unchanged after rendering. Static off-screen screenshots and PNG export are supported; interactive GUI/browser/Jupyter editing remains later scope. PyVista is MIT and VTK BSD-3-Clause; current scikit-image was not added because its current line requires Python >=3.12 while CatalysisWorkbench retains Python >=3.11. The reviewed contract is recorded in [`VOLUMETRIC_3D.md`](VOLUMETRIC_3D.md).
+
+Block-7 final head `6dc1472b9157151d67b20f8b359542e103d5f6c2` passed CI #526 / run `32882938623` with Ruff, full pytest, base fresh-wheel/public-API audits through v0.7 Block 7, all existing optional-backend audits and documented examples, plus a separate fresh-wheel `[volumetric3d]` PyVista/VTK headless skew-cell rendering/PNG-export smoke. Final-head reviews `5022437132`, `5022439286` found no blockers before expected-head squash merge `24d3a8e67e4ef996125e575308b88ab6f9532448`.
+
+### Current v0.7 scientific-completion sync
+
+Issue #229 is the docs-only checkpoint after all seven v0.7 implementation blocks. It records the complete merged v0.7 scientific/visualization state without adding Gate-A code or v0.8 implementation. Gate A frozen-scope release hardening begins only after #229 merges and `main`, immutable `v0.6.0`, distribution/runtime `0.6.0`, public v0.6 GitHub Release, and PyPI-deferred state are reverified. Gate A retains version `0.6.0`; Gate B is the later version-finalization candidate, and Gate C/tag creation remains a separate explicit authorization boundary.
 
 ## Mandatory development loop
 
@@ -461,6 +478,7 @@ After squash merge, re-read `main`. When connector visibility does not expose a 
 - [`PROCAR_FAT_BANDS.md`](PROCAR_FAT_BANDS.md): reviewed v0.7 Block-4 projection-state, backend orbital semantics, explicit aggregation/site identity, compatibility-tolerance, SOC/vector boundary and passive fat-band contract.
 - [`LOCPOT_WORK_FUNCTION.md`](LOCPOT_WORK_FUNCTION.md): reviewed v0.7 Block-5 local-potential scalar-field, skew-cell planar averaging, explicit vacuum/Fermi compatibility, transparent work-function arithmetic and passive plotting contract.
 - [`NEB_BARRIERS.md`](NEB_BARRIERS.md): reviewed v0.7 Block-6 exact image/path order, ordinal/explicit reaction coordinates, explicit reference-relative energy semantics, discrete barrier arithmetic and passive no-spline rendering contract.
+- [`VOLUMETRIC_3D.md`](VOLUMETRIC_3D.md): reviewed v0.7 Block-7 optional PyVista/VTK backend, full-lattice skew-cell source-grid geometry, explicit isosurface/exact-slice/fractional clipping, retained structure/camera mapping, backend-hidden immutable screenshot result and static headless PNG-export contract.
 - [`V0_6_PLAN.md`](V0_6_PLAN.md): retained v0.6 architecture, frozen dependency order, scientific/API semantics, prior-art/license decisions, test strategy, and v0.7 handoff.
 - [`V0_6_RELEASING.md`](V0_6_RELEASING.md): retained v0.6 Gate A/B/C procedure and release evidence.
 - [`V0_5_PLAN.md`](V0_5_PLAN.md): v0.5 architecture, dependency order, scientific completion state and release handoff.
@@ -482,4 +500,4 @@ After each merged scientific Issue, update only documentation whose statements b
 - preceding Issue closure/completion;
 - version/tag/publication boundaries.
 
-Issue #225 is the active v0.7 Block-6 completion-state documentation checkpoint. After it merges, reverify `main`, Issue #225 closure, immutable `v0.6.0 -> c7793b309f41d174c14534bd6d4acdacc2a57636`, distribution/runtime version `0.6.0`, public v0.6 GitHub Release state, and PyPI-deferred state. Then start v0.7 Block 7 (advanced volumetric 3D backend/rendering/export) from that exact verified `main` baseline using [`V0_7_PLAN.md`](V0_7_PLAN.md), [`VOLUMETRIC_VISUALIZATION.md`](VOLUMETRIC_VISUALIZATION.md), and the completed v0.7 foundations.
+Issue #229 is the active v0.7 scientific-completion documentation checkpoint. After it merges, reverify `main`, Issue #229 closure, immutable `v0.6.0 -> c7793b309f41d174c14534bd6d4acdacc2a57636`, distribution/runtime version `0.6.0`, public v0.6 GitHub Release state, and PyPI-deferred state. Then start v0.7 Gate A frozen-scope release hardening from that exact verified `main` baseline using [`V0_7_PLAN.md`](V0_7_PLAN.md) and all completed v0.7 domain contracts; Gate A must retain distribution/runtime version `0.6.0`.
