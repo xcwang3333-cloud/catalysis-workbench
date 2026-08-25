@@ -26,6 +26,13 @@ from .volumetric import (
     VolumetricScene,
     VolumetricSceneError,
 )
+from .volumetric_techniques import (
+    build_charge_density_difference_scene,
+    build_electron_density_scene,
+    build_elf_scene,
+    build_symmetric_charge_density_difference_scene,
+    plot_scalar_field_slice,
+)
 
 __all__ = [
     "AnnotationSpec",
@@ -46,6 +53,10 @@ __all__ = [
     "VolumetricLayerSpec",
     "VolumetricScene",
     "VolumetricSceneError",
+    "build_charge_density_difference_scene",
+    "build_electron_density_scene",
+    "build_elf_scene",
+    "build_symmetric_charge_density_difference_scene",
     "export_figure",
     "format_axis_label",
     "get_preset",
@@ -53,6 +64,7 @@ __all__ = [
     "plot_dos",
     "plot_free_energy_diagram",
     "plot_relative_energies",
+    "plot_scalar_field_slice",
     "plot_structure",
     "register_preset",
     "render_bars",
