@@ -253,7 +253,9 @@ def _convert_procar_result(
             "canonical_axis_order": "band,kpoint,site,orbital",
             "kpoint_atol": kpoint_atol,
             "energy_atol_ev": energy_atol_ev,
-            "parser_kpoint_precision_note": "current pymatgen-core rounds PROCAR kpoints to 5 decimals",
+            "parser_kpoint_precision_note": (
+                "current pymatgen-core rounds PROCAR kpoints to 5 decimals"
+            ),
             "band_state_digest": band_structure.digest,
             "band_source_digest": band_structure.source_digest,
             "occupancies_available": getattr(parsed, "occupancies", None) is not None,
