@@ -1,0 +1,84 @@
+name: Temporary v0.6 scientific completion synchronizer
+
+on:
+  push:
+    branches:
+      - docs/v0.6-scientific-completion-sync
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: docs/v0.6-scientific-completion-sync
+      - name: Synchronize exact central-state text
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          master = Path('docs/MASTER_PLAN.md')
+          text = master.read_text()
+          replacements = [
+              (
+                  '- Active stage: **Issue #180 — synchronize block-8 completion state into central documentation**.\n- v0.6 block 9 (charge-density-difference calculation with strict lattice/grid/component/unit validation) starts only after #180 is complete and `main` is reverified.',
+                  '- v0.6 block-8 completion-state docs sync: Issue #180 / PR #181 — complete at `cec7a9eae1ae256a82ee72b74a80039c6b164bda`.\n- v0.6 block 9, charge-density difference with strict co-registration validation: Issue #182 / PR #183 — complete at `f47d2165f282c8fe2745d1bd50ed32886b0f2054`.\n- Block-9 final head `5312c16cfd877a6fab1346c31e9f0a252be45f57` passed CI #447 / run `32839258539` and final-head reviews `5018036286`, `5018037530` before squash merge.\n- All nine v0.6 scientific implementation blocks are complete.\n- Active stage: **Issue #184 — synchronize v0.6 scientific completion state before Gate A**.\n- Gate A frozen-scope release hardening starts only after #184 is complete and `main` is reverified.'
+              ),
+              (
+                  '| v0.6.x | electronic structure and catalysis thermodynamics | architecture + blocks 1–8 complete; block 9 next after #180 |',
+                  '| v0.6.x | electronic structure and catalysis thermodynamics | all nine scientific blocks complete; completion-state sync #184 active before Gate A |'
+              ),
+              (
+                  '### Current completion-state sync\n\nIssue #180 is the docs-only synchronization checkpoint after block 8. It records merged reality in central plans without adding charge-density-difference code. Block 9 begins only after #180 merges and `main` is reverified.',
+                  '### Block-8 completion-state sync — complete\n\nIssue #180 / PR #181 synchronized the merged block-8 state into central documentation at `cec7a9eae1ae256a82ee72b74a80039c6b164bda` before block 9 began.\n\n### Charge-density difference + strict co-registration validation — complete\n\nIssue #182 / PR #183 delivered explicit co-registered volumetric difference arithmetic on the reviewed `VolumetricGrid` foundation. Caller-visible coefficients, exact grid shape/unit/component semantics, explicit registration identity, and direct lattice-matrix compatibility under a retained absolute tolerance are validated before arithmetic. Different combined/subsystem atomic structures are permitted only while their exact structure/grid provenance remains retained; no interpolation, resampling, origin shift, remapping, alignment, supercell conversion, component conversion, unit conversion, or CHGCAR re-normalization is performed.\n\nBlock-9 final head `5312c16cfd877a6fab1346c31e9f0a252be45f57` passed CI #447 / run `32839258539` and final-head reviews `5018036286`, `5018037530` before squash merge `f47d2165f282c8fe2745d1bd50ed32886b0f2054`.\n\n### Current scientific-completion sync\n\nIssue #184 is the docs-only checkpoint after all nine v0.6 scientific blocks. It records merged scientific completion before Gate A. Gate A begins only after #184 merges and `main` plus release boundaries are reverified.'
+              ),
+              (
+                  '[`CHE_THERMODYNAMICS.md`](CHE_THERMODYNAMICS.md), and [`FREE_ENERGY_DIAGRAMS.md`](FREE_ENERGY_DIAGRAMS.md): reviewed domain contracts.',
+                  '[`CHE_THERMODYNAMICS.md`](CHE_THERMODYNAMICS.md), [`FREE_ENERGY_DIAGRAMS.md`](FREE_ENERGY_DIAGRAMS.md), and [`CHARGE_DENSITY_DIFFERENCE.md`](CHARGE_DENSITY_DIFFERENCE.md): reviewed domain contracts.'
+              ),
+              (
+                  'Issue #180 is the active v0.6 block-8 completion-state documentation checkpoint. After it merges, reverify `main`, Issue #180 closure, immutable `v0.5.0`, immutable `v0.4.0`, distribution/runtime version `0.5.0`, and PyPI-deferred state. Then start block 9 (charge-density-difference calculation with strict lattice/grid/component/unit validation) from that exact verified `main` baseline using the frozen order in `V0_6_PLAN.md`.',
+                  'Issue #184 is the active v0.6 scientific-completion documentation checkpoint. After it merges, reverify `main`, Issue #184 closure, immutable `v0.5.0`, immutable `v0.4.0`, distribution/runtime version `0.5.0`, and PyPI-deferred state. Then start Gate A frozen-scope release hardening from that exact verified `main` baseline. Gate A must retain version `0.5.0`; Gate B is the later final-version candidate; Gate C tag creation remains a separate explicit user-authorization boundary.'
+              ),
+          ]
+          for old, new in replacements:
+              if old not in text:
+                  raise SystemExit(f'missing MASTER_PLAN target: {old[:100]}')
+              text = text.replace(old, new)
+          master.write_text(text)
+
+          roadmap = Path('docs/ROADMAP.md')
+          text = roadmap.read_text()
+          replacements = [
+              (
+                  'Charge-density difference and VASP job management remain v0.6+ work; DOS/PDOS, Bader, COHP/ICOHP, geometry–bonding correlation, CHE/free-energy thermodynamics, and free-energy-diagram scientific blocks are now complete in v0.6.',
+                  'All nine v0.6 scientific blocks are now complete, including charge-density-difference arithmetic with strict co-registration validation. Charge-density-difference visualization remains v0.7, and VASP/HPC job management remains outside the current project scope.'
+              ),
+              (
+                  'and scientific block 8 is complete through Issue #178 / PR #179 at merge `0d8dd67f716c47b4c611dd56cfc0cb243db3fb29`. Issue #180 is the current docs-only completion-state synchronization before block 9 begins.',
+                  'and scientific block 8 is complete through Issue #178 / PR #179 at merge `0d8dd67f716c47b4c611dd56cfc0cb243db3fb29`, block-8 completion-state synchronization #180 / #181 is complete at `cec7a9eae1ae256a82ee72b74a80039c6b164bda`, and scientific block 9 is complete through Issue #182 / PR #183 at merge `f47d2165f282c8fe2745d1bd50ed32886b0f2054`. Issue #184 is the current docs-only scientific-completion synchronization before Gate A begins.'
+              ),
+              (
+                  '9. **Charge-density-difference calculation with lattice/grid/component validation — next after #180; not yet implemented.**',
+                  '9. **Charge-density-difference calculation with lattice/grid/component validation — complete through #182 / #183.**\n   - immutable explicit combined/reference volumetric state with caller-visible coefficients, common registration identity, exact grid/unit/component checks, direct lattice-tolerance validation, provenance-rich difference state and detached reporting; no hidden interpolation, resampling, alignment, remapping, unit/component conversion, or CHGCAR re-normalization.'
+              ),
+          ]
+          for old, new in replacements:
+              if old not in text:
+                  raise SystemExit(f'missing ROADMAP target: {old[:100]}')
+              text = text.replace(old, new)
+          roadmap.write_text(text)
+          PY
+          git diff --check
+      - name: Commit exact docs synchronization
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/MASTER_PLAN.md docs/ROADMAP.md
+          git diff --cached --quiet && exit 0
+          git commit -m "docs: record v0.6 scientific completion state"
+          git push origin HEAD:docs/v0.6-scientific-completion-sync
