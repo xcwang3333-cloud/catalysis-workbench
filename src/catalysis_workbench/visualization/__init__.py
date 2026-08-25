@@ -2,6 +2,7 @@
 
 from .bars import BarCategory, BarData, BarSeries, render_bars
 from .curves import format_axis_label, render_curves
+from .dft import plot_relative_energies
 from .export import export_figure
 from .presets import get_preset, list_presets, register_preset
 from .scatter import ScatterError, render_scatter
@@ -34,6 +35,7 @@ __all__ = [
     "format_axis_label",
     "get_preset",
     "list_presets",
+    "plot_relative_energies",
     "plot_structure",
     "register_preset",
     "render_bars",
