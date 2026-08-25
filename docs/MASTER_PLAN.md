@@ -67,7 +67,7 @@ Release numbering is a planning boundary, not permission to weaken scientific va
 
 ### v0.1-v0.3
 
-Historical release details are retained in [`RELEASING.md`](RELEASING.md), [`V0_2_PLAN.md`](V0_2_PLAN.md), [`V0_2_RELEASING.md`](V0_2_RELEASING.md), [`V0_3_PLAN.md`](V0_3_PLAN.md), and [`V0_3_RELEASING.md`](V0_3_RELEASING.md).
+Historical release details are retained in [`RELEASING.md`](RELEASING.md), [`V0_2_PLAN.md`](V0_2_PLAN.md), [`V0_2_RELEASING.md`](V0_2_RELEASING.md), and [`V0_3_RELEASING.md`](V0_3_RELEASING.md).
 
 The reviewed `v0.3.0` tag remains `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`.
 
