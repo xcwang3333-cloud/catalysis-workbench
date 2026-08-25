@@ -11,6 +11,7 @@ import numpy as np
 from .dos import DOSTrace
 
 _ALLOWED_SPINS = frozenset({"total", "up", "down"})
+_ALLOWED_REFERENCE_KINDS = frozenset({"source-native", "fermi", "vacuum", "custom"})
 
 
 class BandCenterError(ValueError):
@@ -111,7 +112,11 @@ class BandCenterResult:
         reference_kind = _required_text(
             self.energy_reference_kind,
             name="energy_reference_kind",
-        )
+        ).lower()
+        if reference_kind not in _ALLOWED_REFERENCE_KINDS:
+            raise BandCenterError(
+                "energy_reference_kind must be source-native, fermi, vacuum, or custom"
+            )
         source_fermi = None
         if self.source_fermi_ev is not None:
             source_fermi = _finite_float(self.source_fermi_ev, name="source_fermi_ev")
