@@ -63,6 +63,8 @@ def _freeze_value(value: Any) -> Any:
         )
     if isinstance(value, (list, tuple)):
         return tuple(_freeze_value(item) for item in value)
+    if isinstance(value, (set, frozenset)):
+        return frozenset(_freeze_value(item) for item in value)
     if isinstance(value, np.ndarray):
         array = np.array(value, copy=True)
         array.setflags(write=False)
