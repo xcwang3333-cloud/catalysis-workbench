@@ -19,6 +19,13 @@ from .specs import (
     VisualizationError,
 )
 from .structure import plot_structure
+from .volumetric import (
+    IsosurfaceLayerSpec,
+    SliceLayerSpec,
+    VolumetricLayerSpec,
+    VolumetricScene,
+    VolumetricSceneError,
+)
 
 __all__ = [
     "AnnotationSpec",
@@ -29,11 +36,16 @@ __all__ = [
     "DOSVisualizationError",
     "ExportSpec",
     "FigureSpec",
+    "IsosurfaceLayerSpec",
     "LayoutSpec",
     "PlotStyle",
     "ScatterError",
     "SeriesStyle",
+    "SliceLayerSpec",
     "VisualizationError",
+    "VolumetricLayerSpec",
+    "VolumetricScene",
+    "VolumetricSceneError",
     "export_figure",
     "format_axis_label",
     "get_preset",
