@@ -410,14 +410,18 @@ class VolumetricGrid:
         source_components = dict(self.components)
         if not source_components:
             raise ElectronicStructureError("components must contain at least one grid")
-        frozen_components: dict[str, NDArray[np.float64]] = {}
-        shape: tuple[int, int, int] | None = None
+        normalized_components: dict[str, Any] = {}
         for raw_key, values in source_components.items():
             key = _nonblank(str(raw_key), name="component key")
-            if key in frozen_components:
+            if key in normalized_components:
                 raise ElectronicStructureError("component keys must be unique")
+            normalized_components[key] = values
+
+        frozen_components: dict[str, NDArray[np.float64]] = {}
+        shape: tuple[int, int, int] | None = None
+        for key in sorted(normalized_components):
             array = _frozen_float_array(
-                values,
+                normalized_components[key],
                 name=f"component[{key}]",
                 ndim=3,
             )
