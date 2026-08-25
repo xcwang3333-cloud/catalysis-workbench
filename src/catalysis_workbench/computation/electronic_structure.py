@@ -52,7 +52,7 @@ def _thaw_value(value: Any) -> Any:
     if isinstance(value, tuple):
         return [_thaw_value(item) for item in value]
     if isinstance(value, frozenset):
-        return {_thaw_value(item) for item in value]
+        return {_thaw_value(item) for item in value}
     if isinstance(value, np.ndarray):
         return np.array(value, copy=True)
     return deepcopy(value)
