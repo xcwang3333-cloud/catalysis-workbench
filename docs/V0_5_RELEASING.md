@@ -56,25 +56,11 @@ Gate A established a unified fresh-wheel audit that:
 | version after Gate A | `0.4.0` |
 | `v0.4.0` invariant | `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6` |
 
-## Gate B — final-version candidate — active
+## Gate B — final-version candidate — complete
 
-Tracking: Issue #138. Branch: `release/v0.5-gate-b`. Exact base: `0ffcd7e4a89340d993468039ba83b44bc7638050`.
+Tracking: Issue #138 / PR #139. Branch: `release/v0.5-gate-b`. Exact base: `0ffcd7e4a89340d993468039ba83b44bc7638050`.
 
-Gate B is explicitly authorized and owns final candidate version synchronization to `0.5.0`.
-
-Gate B core actions:
-
-- synchronize `[project].version` and runtime `__version__` to `0.5.0`;
-- update the unified v0.5 expected-version value in CI to `0.5.0`;
-- update direct release/changelog candidate state;
-- build the exact candidate wheel in a fresh environment;
-- run the unified v0.5 release audit, optional structure adapter audit, full tests, Ruff, `pip check`, and documented quickstarts;
-- perform formal release/API/packaging review on the final exact head;
-- merge only with behind=0, mergeable=true, unresolved review threads=0, and expected-head protection.
-
-Broad README/MASTER_PLAN/ROADMAP/V0_5_PLAN overview-state synchronization is handled as a routine docs-only checkpoint immediately after Gate B merges and before Gate C.
-
-Gate B does **not** create a tag, GitHub Release, or package-registry artifact.
+Gate B synchronized `[project].version`, runtime `__version__`, and the unified installed-wheel expected version to `0.5.0`, then validated the exact candidate wheel in a fresh environment.
 
 ### Gate B evidence
 
@@ -82,21 +68,28 @@ Gate B does **not** create a tag, GitHub Release, or package-registry artifact.
 | --- | --- |
 | exact base | `0ffcd7e4a89340d993468039ba83b44bc7638050` |
 | candidate version | `0.5.0` |
-| final Gate-B head | pending |
-| exact-head CI | pending |
-| release/API/packaging review | pending |
-| second final-head review | pending |
-| merge gate | pending |
-| squash merge / post-merge main | pending |
-| `v0.4.0` invariant | must remain `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6` |
+| final Gate-B head | `b95841ed472aff1fa4d05af7335547ee5c3cd611` |
+| exact-head CI | CI #360 / run `32800514038` — success |
+| release/API/packaging review | `5014348449` — pass |
+| second final-head review | `5014349058` — pass |
+| merge gate | behind=0; mergeable=true; unresolved threads=0 |
+| squash merge / post-merge main | `9400ac0044ac333d2cae228554c08d955a816a4c` |
+| distribution/runtime version | `0.5.0` |
+| `v0.4.0` invariant | `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6` |
 
-## Gate C — tag creation and reverse verification
+The exact candidate wheel passed Ruff/full pytest, fresh installation, `pip check`, the unified v0.5 release audit, optional `[structure]` adapter audit, and all documented quickstarts.
 
-Gate C is a separate explicit authorization boundary. Do not infer authorization from completion of Gate A or Gate B.
+Gate B did **not** create a tag, GitHub Release, or package-registry artifact.
 
-After separate user authorization, Gate C may create the `v0.5.0` tag only on the exact reviewed Gate-B release commit. After the tag is pushed, reverse-verify:
+Post-Gate-B overview/changelog synchronization is tracked by Issue #140 before any Gate-C action.
 
-- `v0.5.0` resolves exactly to the intended release commit;
+## Gate C — tag creation and reverse verification — pending authorization
+
+Gate C is a separate explicit authorization boundary. Completion of Gate B does not authorize tag creation.
+
+After separate user authorization, Gate C may create the `v0.5.0` tag only on the exact reviewed Gate-B release commit `9400ac0044ac333d2cae228554c08d955a816a4c`. After the tag is pushed, reverse-verify:
+
+- `v0.5.0` resolves exactly to `9400ac0044ac333d2cae228554c08d955a816a4c`;
 - reads through the tag report distribution/runtime version `0.5.0`;
 - `main` and prior immutable tags remain consistent;
 - `v0.4.0` remains exactly `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6`.

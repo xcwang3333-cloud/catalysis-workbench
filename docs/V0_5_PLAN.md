@@ -7,10 +7,13 @@ v0.5 is the XAS, atomic-structure, and basic DFT-energetics release. This docume
 - Architecture checkpoint Issue: #115.
 - Exact architecture base: `main` at `c588b1b0286754c3381f69973183e265fca7621d`.
 - Released v0.4 tag: `v0.4.0 -> bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6`.
-- Distribution/runtime version remains `0.4.0` during v0.5 development until a later reviewed release Gate B.
 - v0.4 GitHub Release is complete.
 - PyPI/package-registry publication is deferred. Issue #113 is closed `not_planned`; the merged trusted-publishing workflow remains dormant until a future explicit decision.
-- No v0.5 implementation may move or recreate `v0.4.0`.
+- No v0.5 implementation or release gate may move or recreate `v0.4.0`.
+- v0.5 Gate A is complete at merge `0ffcd7e4a89340d993468039ba83b44bc7638050`.
+- v0.5 Gate B is complete at merge `9400ac0044ac333d2cae228554c08d955a816a4c`.
+- Distribution/runtime version is now `0.5.0` after reviewed Gate B exact-wheel validation.
+- `v0.5.0` tag does not yet exist and Gate C remains a separate explicit authorization boundary.
 
 ## Scientific completion checkpoint
 
@@ -25,7 +28,7 @@ All eight frozen v0.5 scientific implementation blocks are complete on `main` as
 7. Static publication-oriented structure visualization — Issue #130 / PR #131 — complete.
 8. Basic DFT total/relative/reaction/adsorption-energy analysis — Issue #132 / PR #133 — complete at scientific-completion commit `a7ebd009ec83b0aeb068ad2d2f6712c17a783f1f`.
 
-Issue #134 is the completion-state documentation synchronization. After that docs-only checkpoint merges and is reverified, **Gate A frozen-scope release hardening is the next phase**. Gate A must retain distribution/runtime version `0.4.0`; version finalization belongs only to Gate B.
+Completion-state documentation synchronization #134/#135 is complete at `8c958ffc29a36afa9340cada2239b51520c87a3d`. Gate A #136/#137 and Gate B #138/#139 are also complete. The current handoff is Gate C tag creation/reverse verification, which requires separate explicit authorization.
 
 ## Architecture principles
 
@@ -192,10 +195,11 @@ No CHE potential/pH correction, gas-phase thermochemical lookup, ZPE/entropy cor
 6. **Geometry/coordination/structure comparison — #127/#129 — complete.**
 7. **Basic structure publication visualization — #130/#131 — complete.**
 8. **Basic DFT energetics/adsorption-energy analysis — #132/#133 — complete.**
-9. **Completion-state documentation synchronization — #134 — active.**
-10. **Gate A frozen-scope release hardening — next.**
-11. **Gate B final-version candidate — pending Gate A.**
-12. **Gate C tag creation/reverse verification — separate authorization required.**
+9. **Completion-state documentation synchronization — #134/#135 — complete.**
+10. **Gate A frozen-scope release hardening — #136/#137 — complete at `0ffcd7e4a89340d993468039ba83b44bc7638050`.**
+11. **Gate B final-version candidate — #138/#139 — complete at `9400ac0044ac333d2cae228554c08d955a816a4c`; candidate version `0.5.0`.**
+12. **Post-Gate-B docs sync — #140 — active.**
+13. **Gate C tag creation/reverse verification — pending separate authorization.**
 
 ## Mandatory feature loop
 
@@ -223,10 +227,10 @@ CI or review evidence from an older head is stale after any head change.
 
 ## Release and publication boundaries
 
-- v0.5 development and completion-state synchronization do not move `v0.4.0`.
-- v0.5 scientific implementation does not itself authorize a version bump.
-- Gate A must harden the frozen v0.5 scope while retaining distribution/runtime version `0.4.0`.
-- Gate B may synchronize distribution/runtime version to `0.5.0` only after Gate A completes and the candidate is separately reviewed.
-- Gate C tag creation remains a separate explicit authorization boundary.
+- v0.5 scientific implementation and release gates do not move `v0.4.0`.
+- Gate A completed frozen-scope hardening while retaining distribution/runtime version `0.4.0`.
+- Gate B completed final-version synchronization and exact-wheel validation at `0.5.0`.
+- Gate B final head `b95841ed472aff1fa4d05af7335547ee5c3cd611` passed CI #360 / run `32800514038` and reviews `5014348449`, `5014349058` before squash merge `9400ac0044ac333d2cae228554c08d955a816a4c`.
+- Gate C tag creation remains a separate explicit authorization boundary; no `v0.5.0` tag exists yet.
 - GitHub Release creation remains separate from a Git tag.
 - PyPI/package-registry publication remains deferred unless explicitly reauthorized in a future decision.

@@ -22,8 +22,13 @@ Checkpoint date: 2026-08-25.
 
 - Repository: `xcwang3333-cloud/catalysis-workbench`.
 - Stable integration branch: `main`.
-- Current v0.5 scientific-completion baseline: `a7ebd009ec83b0aeb068ad2d2f6712c17a783f1f`.
-- Distribution/runtime version remains `0.4.0`; v0.5 scientific completion does not itself authorize a version bump.
+- v0.5 scientific-completion baseline: `a7ebd009ec83b0aeb068ad2d2f6712c17a783f1f`.
+- completion-state docs merge: `8c958ffc29a36afa9340cada2239b51520c87a3d` (#134/#135).
+- v0.5 Gate A: #136/#137 — complete at `0ffcd7e4a89340d993468039ba83b44bc7638050`.
+- v0.5 Gate B: #138/#139 — complete at `9400ac0044ac333d2cae228554c08d955a816a4c`.
+- Gate-B final head `b95841ed472aff1fa4d05af7335547ee5c3cd611` passed CI #360 / run `32800514038` and reviews `5014348449`, `5014349058`.
+- Distribution/runtime version is `0.5.0`.
+- No `v0.5.0` tag exists yet; Gate C remains a separate explicit authorization boundary.
 - Released v0.4 tag: `v0.4.0 -> bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6`, immutable and independently reverse-verified.
 - The v0.4 GitHub Release is published from the existing `v0.4.0` tag.
 - `v0.3.0` remains fixed on release commit `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`.
@@ -36,11 +41,10 @@ Checkpoint date: 2026-08-25.
 - Atomic-structure model/adapters: Issue #125 / PR #126 — complete.
 - Geometry/coordination/structure comparison: Issue #127 / PR #129 — complete.
 - Static structure visualization: Issue #130 / PR #131 — complete.
-- Basic DFT energetics: Issue #132 / PR #133 — complete at `a7ebd009ec83b0aeb068ad2d2f6712c17a783f1f`.
+- Basic DFT energetics: Issue #132 / PR #133 — complete.
 - v0.5 scientific implementation: **complete**.
-- Active maintenance stage: **Issue #134 — completion-state documentation synchronization**.
-- Next phase after #134 merges and is reverified: **v0.5 Gate A frozen-scope release hardening**.
-- Gate A must retain version `0.4.0`; Gate B owns final-version synchronization. Gate C tag creation remains a separate explicit authorization boundary.
+- Active maintenance stage: **Issue #140 — post-Gate-B documentation synchronization**.
+- Next true release boundary after #140 merges and is reverified: **v0.5 Gate C tag creation/reverse verification**, requiring separate explicit user authorization.
 
 Live GitHub Issue/PR/tag state remains authoritative if this checkpoint becomes stale.
 
@@ -54,7 +58,7 @@ Detailed long-range scope is maintained in [`ROADMAP.md`](ROADMAP.md).
 | v0.2.x | quantitative core electrochemistry and shared scatter/bar summaries | complete/released as v0.2.0 |
 | v0.3.x | FTIR, thermal analysis, basic gas sorption, ICP/composition | complete/released as v0.3.0 |
 | v0.4.x | shared fitting, XPS, EIS, quantitative BET, product calibration | complete/released as v0.4.0; GitHub Release published; PyPI deferred |
-| v0.5.x | XAS/XANES, FT/WT-EXAFS, EXAFS summaries, structures/geometry/static visualization, basic DFT energetics | scientific scope complete; docs sync active; Gate A next |
+| v0.5.x | XAS/XANES, FT/WT-EXAFS, EXAFS summaries, structures/geometry/static visualization, basic DFT energetics | science + Gate A/B complete at version 0.5.0; Gate C tag pending separate authorization |
 | v0.6.x | electronic structure and catalysis thermodynamics | planned |
 | v0.7.x | advanced computational visualization | planned |
 | v0.8.x | operando/time-resolved analysis | planned |
@@ -96,7 +100,7 @@ Release gates:
 
 ## v0.5 execution status
 
-The reviewed architecture, frozen scope, prior-art decisions, detailed scientific contracts, and release handoff are maintained in [`V0_5_PLAN.md`](V0_5_PLAN.md).
+The reviewed architecture, frozen scope, prior-art decisions, detailed scientific contracts, and release handoff are maintained in [`V0_5_PLAN.md`](V0_5_PLAN.md); release-gate evidence is maintained in [`V0_5_RELEASING.md`](V0_5_RELEASING.md).
 
 ### Architecture checkpoint — complete
 
@@ -140,18 +144,23 @@ CHE/free-energy thermodynamics, DOS/PDOS, Bader, COHP/ICOHP, charge-density diff
 
 ## v0.5 release handoff
 
-The required order after scientific completion is:
+Completed release steps:
 
 ```text
-#134 completion-state docs sync
-    -> Gate A frozen-scope release hardening (retain version 0.4.0)
-    -> Gate B final-version candidate / exact-wheel audit
-    -> Gate C tag creation + reverse verification under separate authorization
-    -> GitHub Release as a separate action
-    -> package-registry publication only if separately reauthorized
+#134/#135 completion-state docs sync — complete
+    -> Gate A #136/#137 — complete, version retained at 0.4.0
+    -> Gate B #138/#139 — complete, exact-wheel candidate finalized at 0.5.0
+    -> #140 post-Gate-B docs sync — active
+    -> Gate C tag creation + reverse verification — separate authorization required
+    -> GitHub Release — separate action
+    -> package-registry publication — only if separately reauthorized
 ```
 
-Gate A is not a version-bump gate. Gate B is the first phase that may synchronize distribution/runtime version to the reviewed v0.5 final candidate. Gate C must not create, move, or recreate a release tag without the user's separate explicit authorization.
+Gate A final head `fb13cdbf633366a0840f5f2e21af215bee47b133` passed CI #358 / run `32799486710` and reviews `5014277750`, `5014278425` before squash merge `0ffcd7e4a89340d993468039ba83b44bc7638050`.
+
+Gate B final head `b95841ed472aff1fa4d05af7335547ee5c3cd611` passed CI #360 / run `32800514038` and reviews `5014348449`, `5014349058` before squash merge `9400ac0044ac333d2cae228554c08d955a816a4c`. Distribution/runtime version is now `0.5.0`.
+
+Gate C must not create, move, or recreate `v0.5.0` without the user's separate explicit authorization.
 
 ## Mandatory development loop
 
@@ -225,6 +234,7 @@ After squash merge, re-read `main`. When connector visibility does not expose a 
 - [`MASTER_PLAN.md`](MASTER_PLAN.md): project-wide execution order, checkpoint summary, governance and quality gates.
 - [`ROADMAP.md`](ROADMAP.md): long-range release scope; not a per-commit log.
 - [`V0_5_PLAN.md`](V0_5_PLAN.md): v0.5 architecture, dependency order, scientific completion state and release handoff.
+- [`V0_5_RELEASING.md`](V0_5_RELEASING.md): v0.5 Gate A/B/C procedure and release evidence.
 - [`V0_4_PLAN.md`](V0_4_PLAN.md) / [`V0_4_RELEASING.md`](V0_4_RELEASING.md): retained v0.4 scientific/release history.
 - technique documents such as [`XAS.md`](XAS.md), [`EXAFS.md`](EXAFS.md), [`WT_EXAFS.md`](WT_EXAFS.md), [`STRUCTURE_GEOMETRY.md`](STRUCTURE_GEOMETRY.md), [`STRUCTURE_VISUALIZATION.md`](STRUCTURE_VISUALIZATION.md), and [`DFT_ENERGETICS.md`](DFT_ENERGETICS.md): reviewed domain contracts.
 - [`REFERENCES.md`](REFERENCES.md): long-lived prior-art reference survey.
@@ -242,4 +252,4 @@ After each merged scientific Issue, update only documentation whose statements b
 - preceding Issue closure/completion;
 - version/tag/publication boundaries.
 
-Issue #134 is the active v0.5 completion-state documentation checkpoint. After it merges, reverify `main`, distribution/runtime version `0.4.0`, and immutable `v0.4.0`; then enter v0.5 Gate A frozen-scope release hardening. Do not move to Gate B until Gate A is fully reviewed and merged, and do not create a v0.5 tag without separate explicit Gate C authorization.
+Issue #140 is the active v0.5 post-Gate-B documentation checkpoint. After it merges, reverify `main`, distribution/runtime version `0.5.0`, and immutable `v0.4.0`. Stop at the Gate C boundary until the user separately authorizes creation and reverse verification of `v0.5.0`.
