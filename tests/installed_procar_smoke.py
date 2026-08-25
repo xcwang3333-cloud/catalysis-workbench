@@ -22,12 +22,13 @@ def main() -> None:
     assert Procar.__name__ == "Procar"
     assert callable(Procar)
     assert hasattr(Procar, "read")
+    assert hasattr(Procar, "_read")
     assert hasattr(Procar, "_parse_kpoint_line")
     parse_source = inspect.getsource(Procar._parse_kpoint_line)
     assert "round(float(val), 5)" in parse_source
-    read_source = inspect.getsource(Procar.read)
-    assert "headers.pop(0)" in read_source
-    assert "headers.pop(-1)" in read_source
+    parser_source = inspect.getsource(Procar._read)
+    assert "headers.pop(0)" in parser_source
+    assert "headers.pop(-1)" in parser_source
 
     structure = AtomicStructure(
         species=("H",),
