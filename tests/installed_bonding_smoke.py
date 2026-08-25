@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from pymatgen.io.lobster import Cohpcar, Icohplist
+
 from catalysis_workbench import computation
 from catalysis_workbench import io as cw_io
-from pymatgen.io.lobster import Cohpcar, Icohplist
 
 
 def main() -> None:
