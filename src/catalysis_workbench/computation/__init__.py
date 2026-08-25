@@ -24,6 +24,14 @@ from .bonding import (
     select_icohp_bonds,
     sum_icohp_spins,
 )
+from .charge_density_difference import (
+    ChargeDensityDifferenceError,
+    ChargeDensityDifferenceResult,
+    ChargeDensityReferenceTerm,
+    ChargeDensitySource,
+    calculate_charge_density_difference,
+    charge_density_difference_frame,
+)
 from .correlation import (
     CorrelationDataset,
     CorrelationError,
@@ -146,6 +154,10 @@ __all__ = [
     "CHEState",
     "COHPChannel",
     "COHPResult",
+    "ChargeDensityDifferenceError",
+    "ChargeDensityDifferenceResult",
+    "ChargeDensityReferenceTerm",
+    "ChargeDensitySource",
     "CoordinationNeighbor",
     "CoordinationResult",
     "CorrelationDataset",
@@ -208,6 +220,8 @@ __all__ = [
     "build_free_energy_diagram_series",
     "build_structure_scene",
     "calculate_band_center",
+    "calculate_charge_density_difference",
+    "charge_density_difference_frame",
     "che_reaction_term",
     "che_result_frame",
     "cohp_channels_frame",
