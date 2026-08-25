@@ -3,18 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from catalysis_workbench.computation import (
-    AtomicStructure,
-    BaderChargeResult,
-    BaderChargeSiteResult,
-    BaderError,
-    BaderResult,
-    BaderSiteResult,
-    account_bader_charges,
-    bader_charge_frame,
-    bader_result_frame,
-)
-from catalysis_workbench.io import BaderIOError, read_bader_acf
+from catalysis_workbench import computation
+from catalysis_workbench import io as cw_io
 
 
 ACF = """# X Y Z CHARGE MIN DIST ATOMIC VOL
@@ -29,14 +19,14 @@ NUMBER OF ELECTRONS: 12.8
 
 
 def main() -> None:
-    assert issubclass(BaderError, ValueError)
-    assert issubclass(BaderIOError, ValueError)
-    assert BaderSiteResult.__name__ == "BaderSiteResult"
-    assert BaderResult.__name__ == "BaderResult"
-    assert BaderChargeSiteResult.__name__ == "BaderChargeSiteResult"
-    assert BaderChargeResult.__name__ == "BaderChargeResult"
+    assert issubclass(computation.BaderError, ValueError)
+    assert issubclass(cw_io.BaderIOError, ValueError)
+    assert computation.BaderSiteResult.__name__ == "BaderSiteResult"
+    assert computation.BaderResult.__name__ == "BaderResult"
+    assert computation.BaderChargeSiteResult.__name__ == "BaderChargeSiteResult"
+    assert computation.BaderChargeResult.__name__ == "BaderChargeResult"
 
-    structure = AtomicStructure(
+    structure = computation.AtomicStructure(
         species=("C", "O"),
         elements=("C", "O"),
         cartesian_coordinates=((0.0, 0.0, 0.0), (1.0, 2.0, 3.0)),
@@ -45,7 +35,7 @@ def main() -> None:
     with TemporaryDirectory() as directory:
         path = Path(directory) / "ACF.dat"
         path.write_text(ACF, encoding="utf-8")
-        raw = read_bader_acf(
+        raw = cw_io.read_bader_acf(
             path,
             structure=structure,
             position_tolerance_angstrom=1e-8,
@@ -57,7 +47,7 @@ def main() -> None:
     assert raw.sites[0].site_index == 0
     assert raw.sites[0].site_key == "c-site"
     assert raw.sites[0].bader_electrons == 5.5
-    charge = account_bader_charges(
+    charge = computation.account_bader_charges(
         raw,
         (6.0, 7.0),
         reference_id="manual-reference",
@@ -66,8 +56,8 @@ def main() -> None:
     assert charge.sites[0].partial_charge == 0.5
     assert round(charge.sites[1].electron_transfer, 12) == 0.2
     assert round(charge.sites[1].partial_charge, 12) == -0.2
-    assert list(bader_result_frame(raw)["bader_electrons"]) == [5.5, 7.2]
-    assert list(bader_charge_frame(charge)["reference_electrons"]) == [6.0, 7.0]
+    assert list(computation.bader_result_frame(raw)["bader_electrons"]) == [5.5, 7.2]
+    assert list(computation.bader_charge_frame(charge)["reference_electrons"]) == [6.0, 7.0]
     print("installed v0.6 Bader parser/charge-accounting smoke: ok")
 
 
