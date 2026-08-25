@@ -538,7 +538,10 @@ def _apply_camera(
     camera.up = tuple(float(value) for value in up)
     if camera_spec.projection == "orthographic":
         camera.enable_parallel_projection()
-        camera.parallel_scale = max(float(np.max(span)), 1.0) * render_spec.orthographic_scale_factor
+        camera.parallel_scale = (
+            max(float(np.max(span)), 1.0)
+            * render_spec.orthographic_scale_factor
+        )
     else:
         camera.disable_parallel_projection()
         camera.view_angle = render_spec.perspective_view_angle_degrees
