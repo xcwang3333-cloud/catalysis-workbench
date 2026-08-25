@@ -10,6 +10,8 @@ import numpy as np
 
 from .dos import DOSTrace
 
+_ALLOWED_SPINS = frozenset({"total", "up", "down"})
+
 
 class BandCenterError(ValueError):
     """Raised when a band-center calculation is scientifically invalid."""
@@ -91,7 +93,9 @@ class BandCenterResult:
             _required_text(value, name="source_projection_key")
             for value in self.source_projection_keys
         )
-        spins = tuple(_required_text(value, name="source_spin") for value in self.source_spins)
+        spins = tuple(
+            _required_text(value, name="source_spin").lower() for value in self.source_spins
+        )
         operations = tuple(
             _required_text(value, name="source_operation") for value in self.source_operations
         )
@@ -99,6 +103,10 @@ class BandCenterResult:
             raise BandCenterError("source channel and operation provenance must not be empty")
         if not (len(channel_digests) == len(projection_keys) == len(spins)):
             raise BandCenterError("source channel/projection/spin provenance must align")
+        if len(channel_digests) != len(set(channel_digests)):
+            raise BandCenterError("source channel digests must be unique")
+        if any(spin not in _ALLOWED_SPINS for spin in spins):
+            raise BandCenterError("source spins must be total, up, or down")
 
         reference_kind = _required_text(
             self.energy_reference_kind,
@@ -134,8 +142,9 @@ class BandCenterResult:
 
         digest = hashlib.sha256()
         digest.update(b"CatalysisWorkbench.BandCenterResult.v1\0")
+        # source_trace_key is retained for addressing/reporting but deliberately excluded
+        # from the scientific digest, matching DOSTrace's label/key-independent identity.
         for value in (
-            trace_key,
             trace_digest,
             dos_digest,
             reference_kind,
