@@ -68,7 +68,7 @@ Colors, opacity and labels are presentation-only. The signed field values, `regi
 
 `build_electron_density_scene(...)` requires the explicit `total` component of a reviewed v0.6 `VolumetricGrid` and adapts it literally as `field_kind="electron-density"` with canonical `1/angstrom^3` units. It does not reinterpret `magnetization_z` as total electron density.
 
-The isosurface threshold is explicit and strictly positive. There is no maximum normalization, logarithm, clipping, smoothing, unit conversion, interpolation or grid transformation.
+The isosurface threshold is an explicit finite caller value. There is no maximum normalization, logarithm, clipping, smoothing, unit conversion, interpolation or grid transformation.
 
 ### ELFCAR / ELF channels
 
