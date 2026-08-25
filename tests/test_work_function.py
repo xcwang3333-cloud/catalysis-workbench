@@ -10,6 +10,7 @@ from catalysis_workbench.computation import (
     BandStructureState,
     FermiLevelSource,
     ScalarField,
+    VacuumLevelResult,
     WorkFunctionError,
     calculate_work_function,
     fermi_source_from_band_structure,
@@ -93,6 +94,8 @@ def test_explicit_vacuum_window_is_half_open_mean_with_retained_bounds() -> None
         stop_index=4,
         side_id="top",
     )
+    assert result.profile_size == 4
+    assert result.normal_height_angstrom == pytest.approx(4.0, rel=0.0, abs=1e-12)
     assert result.selected_indices == (2, 3)
     assert result.vacuum_ev == pytest.approx(12.5, abs=1e-15)
     assert result.fractional_start == 0.5
@@ -101,6 +104,29 @@ def test_explicit_vacuum_window_is_half_open_mean_with_retained_bounds() -> None
     assert result.normal_stop_angstrom == pytest.approx(4.0, rel=0.0, abs=1e-12)
     assert result.side_id == "top"
     assert result.statistic == "mean"
+
+
+def test_vacuum_result_direct_construction_fails_on_spoofed_bounds() -> None:
+    profile = planar_average_potential(_field(), axis=2)
+    valid = vacuum_level_from_profile(profile, start_index=2, stop_index=4)
+    with pytest.raises(WorkFunctionError, match="fractional_start"):
+        VacuumLevelResult(
+            profile_digest=valid.profile_digest,
+            source_field_digest=valid.source_field_digest,
+            calculation_id=valid.calculation_id,
+            side_id=valid.side_id,
+            profile_size=valid.profile_size,
+            normal_height_angstrom=valid.normal_height_angstrom,
+            start_index=valid.start_index,
+            stop_index=valid.stop_index,
+            selected_indices=valid.selected_indices,
+            fractional_start=0.25,
+            fractional_stop=valid.fractional_stop,
+            normal_start_angstrom=valid.normal_start_angstrom,
+            normal_stop_angstrom=valid.normal_stop_angstrom,
+            statistic=valid.statistic,
+            vacuum_ev=valid.vacuum_ev,
+        )
 
 
 @pytest.mark.parametrize(
