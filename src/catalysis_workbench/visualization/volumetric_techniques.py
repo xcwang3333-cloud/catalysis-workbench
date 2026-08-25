@@ -118,7 +118,7 @@ def build_electron_density_scene(
         raise VolumetricSceneError(
             "electron-density visualization requires the explicit 'total' component"
         )
-    retained_threshold = _positive(threshold, name="threshold")
+    retained_threshold = _finite(threshold, name="threshold")
     scalar_field = scalar_field_from_volumetric_grid(
         grid,
         "total",
