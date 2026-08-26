@@ -189,7 +189,8 @@ def build_xanes_operando_stack(
     first_signature = signatures[0]
     if any(signature != first_signature for signature in signatures[1:]):
         raise OperandoXASError(
-            "normalized XANES frames must use identical E0/pre-edge/post-edge normalization parameters"
+            "normalized XANES frames must use identical E0/pre-edge/post-edge "
+            "normalization parameters"
         )
 
     canonical = tuple(
@@ -250,7 +251,8 @@ def _window_indices(
     )
     if indices.size < min_points:
         raise OperandoXASError(
-            f"window [{window.start_ev}, {window.end_ev}] eV retains fewer than {min_points} measured points"
+            f"window [{window.start_ev}, {window.end_ev}] eV retains fewer than "
+            f"{min_points} measured points"
         )
     return indices
 
@@ -344,12 +346,14 @@ def xanes_edge_position_trace(
         maximum = float(np.max(slopes))
         if maximum <= 0.0:
             raise OperandoXASError(
-                f"frame {stack.frame_keys[frame_index]!r} has no positive secant slope in the caller window"
+                f"frame {stack.frame_keys[frame_index]!r} has no positive secant "
+                "slope in the caller window"
             )
         candidates = np.flatnonzero(slopes == maximum)
         if candidates.size != 1:
             raise OperandoXASError(
-                f"frame {stack.frame_keys[frame_index]!r} has an ambiguous equal-maximum edge secant"
+                f"frame {stack.frame_keys[frame_index]!r} has an ambiguous "
+                "equal-maximum edge secant"
             )
         local_index = int(candidates[0])
         positions.append(float((energy[local_index] + energy[local_index + 1]) / 2.0))

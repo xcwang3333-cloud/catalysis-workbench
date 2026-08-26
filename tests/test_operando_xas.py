@@ -281,7 +281,6 @@ def test_descriptor_mode_method_and_window_failures_are_explicit() -> None:
 
 
 def test_edge_position_fails_on_nonrising_or_ambiguous_secants() -> None:
-    energy = np.array([0.0, 1.0, 2.0, 3.0])
     coordinate = FrameCoordinate("time", Axis("time", unit="s"), [0.0])
 
     def normalized_result_for(values: np.ndarray, key: str):
