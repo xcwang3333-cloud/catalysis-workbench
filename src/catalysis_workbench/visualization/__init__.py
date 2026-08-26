@@ -2,6 +2,7 @@
 
 from .band_structure import BandVisualizationError, plot_band_structure
 from .bars import BarCategory, BarData, BarSeries, render_bars
+from .color_scales import symmetric_color_limits
 from .curves import format_axis_label, render_curves
 from .dft import plot_relative_energies
 from .dos import DOSVisualizationError, plot_dos
@@ -98,4 +99,5 @@ __all__ = [
     "render_curves",
     "render_scatter",
     "render_volumetric_scene_3d",
+    "symmetric_color_limits",
 ]

@@ -324,3 +324,15 @@ The reviewed Issue #95 direction is deliberately fail-closed:
 - automatic unique range selection, BETSI-style PCHIP/optimum rules, hidden R² thresholds, pore-size distributions, t-plot/alpha-s/Dubinin methods, hysteresis classification, and GUI workflows remain deferred.
 
 No upstream BET implementation code is copied or adapted. Full scientific/API/test details are in `docs/BET.md`.
+
+## Explicit zero-centered color-limit decision — Issue #245
+
+- Matplotlib `CenteredNorm` and `TwoSlopeNorm` are the direct API/semantics
+  references for mapping data around a conceptual center. Matplotlib is already a
+  runtime dependency and uses the Matplotlib license.
+- CatalysisWorkbench retains a narrower renderer-independent contract:
+  `(-max(abs(values)), +max(abs(values)))` for nonzero finite real input, with
+  one caller-visible positive fallback only for all-zero input.
+- No Matplotlib normalization object is constructed, no upstream implementation is
+  copied or adapted, and no dependency is added. Clipping, percentiles, smoothing,
+  normalization, colormap selection and heatmap rendering remain outside Issue #245.
