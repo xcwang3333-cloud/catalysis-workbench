@@ -1,0 +1,36 @@
+name: Temporary v0.8 Block 5 deterministic test fix
+
+on:
+  push:
+    branches:
+      - feat/v08-block5-operando-xas-xanes
+    paths:
+      - .github/workflows/v08-block5-test-fix-temp.yml
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Make edge failure fixture exact
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path("tests/test_operando_xas.py")
+          text = path.read_text()
+          old = "            mu = 0.02 * raw_energy\n"
+          new = "            mu = np.zeros_like(raw_energy)\n"
+          if old not in text:
+              raise SystemExit("expected edge-failure fixture not found")
+          path.write_text(text.replace(old, new, 1))
+      - name: Commit deterministic fixture
+        run: |
+          git config user.name "xiaochen wang"
+          git config user.email "xcwang3333@gmail.com"
+          git add tests/test_operando_xas.py
+          git commit -m "test: make Block 5 edge failure fixture exact"
+          git push
