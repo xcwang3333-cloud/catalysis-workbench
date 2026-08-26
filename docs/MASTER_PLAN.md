@@ -23,7 +23,7 @@ Checkpoint date: 2026-08-26.
 - Repository: `xcwang3333-cloud/catalysis-workbench`.
 - Stable integration branch: `main`.
 - Exact architecture baseline: `fa7baaf8ce68369b0e732faf4e7621a818db92b6`, the Issue #249 / PR #250 v0.8 architecture squash merge; post-merge CI #550 / run `32920821932` passed on that exact `main` head.
-- Current verified scientific implementation head: `4a5b5ee0f75321dbf3a679ab616ac69972e34575`, the expected-head squash merge of v0.8 Block 3 through Issue #263 / PR #264; post-merge CI #595 / run `32928011235` passed on that exact `main` head.
+- Current verified scientific implementation head: `d46b57c5c558a06880e58d1b0bb15b6fd1c96a8c`, the expected-head squash merge of v0.8 Block 4 through Issue #267 / PR #268; post-merge CI #613 / run `32930335459` passed on that exact `main` head.
 - Distribution/runtime version is `0.7.0`.
 - Released tag `v0.7.0 -> e3062fc12c794f54c7b7613875ec73608a587a59` is immutable and independently reverse-verified.
 - The public GitHub Release `CatalysisWorkbench v0.7.0` is published from that existing verified tag.
@@ -66,7 +66,8 @@ Checkpoint date: 2026-08-26.
 - v0.8 architecture checkpoint Issue #249 / PR #250 is complete at `fa7baaf8ce68369b0e732faf4e7621a818db92b6`.
 - v0.8 Block 1 shared immutable operando-stack foundation is complete through Issue #253 / PR #254 at merge `45d0515dd5c1c70f15f4d5cd76ba2a359dc66bb2`; final head `eadf5b2e6630b137922f365a88f4b9ef3c43b12b` passed CI #561 / run `32922150384` and formal reviews `5026150379`, `5026170031` with zero unresolved threads, followed by successful post-merge main CI #562 / run `32922349620`.
 - v0.8 Block 2 exact measured-point operations, immutable derived traces, fail-closed exact cross-modal comparison, and explicit Pearson correlation are complete through Issue #257 / PR #258 at merge `86cd463e288eca08c7917945fafbf630493ede92`; final exact head `9fc8e372f15015de1d65705cedd0ad68414613b7` passed CI #580 / run `32925586441`, the review-1 fail-closed constructor blocker was fixed and regression-tested, formal review 2 `5026418909` found no blockers with zero unresolved threads, and post-merge main CI #581 / run `32925811342` passed.
-- v0.8 Block 3 passive waterfall/heatmap/frame-cut/trace visualization is complete through Issue #263 / PR #264 at merge `4a5b5ee0f75321dbf3a679ab616ac69972e34575`; final exact head `37c69c18e3e81bd228eadf3c4c2e3b5b8540a8a1` passed CI #594 / run `32927718634` with Ruff, all 1157 tests, fresh-wheel Block-3 audit, and volumetric3d smoke; formal reviews `5026595721`, `5026596493` found no blockers with zero unresolved threads; post-merge main CI #595 / run `32928011235` passed. Block 4 — operando Raman and FTIR adapters with caller-specified band/peak trajectories — is next. No v0.7.1, tag, release, or package-registry action is implied.
+- v0.8 Block 3 passive waterfall/heatmap/frame-cut/trace visualization is complete through Issue #263 / PR #264 at merge `4a5b5ee0f75321dbf3a679ab616ac69972e34575`; final exact head `37c69c18e3e81bd228eadf3c4c2e3b5b8540a8a1` passed CI #594 / run `32927718634` with Ruff, all 1157 tests, fresh-wheel Block-3 audit, and volumetric3d smoke; formal reviews `5026595721`, `5026596493` found no blockers with zero unresolved threads; post-merge main CI #595 / run `32928011235` passed.
+- v0.8 Block 4 operando Raman/FTIR exact-grid adapters and explicit trajectories are complete through Issue #267 / PR #268 at merge `d46b57c5c558a06880e58d1b0bb15b6fd1c96a8c`; final exact head `45314c9c16c5460c8a9d574ec3fb43c6dfef722f` passed CI #612 / run `32930071404`; formal reviews `5026779773`, `5026780870` found no blockers with zero unresolved threads; post-merge main CI #613 / run `32930335459` passed. Block 5 — operando XAS/XANES adapters, mapping, and explicit descriptor trajectories — is next. No v0.7.1, tag, release, or package-registry action is implied.
 
 Live GitHub Issue/PR/tag state remains authoritative if this checkpoint becomes stale.
 
@@ -83,7 +84,7 @@ Detailed long-range scope is maintained in [`ROADMAP.md`](ROADMAP.md).
 | v0.5.x | XAS/XANES, FT/WT-EXAFS, EXAFS summaries, structures/geometry/static visualization, basic DFT energetics | complete/released as v0.5.0; GitHub Release published; PyPI deferred |
 | v0.6.x | electronic structure and catalysis thermodynamics | complete/released as v0.6.0; GitHub Release published; PyPI deferred |
 | v0.7.x | advanced computational visualization | complete/released as v0.7.0; GitHub Release published; post-release color-limit maintenance #245/#246 complete; PyPI deferred |
-| v0.8.x | operando/time-resolved analysis | architecture frozen; Blocks 1-3 complete; Block 4 Raman/FTIR adapters and trajectories next |
+| v0.8.x | operando/time-resolved analysis | architecture frozen; Blocks 1-4 complete; Block 5 XAS/XANES adapters, mapping, and descriptor trajectories next |
 | v0.9.x | reproducible batch workflows and first interactive editor | planned |
 | v1.0.0 | stable personal catalysis data workbench and local GUI | planned |
 
@@ -432,7 +433,9 @@ Block 2 adds exact frame selection by retained keys/indices and explicit frame-c
 
 Block 3 adds passive waterfall rendering with finite caller-visible display offsets, exact retained-matrix heatmaps with explicit ordinal or strictly monotonic coordinate geometry, exact frame-cut and immutable trace plotting, explicit value limits/colormap, and display-only axis reversal. Presentation mesh edges are derived only for rendering and do not resample retained scientific values. Final exact head `37c69c18e3e81bd228eadf3c4c2e3b5b8540a8a1` passed CI #594 / run `32927718634`; expected-head squash merge produced `4a5b5ee0f75321dbf3a679ab616ac69972e34575`; post-merge main CI #595 / run `32928011235` passed.
 
-No new runtime dependency, hidden alignment/interpolation/normalization, automatic peak/species/phase inference, v0.7.1, tag, release, or package-registry action was introduced. Block 4 — operando Raman and FTIR adapters with caller-specified band/peak trajectories — is next.
+Block 4 adds Raman and FTIR exact-grid operando adapters over reviewed domain validators, explicit caller-window direct band-area and observed peak-position trajectories, and caller-supplied `PeakFitResult` center/FWHM trajectories with exact source/order/window/model/axis/unit compatibility. Supported Gaussian, Lorentzian, pseudo-Voigt, and Voigt FWHM conventions remain model-derived from retained lmfit state while unsupported Doniach width extraction fails closed; no automatic peak detection/fitting, baseline choice, smoothing, normalization, transmittance conversion, or chemical assignment is introduced. Final exact head `45314c9c16c5460c8a9d574ec3fb43c6dfef722f` passed CI #612 / run `32930071404`; expected-head squash merge produced `d46b57c5c558a06880e58d1b0bb15b6fd1c96a8c`; post-merge main CI #613 / run `32930335459` passed.
+
+No new runtime dependency, hidden alignment/interpolation/normalization, automatic peak/species/phase inference, v0.7.1, tag, release, or package-registry action was introduced. Block 5 — operando XAS/XANES adapters, mapping, and explicit descriptor trajectories — is next.
 
 ## Mandatory development loop
 
@@ -534,4 +537,4 @@ After each merged scientific Issue, update only documentation whose statements b
 - preceding Issue closure/completion;
 - version/tag/publication boundaries.
 
-The v0.7 release lifecycle and post-release central-state correction are complete. The dedicated v0.8 architecture checkpoint is complete through Issue #249 / PR #250; Blocks 1, 2, and 3 are complete through Issue/PR pairs #253/#254, #257/#258, and #263/#264 respectively, with Block 3 merged at `4a5b5ee0f75321dbf3a679ab616ac69972e34575`; begin Block 4 — operando Raman and FTIR adapters with caller-specified band/peak trajectories — from a new scoped Issue and Draft PR, then continue the frozen order in `V0_8_PLAN.md`. Preserve immutable `v0.7.0 -> e3062fc12c794f54c7b7613875ec73608a587a59`, distribution/runtime release version `0.7.0`, the published public GitHub Release, and the PyPI-deferred boundary.
+The v0.7 release lifecycle and post-release central-state correction are complete. The dedicated v0.8 architecture checkpoint is complete through Issue #249 / PR #250; Blocks 1-4 are complete through Issue/PR pairs #253/#254, #257/#258, #263/#264, and #267/#268 respectively, with Block 4 merged at `d46b57c5c558a06880e58d1b0bb15b6fd1c96a8c`; begin Block 5 — operando XAS/XANES adapters, mapping, and explicit descriptor trajectories — from a new scoped Issue and Draft PR, then continue the frozen order in `V0_8_PLAN.md`. Preserve immutable `v0.7.0 -> e3062fc12c794f54c7b7613875ec73608a587a59`, distribution/runtime release version `0.7.0`, the published public GitHub Release, and the PyPI-deferred boundary.
