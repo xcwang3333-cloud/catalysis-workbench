@@ -40,7 +40,7 @@ Checkpoint date: 2026-08-26.
 - v0.7 Block 2, charge-density-difference + electron-density + ELF visualization: Issue #206 / PR #207 — complete at `b9e3e27c667df9afc6060e387ad0ca4510a73d78`.
 - Block-2 final head `c3a952f9aad9535cfc7b2a88413527fd40487cfe` passed CI #486 / run `32862918547` and exact-head reviews `5020510393`, `5020512056`; unresolved review threads were zero and the PR was behind=0 / mergeable=true before expected-head squash merge.
 - v0.7 Block-2 completion-state synchronization: Issue #208 / PR #209 — complete at `bf80f9bb3ffa1d1a764ff71a5202c05e4b5e827e`.
-- v0.7 Block 3, band-structure state/adapters + passive plotting: Issue #210 / PR #211 — complete at `4a4b1329cbd8153f868cdc2d353dfc0c613778a4`.
+- v0.7 Block 3, band-structure state/adapters + passive band plotting: Issue #210 / PR #211 — complete at `4a4b1329cbd8153f868cdc2d353dfc0c613778a4`.
 - Block-3 final head `b1f1dca77b469f6d3fb4524f7c51f719fa9350e4` passed CI #490 / run `32867366543` (Ruff, full pytest, fresh-wheel/public-API smoke, v0.6 + v0.7 Block-1/2/3 installed audits, optional structure/electronic/bonding/ELFCAR/band adapters including current `pymatgen-core` line-mode KPOINTS and reciprocal `2*pi` convention smoke, and documented examples) and exact-head reviews `5020939345`, `5020940558`; unresolved review threads were zero and the PR was behind=0 / mergeable=true before expected-head squash merge.
 - v0.7 Block-3 completion-state synchronization: Issue #212 / PR #213 — complete at `fa29a40f465fa41afa7620d1dad9cce22720ee06`.
 - v0.7 Block 4, PROCAR projection processing + fat-band plotting: Issue #214 / PR #216 — complete at `28852bb7ef6f7c23319d5a6442659f55516eed59`.
@@ -288,7 +288,7 @@ Block-8 final head `d2046565ab4ab490ed3169e02c03b2d369b4ad74` passed CI #439 / r
 
 ### Block-8 completion-state sync — complete
 
-Issue #180 / PR #181 synchronized the merged Block-8 state into central documentation at `cec7a9eae1ae256a82ee72b74a80039c6b164bda` before block 9 began.
+Issue #180 / PR #181 synchronized the merged block-8 state into central documentation at `cec7a9eae1ae256a82ee72b74a80039c6b164bda` before block 9 began.
 
 ### Charge-density difference + strict co-registration validation — complete
 
