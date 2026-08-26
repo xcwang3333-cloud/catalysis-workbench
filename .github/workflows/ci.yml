@@ -62,6 +62,7 @@ jobs:
           .venv-smoke/bin/python tests/installed_composition_smoke.py
           CATALYSIS_WORKBENCH_EXPECTED_VERSION=0.7.0 .venv-smoke/bin/python tests/installed_v07_release_smoke.py
           .venv-smoke/bin/python tests/installed_v08_block1_smoke.py
+          .venv-smoke/bin/python tests/installed_v08_block2_smoke.py
 
       - name: Audit installed structure/electronic/bonding/ELFCAR/band/PROCAR/LOCPOT adapters
         run: |
