@@ -269,8 +269,6 @@ def plot_operando_heatmap(
             rasterized=raster,
         )
         if mode == "ordinal":
-            ax.set_yticks(frame_centers)
-            ax.set_yticklabels([f"{float(value):g}" for value in coordinate.values])
             coordinate_label = format_axis_label(
                 coordinate.axis,
                 unit_format=resolved_spec.style.axis_unit_format,
@@ -299,6 +297,9 @@ def plot_operando_heatmap(
             ),
             labeled_count=0,
         )
+        if mode == "ordinal":
+            ax.set_yticks(frame_centers)
+            ax.set_yticklabels([f"{float(value):g}" for value in coordinate.values])
         if reverse_x:
             ax.invert_xaxis()
         if reverse_y:
