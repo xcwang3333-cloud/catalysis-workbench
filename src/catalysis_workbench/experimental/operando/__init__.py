@@ -17,6 +17,13 @@ from .operations import (
     select_frames_by_coordinate,
     signal_position_cut,
 )
+from .plotting import (
+    OperandoVisualizationError,
+    plot_operando_frame_cut,
+    plot_operando_heatmap,
+    plot_operando_trace,
+    plot_operando_waterfall,
+)
 from .stack import (
     FrameCoordinate,
     OperandoStack,
@@ -38,6 +45,7 @@ __all__ = [
     "OperandoStack",
     "OperandoStackError",
     "OperandoTrace",
+    "OperandoVisualizationError",
     "PearsonCorrelationResult",
     "TracePair",
     "build_operando_stack",
@@ -46,6 +54,10 @@ __all__ = [
     "frame_cut",
     "pair_traces",
     "pearson_correlation",
+    "plot_operando_frame_cut",
+    "plot_operando_heatmap",
+    "plot_operando_trace",
+    "plot_operando_waterfall",
     "select_frames",
     "select_frames_by_coordinate",
     "series_array_digest",
