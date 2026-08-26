@@ -22,12 +22,12 @@ Checkpoint date: 2026-08-26.
 
 - Repository: `xcwang3333-cloud/catalysis-workbench`.
 - Stable integration branch: `main`.
-- Exact pre-sync baseline: `24d3a8e67e4ef996125e575308b88ab6f9532448`, the expected-head squash merge of v0.7 Block-7 Issue #227 / PR #228.
-- Distribution/runtime version is `0.6.0`.
-- Released tag `v0.6.0 -> c7793b309f41d174c14534bd6d4acdacc2a57636` is immutable.
-- The public GitHub Release `CatalysisWorkbench v0.6.0` is published from that existing tag.
-- Final v0.6 post-release documentation synchronization is complete at `fcc8c0ce73953c8d7468a58dcb0c172e520c4202` through Issue #195 / PR #196.
-- All nine v0.6 scientific blocks, Gate A, Gate B, Gate C, GitHub Release publication, and final post-release documentation synchronization are complete.
+- Exact pre-sync baseline for this central-document correction: `9235e34046d9b07e219393c97f60bfadf817ed71`, the post-release Issue #245 / PR #246 squash merge.
+- Distribution/runtime version is `0.7.0`.
+- Released tag `v0.7.0 -> e3062fc12c794f54c7b7613875ec73608a587a59` is immutable and independently reverse-verified.
+- The public GitHub Release `CatalysisWorkbench v0.7.0` is published from that existing verified tag.
+- Final v0.7 publication-evidence synchronization completed through Issue #243 / PR #244 at `bd3d69ed90f5f7ea2cdc6b950a6e9f33ca2fc338`.
+- All seven v0.7 scientific blocks, Gate A, Gate B, Gate C, GitHub Release publication, and publication-evidence synchronization are complete.
 - `v0.5.0 -> 9400ac0044ac333d2cae228554c08d955a816a4c` remains immutable; its public GitHub Release is complete.
 - `v0.4.0 -> bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6` remains immutable; its public GitHub Release is complete.
 - PyPI/package-registry publication remains explicitly deferred.
@@ -61,8 +61,8 @@ Checkpoint date: 2026-08-26.
 - [`NEB_BARRIERS.md`](NEB_BARRIERS.md) records the reviewed Block-6 exact image-order/path state, ordinal/explicit reaction coordinates, explicit-reference energies, discrete retained-image barrier arithmetic, passive plotting, and no-spline/no-optimizer boundaries.
 - [`VOLUMETRIC_3D.md`](VOLUMETRIC_3D.md) records the reviewed Block-7 optional PyVista/VTK backend, full-lattice skew-cell geometry, explicit isosurface/exact-slice/fractional-clipping semantics, retained structure/camera mapping, backend-hidden result state, and static headless PNG-export boundary.
 - All seven v0.7 implementation blocks are complete.
-- Active stage: **Issue #229 — synchronize the completed v0.7 scientific state before Gate A**.
-- Gate A frozen-scope release hardening begins only after #229 merges and `main` plus release boundaries are reverified; Gate A retains distribution/runtime version `0.6.0`.
+- Post-release maintenance Issue #245 / PR #246 is complete at `9235e34046d9b07e219393c97f60bfadf817ed71`; `symmetric_color_limits()` is backwards-compatible future v0.8 heatmap groundwork and is not a v0.8 data-model implementation.
+- The next major phase is a separately reviewed v0.8 operando/time-resolved architecture checkpoint; no v0.7.1, tag, release, or package-registry action is implied.
 
 Live GitHub Issue/PR/tag state remains authoritative if this checkpoint becomes stale.
 
@@ -78,7 +78,7 @@ Detailed long-range scope is maintained in [`ROADMAP.md`](ROADMAP.md).
 | v0.4.x | shared fitting, XPS, EIS, quantitative BET, product calibration | complete/released as v0.4.0; GitHub Release published; PyPI deferred |
 | v0.5.x | XAS/XANES, FT/WT-EXAFS, EXAFS summaries, structures/geometry/static visualization, basic DFT energetics | complete/released as v0.5.0; GitHub Release published; PyPI deferred |
 | v0.6.x | electronic structure and catalysis thermodynamics | complete/released as v0.6.0; GitHub Release published; PyPI deferred |
-| v0.7.x | advanced computational visualization | architecture + Blocks 1-7 complete; scientific-completion sync #229 active before Gate A |
+| v0.7.x | advanced computational visualization | complete/released as v0.7.0; GitHub Release published; post-release color-limit maintenance #245/#246 complete; PyPI deferred |
 | v0.8.x | operando/time-resolved analysis | planned |
 | v0.9.x | reproducible batch workflows and first interactive editor | planned |
 | v1.0.0 | stable personal catalysis data workbench and local GUI | planned |
@@ -397,9 +397,9 @@ Full 3-D field geometry uses exact source-grid fractional coordinates `f=(i/n0,j
 
 Block-7 final head `6dc1472b9157151d67b20f8b359542e103d5f6c2` passed CI #526 / run `32882938623` with Ruff, full pytest, base fresh-wheel/public-API audits through v0.7 Block 7, all existing optional-backend audits and documented examples, plus a separate fresh-wheel `[volumetric3d]` PyVista/VTK headless skew-cell rendering/PNG-export smoke. Final-head reviews `5022437132`, `5022439286` found no blockers before expected-head squash merge `24d3a8e67e4ef996125e575308b88ab6f9532448`.
 
-### Current v0.7 scientific-completion sync
+### v0.7 release and post-release maintenance — complete
 
-Issue #229 is the docs-only checkpoint after all seven v0.7 implementation blocks. It records the complete merged v0.7 scientific/visualization state without adding Gate-A code or v0.8 implementation. Gate A frozen-scope release hardening begins only after #229 merges and `main`, immutable `v0.6.0`, distribution/runtime `0.6.0`, public v0.6 GitHub Release, and PyPI-deferred state are reverified. Gate A retains version `0.6.0`; Gate B is the later version-finalization candidate, and Gate C/tag creation remains a separate explicit authorization boundary.
+Issue #229 / PR #230 synchronized the completed seven-block scientific state before release hardening. Gate A #231/#232 completed the frozen-scope installed-wheel/public-API audit; Gate B #233/#234 finalized and exact-wheel validated distribution/runtime `0.7.0` at release commit `e3062fc12c794f54c7b7613875ec73608a587a59`; Gate C #237/#238 created and independently reverse-verified `v0.7.0` on that exact commit. The one-shot tag workflow was removed through #239/#240, Gate-C evidence synchronized through #241/#242, the public GitHub Release was published and synchronized through #243/#244, and post-release #245/#246 added the backwards-compatible `symmetric_color_limits()` primitive without changing version or release artifacts. PyPI/package-registry publication remains deferred.
 
 ## Mandatory development loop
 
@@ -500,4 +500,4 @@ After each merged scientific Issue, update only documentation whose statements b
 - preceding Issue closure/completion;
 - version/tag/publication boundaries.
 
-Issue #229 is the active v0.7 scientific-completion documentation checkpoint. After it merges, reverify `main`, Issue #229 closure, immutable `v0.6.0 -> c7793b309f41d174c14534bd6d4acdacc2a57636`, distribution/runtime version `0.6.0`, public v0.6 GitHub Release state, and PyPI-deferred state. Then start v0.7 Gate A frozen-scope release hardening from that exact verified `main` baseline using [`V0_7_PLAN.md`](V0_7_PLAN.md) and all completed v0.7 domain contracts; Gate A must retain distribution/runtime version `0.6.0`.
+The v0.7 release lifecycle and the post-release central-state correction are complete. Before v0.8 implementation, create and review a dedicated v0.8 architecture checkpoint that freezes operando/time-resolved state, grid/alignment, provenance, visualization, domain-consumer, dependency, testing, and out-of-scope contracts. Preserve immutable `v0.7.0 -> e3062fc12c794f54c7b7613875ec73608a587a59`, distribution/runtime release version `0.7.0`, the published public GitHub Release, and the PyPI-deferred boundary.
