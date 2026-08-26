@@ -42,6 +42,14 @@ from .stack import (
     build_operando_stack,
     series_array_digest,
 )
+from .xas import (
+    OperandoXASError,
+    build_xanes_operando_stack,
+    build_xas_operando_stack,
+    xanes_edge_position_trace,
+    xanes_white_line_intensity_trace,
+    xas_window_integral_trace,
+)
 
 # Keep direct imports from the implementation submodule on the same fail-closed
 # public comparison state after package initialization.
@@ -58,12 +66,15 @@ __all__ = [
     "OperandoStackError",
     "OperandoTrace",
     "OperandoVisualizationError",
+    "OperandoXASError",
     "PearsonCorrelationResult",
     "TracePair",
     "build_ftir_operando_stack",
     "build_operando_stack",
     "build_operando_trace",
     "build_raman_operando_stack",
+    "build_xanes_operando_stack",
+    "build_xas_operando_stack",
     "crop_signal",
     "fit_component_center_trace",
     "fit_component_fwhm_trace",
@@ -82,4 +93,7 @@ __all__ = [
     "select_frames_by_coordinate",
     "series_array_digest",
     "signal_position_cut",
+    "xanes_edge_position_trace",
+    "xanes_white_line_intensity_trace",
+    "xas_window_integral_trace",
 ]
