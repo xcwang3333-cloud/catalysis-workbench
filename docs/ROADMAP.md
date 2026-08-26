@@ -172,21 +172,24 @@ All seven v0.7 implementation blocks, scientific-completion synchronization, Gat
 
 VASP/HPC job submission and complete workflow management remain outside the current project scope.
 
-## v0.8.x — Operando and time-resolved data — architecture frozen; Block 1 complete
+## v0.8.x — Operando and time-resolved data — architecture frozen; Blocks 1-2 complete
 
-The six-block architecture is frozen in [`V0_8_PLAN.md`](V0_8_PLAN.md) through Issue #249 / PR #250 at `fa7baaf8ce68369b0e732faf4e7621a818db92b6`; post-merge CI #550 / run `32920821932` passed. Block 1 is complete through Issue #253 / PR #254 at expected-head squash merge `45d0515dd5c1c70f15f4d5cd76ba2a359dc66bb2`; final head `eadf5b2e6630b137922f365a88f4b9ef3c43b12b` passed CI #561 / run `32922150384` and formal reviews `5026150379`, `5026170031`, and post-merge main CI #562 / run `32922349620` passed on the merge commit.
+The six-block architecture is frozen in [`V0_8_PLAN.md`](V0_8_PLAN.md) through Issue #249 / PR #250 at `fa7baaf8ce68369b0e732faf4e7621a818db92b6`; post-merge CI #550 / run `32920821932` passed. Block 1 is complete through Issue #253 / PR #254 at expected-head squash merge `45d0515dd5c1c70f15f4d5cd76ba2a359dc66bb2`; final head `eadf5b2e6630b137922f365a88f4b9ef3c43b12b` passed CI #561 / run `32922150384` and formal reviews `5026150379`, `5026170031`, and post-merge main CI #562 / run `32922349620` passed on the merge commit. Block 2 is complete through Issue #257 / PR #258 at expected-head squash merge `86cd463e288eca08c7917945fafbf630493ede92`; final exact head `9fc8e372f15015de1d65705cedd0ad68414613b7` passed CI #580 / run `32925586441`, the review-1 fail-closed result-state blocker was fixed and regression-tested, formal review 2 `5026418909` found no blockers with zero unresolved threads, and post-merge main CI #581 / run `32925811342` passed.
 
 1. **Shared immutable frame-coordinate and operando-stack foundation — complete through #253 / #254.**
    - immutable frame coordinates and exact-grid `OperandoStack` state on top of released core `Axis` / `Series` / `Dataset`;
    - deterministic source/stack digests, reconstruction validation, preserved frame/signal order, increasing/decreasing signal support, explicit primary coordinates, and fresh-wheel public API audit;
    - no interpolation, resampling, alignment, sorting, hidden processing, unit conversion, or automatic coordinate inference.
-2. Exact measured-point operations, derived traces, and explicit cross-modal comparison.
+2. **Exact measured-point operations, derived traces, and explicit cross-modal comparison — complete through #257 / #258.**
+   - exact retained-key/index and explicit coordinate-comparison frame selection without sorting or automatic coordinate choice;
+   - measured-point signal cropping plus exact frame/signal-position cuts with no synthesized values or nearest-neighbor lookup;
+   - immutable derived traces, fail-closed exact trace pairing, and explicit ordinary Pearson correlation with retained coefficient, two-sided p-value, paired values, and provenance.
 3. Passive waterfall, heatmap, cut, and trace visualization.
 4. Operando Raman and FTIR adapters with caller-specified band/peak trajectories.
 5. Operando XAS/XANES adapters, mapping, and explicit descriptor trajectories.
 6. Operando XRD adapters, mapping, and caller-window/peak trajectories.
 
-The frozen contract requires literal common grids, explicit coordinates/units/provenance, retained acquisition order, passive renderers, and fail-closed incompatibility. It performs no hidden alignment, interpolation, smoothing, baseline correction, normalization, chemical assignment, XAS species inference, XRD phase inference, or causal interpretation. Block 2 — exact measured-point operations, derived traces, and explicit cross-modal comparison — is the next implementation work package.
+The frozen contract requires literal common grids, explicit coordinates/units/provenance, retained acquisition order, passive renderers, and fail-closed incompatibility. It performs no hidden alignment, interpolation, smoothing, baseline correction, normalization, chemical assignment, XAS species inference, XRD phase inference, or causal interpretation. Block 3 — passive waterfall, heatmap, cut, and trace visualization — is the next implementation work package.
 
 ## v0.9.x — Reproducible and interactive workflows
 
