@@ -336,3 +336,40 @@ No upstream BET implementation code is copied or adapted. Full scientific/API/te
 - No Matplotlib normalization object is constructed, no upstream implementation is
   copied or adapted, and no dependency is added. Clipping, percentiles, smoothing,
   normalization, colormap selection and heatmap rendering remain outside Issue #245.
+
+## Operando/time-resolved architecture decision — v0.8 Issue #249
+
+The v0.8 scan is incremental and limited to multidimensional scientific state,
+axis semantics, passive heatmap/waterfall rendering, and license boundaries.
+
+- [xarray data structures](https://docs.xarray.dev/en/latest/user-guide/data-structures.html)
+  are reference prior art for labeled dimensions, coordinates, and attributes.
+  [xarray's current LICENSE](https://github.com/pydata/xarray/blob/main/LICENSE)
+  is Apache-2.0. Decision: architecture reference only; do not add a dependency
+  or copy/adapt implementation.
+- [HyperSpy axes](https://hyperspy.org/hyperspy-doc/current/user_guide/axes.html)
+  distinguish navigation and signal axes. The
+  [HyperSpy repository](https://github.com/hyperspy/hyperspy) is GPL-3.0.
+  Decision: multidimensional workflow reference only; no dependency and no
+  copied/adapted GPL code.
+- [specutils](https://specutils.readthedocs.io/) provides multidimensional
+  spectral representations with explicit spectral-axis handling. The
+  [specutils repository](https://github.com/astropy/specutils) is BSD-3-Clause.
+  Decision: API/axis reference only; no dependency.
+- Matplotlib
+  [`pcolormesh` grid semantics](https://matplotlib.org/stable/gallery/images_contours_and_fields/pcolormesh_grids.html)
+  and [`LineCollection`](https://matplotlib.org/stable/gallery/shapes_and_collections/line_collection.html)
+  are rendering references. Matplotlib is already a runtime dependency under
+  its [PSF-based license](https://matplotlib.org/stable/project/license.html).
+  Decision: use only behind CatalysisWorkbench-owned passive rendering
+  contracts; do not copy gallery implementation.
+
+CatalysisWorkbench v0.8 keeps its own narrower contract: immutable finite real
+`(frame, signal)` state, unique ordered frame keys, exact common measured signal
+grids, explicit multiple per-frame coordinates, caller-visible selection and
+display parameters, exact trace pairing, and no hidden interpolation, resampling,
+sorting, smoothing, normalization, baseline correction, missing-value repair, or
+unit conversion. Existing `Axis`, `Series`, `Dataset`, domain validators,
+provenance/digest patterns, `FigureSpec`, and `symmetric_color_limits()` remain
+the implementation foundation. No new runtime dependency is authorized by Issue
+#249.
