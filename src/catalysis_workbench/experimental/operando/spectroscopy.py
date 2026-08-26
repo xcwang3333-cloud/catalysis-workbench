@@ -105,6 +105,26 @@ def _canonical_domain_frames(
     return tuple(canonical), tuple(source_digests), tuple(fit_source_sha256)
 
 
+def _build_domain_stack(
+    frames: Sequence[Series],
+    *,
+    frame_coordinates: Sequence[FrameCoordinate],
+    primary_coordinate_key: str,
+    source_digests: Sequence[str],
+    metadata: Mapping[str, Any],
+) -> OperandoStack:
+    try:
+        return build_operando_stack(
+            frames,
+            frame_coordinates=frame_coordinates,
+            primary_coordinate_key=primary_coordinate_key,
+            expected_source_digests=source_digests,
+            metadata=metadata,
+        )
+    except OperandoStackError as exc:
+        raise OperandoSpectroscopyError(str(exc)) from exc
+
+
 def build_raman_operando_stack(
     frames: Sequence[Series],
     *,
@@ -117,11 +137,11 @@ def build_raman_operando_stack(
         frames,
         technique="raman",
     )
-    return build_operando_stack(
+    return _build_domain_stack(
         canonical,
         frame_coordinates=frame_coordinates,
         primary_coordinate_key=primary_coordinate_key,
-        expected_source_digests=source_digests,
+        source_digests=source_digests,
         metadata=_domain_metadata(
             metadata,
             technique="raman",
@@ -143,11 +163,11 @@ def build_ftir_operando_stack(
         frames,
         technique="ftir",
     )
-    return build_operando_stack(
+    return _build_domain_stack(
         canonical,
         frame_coordinates=frame_coordinates,
         primary_coordinate_key=primary_coordinate_key,
-        expected_source_digests=source_digests,
+        source_digests=source_digests,
         metadata=_domain_metadata(
             metadata,
             technique="ftir",
