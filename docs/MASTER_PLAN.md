@@ -23,6 +23,7 @@ Checkpoint date: 2026-08-26.
 - Repository: `xcwang3333-cloud/catalysis-workbench`.
 - Stable integration branch: `main`.
 - Exact architecture baseline: `fa7baaf8ce68369b0e732faf4e7621a818db92b6`, the Issue #249 / PR #250 v0.8 architecture squash merge; post-merge CI #550 / run `32920821932` passed on that exact `main` head.
+- Current verified implementation head: `45d0515dd5c1c70f15f4d5cd76ba2a359dc66bb2`, the expected-head squash merge of v0.8 Block 1 through Issue #253 / PR #254; post-merge CI #562 / run `32922349620` passed on that exact `main` head.
 - Distribution/runtime version is `0.7.0`.
 - Released tag `v0.7.0 -> e3062fc12c794f54c7b7613875ec73608a587a59` is immutable and independently reverse-verified.
 - The public GitHub Release `CatalysisWorkbench v0.7.0` is published from that existing verified tag.
@@ -62,7 +63,9 @@ Checkpoint date: 2026-08-26.
 - [`VOLUMETRIC_3D.md`](VOLUMETRIC_3D.md) records the reviewed Block-7 optional PyVista/VTK backend, full-lattice skew-cell geometry, explicit isosurface/exact-slice/fractional-clipping semantics, retained structure/camera mapping, backend-hidden result state, and static headless PNG-export boundary.
 - All seven v0.7 implementation blocks are complete.
 - Post-release maintenance Issue #245 / PR #246 is complete at `9235e34046d9b07e219393c97f60bfadf817ed71`; `symmetric_color_limits()` is backwards-compatible future v0.8 heatmap groundwork and is not a v0.8 data-model implementation.
-- v0.8 architecture checkpoint Issue #249 / PR #250 is complete at `fa7baaf8ce68369b0e732faf4e7621a818db92b6`; shared-stack foundation Block 1 is the next implementation work package. No v0.7.1, tag, release, or package-registry action is implied.
+- v0.8 architecture checkpoint Issue #249 / PR #250 is complete at `fa7baaf8ce68369b0e732faf4e7621a818db92b6`.
+- v0.8 Block 1 shared immutable operando-stack foundation is complete through Issue #253 / PR #254 at merge `45d0515dd5c1c70f15f4d5cd76ba2a359dc66bb2`; final head `eadf5b2e6630b137922f365a88f4b9ef3c43b12b` passed CI #561 / run `32922150384` and formal reviews `5026150379`, `5026170031` with zero unresolved threads, followed by successful post-merge main CI #562 / run `32922349620`.
+- v0.8 Block 2 — exact measured-point operations, derived traces, and explicit cross-modal comparison — is the next scientific implementation work package. No v0.7.1, tag, release, or package-registry action is implied.
 
 Live GitHub Issue/PR/tag state remains authoritative if this checkpoint becomes stale.
 
@@ -79,7 +82,7 @@ Detailed long-range scope is maintained in [`ROADMAP.md`](ROADMAP.md).
 | v0.5.x | XAS/XANES, FT/WT-EXAFS, EXAFS summaries, structures/geometry/static visualization, basic DFT energetics | complete/released as v0.5.0; GitHub Release published; PyPI deferred |
 | v0.6.x | electronic structure and catalysis thermodynamics | complete/released as v0.6.0; GitHub Release published; PyPI deferred |
 | v0.7.x | advanced computational visualization | complete/released as v0.7.0; GitHub Release published; post-release color-limit maintenance #245/#246 complete; PyPI deferred |
-| v0.8.x | operando/time-resolved analysis | architecture frozen; six implementation blocks planned |
+| v0.8.x | operando/time-resolved analysis | architecture frozen; Block 1 complete; Block 2 next |
 | v0.9.x | reproducible batch workflows and first interactive editor | planned |
 | v1.0.0 | stable personal catalysis data workbench and local GUI | planned |
 
@@ -418,7 +421,13 @@ The frozen implementation order is:
 5. operando XAS/XANES adapters/mapping/descriptor trajectories;
 6. operando XRD adapters/mapping/window and peak trajectories.
 
-No new runtime dependency, hidden alignment/interpolation/normalization, automatic peak/species/phase inference, v0.7.1, tag, release, or package-registry action is authorized by this checkpoint. Block 1 must begin from a new scoped Issue and Draft PR.
+### Shared immutable frame-coordinate and operando-stack foundation — complete
+
+Issue #253 / PR #254 delivered the shared `catalysis_workbench.experimental.operando` foundation on top of the released core `Axis` / `Series` / `Dataset` layer: immutable frame coordinates, immutable exact-grid `OperandoStack` state, deterministic reconstructible digests, strict source/grid/axis/basis compatibility, public exports, focused regression tests, and fresh-installed-wheel audit. Acquisition and signal order are retained literally; repeated or non-monotonic frame-coordinate values are valid; signal coordinates must remain strictly monotonic while preserving increasing or decreasing source direction. The implementation performs no interpolation, resampling, alignment, sorting, smoothing, baseline correction, normalization, clipping, unit conversion, coordinate inference, or automatic primary-coordinate selection.
+
+Block-1 final head `eadf5b2e6630b137922f365a88f4b9ef3c43b12b` passed CI #561 / run `32922150384` and formal reviews `5026150379`, `5026170031` with zero unresolved threads after hardening Python/NumPy scalar metadata canonicalization. Expected-head squash merge produced `45d0515dd5c1c70f15f4d5cd76ba2a359dc66bb2`; post-merge main CI #562 / run `32922349620` passed on that exact commit.
+
+No new runtime dependency, hidden alignment/interpolation/normalization, automatic peak/species/phase inference, v0.7.1, tag, release, or package-registry action was introduced. Block 2 — exact measured-point operations, derived traces, and explicit cross-modal comparison — is next.
 
 ## Mandatory development loop
 
@@ -520,4 +529,4 @@ After each merged scientific Issue, update only documentation whose statements b
 - preceding Issue closure/completion;
 - version/tag/publication boundaries.
 
-The v0.7 release lifecycle and post-release central-state correction are complete. The dedicated v0.8 architecture checkpoint is complete through Issue #249 / PR #250; begin shared-stack foundation Block 1 from a new scoped Issue and Draft PR, then follow the frozen six-block order in `V0_8_PLAN.md`. Preserve immutable `v0.7.0 -> e3062fc12c794f54c7b7613875ec73608a587a59`, distribution/runtime release version `0.7.0`, the published public GitHub Release, and the PyPI-deferred boundary.
+The v0.7 release lifecycle and post-release central-state correction are complete. The dedicated v0.8 architecture checkpoint is complete through Issue #249 / PR #250, and shared-stack foundation Block 1 is complete through Issue #253 / PR #254 at `45d0515dd5c1c70f15f4d5cd76ba2a359dc66bb2`; begin Block 2 — exact measured-point operations, derived traces, and explicit cross-modal comparison — from a new scoped Issue and Draft PR, then continue the frozen order in `V0_8_PLAN.md`. Preserve immutable `v0.7.0 -> e3062fc12c794f54c7b7613875ec73608a587a59`, distribution/runtime release version `0.7.0`, the published public GitHub Release, and the PyPI-deferred boundary.
