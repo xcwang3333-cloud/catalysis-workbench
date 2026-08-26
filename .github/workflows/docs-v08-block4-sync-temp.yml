@@ -1,0 +1,100 @@
+name: Temporary v0.8 Block 4 docs sync
+
+on:
+  push:
+    branches:
+      - docs/v08-block4-completion-sync
+    paths:
+      - .github/workflows/docs-v08-block4-sync-temp.yml
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Synchronize central status documents
+        shell: python
+        run: |
+          from pathlib import Path
+
+          def replace(path, old, new):
+              p = Path(path)
+              text = p.read_text()
+              if old not in text:
+                  raise SystemExit(f"expected text not found in {path}: {old[:120]!r}")
+              p.write_text(text.replace(old, new, 1))
+
+          replace(
+              "README.md",
+              "- Operando/time-resolved: v0.8 Blocks 1-3 are implemented on `main`: the shared immutable frame-coordinate / exact-grid stack foundation and exact measured-point/derived-trace/cross-modal comparison layer are joined by passive waterfall, heatmap, frame-cut, and trace visualization with exact retained scientific state, explicit ordinal/coordinate frame geometry, explicit value limits, and display-only offsets/reversal; technique-specific Raman/IR, XAS, and XRD adapters remain later v0.8 blocks.",
+              "- Operando/time-resolved: v0.8 Blocks 1-4 are implemented on `main`: the shared immutable frame-coordinate / exact-grid stack foundation, exact measured-point/derived-trace/cross-modal comparison layer, and passive waterfall/heatmap/cut/trace visualization are joined by reviewed Raman/FTIR exact-grid adapters and explicit caller-window band/peak plus caller-supplied fit-derived center/FWHM trajectories with fail-closed provenance/model compatibility; XAS/XANES and XRD adapters remain later v0.8 blocks."
+          )
+          replace(
+              "README.md",
+              "Block 3 completed through Issue #263 / PR #264: final exact head `37c69c18e3e81bd228eadf3c4c2e3b5b8540a8a1` passed CI #594 / run `32927718634` with Ruff, all 1157 tests, fresh-wheel Block-3 audit, and volumetric3d smoke; formal reviews `5026595721`, `5026596493` found no blockers with zero unresolved threads; expected-head squash merge produced `4a5b5ee0f75321dbf3a679ab616ac69972e34575`, and post-merge main CI #595 / run `32928011235` passed. Block 4 — operando Raman and FTIR adapters with caller-specified band/peak trajectories — is the next implementation work package.",
+              "Block 3 completed through Issue #263 / PR #264: final exact head `37c69c18e3e81bd228eadf3c4c2e3b5b8540a8a1` passed CI #594 / run `32927718634` with Ruff, all 1157 tests, fresh-wheel Block-3 audit, and volumetric3d smoke; formal reviews `5026595721`, `5026596493` found no blockers with zero unresolved threads; expected-head squash merge produced `4a5b5ee0f75321dbf3a679ab616ac69972e34575`, and post-merge main CI #595 / run `32928011235` passed. Block 4 completed through Issue #267 / PR #268: final exact head `45314c9c16c5460c8a9d574ec3fb43c6dfef722f` passed CI #612 / run `32930071404`; formal reviews `5026779773`, `5026780870` found no blockers with zero unresolved threads; expected-head squash merge produced `d46b57c5c558a06880e58d1b0bb15b6fd1c96a8c`, and post-merge main CI #613 / run `32930335459` passed. Block 5 — operando XAS/XANES adapters, mapping, and explicit descriptor trajectories — is the next implementation work package."
+          )
+          replace(
+              "README.md",
+              "- **v0.8:** architecture frozen for operando/time-resolved Raman/IR, XAS, and XRD stacks, waterfalls, heatmaps, descriptor trajectories, and explicit cross-modal correlation; Blocks 1-3 are complete, with three implementation blocks remaining and Block 4 Raman/FTIR adapters and explicit trajectories next.",
+              "- **v0.8:** architecture frozen for operando/time-resolved Raman/IR, XAS, and XRD stacks, waterfalls, heatmaps, descriptor trajectories, and explicit cross-modal correlation; Blocks 1-4 are complete, with two implementation blocks remaining and Block 5 XAS/XANES adapters, mapping, and explicit descriptor trajectories next."
+          )
+
+          replace(
+              "docs/MASTER_PLAN.md",
+              "- Current verified scientific implementation head: `4a5b5ee0f75321dbf3a679ab616ac69972e34575`, the expected-head squash merge of v0.8 Block 3 through Issue #263 / PR #264; post-merge CI #595 / run `32928011235` passed on that exact `main` head.",
+              "- Current verified scientific implementation head: `d46b57c5c558a06880e58d1b0bb15b6fd1c96a8c`, the expected-head squash merge of v0.8 Block 4 through Issue #267 / PR #268; post-merge CI #613 / run `32930335459` passed on that exact `main` head."
+          )
+          replace(
+              "docs/MASTER_PLAN.md",
+              "- v0.8 Block 3 passive waterfall/heatmap/frame-cut/trace visualization is complete through Issue #263 / PR #264 at merge `4a5b5ee0f75321dbf3a679ab616ac69972e34575`; final exact head `37c69c18e3e81bd228eadf3c4c2e3b5b8540a8a1` passed CI #594 / run `32927718634` with Ruff, all 1157 tests, fresh-wheel Block-3 audit, and volumetric3d smoke; formal reviews `5026595721`, `5026596493` found no blockers with zero unresolved threads; post-merge main CI #595 / run `32928011235` passed. Block 4 — operando Raman and FTIR adapters with caller-specified band/peak trajectories — is next. No v0.7.1, tag, release, or package-registry action is implied.",
+              "- v0.8 Block 3 passive waterfall/heatmap/frame-cut/trace visualization is complete through Issue #263 / PR #264 at merge `4a5b5ee0f75321dbf3a679ab616ac69972e34575`; final exact head `37c69c18e3e81bd228eadf3c4c2e3b5b8540a8a1` passed CI #594 / run `32927718634` with Ruff, all 1157 tests, fresh-wheel Block-3 audit, and volumetric3d smoke; formal reviews `5026595721`, `5026596493` found no blockers with zero unresolved threads; post-merge main CI #595 / run `32928011235` passed.\n- v0.8 Block 4 operando Raman/FTIR exact-grid adapters and explicit trajectories are complete through Issue #267 / PR #268 at merge `d46b57c5c558a06880e58d1b0bb15b6fd1c96a8c`; final exact head `45314c9c16c5460c8a9d574ec3fb43c6dfef722f` passed CI #612 / run `32930071404`; formal reviews `5026779773`, `5026780870` found no blockers with zero unresolved threads; post-merge main CI #613 / run `32930335459` passed. Block 5 — operando XAS/XANES adapters, mapping, and explicit descriptor trajectories — is next. No v0.7.1, tag, release, or package-registry action is implied."
+          )
+          replace(
+              "docs/MASTER_PLAN.md",
+              "| v0.8.x | operando/time-resolved analysis | architecture frozen; Blocks 1-3 complete; Block 4 Raman/FTIR adapters and trajectories next |",
+              "| v0.8.x | operando/time-resolved analysis | architecture frozen; Blocks 1-4 complete; Block 5 XAS/XANES adapters, mapping, and descriptor trajectories next |"
+          )
+          replace(
+              "docs/MASTER_PLAN.md",
+              "Block 3 adds passive waterfall rendering with finite caller-visible display offsets, exact retained-matrix heatmaps with explicit ordinal or strictly monotonic coordinate geometry, exact frame-cut and immutable trace plotting, explicit value limits/colormap, and display-only axis reversal. Presentation mesh edges are derived only for rendering and do not resample retained scientific values. Final exact head `37c69c18e3e81bd228eadf3c4c2e3b5b8540a8a1` passed CI #594 / run `32927718634`; expected-head squash merge produced `4a5b5ee0f75321dbf3a679ab616ac69972e34575`; post-merge main CI #595 / run `32928011235` passed.\n\nNo new runtime dependency, hidden alignment/interpolation/normalization, automatic peak/species/phase inference, v0.7.1, tag, release, or package-registry action was introduced. Block 4 — operando Raman and FTIR adapters with caller-specified band/peak trajectories — is next.",
+              "Block 3 adds passive waterfall rendering with finite caller-visible display offsets, exact retained-matrix heatmaps with explicit ordinal or strictly monotonic coordinate geometry, exact frame-cut and immutable trace plotting, explicit value limits/colormap, and display-only axis reversal. Presentation mesh edges are derived only for rendering and do not resample retained scientific values. Final exact head `37c69c18e3e81bd228eadf3c4c2e3b5b8540a8a1` passed CI #594 / run `32927718634`; expected-head squash merge produced `4a5b5ee0f75321dbf3a679ab616ac69972e34575`; post-merge main CI #595 / run `32928011235` passed.\n\nBlock 4 adds Raman and FTIR exact-grid operando adapters over reviewed domain validators, explicit caller-window direct band-area and observed peak-position trajectories, and caller-supplied `PeakFitResult` center/FWHM trajectories with exact source/order/window/model/axis/unit compatibility. Supported Gaussian, Lorentzian, pseudo-Voigt, and Voigt FWHM conventions remain model-derived from retained lmfit state while unsupported Doniach width extraction fails closed; no automatic peak detection/fitting, baseline choice, smoothing, normalization, transmittance conversion, or chemical assignment is introduced. Final exact head `45314c9c16c5460c8a9d574ec3fb43c6dfef722f` passed CI #612 / run `32930071404`; expected-head squash merge produced `d46b57c5c558a06880e58d1b0bb15b6fd1c96a8c`; post-merge main CI #613 / run `32930335459` passed.\n\nNo new runtime dependency, hidden alignment/interpolation/normalization, automatic peak/species/phase inference, v0.7.1, tag, release, or package-registry action was introduced. Block 5 — operando XAS/XANES adapters, mapping, and explicit descriptor trajectories — is next."
+          )
+          replace(
+              "docs/MASTER_PLAN.md",
+              "The v0.7 release lifecycle and post-release central-state correction are complete. The dedicated v0.8 architecture checkpoint is complete through Issue #249 / PR #250; Blocks 1, 2, and 3 are complete through Issue/PR pairs #253/#254, #257/#258, and #263/#264 respectively, with Block 3 merged at `4a5b5ee0f75321dbf3a679ab616ac69972e34575`; begin Block 4 — operando Raman and FTIR adapters with caller-specified band/peak trajectories — from a new scoped Issue and Draft PR, then continue the frozen order in `V0_8_PLAN.md`. Preserve immutable `v0.7.0 -> e3062fc12c794f54c7b7613875ec73608a587a59`, distribution/runtime release version `0.7.0`, the published public GitHub Release, and the PyPI-deferred boundary.",
+              "The v0.7 release lifecycle and post-release central-state correction are complete. The dedicated v0.8 architecture checkpoint is complete through Issue #249 / PR #250; Blocks 1-4 are complete through Issue/PR pairs #253/#254, #257/#258, #263/#264, and #267/#268 respectively, with Block 4 merged at `d46b57c5c558a06880e58d1b0bb15b6fd1c96a8c`; begin Block 5 — operando XAS/XANES adapters, mapping, and explicit descriptor trajectories — from a new scoped Issue and Draft PR, then continue the frozen order in `V0_8_PLAN.md`. Preserve immutable `v0.7.0 -> e3062fc12c794f54c7b7613875ec73608a587a59`, distribution/runtime release version `0.7.0`, the published public GitHub Release, and the PyPI-deferred boundary."
+          )
+
+          replace(
+              "docs/ROADMAP.md",
+              "## v0.8.x — Operando and time-resolved data — architecture frozen; Blocks 1-3 complete",
+              "## v0.8.x — Operando and time-resolved data — architecture frozen; Blocks 1-4 complete"
+          )
+          replace(
+              "docs/ROADMAP.md",
+              "Block 3 is complete through Issue #263 / PR #264 at expected-head squash merge `4a5b5ee0f75321dbf3a679ab616ac69972e34575`; final exact head `37c69c18e3e81bd228eadf3c4c2e3b5b8540a8a1` passed CI #594 / run `32927718634`, formal reviews `5026595721`, `5026596493` found no blockers with zero unresolved threads, and post-merge main CI #595 / run `32928011235` passed.",
+              "Block 3 is complete through Issue #263 / PR #264 at expected-head squash merge `4a5b5ee0f75321dbf3a679ab616ac69972e34575`; final exact head `37c69c18e3e81bd228eadf3c4c2e3b5b8540a8a1` passed CI #594 / run `32927718634`, formal reviews `5026595721`, `5026596493` found no blockers with zero unresolved threads, and post-merge main CI #595 / run `32928011235` passed. Block 4 is complete through Issue #267 / PR #268 at expected-head squash merge `d46b57c5c558a06880e58d1b0bb15b6fd1c96a8c`; final exact head `45314c9c16c5460c8a9d574ec3fb43c6dfef722f` passed CI #612 / run `32930071404`, formal reviews `5026779773`, `5026780870` found no blockers with zero unresolved threads, and post-merge main CI #613 / run `32930335459` passed."
+          )
+          replace(
+              "docs/ROADMAP.md",
+              "4. Operando Raman and FTIR adapters with caller-specified band/peak trajectories.",
+              "4. **Operando Raman and FTIR adapters with caller-specified band/peak trajectories — complete through #267 / #268.**\n   - exact-grid Raman/FTIR adapters reuse reviewed domain validators and preserve literal source arrays/digests while allowing only semantic alias/unit canonicalization; direct band-area and observed peak-position trajectories require caller-supplied windows, and fit-derived center/FWHM trajectories consume caller-supplied compatible `PeakFitResult` state with explicit model/source/window/axis/unit provenance; Gaussian, Lorentzian, pseudo-Voigt, and Voigt widths follow retained lmfit model conventions, while unsupported Doniach width extraction fails closed; no automatic peak detection/fitting, baseline correction, smoothing, normalization, transmittance conversion, or species assignment is introduced."
+          )
+          replace(
+              "docs/ROADMAP.md",
+              "The frozen contract requires literal common grids, explicit coordinates/units/provenance, retained acquisition order, passive renderers, and fail-closed incompatibility. It performs no hidden alignment, interpolation, smoothing, baseline correction, normalization, chemical assignment, XAS species inference, XRD phase inference, or causal interpretation. Block 4 — operando Raman and FTIR adapters with caller-specified band/peak trajectories — is the next implementation work package.",
+              "The frozen contract requires literal common grids, explicit coordinates/units/provenance, retained acquisition order, passive renderers, and fail-closed incompatibility. It performs no hidden alignment, interpolation, smoothing, baseline correction, normalization, chemical assignment, XAS species inference, XRD phase inference, or causal interpretation. Block 5 — operando XAS/XANES adapters, mapping, and explicit descriptor trajectories — is the next implementation work package."
+          )
+      - name: Commit synchronized docs
+        run: |
+          git config user.name "xiaochen wang"
+          git config user.email "xcwang3333@gmail.com"
+          git add README.md docs/MASTER_PLAN.md docs/ROADMAP.md
+          git commit -m "docs: record v0.8 Block 4 completion"
+          git push
