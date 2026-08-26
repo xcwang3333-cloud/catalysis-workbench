@@ -12,7 +12,7 @@ This document records release-hardening procedure and evidence for the frozen v0
 - Distribution/runtime release version through `v0.7.0`: `0.7.0`.
 - Prior release tag: `v0.6.0 -> c7793b309f41d174c14534bd6d4acdacc2a57636`, immutable.
 - The public `CatalysisWorkbench v0.6.0` GitHub Release is published from that existing tag.
-- A public GitHub Release for `v0.7.0` has not yet been published and remains a separate explicit decision.
+- The public `CatalysisWorkbench v0.7.0` GitHub Release is published from the verified `v0.7.0` tag; Release ID `376798329`, published at `2026-08-26T00:48:05Z`, `draft=false`, `prerelease=false`.
 - PyPI/package-registry publication remains deferred.
 
 The frozen v0.7 implementation blocks are:
@@ -126,9 +126,24 @@ The one-shot tag workflow was then removed as required:
 - `.github/workflows/gate-c-v07-tag.yml` is absent from post-cleanup `main`;
 - neither cleanup nor this evidence synchronization may move or recreate `v0.7.0`.
 
-## GitHub Release and package publication
+## GitHub Release publication — complete
 
-Publishing a public GitHub Release for `v0.7.0` remains a separate explicit action after Gate C. The existing verified tag must be used as-is; publication does not authorize tag movement or recreation.
+The public GitHub Release `CatalysisWorkbench v0.7.0` has been published from the existing verified `v0.7.0` tag.
+
+### Publication evidence
+
+| Evidence | State |
+| --- | --- |
+| release name | `CatalysisWorkbench v0.7.0` |
+| release ID | `376798329` |
+| tag name | `v0.7.0` |
+| verified tag target | `e3062fc12c794f54c7b7613875ec73608a587a59` |
+| published at | `2026-08-26T00:48:05Z` |
+| draft | `false` |
+| prerelease | `false` |
+| assets | none; GitHub source tarball/zipball remain available from the tag |
+
+Publication used the already verified tag and did not authorize or perform tag movement, recreation, scientific/API/dependency changes, or package-registry publication. The v0.7 GitHub release lifecycle is complete.
 
 PyPI/package-registry publication remains deferred unless explicitly reauthorized in a future decision.
 
