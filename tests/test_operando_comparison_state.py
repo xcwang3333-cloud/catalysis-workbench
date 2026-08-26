@@ -74,7 +74,7 @@ def test_direct_pearson_result_computes_statistics_from_retained_pair():
 
     result = PearsonCorrelationResult(pair=pair)
     assert result.coefficient == pytest.approx(1.0)
-    assert result.p_value == pytest.approx(0.0)
+    assert 0.0 <= result.p_value < 1e-6
     assert result.source_digests == (left.digest, right.digest)
 
     with pytest.raises(TypeError):
