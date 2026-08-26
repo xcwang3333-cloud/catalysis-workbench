@@ -15,7 +15,7 @@ from catalysis_workbench.experimental.operando import (
     plot_operando_waterfall,
     signal_position_cut,
 )
-from catalysis_workbench.visualization import FigureSpec, symmetric_color_limits
+from catalysis_workbench.visualization import symmetric_color_limits
 
 
 def main() -> None:

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from math import isfinite
 
 import numpy as np
@@ -162,9 +163,7 @@ def _validate_waterfall_styles(stack: OperandoStack, spec: FigureSpec) -> None:
         raise OperandoVisualizationError(
             f"series style keys are not retained frame keys: {sorted(unknown)!r}"
         )
-    hidden = [
-        key for key, style in spec.series_styles.items() if not style.visible
-    ]
+    hidden = [key for key, style in spec.series_styles.items() if not style.visible]
     if hidden:
         raise OperandoVisualizationError(
             "waterfall rendering does not permit trace omission; "
@@ -272,10 +271,11 @@ def plot_operando_heatmap(
         if mode == "ordinal":
             ax.set_yticks(frame_centers)
             ax.set_yticklabels([f"{float(value):g}" for value in coordinate.values])
-            default_ylabel = (
-                f"{format_axis_label(coordinate.axis, unit_format=resolved_spec.style.axis_unit_format)} "
-                "[ordinal frame geometry]"
+            coordinate_label = format_axis_label(
+                coordinate.axis,
+                unit_format=resolved_spec.style.axis_unit_format,
             )
+            default_ylabel = f"{coordinate_label} [ordinal frame geometry]"
         else:
             default_ylabel = format_axis_label(
                 coordinate.axis,
@@ -322,14 +322,33 @@ def plot_operando_heatmap(
     return figure, ax
 
 
+def _valid_digest(value: object) -> bool:
+    text = str(value).strip().lower()
+    return len(text) == 64 and all(character in "0123456789abcdef" for character in text)
+
+
 def _require_frame_cut(series: Series) -> None:
     if not isinstance(series, Series):
         raise TypeError("cut must be a Series")
     provenance = series.metadata.get("catalysis_workbench.operando_cut")
-    if not isinstance(provenance, dict) and provenance is None:
+    required = {"source_stack_digest", "frame_key", "frame_index", "source_digest"}
+    if not isinstance(provenance, Mapping) or not required.issubset(provenance):
         raise OperandoVisualizationError(
             "cut must be an exact Series returned by operando frame_cut"
         )
+    if str(provenance["frame_key"]).strip() != series.key:
+        raise OperandoVisualizationError("frame-cut provenance contradicts the Series key")
+    if not _valid_digest(provenance["source_stack_digest"]) or not _valid_digest(
+        provenance["source_digest"]
+    ):
+        raise OperandoVisualizationError("frame-cut provenance contains an invalid digest")
+    frame_index = provenance["frame_index"]
+    if isinstance(frame_index, (bool, np.bool_)) or not isinstance(
+        frame_index, (int, np.integer)
+    ):
+        raise OperandoVisualizationError("frame-cut provenance contains an invalid frame index")
+    if int(frame_index) < 0:
+        raise OperandoVisualizationError("frame-cut provenance contains an invalid frame index")
 
 
 def plot_operando_frame_cut(
