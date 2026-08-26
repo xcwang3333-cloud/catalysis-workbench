@@ -104,12 +104,12 @@ assert white_line.reconstructed_result_digests() == white_line.source_result_dig
 assert not xanes_stack.values.flags.writeable
 assert not white_line.values.flags.writeable
 
-figure, axes, _ = plot_operando_heatmap(
+figure, axes = plot_operando_heatmap(
     xanes_stack,
     frame_geometry="ordinal",
     coordinate_key="potential",
     value_limits=(0.0, 1.3),
-    cmap="viridis",
+    colormap="viridis",
 )
 figure.canvas.draw()
 figure.clf()
