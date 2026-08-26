@@ -23,7 +23,7 @@ Checkpoint date: 2026-08-26.
 - Repository: `xcwang3333-cloud/catalysis-workbench`.
 - Stable integration branch: `main`.
 - Exact architecture baseline: `fa7baaf8ce68369b0e732faf4e7621a818db92b6`, the Issue #249 / PR #250 v0.8 architecture squash merge; post-merge CI #550 / run `32920821932` passed on that exact `main` head.
-- Current verified implementation head: `45d0515dd5c1c70f15f4d5cd76ba2a359dc66bb2`, the expected-head squash merge of v0.8 Block 1 through Issue #253 / PR #254; post-merge CI #562 / run `32922349620` passed on that exact `main` head.
+- Current verified scientific implementation merge: `86cd463e288eca08c7917945fafbf630493ede92`, the expected-head squash merge of v0.8 Block 2 through Issue #257 / PR #258; post-merge CI #581 / run `32925811342` passed on that exact merge head. Current `main` `38e512d9b591c69a85b1664a604d3700ba0da945` has the same source tree after an accidental `noop` add/remove pair.
 - Distribution/runtime version is `0.7.0`.
 - Released tag `v0.7.0 -> e3062fc12c794f54c7b7613875ec73608a587a59` is immutable and independently reverse-verified.
 - The public GitHub Release `CatalysisWorkbench v0.7.0` is published from that existing verified tag.
@@ -65,7 +65,7 @@ Checkpoint date: 2026-08-26.
 - Post-release maintenance Issue #245 / PR #246 is complete at `9235e34046d9b07e219393c97f60bfadf817ed71`; `symmetric_color_limits()` is backwards-compatible future v0.8 heatmap groundwork and is not a v0.8 data-model implementation.
 - v0.8 architecture checkpoint Issue #249 / PR #250 is complete at `fa7baaf8ce68369b0e732faf4e7621a818db92b6`.
 - v0.8 Block 1 shared immutable operando-stack foundation is complete through Issue #253 / PR #254 at merge `45d0515dd5c1c70f15f4d5cd76ba2a359dc66bb2`; final head `eadf5b2e6630b137922f365a88f4b9ef3c43b12b` passed CI #561 / run `32922150384` and formal reviews `5026150379`, `5026170031` with zero unresolved threads, followed by successful post-merge main CI #562 / run `32922349620`.
-- v0.8 Block 2 — exact measured-point operations, derived traces, and explicit cross-modal comparison — is the next scientific implementation work package. No v0.7.1, tag, release, or package-registry action is implied.
+- v0.8 Block 2 exact measured-point operations, immutable derived traces, fail-closed exact cross-modal comparison, and explicit Pearson correlation are complete through Issue #257 / PR #258 at merge `86cd463e288eca08c7917945fafbf630493ede92`; final exact head `9fc8e372f15015de1d65705cedd0ad68414613b7` passed CI #580 / run `32925586441`, the review-1 fail-closed constructor blocker was fixed and regression-tested, formal review 2 `5026418909` found no blockers with zero unresolved threads, and post-merge main CI #581 / run `32925811342` passed. Block 3 — passive waterfall, heatmap, cut, and trace visualization — is next. No v0.7.1, tag, release, or package-registry action is implied.
 
 Live GitHub Issue/PR/tag state remains authoritative if this checkpoint becomes stale.
 
@@ -82,7 +82,7 @@ Detailed long-range scope is maintained in [`ROADMAP.md`](ROADMAP.md).
 | v0.5.x | XAS/XANES, FT/WT-EXAFS, EXAFS summaries, structures/geometry/static visualization, basic DFT energetics | complete/released as v0.5.0; GitHub Release published; PyPI deferred |
 | v0.6.x | electronic structure and catalysis thermodynamics | complete/released as v0.6.0; GitHub Release published; PyPI deferred |
 | v0.7.x | advanced computational visualization | complete/released as v0.7.0; GitHub Release published; post-release color-limit maintenance #245/#246 complete; PyPI deferred |
-| v0.8.x | operando/time-resolved analysis | architecture frozen; Block 1 complete; Block 2 next |
+| v0.8.x | operando/time-resolved analysis | architecture frozen; Blocks 1-2 complete; Block 3 passive visualization next |
 | v0.9.x | reproducible batch workflows and first interactive editor | planned |
 | v1.0.0 | stable personal catalysis data workbench and local GUI | planned |
 
@@ -427,7 +427,9 @@ Issue #253 / PR #254 delivered the shared `catalysis_workbench.experimental.oper
 
 Block-1 final head `eadf5b2e6630b137922f365a88f4b9ef3c43b12b` passed CI #561 / run `32922150384` and formal reviews `5026150379`, `5026170031` with zero unresolved threads after hardening Python/NumPy scalar metadata canonicalization. Expected-head squash merge produced `45d0515dd5c1c70f15f4d5cd76ba2a359dc66bb2`; post-merge main CI #562 / run `32922349620` passed on that exact commit.
 
-No new runtime dependency, hidden alignment/interpolation/normalization, automatic peak/species/phase inference, v0.7.1, tag, release, or package-registry action was introduced. Block 2 — exact measured-point operations, derived traces, and explicit cross-modal comparison — is next.
+Block 2 adds exact frame selection by retained keys/indices and explicit frame-coordinate comparison, measured-point signal cropping, exact frame/signal-position cuts, immutable derived `OperandoTrace` state, fail-closed exact `TracePair` compatibility, and ordinary Pearson correlation computed from the retained pair. It preserves acquisition order and measured coordinates/values, rejects hidden intersection/alignment/interpolation/nearest-neighbor matching, and carries no causal interpretation. Final exact head `9fc8e372f15015de1d65705cedd0ad68414613b7` passed CI #580 / run `32925586441`; expected-head squash merge produced `86cd463e288eca08c7917945fafbf630493ede92`; post-merge main CI #581 / run `32925811342` passed.
+
+No new runtime dependency, hidden alignment/interpolation/normalization, automatic peak/species/phase inference, v0.7.1, tag, release, or package-registry action was introduced. Block 3 — passive waterfall, heatmap, cut, and trace visualization — is next.
 
 ## Mandatory development loop
 
@@ -529,4 +531,4 @@ After each merged scientific Issue, update only documentation whose statements b
 - preceding Issue closure/completion;
 - version/tag/publication boundaries.
 
-The v0.7 release lifecycle and post-release central-state correction are complete. The dedicated v0.8 architecture checkpoint is complete through Issue #249 / PR #250, and shared-stack foundation Block 1 is complete through Issue #253 / PR #254 at `45d0515dd5c1c70f15f4d5cd76ba2a359dc66bb2`; begin Block 2 — exact measured-point operations, derived traces, and explicit cross-modal comparison — from a new scoped Issue and Draft PR, then continue the frozen order in `V0_8_PLAN.md`. Preserve immutable `v0.7.0 -> e3062fc12c794f54c7b7613875ec73608a587a59`, distribution/runtime release version `0.7.0`, the published public GitHub Release, and the PyPI-deferred boundary.
+The v0.7 release lifecycle and post-release central-state correction are complete. The dedicated v0.8 architecture checkpoint is complete through Issue #249 / PR #250, shared-stack foundation Block 1 is complete through Issue #253 / PR #254 at `45d0515dd5c1c70f15f4d5cd76ba2a359dc66bb2`, and exact measured-point/derived-trace/comparison Block 2 is complete through Issue #257 / PR #258 at `86cd463e288eca08c7917945fafbf630493ede92`; begin Block 3 — passive waterfall, heatmap, cut, and trace visualization — from a new scoped Issue and Draft PR, then continue the frozen order in `V0_8_PLAN.md`. Preserve immutable `v0.7.0 -> e3062fc12c794f54c7b7613875ec73608a587a59`, distribution/runtime release version `0.7.0`, the published public GitHub Release, and the PyPI-deferred boundary.
