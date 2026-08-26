@@ -50,6 +50,14 @@ from .xas import (
     xanes_white_line_intensity_trace,
     xas_window_integral_trace,
 )
+from .xrd import (
+    OperandoXRDError,
+    build_xrd_operando_stack,
+    xrd_fit_component_center_trace,
+    xrd_fit_component_fwhm_trace,
+    xrd_observed_peak_position_trace,
+    xrd_window_integral_trace,
+)
 
 # Keep direct imports from the implementation submodule on the same fail-closed
 # public comparison state after package initialization.
@@ -67,6 +75,7 @@ __all__ = [
     "OperandoTrace",
     "OperandoVisualizationError",
     "OperandoXASError",
+    "OperandoXRDError",
     "PearsonCorrelationResult",
     "TracePair",
     "build_ftir_operando_stack",
@@ -75,6 +84,7 @@ __all__ = [
     "build_raman_operando_stack",
     "build_xanes_operando_stack",
     "build_xas_operando_stack",
+    "build_xrd_operando_stack",
     "crop_signal",
     "fit_component_center_trace",
     "fit_component_fwhm_trace",
@@ -96,4 +106,8 @@ __all__ = [
     "xanes_edge_position_trace",
     "xanes_white_line_intensity_trace",
     "xas_window_integral_trace",
+    "xrd_fit_component_center_trace",
+    "xrd_fit_component_fwhm_trace",
+    "xrd_observed_peak_position_trace",
+    "xrd_window_integral_trace",
 ]
