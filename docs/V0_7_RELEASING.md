@@ -8,9 +8,11 @@ This document records release-hardening procedure and evidence for the frozen v0
 - Scientific-completion documentation merge and Gate-A exact baseline: `8dc651fd87c18b1710258a26b88aaf76878240a8` (Issue #229 / PR #230).
 - Gate-A merge and Gate-B exact baseline: `d718df1338b5a84d71c43a09a41c855c43cbacda` (Issue #231 / PR #232).
 - Gate-B reviewed release commit: `e3062fc12c794f54c7b7613875ec73608a587a59` (Issue #233 / PR #234).
-- Distribution/runtime release-candidate version: `0.7.0`.
+- Release tag: `v0.7.0 -> e3062fc12c794f54c7b7613875ec73608a587a59`, independently reverse-verified.
+- Distribution/runtime release version through `v0.7.0`: `0.7.0`.
 - Prior release tag: `v0.6.0 -> c7793b309f41d174c14534bd6d4acdacc2a57636`, immutable.
 - The public `CatalysisWorkbench v0.6.0` GitHub Release is published from that existing tag.
+- A public GitHub Release for `v0.7.0` has not yet been published and remains a separate explicit decision.
 - PyPI/package-registry publication remains deferred.
 
 The frozen v0.7 implementation blocks are:
@@ -87,19 +89,46 @@ The exact Gate-B candidate passed Ruff/full pytest, fresh exact `0.7.0` base-whe
 
 Gate B created no tag, GitHub Release, or package-registry artifact.
 
-## Gate C — tag creation and reverse verification — pending separate authorization
+## Gate C — tag creation and reverse verification — complete
 
-Gate C remains a separate explicit user-authorization boundary. No `v0.7.0` tag is authorized by Gate A, Gate B, or this documentation synchronization. The existing `v0.6.0` tag must never move or be recreated.
-
-If Gate C is separately authorized, the release tag `v0.7.0` must be created **only** on the exact reviewed Gate-B release commit:
+User explicitly authorized Gate C on 2026-08-26. The sole authorized release target was the reviewed Gate-B release commit:
 
 `e3062fc12c794f54c7b7613875ec73608a587a59`
 
-Do not tag a later docs-only synchronization commit. After tag creation, reverse-verify tag target, distribution version, runtime version, prior-tag invariants, repository state, and open Issue/PR queue.
+The connected GitHub mutation surface did not expose a direct `refs/tags/*` creation endpoint, so Gate C used a reviewed one-shot GitHub Actions workflow rather than misusing branch refs.
+
+### Gate C evidence
+
+| Evidence | State |
+| --- | --- |
+| authorization | explicit user authorization on 2026-08-26 |
+| tracking | Issue #237 / PR #238 |
+| carrier exact base | `281f5e7e51cc6e80f116742706e7a08f2cf5112e` |
+| carrier final head | `1ff5fb863db6cf5824f0a5169baefe4a4f548054` |
+| carrier exact-head CI | CI #536 / run `32915040785` — success |
+| Gate-C workflow/tag-semantics review | `5025613183` — no blockers |
+| release-boundary/compatibility review | `5025613986` — no blockers |
+| carrier merge | `54100f27124d22efb5abdd40c1e818801019daed` |
+| tag workflow run | `32915322619` / `create-and-verify-tag` — success |
+| created tag | `v0.7.0 -> e3062fc12c794f54c7b7613875ec73608a587a59` |
+| independent tag reverse verification | exact commit target confirmed through GitHub ref API |
+| version through tag | `[project].version = 0.7.0`; runtime `__version__ = 0.7.0` |
+| prior-tag invariant | `v0.6.0 -> c7793b309f41d174c14534bd6d4acdacc2a57636` |
+| carrier main push CI | CI #537 / run `32915322601` — success |
+
+The one-shot tag workflow was then removed as required:
+
+- cleanup tracking: Issue #239 / PR #240;
+- cleanup final head: `0b6f75287a1770e03607992e74b7e70341e0d145`;
+- cleanup exact-head CI: CI #538 / run `32915523745` — success;
+- cleanup reviews: `5025642265`, `5025642879` — no blockers;
+- cleanup squash merge / post-cleanup main: `914a3b2db94f29fa302b45f90928006d594423c7`;
+- `.github/workflows/gate-c-v07-tag.yml` is absent from post-cleanup `main`;
+- neither cleanup nor this evidence synchronization may move or recreate `v0.7.0`.
 
 ## GitHub Release and package publication
 
-Publishing a GitHub Release is a separate action after Gate C and does not authorize tag mutation or package-registry publication.
+Publishing a public GitHub Release for `v0.7.0` remains a separate explicit action after Gate C. The existing verified tag must be used as-is; publication does not authorize tag movement or recreation.
 
 PyPI/package-registry publication remains deferred unless explicitly reauthorized in a future decision.
 
