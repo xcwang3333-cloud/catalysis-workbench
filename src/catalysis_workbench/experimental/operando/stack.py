@@ -57,15 +57,18 @@ def _immutable_real_array(
 
 
 def _freeze_value(value: Any, *, path: str) -> Any:
-    if value is None or isinstance(value, (str, bytes, bool, int)):
-        return value
-    if isinstance(value, (float, np.floating)):
-        number = float(value)
-        if not np.isfinite(number):
-            raise OperandoStackError(f"{path} must contain only finite numbers")
-        return number
+    if isinstance(value, np.bool_):
+        return bool(value)
     if isinstance(value, np.integer):
         return int(value)
+    if isinstance(value, np.floating):
+        value = float(value)
+    if value is None or isinstance(value, (str, bytes, bool, int)):
+        return value
+    if isinstance(value, float):
+        if not np.isfinite(value):
+            raise OperandoStackError(f"{path} must contain only finite numbers")
+        return value
     if isinstance(value, Mapping):
         return MappingProxyType(
             {
@@ -83,9 +86,9 @@ def _freeze_value(value: Any, *, path: str) -> Any:
     if isinstance(value, np.ndarray):
         source = np.asarray(value)
         if source.dtype.kind not in "biufSU":
+            if np.iscomplexobj(source):
+                raise OperandoStackError(f"{path} must not contain complex arrays")
             raise TypeError(f"{path} contains an unsupported ndarray dtype")
-        if np.issubdtype(source.dtype, np.complexfloating):
-            raise OperandoStackError(f"{path} must not contain complex arrays")
         if np.issubdtype(source.dtype, np.number) and not np.isfinite(source).all():
             raise OperandoStackError(f"{path} must contain only finite numbers")
         contiguous = np.ascontiguousarray(source)
@@ -126,13 +129,23 @@ def _length_prefixed(payload: bytes) -> bytes:
 
 
 def _canonical_bytes(value: Any) -> bytes:
+    """Encode supported frozen state deterministically across Python/NumPy scalars."""
+    if isinstance(value, np.bool_):
+        value = bool(value)
+    elif isinstance(value, np.integer):
+        value = int(value)
+    elif isinstance(value, np.floating):
+        value = float(value)
+
     if value is None:
         return b"N"
     if isinstance(value, bool):
         return b"B1" if value else b"B0"
-    if isinstance(value, int) and not isinstance(value, bool):
+    if isinstance(value, int):
         return b"I" + _length_prefixed(str(value).encode("ascii"))
     if isinstance(value, float):
+        if not np.isfinite(value):
+            raise OperandoStackError("metadata used in digests must contain finite numbers")
         return b"F" + np.float64(value).tobytes()
     if isinstance(value, str):
         return b"S" + _length_prefixed(value.encode("utf-8"))
@@ -153,13 +166,25 @@ def _canonical_bytes(value: Any) -> bytes:
         payload = b"".join(_length_prefixed(item) for item in encoded)
         return b"R" + len(encoded).to_bytes(8, "little") + payload
     if isinstance(value, np.ndarray):
-        dtype = value.dtype.str.encode("ascii")
-        shape = tuple(int(item) for item in value.shape)
+        source = np.asarray(value)
+        if source.dtype.kind not in "biufSU":
+            if np.iscomplexobj(source):
+                raise OperandoStackError(
+                    "metadata used in digests must not contain complex arrays"
+                )
+            raise TypeError("metadata used in digests contains unsupported ndarray dtype")
+        if np.issubdtype(source.dtype, np.number) and not np.isfinite(source).all():
+            raise OperandoStackError(
+                "metadata used in digests must contain only finite numbers"
+            )
+        contiguous = np.ascontiguousarray(source)
+        dtype = contiguous.dtype.str.encode("ascii")
+        shape = tuple(int(item) for item in contiguous.shape)
         return (
             b"A"
             + _length_prefixed(dtype)
             + _length_prefixed(_canonical_bytes(shape))
-            + _length_prefixed(np.ascontiguousarray(value).tobytes(order="C"))
+            + _length_prefixed(contiguous.tobytes(order="C"))
         )
     raise TypeError(f"unsupported canonical value type {type(value).__name__!r}")
 
