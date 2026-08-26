@@ -294,8 +294,8 @@ def test_edge_position_fails_on_nonrising_or_ambiguous_secants() -> None:
                 5.0,
                 XASWindow(0.0, 2.0),
                 XASWindow(7.0, 10.0),
-                1,
-                1,
+                0,
+                0,
             ),
         )
 
