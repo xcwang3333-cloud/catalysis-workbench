@@ -7,8 +7,8 @@ This document records release-hardening procedure and evidence for the frozen v0
 - Final v0.7 scientific implementation merge: `24d3a8e67e4ef996125e575308b88ab6f9532448` (Issue #227 / PR #228).
 - Scientific-completion documentation merge and Gate-A exact baseline: `8dc651fd87c18b1710258a26b88aaf76878240a8` (Issue #229 / PR #230).
 - Gate-A merge and Gate-B exact baseline: `d718df1338b5a84d71c43a09a41c855c43cbacda` (Issue #231 / PR #232).
-- Distribution/runtime version after Gate A: `0.6.0`.
-- Gate-B release candidate version: `0.7.0`.
+- Gate-B reviewed release commit: `e3062fc12c794f54c7b7613875ec73608a587a59` (Issue #233 / PR #234).
+- Distribution/runtime release-candidate version: `0.7.0`.
 - Prior release tag: `v0.6.0 -> c7793b309f41d174c14534bd6d4acdacc2a57636`, immutable.
 - The public `CatalysisWorkbench v0.6.0` GitHub Release is published from that existing tag.
 - PyPI/package-registry publication remains deferred.
@@ -58,18 +58,18 @@ Gate A established a unified fresh-wheel v0.7 release audit that:
 | version after Gate A | `0.6.0` |
 | `v0.6.0` invariant | `c7793b309f41d174c14534bd6d4acdacc2a57636` |
 
-## Gate B — final-version candidate — in progress
+## Gate B — final-version candidate — complete
 
-Tracking: Issue #233. Branch: `release/v0.7-gate-b`. Exact base: `d718df1338b5a84d71c43a09a41c855c43cbacda`.
+Tracking: Issue #233 / PR #234. Exact base: `d718df1338b5a84d71c43a09a41c855c43cbacda`.
 
-Gate B owns only final candidate synchronization and exact-wheel validation:
+Gate B performed only final candidate synchronization and exact-wheel validation:
 
 - `[project].version`: `0.6.0` -> `0.7.0`;
 - runtime `__version__`: `0.6.0` -> `0.7.0`;
 - unified v0.7 release-audit expected version in CI: `0.6.0` -> `0.7.0`;
 - no scientific/API/dependency/optional-backend expansion.
 
-The exact Gate-B candidate must pass Ruff/full pytest, fresh exact `0.7.0` base-wheel build/install/`pip check`, the unified v0.7 release audit, the retained fresh `[structure]` adapter audit, the retained separate `[volumetric3d]` PyVista/VTK headless rendering/PNG-export audit, and documented quickstarts.
+The exact Gate-B candidate passed Ruff/full pytest, fresh exact `0.7.0` base-wheel build/install/`pip check`, the unified v0.7 release audit, the retained fresh `[structure]` adapter audit, the retained separate `[volumetric3d]` PyVista/VTK headless rendering/PNG-export audit, and documented quickstarts.
 
 ### Gate B evidence
 
@@ -77,21 +77,25 @@ The exact Gate-B candidate must pass Ruff/full pytest, fresh exact `0.7.0` base-
 | --- | --- |
 | exact base | `d718df1338b5a84d71c43a09a41c855c43cbacda` |
 | candidate version | `0.7.0` |
-| final Gate-B head | pending |
-| exact-head CI | pending |
-| release/API/packaging review | pending |
-| compatibility/release-boundary review | pending |
-| merge gate | pending |
-| squash merge / reviewed release commit | pending |
+| final Gate-B head | `1f468f0875c5d71ffe1b475432d40d2f6a0cb19f` |
+| exact-head CI | CI #532 / run `32912897877` — success |
+| release/API/packaging review | `5025475440` — no blockers |
+| compatibility/release-boundary review | `5025476096` — no blockers |
+| merge gate | behind=0, mergeable=true, unresolved review threads=0 |
+| squash merge / reviewed release commit | `e3062fc12c794f54c7b7613875ec73608a587a59` |
 | `v0.6.0` invariant | `c7793b309f41d174c14534bd6d4acdacc2a57636` |
 
-Gate B must not create a tag, GitHub Release, or package-registry artifact.
+Gate B created no tag, GitHub Release, or package-registry artifact.
 
-## Gate C — tag creation and reverse verification — separate authorization required
+## Gate C — tag creation and reverse verification — pending separate authorization
 
-Gate C remains a separate explicit user-authorization boundary. No `v0.7.0` tag may be created during Gate A or Gate B. The existing `v0.6.0` tag must never move or be recreated.
+Gate C remains a separate explicit user-authorization boundary. No `v0.7.0` tag is authorized by Gate A, Gate B, or this documentation synchronization. The existing `v0.6.0` tag must never move or be recreated.
 
-After explicit authorization, Gate C must create the release tag only on the exact reviewed Gate-B release commit and reverse-verify tag target, distribution version, runtime version, prior-tag invariants, and repository state.
+If Gate C is separately authorized, the release tag `v0.7.0` must be created **only** on the exact reviewed Gate-B release commit:
+
+`e3062fc12c794f54c7b7613875ec73608a587a59`
+
+Do not tag a later docs-only synchronization commit. After tag creation, reverse-verify tag target, distribution version, runtime version, prior-tag invariants, repository state, and open Issue/PR queue.
 
 ## GitHub Release and package publication
 
