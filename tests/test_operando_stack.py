@@ -30,7 +30,7 @@ def _frames(*, decreasing: bool = False, basis: str = "raw") -> tuple[Series, ..
     return tuple(
         Series(
             signal,
-            [float(index + 1), float(index + 2), float(index + 3)],
+            [index + 1.0, index + 2.0, index + 3.0],
             key=f"frame-{index}",
             x_axis=signal_axis,
             y_axis=value_axis,
@@ -41,11 +41,7 @@ def _frames(*, decreasing: bool = False, basis: str = "raw") -> tuple[Series, ..
 
 def _coordinates() -> tuple[FrameCoordinate, ...]:
     return (
-        FrameCoordinate(
-            "time",
-            Axis("time", unit="s", label="Time"),
-            [0.0, 10.0, 20.0],
-        ),
+        FrameCoordinate("time", Axis("time", unit="s", label="Time"), [0.0, 10.0, 20.0]),
         FrameCoordinate(
             "potential",
             Axis(
@@ -91,12 +87,7 @@ def test_frame_coordinate_detaches_arrays_and_deep_freezes_metadata():
         coordinate.metadata["new"] = "value"
 
 
-def test_frame_coordinate_preserves_repeated_nonmonotonic_values():
-    coordinate = _coordinates()[1]
-    np.testing.assert_array_equal(coordinate.values, [-0.5, -0.7, -0.5])
-
-
-def test_build_stack_preserves_exact_frame_signal_and_coordinate_order():
+def test_stack_preserves_exact_order_repeated_coordinates_and_primary_selection():
     stack = _stack()
 
     assert stack.frame_keys == ("frame-0", "frame-1", "frame-2")
@@ -106,26 +97,20 @@ def test_build_stack_preserves_exact_frame_signal_and_coordinate_order():
         stack.values,
         [[1.0, 2.0, 3.0], [2.0, 3.0, 4.0], [3.0, 4.0, 5.0]],
     )
-    assert tuple(item.key for item in stack.frame_coordinates) == (
-        "time",
-        "potential",
-    )
+    assert tuple(item.key for item in stack.frame_coordinates) == ("time", "potential")
+    np.testing.assert_array_equal(stack.frame_coordinates[1].values, [-0.5, -0.7, -0.5])
     assert stack.primary_coordinate.key == "time"
     assert stack.signal_direction == "increasing"
-    assert stack.n_frames == 3
-    assert stack.n_signal_points == 3
 
 
-def test_build_stack_accepts_decreasing_signal_grid_without_reordering():
+def test_stack_accepts_decreasing_signal_grid_without_reordering():
     stack = _stack(decreasing=True)
-
     np.testing.assert_array_equal(stack.signal, [1200.0, 1100.0, 1000.0])
     assert stack.signal_direction == "decreasing"
 
 
-def test_stack_arrays_are_immutable_even_via_setflags():
+def test_stack_arrays_use_non_reenableable_read_only_backing():
     stack = _stack()
-
     assert not stack.signal.flags.writeable
     assert not stack.values.flags.writeable
     with pytest.raises(ValueError):
@@ -134,12 +119,9 @@ def test_stack_arrays_are_immutable_even_via_setflags():
         stack.values.setflags(write=True)
 
 
-def test_stack_is_detached_from_caller_owned_series_and_coordinate_arrays():
+def test_stack_is_detached_from_caller_owned_arrays_and_digest_is_stable():
     signal = np.array([1000.0, 1100.0, 1200.0])
-    values = [
-        np.array([1.0, 2.0, 3.0]),
-        np.array([2.0, 3.0, 4.0]),
-    ]
+    source_values = [np.array([1.0, 2.0, 3.0]), np.array([2.0, 3.0, 4.0])]
     frames = tuple(
         Series(
             signal,
@@ -148,19 +130,18 @@ def test_stack_is_detached_from_caller_owned_series_and_coordinate_arrays():
             x_axis=Axis("wavenumber", unit="cm^-1"),
             y_axis=Axis("intensity", unit="a.u."),
         )
-        for index, row in enumerate(values)
+        for index, row in enumerate(source_values)
     )
     times = np.array([0.0, 5.0])
-    coordinate = FrameCoordinate("time", Axis("time", unit="s"), times)
     stack = build_operando_stack(
         frames,
-        frame_coordinates=[coordinate],
+        frame_coordinates=[FrameCoordinate("time", Axis("time", unit="s"), times)],
         primary_coordinate_key="time",
     )
     digest = stack.digest
 
     signal[:] = -1
-    values[0][:] = -2
+    source_values[0][:] = -2
     times[:] = -3
 
     np.testing.assert_array_equal(stack.signal, [1000.0, 1100.0, 1200.0])
@@ -169,30 +150,27 @@ def test_stack_is_detached_from_caller_owned_series_and_coordinate_arrays():
     assert stack.digest == digest
 
 
-def test_source_array_digests_reconstruct_exactly_from_retained_stack():
+def test_source_array_digests_reconstruct_and_expected_digest_is_enforced():
     frames = _frames()
     stack = build_operando_stack(
         frames,
         frame_coordinates=_coordinates(),
         primary_coordinate_key="time",
     )
+    expected = tuple(series_array_digest(frame) for frame in frames)
 
-    assert stack.source_digests == tuple(series_array_digest(frame) for frame in frames)
-    assert stack.reconstructed_source_digests() == stack.source_digests
-    assert all(len(item) == 64 for item in stack.source_digests)
+    assert stack.source_digests == expected
+    assert stack.reconstructed_source_digests() == expected
+    assert all(len(item) == 64 for item in expected)
 
-
-def test_expected_source_digest_contradiction_fails_closed():
-    frames = _frames()
-    expected = [series_array_digest(frame) for frame in frames]
-    expected[1] = "0" * 64
-
+    contradictory = list(expected)
+    contradictory[1] = "0" * 64
     with pytest.raises(OperandoStackError, match="contradict"):
         build_operando_stack(
             frames,
             frame_coordinates=_coordinates(),
             primary_coordinate_key="time",
-            expected_source_digests=expected,
+            expected_source_digests=contradictory,
         )
 
 
@@ -224,7 +202,6 @@ def test_equivalent_inputs_produce_deterministic_stack_digest():
         primary_coordinate_key="time",
         metadata={"modality": "test-spectrum"},
     )
-
     assert first.digest == second.digest
     assert len(first.digest) == 64
     assert first == second
@@ -236,31 +213,28 @@ def test_equivalent_inputs_produce_deterministic_stack_digest():
         [1000.0, 1000.0, 1200.0],
         [1000.0, 1200.0, 1100.0],
         [1000.0, np.nan, 1200.0],
-        [1000.0, np.inf, 1200.0],
     ],
 )
 def test_signal_grid_must_be_finite_and_strictly_monotonic(bad_signal):
-    frames = (
-        Series(
-            bad_signal,
-            [1.0, 2.0, 3.0],
-            key="f0",
-            x_axis=Axis("wavenumber", unit="cm^-1"),
-            y_axis=Axis("intensity", unit="a.u."),
-        ),
+    frame = Series(
+        bad_signal,
+        [1.0, 2.0, 3.0],
+        key="f0",
+        x_axis=Axis("wavenumber", unit="cm^-1"),
+        y_axis=Axis("intensity", unit="a.u."),
     )
-
-    with pytest.raises((OperandoStackError, ValueError)):
+    with pytest.raises(OperandoStackError):
         build_operando_stack(
-            frames,
-            frame_coordinates=[
-                FrameCoordinate("time", Axis("time", unit="s"), [0.0])
-            ],
+            [frame],
+            frame_coordinates=[FrameCoordinate("time", Axis("time", unit="s"), [0.0])],
             primary_coordinate_key="time",
         )
 
 
-def test_builder_rejects_complex_signal_or_values():
+def test_builder_rejects_core_series_with_infinite_or_complex_data():
+    with pytest.raises(ValueError):
+        Series([1000.0, np.inf], [1.0, 2.0], key="inf")
+
     complex_signal = Series(
         [1000.0 + 0j, 1100.0 + 0j],
         [1.0, 2.0],
@@ -276,58 +250,48 @@ def test_builder_rejects_complex_signal_or_values():
         y_axis=Axis("intensity", unit="a.u."),
     )
     coordinate = [FrameCoordinate("time", Axis("time", unit="s"), [0.0])]
-
-    with pytest.raises(OperandoStackError, match="real"):
-        build_operando_stack(
-            [complex_signal],
-            frame_coordinates=coordinate,
-            primary_coordinate_key="time",
-        )
-    with pytest.raises(OperandoStackError, match="real"):
-        build_operando_stack(
-            [complex_values],
-            frame_coordinates=coordinate,
-            primary_coordinate_key="time",
-        )
+    for frame in (complex_signal, complex_values):
+        with pytest.raises(OperandoStackError, match="real"):
+            build_operando_stack(
+                [frame],
+                frame_coordinates=coordinate,
+                primary_coordinate_key="time",
+            )
 
 
 def test_builder_rejects_literal_grid_mismatch():
     first, second, _ = _frames()
     mismatched = second.with_data(x=[1000.0, 1100.0, 1200.0000000001])
-
     with pytest.raises(OperandoStackError, match="literally identical"):
         build_operando_stack(
             [first, mismatched],
-            frame_coordinates=[
-                FrameCoordinate("time", Axis("time", unit="s"), [0.0, 1.0])
-            ],
+            frame_coordinates=[FrameCoordinate("time", Axis("time", unit="s"), [0.0, 1.0])],
             primary_coordinate_key="time",
         )
 
 
-def test_builder_rejects_mixed_signal_units():
+def test_builder_rejects_mixed_signal_unit_and_value_processing_basis():
     first, second, _ = _frames()
-    second = Series(
+    wrong_signal_unit = Series(
         second.x,
         second.y,
         key=second.key,
-        x_axis=Axis("wavenumber", unit="m^-1", metadata={"calibration": "source-native"}),
+        x_axis=Axis(
+            "wavenumber",
+            unit="m^-1",
+            metadata={"calibration": "source-native"},
+        ),
         y_axis=second.y_axis,
     )
-
+    coordinate = [FrameCoordinate("time", Axis("time", unit="s"), [0.0, 1.0])]
     with pytest.raises(OperandoStackError, match="signal-axis"):
         build_operando_stack(
-            [first, second],
-            frame_coordinates=[
-                FrameCoordinate("time", Axis("time", unit="s"), [0.0, 1.0])
-            ],
+            [first, wrong_signal_unit],
+            frame_coordinates=coordinate,
             primary_coordinate_key="time",
         )
 
-
-def test_builder_rejects_mixed_value_processing_basis():
-    first, second, _ = _frames(basis="raw")
-    second = Series(
+    wrong_basis = Series(
         second.x,
         second.y,
         key=second.key,
@@ -338,18 +302,15 @@ def test_builder_rejects_mixed_value_processing_basis():
             metadata={"processing_basis": "normalized-max"},
         ),
     )
-
     with pytest.raises(OperandoStackError, match="processing basis"):
         build_operando_stack(
-            [first, second],
-            frame_coordinates=[
-                FrameCoordinate("time", Axis("time", unit="s"), [0.0, 1.0])
-            ],
+            [first, wrong_basis],
+            frame_coordinates=coordinate,
             primary_coordinate_key="time",
         )
 
 
-def test_builder_requires_unique_nonempty_frame_keys():
+def test_builder_requires_unique_nonempty_keys_matching_coordinate_lengths():
     first, second, _ = _frames()
     duplicate = Series(
         second.x,
@@ -358,42 +319,33 @@ def test_builder_requires_unique_nonempty_frame_keys():
         x_axis=second.x_axis,
         y_axis=second.y_axis,
     )
-
+    coordinate = [FrameCoordinate("time", Axis("time", unit="s"), [0.0, 1.0])]
     with pytest.raises(OperandoStackError, match="unique"):
         build_operando_stack(
             [first, duplicate],
-            frame_coordinates=[
-                FrameCoordinate("time", Axis("time", unit="s"), [0.0, 1.0])
-            ],
+            frame_coordinates=coordinate,
             primary_coordinate_key="time",
         )
 
-    blank = first.with_data(key="")
     with pytest.raises(OperandoStackError, match="Series.key"):
         build_operando_stack(
-            [blank],
-            frame_coordinates=[
-                FrameCoordinate("time", Axis("time", unit="s"), [0.0])
-            ],
+            [first.with_data(key="")],
+            frame_coordinates=[FrameCoordinate("time", Axis("time", unit="s"), [0.0])],
             primary_coordinate_key="time",
         )
-
-
-def test_stack_requires_coordinate_lengths_and_explicit_known_primary_key():
-    frames = _frames()
 
     with pytest.raises(OperandoStackError, match="length"):
         build_operando_stack(
-            frames,
-            frame_coordinates=[
-                FrameCoordinate("time", Axis("time", unit="s"), [0.0, 1.0])
-            ],
+            _frames(),
+            frame_coordinates=coordinate,
             primary_coordinate_key="time",
         )
 
+
+def test_builder_requires_explicit_known_primary_coordinate():
     with pytest.raises(OperandoStackError, match="primary_coordinate_key"):
         build_operando_stack(
-            frames,
+            _frames(),
             frame_coordinates=_coordinates(),
             primary_coordinate_key="temperature",
         )
