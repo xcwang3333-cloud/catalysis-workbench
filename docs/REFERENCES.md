@@ -347,7 +347,7 @@ axis semantics, passive heatmap/waterfall rendering, and license boundaries.
   [xarray's current LICENSE](https://github.com/pydata/xarray/blob/main/LICENSE)
   is Apache-2.0. Decision: architecture reference only; do not add a dependency
   or copy/adapt implementation.
-- [HyperSpy axes](https://hyperspy.org/hyperspy-doc/current/user_guide/signal/axes.html)
+- [HyperSpy axes](https://hyperspy.org/hyperspy-doc/current/user_guide/axes.html)
   distinguish navigation and signal axes. The
   [HyperSpy repository](https://github.com/hyperspy/hyperspy) is GPL-3.0.
   Decision: multidimensional workflow reference only; no dependency and no

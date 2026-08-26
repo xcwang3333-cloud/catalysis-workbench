@@ -162,13 +162,23 @@ baseline correction, sorting, color inference, or trace omission occurs.
 
 ### Heatmap
 
-The initial heatmap uses retained signal coordinates, the selected retained frame
-coordinate, and the exact matrix. Matplotlib `pcolormesh` center/edge geometry
-is presentation geometry only; scientific values are never resampled.
+The initial heatmap uses retained signal coordinates, explicit frame display
+positions, and the exact matrix. Frame display positions use one caller-selected
+mode:
+
+- `ordinal` uses the retained acquisition indices and works for repeated or
+  non-monotonic condition programs without rewriting their coordinate values;
+- `coordinate` uses one selected retained frame coordinate only when its values
+  are unique and strictly monotonic in retained order; repeated or non-monotonic
+  values fail closed instead of being sorted, deduplicated, or converted to cell
+  geometry.
+
+Matplotlib `pcolormesh` center/edge geometry is presentation geometry only;
+scientific values are never resampled.
 
 The caller controls:
 
-- selected coordinate;
+- selected coordinate and explicit `ordinal` or `coordinate` frame geometry;
 - retained frame order;
 - explicit value limits or an explicitly requested
   `symmetric_color_limits()` result;
@@ -291,7 +301,10 @@ CI. The v0.8 matrix must cover:
 - immutability and caller-array non-mutation;
 - exact frame and signal order;
 - increasing and decreasing signal axes;
-- repeated and non-monotonic frame-coordinate values;
+- repeated and non-monotonic frame-coordinate values retained in scientific
+  state;
+- ordinal heatmap rendering for those coordinates plus fail-closed coordinate
+  geometry when values are repeated or non-monotonic;
 - multiple coordinates and explicit primary-coordinate selection;
 - exact common-grid success and every mixed-grid/unit/basis failure;
 - finite/real/shape/key/digest reconstruction failures;
