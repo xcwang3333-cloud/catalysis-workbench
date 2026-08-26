@@ -285,7 +285,7 @@ def test_edge_position_fails_on_nonrising_or_ambiguous_secants() -> None:
 
     def normalized_result_for(values: np.ndarray, key: str):
         raw_energy = np.arange(0.0, 11.0, 1.0)
-        mu = 0.02 * raw_energy
+        mu = np.zeros_like(raw_energy)
         mu[raw_energy >= 7.0] += 1.0
         mu[3:7] += values
         return normalize_xanes(
