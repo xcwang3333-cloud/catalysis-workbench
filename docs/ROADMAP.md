@@ -172,13 +172,18 @@ All seven v0.7 implementation blocks, scientific-completion synchronization, Gat
 
 VASP/HPC job submission and complete workflow management remain outside the current project scope.
 
-## v0.8.x — Operando and time-resolved data
+## v0.8.x — Operando and time-resolved data — architecture frozen
 
-- Operando Raman / IR stacks, waterfalls, and heatmaps.
-- Operando XAS mapping.
-- Operando XRD mapping.
-- Peak area / position / FWHM versus potential or time.
-- Cross-modal correlation analysis.
+The six-block architecture is frozen in [`V0_8_PLAN.md`](V0_8_PLAN.md) through Issue #249 / PR #250 at `fa7baaf8ce68369b0e732faf4e7621a818db92b6`; post-merge CI #550 / run `32920821932` passed. Production implementation has not begun.
+
+1. Shared immutable frame-coordinate and operando-stack foundation.
+2. Exact measured-point operations, derived traces, and explicit cross-modal comparison.
+3. Passive waterfall, heatmap, cut, and trace visualization.
+4. Operando Raman and FTIR adapters with caller-specified band/peak trajectories.
+5. Operando XAS/XANES adapters, mapping, and explicit descriptor trajectories.
+6. Operando XRD adapters, mapping, and caller-window/peak trajectories.
+
+The frozen contract requires literal common grids, explicit coordinates/units/provenance, retained acquisition order, passive renderers, and fail-closed incompatibility. It performs no hidden alignment, interpolation, smoothing, baseline correction, normalization, chemical assignment, XAS species inference, XRD phase inference, or causal interpretation. Block 1 is the next implementation work package.
 
 ## v0.9.x — Reproducible and interactive workflows
 

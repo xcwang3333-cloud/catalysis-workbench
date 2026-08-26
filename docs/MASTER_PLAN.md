@@ -22,7 +22,7 @@ Checkpoint date: 2026-08-26.
 
 - Repository: `xcwang3333-cloud/catalysis-workbench`.
 - Stable integration branch: `main`.
-- Exact pre-sync baseline for this central-document correction: `9235e34046d9b07e219393c97f60bfadf817ed71`, the post-release Issue #245 / PR #246 squash merge.
+- Exact architecture baseline: `fa7baaf8ce68369b0e732faf4e7621a818db92b6`, the Issue #249 / PR #250 v0.8 architecture squash merge; post-merge CI #550 / run `32920821932` passed on that exact `main` head.
 - Distribution/runtime version is `0.7.0`.
 - Released tag `v0.7.0 -> e3062fc12c794f54c7b7613875ec73608a587a59` is immutable and independently reverse-verified.
 - The public GitHub Release `CatalysisWorkbench v0.7.0` is published from that existing verified tag.
@@ -62,7 +62,7 @@ Checkpoint date: 2026-08-26.
 - [`VOLUMETRIC_3D.md`](VOLUMETRIC_3D.md) records the reviewed Block-7 optional PyVista/VTK backend, full-lattice skew-cell geometry, explicit isosurface/exact-slice/fractional-clipping semantics, retained structure/camera mapping, backend-hidden result state, and static headless PNG-export boundary.
 - All seven v0.7 implementation blocks are complete.
 - Post-release maintenance Issue #245 / PR #246 is complete at `9235e34046d9b07e219393c97f60bfadf817ed71`; `symmetric_color_limits()` is backwards-compatible future v0.8 heatmap groundwork and is not a v0.8 data-model implementation.
-- The next major phase is a separately reviewed v0.8 operando/time-resolved architecture checkpoint; no v0.7.1, tag, release, or package-registry action is implied.
+- v0.8 architecture checkpoint Issue #249 / PR #250 is complete at `fa7baaf8ce68369b0e732faf4e7621a818db92b6`; shared-stack foundation Block 1 is the next implementation work package. No v0.7.1, tag, release, or package-registry action is implied.
 
 Live GitHub Issue/PR/tag state remains authoritative if this checkpoint becomes stale.
 
@@ -79,7 +79,7 @@ Detailed long-range scope is maintained in [`ROADMAP.md`](ROADMAP.md).
 | v0.5.x | XAS/XANES, FT/WT-EXAFS, EXAFS summaries, structures/geometry/static visualization, basic DFT energetics | complete/released as v0.5.0; GitHub Release published; PyPI deferred |
 | v0.6.x | electronic structure and catalysis thermodynamics | complete/released as v0.6.0; GitHub Release published; PyPI deferred |
 | v0.7.x | advanced computational visualization | complete/released as v0.7.0; GitHub Release published; post-release color-limit maintenance #245/#246 complete; PyPI deferred |
-| v0.8.x | operando/time-resolved analysis | planned |
+| v0.8.x | operando/time-resolved analysis | architecture frozen; six implementation blocks planned |
 | v0.9.x | reproducible batch workflows and first interactive editor | planned |
 | v1.0.0 | stable personal catalysis data workbench and local GUI | planned |
 
@@ -401,6 +401,25 @@ Block-7 final head `6dc1472b9157151d67b20f8b359542e103d5f6c2` passed CI #526 / r
 
 Issue #229 / PR #230 synchronized the completed seven-block scientific state before release hardening. Gate A #231/#232 completed the frozen-scope installed-wheel/public-API audit; Gate B #233/#234 finalized and exact-wheel validated distribution/runtime `0.7.0` at release commit `e3062fc12c794f54c7b7613875ec73608a587a59`; Gate C #237/#238 created and independently reverse-verified `v0.7.0` on that exact commit. The one-shot tag workflow was removed through #239/#240, Gate-C evidence synchronized through #241/#242, the public GitHub Release was published and synchronized through #243/#244, and post-release #245/#246 added the backwards-compatible `symmetric_color_limits()` primitive without changing version or release artifacts. PyPI/package-registry publication remains deferred.
 
+## v0.8 execution status
+
+The reviewed v0.8 architecture, scientific semantics, dependency boundaries, implementation order, prior-art/license decisions, testing strategy, and release handoff are maintained in [`V0_8_PLAN.md`](V0_8_PLAN.md).
+
+### Architecture checkpoint — complete
+
+Issue #249 / PR #250 froze the shared operando/time-resolved state model, literal common-grid and fail-closed compatibility rules, exact measured-point operations, passive visualization boundary, Raman/FTIR/XAS/XRD domain consumers, and six-block dependency order before production implementation. It merged at `fa7baaf8ce68369b0e732faf4e7621a818db92b6`; post-merge CI #550 / run `32920821932` passed on that exact `main` head.
+
+The frozen implementation order is:
+
+1. shared immutable frame-coordinate and operando-stack foundation;
+2. exact operations, derived traces, and explicit cross-modal comparison;
+3. passive waterfall, heatmap, cut, and trace visualization;
+4. operando Raman and FTIR adapters/trajectories;
+5. operando XAS/XANES adapters/mapping/descriptor trajectories;
+6. operando XRD adapters/mapping/window and peak trajectories.
+
+No new runtime dependency, hidden alignment/interpolation/normalization, automatic peak/species/phase inference, v0.7.1, tag, release, or package-registry action is authorized by this checkpoint. Block 1 must begin from a new scoped Issue and Draft PR.
+
 ## Mandatory development loop
 
 Every scientific feature follows:
@@ -472,6 +491,7 @@ After squash merge, re-read `main`. When connector visibility does not expose a 
 - [`../README.md`](../README.md): user-facing overview, installation, public capability summary and links.
 - [`MASTER_PLAN.md`](MASTER_PLAN.md): project-wide execution order, checkpoint summary, governance and quality gates.
 - [`ROADMAP.md`](ROADMAP.md): long-range release scope; not a per-commit log.
+- [`V0_8_PLAN.md`](V0_8_PLAN.md): v0.8 architecture, shared operando state/grid/provenance contracts, frozen six-block dependency order, passive visualization and domain-consumer boundaries, testing strategy, and release handoff.
 - [`V0_7_PLAN.md`](V0_7_PLAN.md): v0.7 architecture, frozen seven-block dependency order, scientific/visualization semantics, prior-art/license decisions, testing strategy, and release handoff.
 - [`VOLUMETRIC_VISUALIZATION.md`](VOLUMETRIC_VISUALIZATION.md): reviewed v0.7 Block-1 scalar-field/source-grid/renderer-neutral foundation and Block-2 density/ELF/exact-slice visualization contracts.
 - [`BAND_STRUCTURE.md`](BAND_STRUCTURE.md): reviewed v0.7 Block-3 ordinary band-state, reciprocal-path/`2*pi`, physical-spin, explicit Fermi-reference, VASP line-mode adapter and passive plotting contract.
@@ -500,4 +520,4 @@ After each merged scientific Issue, update only documentation whose statements b
 - preceding Issue closure/completion;
 - version/tag/publication boundaries.
 
-The v0.7 release lifecycle and the post-release central-state correction are complete. Before v0.8 implementation, create and review a dedicated v0.8 architecture checkpoint that freezes operando/time-resolved state, grid/alignment, provenance, visualization, domain-consumer, dependency, testing, and out-of-scope contracts. Preserve immutable `v0.7.0 -> e3062fc12c794f54c7b7613875ec73608a587a59`, distribution/runtime release version `0.7.0`, the published public GitHub Release, and the PyPI-deferred boundary.
+The v0.7 release lifecycle and post-release central-state correction are complete. The dedicated v0.8 architecture checkpoint is complete through Issue #249 / PR #250; begin shared-stack foundation Block 1 from a new scoped Issue and Draft PR, then follow the frozen six-block order in `V0_8_PLAN.md`. Preserve immutable `v0.7.0 -> e3062fc12c794f54c7b7613875ec73608a587a59`, distribution/runtime release version `0.7.0`, the published public GitHub Release, and the PyPI-deferred boundary.
