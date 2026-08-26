@@ -23,6 +23,7 @@ Checkpoint date: 2026-08-26.
 - Repository: `xcwang3333-cloud/catalysis-workbench`.
 - Stable integration branch: `main`.
 - Exact architecture baseline: `fa7baaf8ce68369b0e732faf4e7621a818db92b6`, the Issue #249 / PR #250 v0.8 architecture squash merge; post-merge CI #550 / run `32920821932` passed on that exact `main` head.
+- Current verified implementation head: `45d0515dd5c1c70f15f4d5cd76ba2a359dc66bb2`, the expected-head squash merge of v0.8 Block 1 through Issue #253 / PR #254; post-merge CI #562 / run `32922349620` passed on that exact `main` head.
 - Distribution/runtime version is `0.7.0`.
 - Released tag `v0.7.0 -> e3062fc12c794f54c7b7613875ec73608a587a59` is immutable and independently reverse-verified.
 - The public GitHub Release `CatalysisWorkbench v0.7.0` is published from that existing verified tag.
@@ -39,7 +40,7 @@ Checkpoint date: 2026-08-26.
 - v0.7 Block 2, charge-density-difference + electron-density + ELF visualization: Issue #206 / PR #207 — complete at `b9e3e27c667df9afc6060e387ad0ca4510a73d78`.
 - Block-2 final head `c3a952f9aad9535cfc7b2a88413527fd40487cfe` passed CI #486 / run `32862918547` and exact-head reviews `5020510393`, `5020512056`; unresolved review threads were zero and the PR was behind=0 / mergeable=true before expected-head squash merge.
 - v0.7 Block-2 completion-state synchronization: Issue #208 / PR #209 — complete at `bf80f9bb3ffa1d1a764ff71a5202c05e4b5e827e`.
-- v0.7 Block 3, band-structure state/adapters + passive plotting: Issue #210 / PR #211 — complete at `4a4b1329cbd8153f868cdc2d353dfc0c613778a4`.
+- v0.7 Block 3, band-structure state/adapters + passive band plotting: Issue #210 / PR #211 — complete at `4a4b1329cbd8153f868cdc2d353dfc0c613778a4`.
 - Block-3 final head `b1f1dca77b469f6d3fb4524f7c51f719fa9350e4` passed CI #490 / run `32867366543` (Ruff, full pytest, fresh-wheel/public-API smoke, v0.6 + v0.7 Block-1/2/3 installed audits, optional structure/electronic/bonding/ELFCAR/band adapters including current `pymatgen-core` line-mode KPOINTS and reciprocal `2*pi` convention smoke, and documented examples) and exact-head reviews `5020939345`, `5020940558`; unresolved review threads were zero and the PR was behind=0 / mergeable=true before expected-head squash merge.
 - v0.7 Block-3 completion-state synchronization: Issue #212 / PR #213 — complete at `fa29a40f465fa41afa7620d1dad9cce22720ee06`.
 - v0.7 Block 4, PROCAR projection processing + fat-band plotting: Issue #214 / PR #216 — complete at `28852bb7ef6f7c23319d5a6442659f55516eed59`.
@@ -62,7 +63,9 @@ Checkpoint date: 2026-08-26.
 - [`VOLUMETRIC_3D.md`](VOLUMETRIC_3D.md) records the reviewed Block-7 optional PyVista/VTK backend, full-lattice skew-cell geometry, explicit isosurface/exact-slice/fractional-clipping semantics, retained structure/camera mapping, backend-hidden result state, and static headless PNG-export boundary.
 - All seven v0.7 implementation blocks are complete.
 - Post-release maintenance Issue #245 / PR #246 is complete at `9235e34046d9b07e219393c97f60bfadf817ed71`; `symmetric_color_limits()` is backwards-compatible future v0.8 heatmap groundwork and is not a v0.8 data-model implementation.
-- v0.8 architecture checkpoint Issue #249 / PR #250 is complete at `fa7baaf8ce68369b0e732faf4e7621a818db92b6`; shared-stack foundation Block 1 is the next implementation work package. No v0.7.1, tag, release, or package-registry action is implied.
+- v0.8 architecture checkpoint Issue #249 / PR #250 is complete at `fa7baaf8ce68369b0e732faf4e7621a818db92b6`.
+- v0.8 Block 1 shared immutable operando-stack foundation is complete through Issue #253 / PR #254 at merge `45d0515dd5c1c70f15f4d5cd76ba2a359dc66bb2`; final head `eadf5b2e6630b137922f365a88f4b9ef3c43b12b` passed CI #561 / run `32922150384` and formal reviews `5026150379`, `5026170031` with zero unresolved threads, followed by successful post-merge main CI #562 / run `32922349620`.
+- v0.8 Block 2 — exact measured-point operations, derived traces, and explicit cross-modal comparison — is the next scientific implementation work package. No v0.7.1, tag, release, or package-registry action is implied.
 
 Live GitHub Issue/PR/tag state remains authoritative if this checkpoint becomes stale.
 
@@ -79,7 +82,7 @@ Detailed long-range scope is maintained in [`ROADMAP.md`](ROADMAP.md).
 | v0.5.x | XAS/XANES, FT/WT-EXAFS, EXAFS summaries, structures/geometry/static visualization, basic DFT energetics | complete/released as v0.5.0; GitHub Release published; PyPI deferred |
 | v0.6.x | electronic structure and catalysis thermodynamics | complete/released as v0.6.0; GitHub Release published; PyPI deferred |
 | v0.7.x | advanced computational visualization | complete/released as v0.7.0; GitHub Release published; post-release color-limit maintenance #245/#246 complete; PyPI deferred |
-| v0.8.x | operando/time-resolved analysis | architecture frozen; six implementation blocks planned |
+| v0.8.x | operando/time-resolved analysis | architecture frozen; Block 1 complete; Block 2 next |
 | v0.9.x | reproducible batch workflows and first interactive editor | planned |
 | v1.0.0 | stable personal catalysis data workbench and local GUI | planned |
 
@@ -341,7 +344,7 @@ Issue #208 / PR #209 synchronized the merged Block-2 state into central document
 
 ### Band-structure state, VASP adapter, and passive plotting — complete
 
-Issue #210 / PR #211 delivered CatalysisWorkbench-owned immutable band-structure state with exact ordered reciprocal k-points, explicit full reciprocal-lattice matrix and `2*pi` convention, exact physical `total` or complete collinear `up/down` channels, source band index/order, explicit path segments and source labels, retained source Fermi/reference state, periodic structure provenance and deterministic digests. Path distance uses the retained full reciprocal matrix literally, excludes discontinuity jumps, and never inserts or removes `2*pi`. `reference_band_structure_to_fermi(...)` performs only the explicit retained `E - E_F` transformation and is idempotent; neither parser nor renderer shifts energies implicitly. The lazy optional `read_vasprun_band_structure(...)` supports standard reciprocal-coordinate line-mode VASP `KPOINTS` plus `vasprun.xml`, maps physical spin from VASP `ISPIN`, validates every source path point against the explicit line-mode interpolation, and fails closed on hybrid/uniform+line mismatches, unsupported layouts, SOC/noncollinear state, or ambiguous spin semantics. Passive Matplotlib plotting renders every retained band/spin/segment separately so discontinuities are never connected and no gap, metallicity, occupation, symmetry path or band reconnection is inferred. The reviewed domain contract is recorded in [`BAND_STRUCTURE.md`](BAND_STRUCTURE.md), with no new runtime dependency or Block-4 PROCAR implementation.
+Issue #210 / PR #211 delivered CatalysisWorkbench-owned immutable band-structure state with exact ordered reciprocal k-points, explicit full reciprocal-lattice matrix and `2*pi` convention, exact physical `total` or complete collinear `up/down` channels, source band index/order, explicit path segments and source labels, retained source Fermi/reference state, periodic structure provenance and deterministic digests. Path distance uses the retained full reciprocal matrix literally and excludes discontinuity jumps; it never inserts or removes `2*pi`. `reference_band_structure_to_fermi(...)` performs only the explicit retained `E - E_F` transformation and is idempotent; neither parser nor renderer shifts energies implicitly. The lazy optional `read_vasprun_band_structure(...)` supports standard reciprocal-coordinate line-mode VASP `KPOINTS` plus `vasprun.xml`, maps physical spin from VASP `ISPIN`, validates every source path point against the explicit line-mode interpolation, and fails closed on hybrid/uniform+line mismatches, unsupported layouts, SOC/noncollinear state, or ambiguous spin semantics. Passive Matplotlib plotting renders every retained band/spin/segment separately so discontinuities are never connected and no gap, metallicity, occupation, symmetry path or band reconnection is inferred. The reviewed domain contract is recorded in [`BAND_STRUCTURE.md`](BAND_STRUCTURE.md), with no new runtime dependency or Block-4 PROCAR implementation.
 
 Block-3 final head `b1f1dca77b469f6d3fb4524f7c51f719fa9350e4` passed CI #490 / run `32867366543` with Ruff, full pytest, fresh-wheel/public-API audits, current optional-backend line-mode KPOINTS/reciprocal-convention smoke and documented examples, plus final-head reviews `5020939345`, `5020940558`, before expected-head squash merge `4a4b1329cbd8153f868cdc2d353dfc0c613778a4`.
 
@@ -351,7 +354,7 @@ Issue #212 / PR #213 synchronized the merged Block-3 state into central document
 
 ### PROCAR projection processing + fat-band plotting — complete
 
-Issue #214 / PR #216 delivered CatalysisWorkbench-owned immutable PROCAR projection state explicitly bound to one reviewed Block-3 `BandStructureState`, which remains the sole energy/path/reference authority. Projection channels retain canonical `(band, kpoint, site, orbital)` order, exact physical spin compatibility, structure-coupled site identity, finite non-negative dimensionless weights and deterministic digests. `aggregate_band_projection(...)` requires explicit physical spin, source site indices and exact retained orbital labels, canonicalizes request identity to retained source order, and performs only the selected sum with no hidden element/orbital grouping, spin summation, normalization or thresholding. Direct `AggregatedBandProjection` construction fails closed if site indices are not in retained source order or if supplied site keys/elements do not exactly match the associated `AtomicStructure`.
+Issue #214 / PR #216 delivered CatalysisWorkbench-owned immutable PROCAR projection state explicitly bound to one reviewed Block-3 `BandStructureState`, which remains the sole energy/path/reference authority. Projection channels retain canonical `(band, kpoint, site, orbital)` order, exact physical-spin/site/orbital provenance, finite non-negative dimensionless weights and deterministic digests. `aggregate_band_projection(...)` requires explicit physical spin, source site indices and exact retained orbital labels, canonicalizes request identity to retained source order, and performs only the selected sum with no hidden element/orbital grouping, spin summation, normalization or thresholding. Direct `AggregatedBandProjection` construction fails closed if site indices are not in retained source order or if supplied site keys/elements do not exactly match the associated `AtomicStructure`.
 
 The lazy optional `read_procar_projection(...)` accepts one ordinary non-SOC PROCAR path, binds it to the reviewed Block-3 band source, exposes caller-visible `kpoint_atol` / `energy_atol_ev`, validates exact band/site/orbital/spin compatibility and does not reorder k-points, reconstruct paths, pad bands, replace energies or collapse SOC/vector state. Current `pymatgen-core.Procar` behavior is retained truthfully: parsed k-points are rounded to five decimals and the raw terminal PROCAR `tot` header/column is removed by the backend, so CatalysisWorkbench retains only backend-exposed `parsed.orbitals`, records `raw_terminal_tot_retained=False`, and never reconstructs or normalizes against that omitted total. A sole backend channel maps to physical `total` for a non-spin band source; collinear spin requires complete `up/down`.
 
@@ -418,7 +421,13 @@ The frozen implementation order is:
 5. operando XAS/XANES adapters/mapping/descriptor trajectories;
 6. operando XRD adapters/mapping/window and peak trajectories.
 
-No new runtime dependency, hidden alignment/interpolation/normalization, automatic peak/species/phase inference, v0.7.1, tag, release, or package-registry action is authorized by this checkpoint. Block 1 must begin from a new scoped Issue and Draft PR.
+### Shared immutable frame-coordinate and operando-stack foundation — complete
+
+Issue #253 / PR #254 delivered the shared `catalysis_workbench.experimental.operando` foundation on top of the released core `Axis` / `Series` / `Dataset` layer: immutable frame coordinates, immutable exact-grid `OperandoStack` state, deterministic reconstructible digests, strict source/grid/axis/basis compatibility, public exports, focused regression tests, and fresh-installed-wheel audit. Acquisition and signal order are retained literally; repeated or non-monotonic frame-coordinate values are valid; signal coordinates must remain strictly monotonic while preserving increasing or decreasing source direction. The implementation performs no interpolation, resampling, alignment, sorting, smoothing, baseline correction, normalization, clipping, unit conversion, coordinate inference, or automatic primary-coordinate selection.
+
+Block-1 final head `eadf5b2e6630b137922f365a88f4b9ef3c43b12b` passed CI #561 / run `32922150384` and formal reviews `5026150379`, `5026170031` with zero unresolved threads after hardening Python/NumPy scalar metadata canonicalization. Expected-head squash merge produced `45d0515dd5c1c70f15f4d5cd76ba2a359dc66bb2`; post-merge main CI #562 / run `32922349620` passed on that exact commit.
+
+No new runtime dependency, hidden alignment/interpolation/normalization, automatic peak/species/phase inference, v0.7.1, tag, release, or package-registry action was introduced. Block 2 — exact measured-point operations, derived traces, and explicit cross-modal comparison — is next.
 
 ## Mandatory development loop
 
@@ -520,4 +529,4 @@ After each merged scientific Issue, update only documentation whose statements b
 - preceding Issue closure/completion;
 - version/tag/publication boundaries.
 
-The v0.7 release lifecycle and post-release central-state correction are complete. The dedicated v0.8 architecture checkpoint is complete through Issue #249 / PR #250; begin shared-stack foundation Block 1 from a new scoped Issue and Draft PR, then follow the frozen six-block order in `V0_8_PLAN.md`. Preserve immutable `v0.7.0 -> e3062fc12c794f54c7b7613875ec73608a587a59`, distribution/runtime release version `0.7.0`, the published public GitHub Release, and the PyPI-deferred boundary.
+The v0.7 release lifecycle and post-release central-state correction are complete. The dedicated v0.8 architecture checkpoint is complete through Issue #249 / PR #250, and shared-stack foundation Block 1 is complete through Issue #253 / PR #254 at `45d0515dd5c1c70f15f4d5cd76ba2a359dc66bb2`; begin Block 2 — exact measured-point operations, derived traces, and explicit cross-modal comparison — from a new scoped Issue and Draft PR, then continue the frozen order in `V0_8_PLAN.md`. Preserve immutable `v0.7.0 -> e3062fc12c794f54c7b7613875ec73608a587a59`, distribution/runtime release version `0.7.0`, the published public GitHub Release, and the PyPI-deferred boundary.
