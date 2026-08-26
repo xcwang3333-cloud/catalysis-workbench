@@ -95,7 +95,9 @@ def _canonical_domain_frames(
             ) from exc
 
         if digest != series_array_digest(normalized):
-            raise RuntimeError("domain semantic canonicalization unexpectedly changed source arrays")
+            raise RuntimeError(
+                "domain semantic canonicalization unexpectedly changed source arrays"
+            )
         canonical.append(normalized)
         source_digests.append(digest)
         fit_source_sha256.append(_series_data_digest(normalized))
