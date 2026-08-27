@@ -7,11 +7,7 @@ from types import MappingProxyType
 
 import pytest
 
-from catalysis_workbench.workflow.registry import (
-    OperationDescriptor,
-    get_operation_descriptor,
-    list_recipe_operations,
-)
+from catalysis_workbench.workflow import registry as workflow_registry
 
 
 EXPECTED_OPERATION_IDS = (
@@ -22,12 +18,14 @@ EXPECTED_OPERATION_IDS = (
 
 
 def test_registry_contains_only_first_execution_slice_in_literal_order() -> None:
-    operations = list_recipe_operations()
+    operations = workflow_registry.list_recipe_operations()
     assert tuple(item.operation_id for item in operations) == EXPECTED_OPERATION_IDS
 
 
 def test_registry_descriptors_are_frozen_and_defaults_are_read_only() -> None:
-    crop = get_operation_descriptor("catalysis.processing.crop.v1")
+    crop = workflow_registry.get_operation_descriptor(
+        "catalysis.processing.crop.v1"
+    )
     with pytest.raises(FrozenInstanceError):
         crop.operation_id = "changed"  # type: ignore[misc]
     assert isinstance(crop.parameter_defaults, MappingProxyType)
@@ -36,11 +34,15 @@ def test_registry_descriptors_are_frozen_and_defaults_are_read_only() -> None:
 
 
 def test_registry_contracts_are_explicit() -> None:
-    crop, offset, normalize = list_recipe_operations()
+    crop, offset, normalize = workflow_registry.list_recipe_operations()
     assert crop.input_ports == ("series",)
     assert crop.output_ports == ("series",)
     assert crop.required_parameters == ()
-    assert crop.parameter_defaults == {"x_min": None, "x_max": None, "inclusive": True}
+    assert crop.parameter_defaults == {
+        "x_min": None,
+        "x_max": None,
+        "inclusive": True,
+    }
     assert offset.required_parameters == ("value",)
     assert offset.parameter_defaults == {}
     assert normalize.parameter_defaults == {
@@ -51,7 +53,7 @@ def test_registry_contracts_are_explicit() -> None:
 
 
 def test_parameter_names_preserve_contract_order() -> None:
-    descriptor = OperationDescriptor(
+    descriptor = workflow_registry.OperationDescriptor(
         operation_id="example.operation.v1",
         contract_version=1,
         input_ports=("source",),
@@ -64,14 +66,18 @@ def test_parameter_names_preserve_contract_order() -> None:
 
 def test_unknown_operation_fails_closed() -> None:
     with pytest.raises(KeyError, match="unknown workflow operation_id"):
-        get_operation_descriptor("catalysis.processing.savgol.v1")
+        workflow_registry.get_operation_descriptor(
+            "catalysis.processing.savgol.v1"
+        )
     with pytest.raises(KeyError):
-        get_operation_descriptor(" catalysis.processing.crop.v1")
+        workflow_registry.get_operation_descriptor(
+            " catalysis.processing.crop.v1"
+        )
 
 
 def test_non_string_operation_id_is_rejected() -> None:
     with pytest.raises(TypeError):
-        get_operation_descriptor(1)  # type: ignore[arg-type]
+        workflow_registry.get_operation_descriptor(1)  # type: ignore[arg-type]
 
 
 @pytest.mark.parametrize(
@@ -96,12 +102,12 @@ def test_invalid_descriptors_are_rejected(arguments: dict[str, object]) -> None:
     }
     values.update(arguments)
     with pytest.raises(ValueError):
-        OperationDescriptor(**values)  # type: ignore[arg-type]
+        workflow_registry.OperationDescriptor(**values)  # type: ignore[arg-type]
 
 
 def test_required_parameter_cannot_also_have_default() -> None:
     with pytest.raises(ValueError, match="cannot also define defaults"):
-        OperationDescriptor(
+        workflow_registry.OperationDescriptor(
             operation_id="example.operation.v1",
             contract_version=1,
             input_ports=("source",),
