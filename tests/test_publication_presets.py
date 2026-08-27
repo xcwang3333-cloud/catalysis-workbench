@@ -16,7 +16,6 @@ from catalysis_workbench.visualization.publication_presets import (
     publication_preset_manifest,
 )
 
-
 PRESET_NAME = "catalysis.publication.single-column.v1"
 FIGURE_SPEC_SHA256 = "9022ff993c9ad8c8f7c0ea80111dda2fe9d31006c4f98bffdbb724dc165a0d5f"
 EXPECTED_FIGURE_SPEC = {
