@@ -541,8 +541,9 @@ src/catalysis_workbench/visualization/
 
 Current promoted state: _canonical_json.py and workflow/__init__.py,
 workflow/recipe.py, workflow/registry.py, workflow/_adapters.py,
-workflow/execution.py, workflow/batch.py, and workflow/qa.py are implemented
-through Block 4. The visualization files remain planned for Blocks 5-6.
+workflow/execution.py, workflow/batch.py, workflow/qa.py, and
+visualization/preset_bundles.py are implemented through Block 5.
+visualization/editor.py remains planned for Block 6.
 
 Expected test families are:
 

@@ -7,6 +7,8 @@ specifications later.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 from .specs import FigureSpec, LayoutSpec, PlotStyle, VisualizationError
 
 _PRESETS: dict[str, FigureSpec] = {
@@ -56,6 +58,19 @@ _PRESETS: dict[str, FigureSpec] = {
 }
 
 
+def _preset_key(name: object) -> str:
+    return str(name).strip().lower()
+
+
+def _validated_preset(name: object, spec: FigureSpec) -> tuple[str, FigureSpec]:
+    key = _preset_key(name)
+    if not key:
+        raise VisualizationError("preset name must not be empty")
+    if not isinstance(spec, FigureSpec):
+        raise TypeError("spec must be a FigureSpec")
+    return key, spec
+
+
 def list_presets() -> tuple[str, ...]:
     """Return registered preset names in deterministic insertion order."""
     return tuple(_PRESETS)
@@ -63,7 +78,7 @@ def list_presets() -> tuple[str, ...]:
 
 def get_preset(name: str = "publication") -> FigureSpec:
     """Return an immutable registered figure specification."""
-    key = str(name).strip().lower()
+    key = _preset_key(name)
     try:
         return _PRESETS[key]
     except KeyError as exc:
@@ -74,11 +89,26 @@ def get_preset(name: str = "publication") -> FigureSpec:
 
 def register_preset(name: str, spec: FigureSpec, *, overwrite: bool = False) -> None:
     """Register a future project/journal preset without changing renderer internals."""
-    key = str(name).strip().lower()
-    if not key:
-        raise VisualizationError("preset name must not be empty")
-    if not isinstance(spec, FigureSpec):
-        raise TypeError("spec must be a FigureSpec")
+    key, checked_spec = _validated_preset(name, spec)
     if key in _PRESETS and not overwrite:
         raise VisualizationError(f"visualization preset {key!r} is already registered")
-    _PRESETS[key] = spec
+    _PRESETS[key] = checked_spec
+
+
+def _install_presets_atomic(
+    entries: Sequence[tuple[str, FigureSpec]],
+    *,
+    overwrite: bool = False,
+) -> None:
+    """Install validated entries without mutating the registry on conflict."""
+
+    candidate = dict(_PRESETS)
+    for name, spec in entries:
+        key, checked_spec = _validated_preset(name, spec)
+        if key in candidate and not overwrite:
+            raise VisualizationError(
+                f"visualization preset {key!r} is already registered"
+            )
+        candidate[key] = checked_spec
+    _PRESETS.clear()
+    _PRESETS.update(candidate)

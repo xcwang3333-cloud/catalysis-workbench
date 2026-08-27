@@ -9,6 +9,13 @@ from .dos import DOSVisualizationError, plot_dos
 from .export import export_figure
 from .free_energy import plot_free_energy_diagram
 from .neb import NEBVisualizationError, plot_neb_path
+from .preset_bundles import (
+    FigurePresetBundle,
+    FigurePresetEntry,
+    install_preset_bundle,
+    load_preset_bundle,
+    save_preset_bundle,
+)
 from .presets import get_preset, list_presets, register_preset
 from .projected_bands import ProjectedBandVisualizationError, plot_fat_band
 from .scatter import ScatterError, render_scatter
@@ -58,6 +65,8 @@ __all__ = [
     "CategoryStyle",
     "DOSVisualizationError",
     "ExportSpec",
+    "FigurePresetBundle",
+    "FigurePresetEntry",
     "FigureSpec",
     "IsosurfaceLayerSpec",
     "LayoutSpec",
@@ -84,7 +93,9 @@ __all__ = [
     "export_volumetric_scene_3d",
     "format_axis_label",
     "get_preset",
+    "install_preset_bundle",
     "list_presets",
+    "load_preset_bundle",
     "plot_band_structure",
     "plot_dos",
     "plot_fat_band",
@@ -99,5 +110,6 @@ __all__ = [
     "render_curves",
     "render_scatter",
     "render_volumetric_scene_3d",
+    "save_preset_bundle",
     "symmetric_color_limits",
 ]
