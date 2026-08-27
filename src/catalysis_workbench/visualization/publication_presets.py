@@ -31,7 +31,7 @@ class _PublicationPresetAsset:
             raise TypeError("publication preset figure_spec must be a FigureSpec")
 
 
-_SINGLE_COLUMN_V1 = FigureSpec(
+_STANDARD_V1 = FigureSpec(
     layout=LayoutSpec(
         figure_width_in=3.5,
         figure_height_in=2.625,
@@ -95,11 +95,65 @@ _SINGLE_COLUMN_V1 = FigureSpec(
     category_styles={},
 )
 
+_COMPACT_V1 = _STANDARD_V1.with_layout(
+    figure_width_in=3.35,
+    figure_height_in=2.30,
+    left_margin_in=0.52,
+    right_margin_in=0.12,
+    bottom_margin_in=0.43,
+    top_margin_in=0.12,
+    axes_width_in=None,
+    axes_height_in=None,
+    axes_aspect=None,
+).with_style(
+    font_size=7.5,
+    axis_label_size=7.5,
+    tick_label_size=6.8,
+    title_size=7.5,
+    line_width=1.1,
+    spine_width=0.7,
+    tick_length=2.8,
+    tick_width=0.7,
+    legend_font_size=6.8,
+)
+
+_WIDE_V1 = _STANDARD_V1.with_layout(
+    figure_width_in=7.0,
+    figure_height_in=3.5,
+    left_margin_in=0.65,
+    right_margin_in=0.20,
+    bottom_margin_in=0.55,
+    top_margin_in=0.18,
+    axes_width_in=None,
+    axes_height_in=None,
+    axes_aspect=None,
+).with_style(
+    font_size=9.0,
+    axis_label_size=9.0,
+    tick_label_size=8.0,
+    title_size=9.0,
+    line_width=1.4,
+    spine_width=0.9,
+    tick_length=3.5,
+    tick_width=0.9,
+    legend_font_size=8.0,
+)
+
 _PUBLICATION_PRESETS = (
     _PublicationPresetAsset(
-        name="catalysis.publication.single-column.v1",
+        name="catalysis.publication.standard.v1",
         asset_version=1,
-        figure_spec=_SINGLE_COLUMN_V1,
+        figure_spec=_STANDARD_V1,
+    ),
+    _PublicationPresetAsset(
+        name="catalysis.publication.compact.v1",
+        asset_version=1,
+        figure_spec=_COMPACT_V1,
+    ),
+    _PublicationPresetAsset(
+        name="catalysis.publication.wide.v1",
+        asset_version=1,
+        figure_spec=_WIDE_V1,
     ),
 )
 
