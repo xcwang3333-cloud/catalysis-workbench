@@ -169,7 +169,10 @@ def check_units(
     checked_subject = _stable_string(subject, label="subject")
     violations: list[dict[str, object]] = []
     for series_index, series in enumerate(series_values):
-        for component, expected_unit in expectations.items():
+        for component in ("x", "y"):
+            if component not in expectations:
+                continue
+            expected_unit = expectations[component]
             observed_unit = (
                 series.x_axis.unit if component == "x" else series.y_axis.unit
             )
