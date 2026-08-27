@@ -1,7 +1,17 @@
-"""Public reproducible workflow recipe, execution, and batch API."""
+"""Public reproducible workflow recipe, execution, batch, and QA API."""
 
 from .batch import BatchItem, BatchItemRecord, BatchRunRecord, run_batch
 from .execution import StepExecutionRecord, WorkflowRun, execute_recipe
+from .qa import (
+    QAFinding,
+    QAReport,
+    QAStatus,
+    check_digest,
+    check_finite_values,
+    check_stable_keys,
+    check_units,
+    run_qa,
+)
 from .recipe import (
     RecipeStep,
     WorkflowRecipe,
@@ -22,11 +32,18 @@ __all__ = [
     "BatchItemRecord",
     "BatchRunRecord",
     "OperationDescriptor",
+    "QAFinding",
+    "QAReport",
+    "QAStatus",
     "RecipeStep",
     "StepExecutionRecord",
     "WorkflowRecipe",
     "WorkflowRecipeError",
     "WorkflowRun",
+    "check_digest",
+    "check_finite_values",
+    "check_stable_keys",
+    "check_units",
     "dump_recipe",
     "execute_recipe",
     "get_operation_descriptor",
@@ -35,4 +52,5 @@ __all__ = [
     "recipe_from_dict",
     "recipe_to_dict",
     "run_batch",
+    "run_qa",
 ]
