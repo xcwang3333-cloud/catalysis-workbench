@@ -9,7 +9,6 @@ import pytest
 
 import catalysis_workbench.workflow as workflow
 
-
 EXPECTED_OPERATION_IDS = (
     "catalysis.processing.crop.v1",
     "catalysis.processing.offset.v1",
