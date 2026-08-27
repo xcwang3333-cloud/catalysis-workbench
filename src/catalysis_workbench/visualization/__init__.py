@@ -6,6 +6,7 @@ from .color_scales import symmetric_color_limits
 from .curves import format_axis_label, render_curves
 from .dft import plot_relative_energies
 from .dos import DOSVisualizationError, plot_dos
+from .editor import FigureEditorState, FigureSpecEditorController, open_figure_spec_editor
 from .export import export_figure
 from .free_energy import plot_free_energy_diagram
 from .neb import NEBVisualizationError, plot_neb_path
@@ -65,9 +66,11 @@ __all__ = [
     "CategoryStyle",
     "DOSVisualizationError",
     "ExportSpec",
+    "FigureEditorState",
     "FigurePresetBundle",
     "FigurePresetEntry",
     "FigureSpec",
+    "FigureSpecEditorController",
     "IsosurfaceLayerSpec",
     "LayoutSpec",
     "NEBVisualizationError",
@@ -96,6 +99,7 @@ __all__ = [
     "install_preset_bundle",
     "list_presets",
     "load_preset_bundle",
+    "open_figure_spec_editor",
     "plot_band_structure",
     "plot_dos",
     "plot_fat_band",
