@@ -2,20 +2,22 @@
 
 ## 1. Status and authority
 
-This document is the local v0.9 development architecture authority candidate.
-It governs development planning on the independent local branch only; it is not
-formal GitHub release evidence and does not supersede GitHub main.
+This document defines the v0.9 development architecture for the promoted
+0.9.0.dev0 development line. It records the original local development
+provenance while governing the promoted v0.9 development line. It is
+development-planning evidence, not a GitHub Release artifact, and does not by
+itself authorize a tag, Release, or package-registry publication.
 
-- Local development branch: dev/v09-local
-- Local bootstrap anchor:
+- Original local development branch: dev/v09-local
+- Original local bootstrap anchor:
   b75891f0ff319b6f958eb3c1923e78a6411eee8e
 - Original local bootstrap parent / retired v0.8 release-preparation checkpoint:
   c75ddb84c35bfe9d2ddd66a8823c99d773b66c29
   This ancestor is retained only as local development provenance and is not part of the promoted v0.9 history.
 - Development version: 0.9.0.dev0
 
-The bootstrap anchor is a local development checkpoint. It is not described as
-a released, formally reviewed, or GitHub exact-head-CI-authorized SHA.
+The original local bootstrap anchor is retained as development provenance. It is
+not a released, formally reviewed, or GitHub exact-head-CI-authorized SHA.
 
 Formal v0.9 integration is performed by replaying or cherry-picking the intended
 v0.9 commits onto the official post-v0.8 GitHub main, followed by complete
@@ -136,13 +138,14 @@ replaced.
 
 ## 5. Strict canonical JSON contract
 
-A future private helper is planned at:
+The private canonical JSON helper is implemented at:
 
 ~~~text
 src/catalysis_workbench/_canonical_json.py
 ~~~
 
-That file is not created by this architecture checkpoint.
+Block 1 uses this helper for strict canonical encoding, strict JSON loading, and
+deterministic SHA-256 identity. The helper remains private.
 
 The canonical JSON contract requires:
 
@@ -537,8 +540,9 @@ src/catalysis_workbench/visualization/
     editor.py
 ~~~
 
-None of these planned implementation files is created by this documentation
-commit.
+Current promoted state: _canonical_json.py, workflow/__init__.py, and
+workflow/recipe.py are implemented for Block 1. The remaining files shown above
+remain planned for Blocks 2-6.
 
 Expected test families are:
 
@@ -694,27 +698,27 @@ represented as final GitHub exact-head Ubuntu CI evidence.
 
 All v0.9 implementation commits remain independently cherry-pickable.
 
-Expected local history:
+Original local development history:
 
 ~~~text
 retired local v0.8 release-preparation ancestor
-→ v0.9 bootstrap
-→ v0.9 architecture checkpoint
+→ local v0.9 bootstrap
+→ local v0.9 architecture checkpoint
 → Block 1
 → Block 2
 → ...
 ~~~
 
-Future formal route:
+Formal promotion route:
 
 ~~~text
 official post-v0.8 GitHub main
-→ formal v0.9 branch
-→ replay/cherry-pick real v0.9 commits
-→ rerun full validation
+→ promotion branch
+→ replay/cherry-pick intended v0.9 commits
+→ full validation
 → Draft PR
 → exact-head GitHub CI
-→ formal reviews
+→ formal review
 → expected-head merge
 → post-merge main CI
 ~~~

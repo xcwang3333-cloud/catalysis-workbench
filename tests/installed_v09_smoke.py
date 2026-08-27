@@ -1,4 +1,4 @@
-"""Installed-wheel smoke for the cumulative v0.9 public release surface."""
+"""Installed-wheel smoke for the cumulative v0.9 public API surface."""
 
 from __future__ import annotations
 
