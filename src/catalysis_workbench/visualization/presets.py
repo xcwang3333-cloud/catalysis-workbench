@@ -59,14 +59,13 @@ _PRESETS: dict[str, FigureSpec] = {
 
 
 def _preset_key(name: object) -> str:
-    key = str(name).strip().lower()
-    if not key:
-        raise VisualizationError("preset name must not be empty")
-    return key
+    return str(name).strip().lower()
 
 
 def _validated_preset(name: object, spec: FigureSpec) -> tuple[str, FigureSpec]:
     key = _preset_key(name)
+    if not key:
+        raise VisualizationError("preset name must not be empty")
     if not isinstance(spec, FigureSpec):
         raise TypeError("spec must be a FigureSpec")
     return key, spec
