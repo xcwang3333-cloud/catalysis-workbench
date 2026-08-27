@@ -8,19 +8,33 @@ import sys
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+import numpy as np
+
 import catalysis_workbench
 import catalysis_workbench.workflow as workflow
+from catalysis_workbench.core import Series
 
 EXPECTED_VERSION = "0.9.0.dev0"
 EXPECTED_WORKFLOW_ALL = {
+    "OperationDescriptor",
     "RecipeStep",
+    "StepExecutionRecord",
     "WorkflowRecipe",
     "WorkflowRecipeError",
+    "WorkflowRun",
     "dump_recipe",
+    "execute_recipe",
+    "get_operation_descriptor",
+    "list_recipe_operations",
     "load_recipe",
     "recipe_from_dict",
     "recipe_to_dict",
 }
+EXPECTED_OPERATION_IDS = (
+    "catalysis.processing.crop.v1",
+    "catalysis.processing.offset.v1",
+    "catalysis.processing.normalize.v1",
+)
 SOURCE_TREE = Path(__file__).resolve().parents[1] / "src"
 
 
@@ -29,12 +43,13 @@ def _step(
     operation_id: str,
     output_binding: str,
     *,
+    input_binding: str = "source",
     parameters: dict[str, object] | None = None,
 ) -> workflow.RecipeStep:
     return workflow.RecipeStep(
         step_id=step_id,
         operation_id=operation_id,
-        inputs={"series": "source"},
+        inputs={"series": input_binding},
         outputs={"series": output_binding},
         parameters={} if parameters is None else parameters,
     )
@@ -51,12 +66,13 @@ def main() -> None:
     assert set(workflow.__all__) == EXPECTED_WORKFLOW_ALL
     assert len(workflow.__all__) == len(EXPECTED_WORKFLOW_ALL)
     assert all(hasattr(workflow, name) for name in workflow.__all__)
+    assert "catalysis_workbench.processing" not in sys.modules
 
     first = _step(
         "crop",
         "catalysis.processing.crop.v1",
         "cropped",
-        parameters={"upper": 0.8, "lower": 0.2},
+        parameters={"x_min": 0.2, "x_max": 0.8},
     )
     recipe = workflow.WorkflowRecipe(
         schema_version=1,
@@ -73,7 +89,7 @@ def main() -> None:
         "crop",
         "catalysis.processing.crop.v1",
         "cropped",
-        parameters={"lower": 0.2, "upper": 0.8},
+        parameters={"x_max": 0.8, "x_min": 0.2},
     )
     reordered_recipe = workflow.WorkflowRecipe(
         schema_version=1,
@@ -110,6 +126,73 @@ def main() -> None:
             pass
         else:
             raise AssertionError("dump_recipe silently overwrote an existing file")
+
+    operations = workflow.list_recipe_operations()
+    assert tuple(item.operation_id for item in operations) == EXPECTED_OPERATION_IDS
+    assert all(isinstance(item, workflow.OperationDescriptor) for item in operations)
+    try:
+        workflow.get_operation_descriptor("catalysis.processing.savgol.v1")
+    except KeyError:
+        pass
+    else:
+        raise AssertionError("unknown workflow operation was accepted")
+
+    source = Series(
+        x=np.array([0.0, 1.0, 2.0, 3.0]),
+        y=np.array([1.0, 2.0, 4.0, 8.0]),
+        label="source",
+        key="source",
+    )
+    executable = workflow.WorkflowRecipe(
+        schema_version=1,
+        inputs=("source",),
+        steps=(
+            _step(
+                "crop",
+                "catalysis.processing.crop.v1",
+                "cropped",
+                parameters={"x_min": 1.0, "x_max": 3.0},
+            ),
+            _step(
+                "offset",
+                "catalysis.processing.offset.v1",
+                "shifted",
+                input_binding="cropped",
+                parameters={"value": -1.0},
+            ),
+            _step(
+                "normalize",
+                "catalysis.processing.normalize.v1",
+                "normalized",
+                input_binding="shifted",
+            ),
+        ),
+        outputs={"result": "normalized"},
+    )
+    run = workflow.execute_recipe(
+        executable,
+        {"source": source},
+        input_identities={"source": "installed-wheel-source-v1"},
+    )
+    assert isinstance(run, workflow.WorkflowRun)
+    assert len(run.steps) == 3
+    assert all(isinstance(record, workflow.StepExecutionRecord) for record in run.steps)
+    assert run.recipe_sha256 == executable.recipe_sha256
+    assert len(run.content_sha256) == 64
+    assert len(run.record_sha256) == 64
+    np.testing.assert_allclose(run.outputs["result"].x, np.array([1.0, 2.0, 3.0]))
+    np.testing.assert_allclose(
+        run.outputs["result"].y,
+        np.array([1.0 / 7.0, 3.0 / 7.0, 1.0]),
+    )
+    assert run.steps[2].effective_parameters == {
+        "method": "max",
+        "target": 1.0,
+        "area_mode": "absolute",
+    }
+    assert run.environment_evidence == {
+        "catalysis_workbench_version": EXPECTED_VERSION
+    }
 
     for optional_name in ("pymatgen", "pyvista", "vtk"):
         assert optional_name not in sys.modules
