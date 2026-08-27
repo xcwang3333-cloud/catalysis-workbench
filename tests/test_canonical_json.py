@@ -103,3 +103,96 @@ def test_valid_strict_json_loads_as_plain_values() -> None:
 def test_invalid_json_has_controlled_error() -> None:
     with pytest.raises(CanonicalJSONError, match="invalid JSON document"):
         loads_strict_json("{")
+
+
+def test_cyclic_list_is_rejected_with_controlled_error() -> None:
+    value: list[object] = []
+    value.append(value)
+    with pytest.raises(CanonicalJSONError, match="cyclic JSON container"):
+        canonical_json_bytes(value)
+
+
+def test_cyclic_mapping_is_rejected_with_controlled_error() -> None:
+    value: dict[str, object] = {}
+    value["self"] = value
+    with pytest.raises(CanonicalJSONError, match="cyclic JSON container"):
+        canonical_json_bytes(value)
+
+
+def test_indirect_container_cycle_is_rejected() -> None:
+    first: dict[str, object] = {}
+    second = {"first": first}
+    first["second"] = second
+    with pytest.raises(CanonicalJSONError, match="cyclic JSON container"):
+        canonical_json_bytes(first)
+
+
+def test_acyclic_shared_reference_is_serialized_by_value() -> None:
+    shared = [1, 2]
+    value = {"left": shared, "right": shared}
+    assert canonical_json_bytes(value) == (
+        b'{"left":[1,2],"right":[1,2]}'
+    )
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "\ud800",
+        "\udfff",
+        {"\ud800": "value"},
+        {"outer": [{"bad": "\udfff"}]},
+    ],
+)
+def test_lone_surrogates_are_rejected(value: object) -> None:
+    with pytest.raises(CanonicalJSONError, match="valid UTF-8"):
+        canonical_json_bytes(value)
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        '"\\ud800"',
+        '"\\udfff"',
+        '{"\\ud800":"value"}',
+    ],
+)
+def test_strict_loader_rejects_lone_surrogates(text: str) -> None:
+    with pytest.raises(CanonicalJSONError, match="valid UTF-8"):
+        loads_strict_json(text)
+
+
+def test_valid_non_bmp_unicode_round_trips() -> None:
+    value = {"emoji": "😀", "label": "催化"}
+    encoded = canonical_json_bytes(value)
+    assert encoded == '{"emoji":"😀","label":"催化"}'.encode()
+    assert loads_strict_json(encoded) == value
+
+
+def test_valid_escaped_surrogate_pair_decodes_to_unicode_scalar() -> None:
+    value = loads_strict_json('"\\ud83d\\ude00"')
+    assert value == "😀"
+    assert canonical_json_bytes(value) == '"😀"'.encode()
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "null",
+        "true",
+        "1",
+        "1.0",
+        '"catalysis"',
+        '["催化",{"emoji":"😀"}]',
+        '{"nested":{"values":[1,2,3]}}',
+    ],
+)
+def test_successful_strict_load_is_immediately_canonicalizable(text: str) -> None:
+    canonical_json_bytes(loads_strict_json(text))
+
+
+def test_numeric_identity_remains_literal() -> None:
+    assert canonical_json_bytes(0.0) == b"0.0"
+    assert canonical_json_bytes(-0.0) == b"-0.0"
+    assert canonical_json_bytes(1) == b"1"
+    assert canonical_json_bytes(1.0) == b"1.0"

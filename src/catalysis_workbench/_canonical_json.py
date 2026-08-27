@@ -13,27 +13,59 @@ class CanonicalJSONError(ValueError):
     """Raised when a value is not strict canonical JSON."""
 
 
-def _validated_plain_value(value: object, *, location: str = "$") -> Any:
-    if value is None or type(value) in {bool, str}:
+def _validated_string(value: str, *, location: str) -> str:
+    try:
+        value.encode("utf-8")
+    except UnicodeEncodeError as exc:
+        raise CanonicalJSONError(f"string is not valid UTF-8 at {location}") from exc
+    return value
+
+
+def _validated_plain_value(
+    value: object,
+    *,
+    location: str = "$",
+    active_containers: set[int] | None = None,
+) -> Any:
+    if value is None or type(value) is bool:
         return value
+    if type(value) is str:
+        return _validated_string(value, location=location)
     if type(value) is int:
         return value
     if type(value) is float:
         if not math.isfinite(value):
             raise CanonicalJSONError(f"non-finite float at {location}")
         return value
-    if isinstance(value, list):
-        return [
-            _validated_plain_value(item, location=f"{location}[{index}]")
-            for index, item in enumerate(value)
-        ]
-    if isinstance(value, Mapping):
-        result: dict[str, Any] = {}
-        for key, item in value.items():
-            if type(key) is not str:
-                raise CanonicalJSONError(f"non-string object key at {location}")
-            result[key] = _validated_plain_value(item, location=f"{location}.{key}")
-        return result
+    if isinstance(value, (list, Mapping)):
+        active = set() if active_containers is None else active_containers
+        container_id = id(value)
+        if container_id in active:
+            raise CanonicalJSONError(f"cyclic JSON container at {location}")
+        active.add(container_id)
+        try:
+            if isinstance(value, list):
+                return [
+                    _validated_plain_value(
+                        item,
+                        location=f"{location}[{index}]",
+                        active_containers=active,
+                    )
+                    for index, item in enumerate(value)
+                ]
+            result: dict[str, Any] = {}
+            for key, item in value.items():
+                if type(key) is not str:
+                    raise CanonicalJSONError(f"non-string object key at {location}")
+                checked_key = _validated_string(key, location=f"{location} object key")
+                result[checked_key] = _validated_plain_value(
+                    item,
+                    location=f"{location}.{checked_key}",
+                    active_containers=active,
+                )
+            return result
+        finally:
+            active.remove(container_id)
     raise CanonicalJSONError(
         f"unsupported value type at {location}: {type(value).__name__}"
     )
@@ -42,7 +74,10 @@ def _validated_plain_value(value: object, *, location: str = "$") -> Any:
 def canonical_json_bytes(value: object) -> bytes:
     """Return strict canonical JSON encoded as UTF-8."""
 
-    plain_value = _validated_plain_value(value)
+    try:
+        plain_value = _validated_plain_value(value)
+    except RecursionError as exc:
+        raise CanonicalJSONError("JSON nesting exceeds the supported depth") from exc
     try:
         text = json.dumps(
             plain_value,
@@ -51,7 +86,7 @@ def canonical_json_bytes(value: object) -> bytes:
             ensure_ascii=False,
             allow_nan=False,
         )
-    except (TypeError, ValueError) as exc:
+    except (TypeError, ValueError, RecursionError) as exc:
         raise CanonicalJSONError("value cannot be encoded as canonical JSON") from exc
     try:
         return text.encode("utf-8")
@@ -89,6 +124,9 @@ def loads_strict_json(text: str | bytes | bytearray) -> Any:
         )
     except CanonicalJSONError:
         raise
-    except (TypeError, ValueError) as exc:
+    except (TypeError, ValueError, RecursionError) as exc:
         raise CanonicalJSONError("invalid JSON document") from exc
-    return _validated_plain_value(value)
+    try:
+        return _validated_plain_value(value)
+    except RecursionError as exc:
+        raise CanonicalJSONError("JSON nesting exceeds the supported depth") from exc

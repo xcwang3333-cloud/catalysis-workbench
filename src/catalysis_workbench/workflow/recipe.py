@@ -25,6 +25,10 @@ def _identifier(value: object, *, label: str) -> str:
         raise WorkflowRecipeError(f"{label} must be a non-empty string")
     if value != value.strip():
         raise WorkflowRecipeError(f"{label} must not have surrounding whitespace")
+    try:
+        canonical_json_bytes(value)
+    except CanonicalJSONError as exc:
+        raise WorkflowRecipeError(f"{label} must be valid UTF-8") from exc
     return value
 
 
@@ -156,11 +160,13 @@ class WorkflowRecipe:
         object.__setattr__(self, "inputs", checked_inputs)
         object.__setattr__(self, "steps", checked_steps)
         object.__setattr__(self, "outputs", checked_outputs)
-        object.__setattr__(
-            self,
-            "recipe_sha256",
-            canonical_json_sha256(_recipe_to_plain_dict(self)),
-        )
+        try:
+            recipe_sha256 = canonical_json_sha256(_recipe_to_plain_dict(self))
+        except CanonicalJSONError as exc:
+            raise WorkflowRecipeError(
+                "recipe state must contain only strict canonical JSON values"
+            ) from exc
+        object.__setattr__(self, "recipe_sha256", recipe_sha256)
 
 
 _RECIPE_FIELDS = frozenset({"schema_version", "inputs", "steps", "outputs"})
@@ -249,7 +255,10 @@ def dump_recipe(
 ) -> None:
     """Write canonical UTF-8 JSON with one trailing newline."""
 
-    payload = canonical_json_bytes(recipe_to_dict(recipe)) + b"\n"
+    try:
+        payload = canonical_json_bytes(recipe_to_dict(recipe)) + b"\n"
+    except CanonicalJSONError as exc:
+        raise WorkflowRecipeError("recipe cannot be serialized") from exc
     mode = "wb" if overwrite else "xb"
     with Path(path).open(mode) as stream:
         stream.write(payload)
@@ -260,7 +269,10 @@ def load_recipe(path: str | Path) -> WorkflowRecipe:
 
     try:
         text = Path(path).read_text(encoding="utf-8")
+    except UnicodeError as exc:
+        raise WorkflowRecipeError(f"recipe file is not valid UTF-8: {path!s}") from exc
+    try:
         value = loads_strict_json(text)
-    except (OSError, UnicodeError, CanonicalJSONError) as exc:
+    except CanonicalJSONError as exc:
         raise WorkflowRecipeError(f"cannot load recipe from {path!s}") from exc
     return recipe_from_dict(value)

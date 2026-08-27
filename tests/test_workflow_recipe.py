@@ -11,6 +11,7 @@ import numpy as np
 import pytest
 
 from catalysis_workbench._canonical_json import (
+    CanonicalJSONError,
     canonical_json_bytes,
     loads_strict_json,
 )
@@ -454,3 +455,86 @@ for name in ('catalysis_workbench.processing', 'pymatgen', 'pyvista', 'vtk'):
         text=True,
     )
     assert result.returncode == 0, result.stderr
+
+
+def test_recipe_step_rejects_cyclic_parameters_with_public_error() -> None:
+    cycle: list[object] = []
+    cycle.append(cycle)
+    with pytest.raises(WorkflowRecipeError) as error:
+        _step(parameters={"cycle": cycle})
+    assert type(error.value) is WorkflowRecipeError
+    assert not isinstance(error.value, (CanonicalJSONError, RecursionError))
+
+
+@pytest.mark.parametrize(
+    "arguments",
+    [
+        {"step_id": "\ud800"},
+        {"parameters": {"nested": ["\udfff"]}},
+        {"inputs": {"\ud800": "source"}},
+        {"outputs": {"series": "\udfff"}},
+    ],
+)
+def test_recipe_step_rejects_lone_surrogates_with_public_error(
+    arguments: dict[str, object],
+) -> None:
+    values: dict[str, object] = {
+        "step_id": "step",
+        "operation_id": "opaque.v1",
+        "inputs": {"series": "source"},
+        "outputs": {"series": "result"},
+        "parameters": {},
+    }
+    values.update(arguments)
+    with pytest.raises(WorkflowRecipeError) as error:
+        RecipeStep(**values)
+    assert type(error.value) is WorkflowRecipeError
+    assert not isinstance(error.value, (CanonicalJSONError, UnicodeEncodeError))
+
+
+def test_recipe_from_dict_rejects_cyclic_parameter_with_public_error() -> None:
+    payload = recipe_to_dict(_recipe())
+    cycle: list[object] = []
+    cycle.append(cycle)
+    payload["steps"][0]["parameters"] = {"cycle": cycle}
+    with pytest.raises(WorkflowRecipeError) as error:
+        recipe_from_dict(payload)
+    assert type(error.value) is WorkflowRecipeError
+    assert not isinstance(error.value, (CanonicalJSONError, RecursionError))
+
+
+def test_recipe_from_dict_rejects_lone_surrogate_id_with_public_error() -> None:
+    payload = recipe_to_dict(_recipe())
+    payload["steps"][0]["step_id"] = "\ud800"
+    with pytest.raises(WorkflowRecipeError) as error:
+        recipe_from_dict(payload)
+    assert type(error.value) is WorkflowRecipeError
+    assert not isinstance(error.value, (CanonicalJSONError, UnicodeEncodeError))
+
+
+def test_load_recipe_rejects_escaped_lone_surrogate_with_public_error(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "recipe.json"
+    path.write_text(
+        (
+            '{"inputs":["source"],"outputs":{"result":"result"},'
+            '"schema_version":1,"steps":[{"inputs":{"series":"source"},'
+            '"operation_id":"opaque.v1","outputs":{"series":"result"},'
+            '"parameters":{},"step_id":"\\ud800"}]}'
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(WorkflowRecipeError) as error:
+        load_recipe(path)
+    assert type(error.value) is WorkflowRecipeError
+    assert not isinstance(error.value, (CanonicalJSONError, UnicodeEncodeError))
+
+
+def test_load_recipe_preserves_filesystem_errors(monkeypatch: pytest.MonkeyPatch) -> None:
+    def fail_read_text(*args: object, **kwargs: object) -> str:
+        raise PermissionError("denied")
+
+    monkeypatch.setattr(Path, "read_text", fail_read_text)
+    with pytest.raises(PermissionError, match="denied"):
+        load_recipe("recipe.json")

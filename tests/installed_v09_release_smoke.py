@@ -113,6 +113,22 @@ def main() -> None:
 
     for optional_name in ("pymatgen", "pyvista", "vtk"):
         assert optional_name not in sys.modules
+
+    cycle: list[object] = []
+    cycle.append(cycle)
+    try:
+        _step("cycle", "example.cycle.v1", "cycle_result", parameters={"x": cycle})
+    except workflow.WorkflowRecipeError:
+        pass
+    else:
+        raise AssertionError("cyclic recipe parameters were accepted")
+
+    try:
+        _step("\ud800", "example.invalid.v1", "invalid_result")
+    except workflow.WorkflowRecipeError:
+        pass
+    else:
+        raise AssertionError("lone-surrogate recipe identifier was accepted")
     print("installed v0.9 release smoke passed")
 
 
