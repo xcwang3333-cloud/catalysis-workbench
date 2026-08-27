@@ -230,7 +230,10 @@ def _preflight(
         _validate_ports(step, descriptor)
         effective = adapters.validate_parameters(step.operation_id, step.parameters)
         for port, binding_name in step.inputs.items():
-            if binding_name in workflow_inputs and not isinstance(input_values[binding_name], Series):
+            if (
+                binding_name in workflow_inputs
+                and not isinstance(input_values[binding_name], Series)
+            ):
                 raise TypeError(
                     f"step {step.step_id!r} input port {port!r} requires a Series"
                 )

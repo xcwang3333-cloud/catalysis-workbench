@@ -22,8 +22,14 @@ class OperationDescriptor:
 
     def __post_init__(self) -> None:
         operation_id = self.operation_id
-        if not isinstance(operation_id, str) or not operation_id or operation_id.strip() != operation_id:
-            raise ValueError("operation_id must be a non-empty string without surrounding whitespace")
+        if (
+            not isinstance(operation_id, str)
+            or not operation_id
+            or operation_id.strip() != operation_id
+        ):
+            raise ValueError(
+                "operation_id must be a non-empty string without surrounding whitespace"
+            )
         if type(self.contract_version) is not int or self.contract_version < 1:
             raise ValueError("contract_version must be a positive integer")
         if not operation_id.endswith(f".v{self.contract_version}"):
@@ -40,16 +46,24 @@ class OperationDescriptor:
         overlap = set(required_parameters).intersection(defaults)
         if overlap:
             joined = ", ".join(sorted(overlap))
-            raise ValueError(f"required parameters cannot also define defaults: {joined}")
+            raise ValueError(
+                f"required parameters cannot also define defaults: {joined}"
+            )
         try:
             canonical_json_bytes(defaults)
         except CanonicalJSONError as exc:
-            raise ValueError("parameter_defaults must contain strict JSON values") from exc
+            raise ValueError(
+                "parameter_defaults must contain strict JSON values"
+            ) from exc
 
         object.__setattr__(self, "input_ports", input_ports)
         object.__setattr__(self, "output_ports", output_ports)
         object.__setattr__(self, "required_parameters", required_parameters)
-        object.__setattr__(self, "parameter_defaults", MappingProxyType(defaults))
+        object.__setattr__(
+            self,
+            "parameter_defaults",
+            _freeze_json_value(defaults),
+        )
 
     @property
     def parameter_names(self) -> tuple[str, ...]:
@@ -57,13 +71,32 @@ class OperationDescriptor:
         return (*self.required_parameters, *self.parameter_defaults.keys())
 
 
-def _validate_names(values: tuple[str, ...], *, field_name: str) -> tuple[str, ...]:
+def _validate_names(
+    values: tuple[str, ...],
+    *,
+    field_name: str,
+) -> tuple[str, ...]:
     names = tuple(values)
-    if any(not isinstance(name, str) or not name or name.strip() != name for name in names):
-        raise ValueError(f"{field_name} must contain non-empty strings without surrounding whitespace")
+    if any(
+        not isinstance(name, str) or not name or name.strip() != name
+        for name in names
+    ):
+        raise ValueError(
+            f"{field_name} must contain non-empty strings without surrounding whitespace"
+        )
     if len(names) != len(set(names)):
         raise ValueError(f"{field_name} must contain unique names")
     return names
+
+
+def _freeze_json_value(value: Any) -> Any:
+    if isinstance(value, Mapping):
+        return MappingProxyType(
+            {key: _freeze_json_value(item) for key, item in value.items()}
+        )
+    if isinstance(value, list):
+        return tuple(_freeze_json_value(item) for item in value)
+    return value
 
 
 _OPERATIONS = (
@@ -86,11 +119,17 @@ _OPERATIONS = (
         contract_version=1,
         input_ports=("series",),
         output_ports=("series",),
-        parameter_defaults={"method": "max", "target": 1.0, "area_mode": "absolute"},
+        parameter_defaults={
+            "method": "max",
+            "target": 1.0,
+            "area_mode": "absolute",
+        },
     ),
 )
 
-_OPERATION_BY_ID = MappingProxyType({item.operation_id: item for item in _OPERATIONS})
+_OPERATION_BY_ID = MappingProxyType(
+    {item.operation_id: item for item in _OPERATIONS}
+)
 
 
 def list_recipe_operations() -> tuple[OperationDescriptor, ...]:
@@ -105,4 +144,6 @@ def get_operation_descriptor(operation_id: str) -> OperationDescriptor:
     try:
         return _OPERATION_BY_ID[operation_id]
     except KeyError:
-        raise KeyError(f"unknown workflow operation_id: {operation_id!r}") from None
+        raise KeyError(
+            f"unknown workflow operation_id: {operation_id!r}"
+        ) from None
