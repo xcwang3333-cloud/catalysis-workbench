@@ -19,7 +19,7 @@ a released, formally reviewed, or GitHub exact-head-CI-authorized SHA.
 Future formal v0.9 work must be replayed or cherry-picked onto the official
 post-v0.8 GitHub main, followed by complete validation on the resulting exact
 head. Local commit SHAs are portable development evidence, not presumed formal
-merge SHAs. Frozen v0.8 Gate A, Gate B, and Gate C history remains untouched.
+merge SHAs. The completed v0.8 scientific implementation history and the frozen docs/V0_8_PLAN.md remain untouched.
 
 ## 2. v0.9 mission
 
