@@ -238,13 +238,13 @@ They may be retained as clearly separate metadata when useful.
 
 Block 1 creates declarative immutable workflow recipe state only.
 
-The planned module is:
+The implemented module is:
 
 ~~~text
 src/catalysis_workbench/workflow/recipe.py
 ~~~
 
-The planned minimum public API is:
+The current public API is:
 
 - WorkflowRecipe;
 - RecipeStep;
@@ -253,8 +253,7 @@ The planned minimum public API is:
 - dump_recipe(); and
 - load_recipe().
 
-Persistent write APIs must refuse overwrite by default. If an overwrite argument
-is introduced, its default is:
+Persistent write APIs expose overwrite=False by default.
 
 ~~~text
 overwrite=False
@@ -705,8 +704,6 @@ retired local v0.8 release-preparation ancestor
 → local v0.9 bootstrap
 → local v0.9 architecture checkpoint
 → Block 1
-→ Block 2
-→ ...
 ~~~
 
 Formal promotion route:

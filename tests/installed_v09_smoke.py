@@ -129,7 +129,7 @@ def main() -> None:
         pass
     else:
         raise AssertionError("lone-surrogate recipe identifier was accepted")
-    print("installed v0.9 release smoke passed")
+    print("installed v0.9 smoke passed")
 
 
 if __name__ == "__main__":
