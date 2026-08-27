@@ -8,7 +8,11 @@ from types import MappingProxyType
 from typing import Any
 
 from catalysis_workbench import __version__
-from catalysis_workbench._canonical_json import CanonicalJSONError, canonical_json_bytes, canonical_json_sha256
+from catalysis_workbench._canonical_json import (
+    CanonicalJSONError,
+    canonical_json_bytes,
+    canonical_json_sha256,
+)
 
 from .execution import WorkflowRun, execute_recipe
 from .recipe import WorkflowRecipe

@@ -1,5 +1,6 @@
-"""Public reproducible workflow recipe and execution API."""
+"""Public reproducible workflow recipe, execution, and batch API."""
 
+from .batch import BatchItem, BatchItemRecord, BatchRunRecord, run_batch
 from .execution import StepExecutionRecord, WorkflowRun, execute_recipe
 from .recipe import (
     RecipeStep,
@@ -17,6 +18,9 @@ from .registry import (
 )
 
 __all__ = [
+    "BatchItem",
+    "BatchItemRecord",
+    "BatchRunRecord",
     "OperationDescriptor",
     "RecipeStep",
     "StepExecutionRecord",
@@ -30,4 +34,5 @@ __all__ = [
     "load_recipe",
     "recipe_from_dict",
     "recipe_to_dict",
+    "run_batch",
 ]

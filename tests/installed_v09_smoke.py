@@ -16,6 +16,9 @@ from catalysis_workbench.core import Series
 
 EXPECTED_VERSION = "0.9.0.dev0"
 EXPECTED_WORKFLOW_ALL = {
+    "BatchItem",
+    "BatchItemRecord",
+    "BatchRunRecord",
     "OperationDescriptor",
     "RecipeStep",
     "StepExecutionRecord",
@@ -29,6 +32,7 @@ EXPECTED_WORKFLOW_ALL = {
     "load_recipe",
     "recipe_from_dict",
     "recipe_to_dict",
+    "run_batch",
 }
 EXPECTED_OPERATION_IDS = (
     "catalysis.processing.crop.v1",
@@ -81,7 +85,10 @@ def main() -> None:
         outputs={"result": "cropped"},
     )
     assert len(recipe.recipe_sha256) == 64
-    assert all(character in string.hexdigits.lower() for character in recipe.recipe_sha256)
+    assert all(
+        character in string.hexdigits.lower()
+        for character in recipe.recipe_sha256
+    )
     restored = workflow.recipe_from_dict(workflow.recipe_to_dict(recipe))
     assert restored.recipe_sha256 == recipe.recipe_sha256
 
@@ -176,11 +183,17 @@ def main() -> None:
     )
     assert isinstance(run, workflow.WorkflowRun)
     assert len(run.steps) == 3
-    assert all(isinstance(record, workflow.StepExecutionRecord) for record in run.steps)
+    assert all(
+        isinstance(record, workflow.StepExecutionRecord)
+        for record in run.steps
+    )
     assert run.recipe_sha256 == executable.recipe_sha256
     assert len(run.content_sha256) == 64
     assert len(run.record_sha256) == 64
-    np.testing.assert_allclose(run.outputs["result"].x, np.array([1.0, 2.0, 3.0]))
+    np.testing.assert_allclose(
+        run.outputs["result"].x,
+        np.array([1.0, 2.0, 3.0]),
+    )
     np.testing.assert_allclose(
         run.outputs["result"].y,
         np.array([1.0 / 7.0, 3.0 / 7.0, 1.0]),
@@ -194,13 +207,55 @@ def main() -> None:
         "catalysis_workbench_version": EXPECTED_VERSION
     }
 
+    failing_source = Series(
+        x=np.array([10.0, 11.0, 12.0, 13.0]),
+        y=np.array([1.0, 2.0, 4.0, 8.0]),
+        label="source",
+        key="source",
+    )
+    batch = workflow.run_batch(
+        executable,
+        (
+            workflow.BatchItem(
+                key="good",
+                inputs={"source": source},
+                input_identities={"source": "installed-batch-good-v1"},
+            ),
+            workflow.BatchItem(
+                key="bad",
+                inputs={"source": failing_source},
+                input_identities={"source": "installed-batch-bad-v1"},
+            ),
+        ),
+        error_policy="record",
+    )
+    assert isinstance(batch, workflow.BatchRunRecord)
+    assert tuple(item.key for item in batch.items) == ("good", "bad")
+    assert tuple(item.status for item in batch.items) == ("success", "failure")
+    assert isinstance(batch.items[0], workflow.BatchItemRecord)
+    assert isinstance(batch.items[0].workflow_run, workflow.WorkflowRun)
+    assert batch.items[1].workflow_run is None
+    assert batch.items[1].failure_code is not None
+    assert batch.items[1].failure_code.endswith(".ProcessingError")
+    assert len(batch.items[0].record_sha256) == 64
+    assert len(batch.items[1].record_sha256) == 64
+    assert len(batch.record_sha256) == 64
+    assert batch.environment_evidence == {
+        "catalysis_workbench_version": EXPECTED_VERSION
+    }
+
     for optional_name in ("pymatgen", "pyvista", "vtk"):
         assert optional_name not in sys.modules
 
     cycle: list[object] = []
     cycle.append(cycle)
     try:
-        _step("cycle", "example.cycle.v1", "cycle_result", parameters={"x": cycle})
+        _step(
+            "cycle",
+            "example.cycle.v1",
+            "cycle_result",
+            parameters={"x": cycle},
+        )
     except workflow.WorkflowRecipeError:
         pass
     else:
