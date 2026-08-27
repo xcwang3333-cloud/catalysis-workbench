@@ -9,7 +9,7 @@ from catalysis_workbench._canonical_json import (
     canonical_json_sha256,
 )
 
-from .specs import FigureSpec
+from .specs import ExportSpec, FigureSpec, LayoutSpec, PlotStyle
 
 
 @dataclass(frozen=True, slots=True)
@@ -31,11 +31,75 @@ class _PublicationPresetAsset:
             raise TypeError("publication preset figure_spec must be a FigureSpec")
 
 
+_SINGLE_COLUMN_V1 = FigureSpec(
+    layout=LayoutSpec(
+        figure_width_in=3.5,
+        figure_height_in=2.625,
+        left_margin_in=0.55,
+        right_margin_in=0.15,
+        bottom_margin_in=0.48,
+        top_margin_in=0.15,
+        axes_width_in=None,
+        axes_height_in=None,
+        axes_aspect=None,
+    ),
+    style=PlotStyle(
+        font_family="DejaVu Sans",
+        font_size=8.0,
+        axis_label_size=8.0,
+        tick_label_size=7.0,
+        title_size=8.0,
+        line_width=1.2,
+        line_style="-",
+        marker=None,
+        marker_size=4.0,
+        marker_edge_width=0.8,
+        bar_group_width=0.8,
+        errorbar_capsize=2.5,
+        spine_width=0.8,
+        tick_length=3.0,
+        tick_width=0.8,
+        tick_direction="in",
+        minor_ticks=True,
+        top_ticks=True,
+        right_ticks=True,
+        legend_font_size=7.0,
+        legend_location="best",
+        legend_frame=False,
+        axis_unit_format="parentheses",
+        color_cycle=(
+            "#0C5DA5",
+            "#00B945",
+            "#FF9500",
+            "#FF2C00",
+            "#845B97",
+            "#474747",
+        ),
+    ),
+    export=ExportSpec(
+        dpi=600,
+        transparent=False,
+        svg_fonttype="none",
+        pdf_fonttype=42,
+    ),
+    xlabel=None,
+    ylabel=None,
+    title=None,
+    xlim=None,
+    ylim=None,
+    xscale="linear",
+    yscale="linear",
+    show_legend=None,
+    annotations=(),
+    series_styles={},
+    category_styles={},
+)
+
 _PUBLICATION_PRESETS = (
     _PublicationPresetAsset(
         name="catalysis.publication.single-column.v1",
         asset_version=1,
-        figure_spec=FigureSpec(),
+        figure_spec=_SINGLE_COLUMN_V1,
     ),
 )
 
