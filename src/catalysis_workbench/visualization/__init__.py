@@ -11,6 +11,11 @@ from .free_energy import plot_free_energy_diagram
 from .neb import NEBVisualizationError, plot_neb_path
 from .presets import get_preset, list_presets, register_preset
 from .projected_bands import ProjectedBandVisualizationError, plot_fat_band
+from .publication_presets import (
+    get_publication_preset,
+    list_publication_presets,
+    publication_preset_manifest,
+)
 from .scatter import ScatterError, render_scatter
 from .specs import (
     AnnotationSpec,
@@ -84,7 +89,9 @@ __all__ = [
     "export_volumetric_scene_3d",
     "format_axis_label",
     "get_preset",
+    "get_publication_preset",
     "list_presets",
+    "list_publication_presets",
     "plot_band_structure",
     "plot_dos",
     "plot_fat_band",
@@ -94,6 +101,7 @@ __all__ = [
     "plot_relative_energies",
     "plot_scalar_field_slice",
     "plot_structure",
+    "publication_preset_manifest",
     "register_preset",
     "render_bars",
     "render_curves",
