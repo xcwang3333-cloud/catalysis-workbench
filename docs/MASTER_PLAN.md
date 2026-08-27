@@ -18,19 +18,21 @@ Planning documents must be corrected when they drift from merged reality. They d
 
 ## Current checkpoint
 
-Checkpoint date: 2026-08-26.
+Checkpoint date: 2026-08-27.
 
 - Repository: `xcwang3333-cloud/catalysis-workbench`.
+- Repository visibility: public.
 - Stable integration branch: `main`.
 - Exact architecture baseline: `fa7baaf8ce68369b0e732faf4e7621a818db92b6`, the Issue #249 / PR #250 v0.8 architecture squash merge; post-merge CI #550 / run `32920821932` passed on that exact `main` head.
-- Current verified scientific implementation head: `b5503ea7b48ca421d5ddf49e35b74f8f4e24791f`, the expected-head squash merge of v0.8 Block 6 through Issue #275 / PR #276; post-merge CI #651 / run `32933955320` passed on that exact `main` head. All six v0.8 scientific implementation blocks are complete; release Gate A is next and retains distribution/runtime version `0.7.0`.
+- Current verified scientific implementation head: `b5503ea7b48ca421d5ddf49e35b74f8f4e24791f`, the expected-head squash merge of v0.8 Block 6 through Issue #275 / PR #276; post-merge CI #651 / run `32933955320` passed on that exact `main` head. All six v0.8 scientific implementation blocks are complete. No standalone v0.8 release Gate path, `v0.8.0` tag, or GitHub Release is planned; this implementation milestone becomes the scientific foundation for continuing `0.9.0.dev0` development.
 - Distribution/runtime version is `0.7.0`.
-- Released tag `v0.7.0 -> e3062fc12c794f54c7b7613875ec73608a587a59` is immutable and independently reverse-verified.
-- The public GitHub Release `CatalysisWorkbench v0.7.0` is published from that existing verified tag.
+- Retained stable tag `v0.7.0 -> e3062fc12c794f54c7b7613875ec73608a587a59` is immutable and independently reverse-verified.
+- `CatalysisWorkbench v0.7.0` is the only currently retained stable GitHub Release/tag.
 - Final v0.7 publication-evidence synchronization completed through Issue #243 / PR #244 at `bd3d69ed90f5f7ea2cdc6b950a6e9f33ca2fc338`.
 - All seven v0.7 scientific blocks, Gate A, Gate B, Gate C, GitHub Release publication, and publication-evidence synchronization are complete.
-- `v0.5.0 -> 9400ac0044ac333d2cae228554c08d955a816a4c` remains immutable; its public GitHub Release is complete.
-- `v0.4.0 -> bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6` remains immutable; its public GitHub Release is complete.
+- v0.1-v0.6 remain valid historical development/release milestones. Their old GitHub Release/tag artifacts were intentionally removed during repository cleanup, while their Issues, Pull Requests, commits, CI runs, release gates, and historical release documentation remain retained as provenance.
+- `0.9.0.dev0` is the continuing development line, not the version currently merged to `main` and not a stable GitHub Release.
+- GitHub Releases are intentionally reserved for infrequent maturity checkpoints rather than every minor development boundary.
 - PyPI/package-registry publication remains explicitly deferred.
 - v0.7 architecture checkpoint: Issue #197 / PR #198 — complete at `a854b5d4ab6168d857f9f783c9b4c1827e064972`.
 - v0.7 architecture central-document synchronization: Issue #199 / PR #201 — complete at `7f04e1312a67417ea9b1ddd10482722c599040d4`.
@@ -69,7 +71,7 @@ Checkpoint date: 2026-08-26.
 - v0.8 Block 3 passive waterfall/heatmap/frame-cut/trace visualization is complete through Issue #263 / PR #264 at merge `4a5b5ee0f75321dbf3a679ab616ac69972e34575`; final exact head `37c69c18e3e81bd228eadf3c4c2e3b5b8540a8a1` passed CI #594 / run `32927718634` with Ruff, all 1157 tests, fresh-wheel Block-3 audit, and volumetric3d smoke; formal reviews `5026595721`, `5026596493` found no blockers with zero unresolved threads; post-merge main CI #595 / run `32928011235` passed.
 - v0.8 Block 4 operando Raman/FTIR exact-grid adapters and explicit trajectories are complete through Issue #267 / PR #268 at merge `d46b57c5c558a06880e58d1b0bb15b6fd1c96a8c`; final exact head `45314c9c16c5460c8a9d574ec3fb43c6dfef722f` passed CI #612 / run `32930071404`; formal reviews `5026779773`, `5026780870` found no blockers with zero unresolved threads; post-merge main CI #613 / run `32930335459` passed.
 - v0.8 Block 5 operando XAS/XANES raw-versus-normalized adapters and explicit descriptor trajectories are complete through Issue #271 / PR #272 at merge `b3aa8f59834f4c3fe5e4bffe94111b60ca360570`; final exact head `a7fc080cd564191205dd8d8f8882b6e60e891ce5` passed CI #637 / run `32931971740` with Ruff, all 1177 tests, fresh-wheel Block-5 audit, and volumetric3d smoke; formal reviews `5026944037`, `5026945010` found no blockers with zero unresolved threads; post-merge main CI #638 / run `32932720710` passed.
-- v0.8 Block 6 operando XRD exact-grid adapters and explicit caller-window/peak trajectories are complete through Issue #275 / PR #276 at merge `b5503ea7b48ca421d5ddf49e35b74f8f4e24791f`; final exact head `6ddd7331363293593741dccb8b74ec9ed0dea3e2` passed CI #650 / run `32933715614` with Ruff, all 1186 tests, fresh-wheel Block-6 audit, and volumetric3d smoke; formal reviews `5027028638`, `5027030329` found no blockers with zero unresolved threads; post-merge main CI #651 / run `32933955320` passed. All six v0.8 scientific implementation blocks are complete; Gate A installed-wheel/public-API freeze/audit is next while version remains `0.7.0`. No v0.7.1, Gate-B version bump, tag, release, or package-registry action is implied.
+- v0.8 Block 6 operando XRD exact-grid adapters and explicit caller-window/peak trajectories are complete through Issue #275 / PR #276 at merge `b5503ea7b48ca421d5ddf49e35b74f8f4e24791f`; final exact head `6ddd7331363293593741dccb8b74ec9ed0dea3e2` passed CI #650 / run `32933715614` with Ruff, all 1186 tests, fresh-wheel Block-6 audit, and volumetric3d smoke; formal reviews `5027028638`, `5027030329` found no blockers with zero unresolved threads; post-merge main CI #651 / run `32933955320` passed. All six v0.8 scientific implementation blocks are complete. The standalone v0.8 Release path is retired; no v0.8 Gate A/B/C publication cycle, `v0.8.0` tag, Release, or package-registry action is planned. Current `main` remains at version `0.7.0`, and the completed capabilities carry into ongoing `0.9.0.dev0` development.
 
 Live GitHub Issue/PR/tag state remains authoritative if this checkpoint becomes stale.
 
@@ -79,18 +81,18 @@ Detailed long-range scope is maintained in [`ROADMAP.md`](ROADMAP.md).
 
 | Release | Primary scope | State |
 | --- | --- | --- |
-| v0.1.x | common XY core, tabular I/O, reusable processing, LSV, XRD, Raman, shared publication rendering/export | complete/released |
-| v0.2.x | quantitative core electrochemistry and shared scatter/bar summaries | complete/released as v0.2.0 |
-| v0.3.x | FTIR, thermal analysis, basic gas sorption, ICP/composition | complete/released as v0.3.0 |
-| v0.4.x | shared fitting, XPS, EIS, quantitative BET, product calibration | complete/released as v0.4.0; GitHub Release published; PyPI deferred |
-| v0.5.x | XAS/XANES, FT/WT-EXAFS, EXAFS summaries, structures/geometry/static visualization, basic DFT energetics | complete/released as v0.5.0; GitHub Release published; PyPI deferred |
-| v0.6.x | electronic structure and catalysis thermodynamics | complete/released as v0.6.0; GitHub Release published; PyPI deferred |
-| v0.7.x | advanced computational visualization | complete/released as v0.7.0; GitHub Release published; post-release color-limit maintenance #245/#246 complete; PyPI deferred |
-| v0.8.x | operando/time-resolved analysis | architecture frozen; Blocks 1-6 scientific implementation complete; Gate A installed-wheel/public-API freeze/audit next at version 0.7.0 |
-| v0.9.x | reproducible batch workflows and first interactive editor | planned |
+| v0.1.x | common XY core, tabular I/O, reusable processing, LSV, XRD, Raman, shared publication rendering/export | historical completed milestone; old GitHub Release/tag not retained |
+| v0.2.x | quantitative core electrochemistry and shared scatter/bar summaries | historical completed milestone; old GitHub Release/tag not retained |
+| v0.3.x | FTIR, thermal analysis, basic gas sorption, ICP/composition | historical completed milestone; old GitHub Release/tag not retained |
+| v0.4.x | shared fitting, XPS, EIS, quantitative BET, product calibration | historical completed milestone; release-gate evidence retained; old GitHub Release/tag not retained |
+| v0.5.x | XAS/XANES, FT/WT-EXAFS, EXAFS summaries, structures/geometry/static visualization, basic DFT energetics | historical completed milestone; release-gate evidence retained; old GitHub Release/tag not retained |
+| v0.6.x | electronic structure and catalysis thermodynamics | historical completed milestone; release-gate evidence retained; old GitHub Release/tag not retained |
+| v0.7.x | advanced computational visualization | current retained stable GitHub Release/tag `v0.7.0`; post-release color-limit maintenance #245/#246 complete; PyPI deferred |
+| v0.8.x | operando/time-resolved analysis | scientific implementation complete; no standalone GitHub Release/tag |
+| v0.9.x | reproducible workflows and first interactive editor | continuing development line `0.9.0.dev0`; not a stable Release |
 | v1.0.0 | stable personal catalysis data workbench and local GUI | planned |
 
-Release numbering is a planning boundary, not permission to weaken scientific validation or compatibility requirements.
+Release numbers before v0.7 remain valid historical development/version boundaries even though their old GitHub Release/tag artifacts have been removed. GitHub Releases are not expected for every future minor development boundary; they are reserved for separately authorized maturity checkpoints. Release numbering is a planning boundary, not permission to weaken scientific validation or compatibility requirements.
 
 ## Completed release baselines
 
@@ -98,7 +100,7 @@ Release numbering is a planning boundary, not permission to weaken scientific va
 
 Historical release details are retained in [`RELEASING.md`](RELEASING.md), [`V0_2_PLAN.md`](V0_2_PLAN.md), [`V0_2_RELEASING.md`](V0_2_RELEASING.md), and [`V0_3_RELEASING.md`](V0_3_RELEASING.md).
 
-The reviewed `v0.3.0` tag remains `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`.
+Historically, `v0.3.0` was reverse-verified on `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`; that old tag is no longer retained.
 
 ### v0.4
 
@@ -122,6 +124,8 @@ Release gates:
 - post-tag docs sync — #108/#111 — complete;
 - GitHub Release tracking — #112 — completed after user-confirmed publication and post-publication tag/main invariants;
 - PyPI publication — #113 — intentionally deferred/closed `not_planned`.
+
+The historical `v0.4.0` tag was reverse-verified on `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6`, and its GitHub Release was published at the time. That old tag/Release artifact is no longer retained; the commit and Gate evidence above remain retained history.
 
 ## v0.5 execution status
 
@@ -186,7 +190,7 @@ Gate A final head `fb13cdbf633366a0840f5f2e21af215bee47b133` passed CI #358 / ru
 
 Gate B final head `b95841ed472aff1fa4d05af7335547ee5c3cd611` passed CI #360 / run `32800514038` and reviews `5014348449`, `5014349058` before squash merge `9400ac0044ac333d2cae228554c08d955a816a4c`. Distribution/runtime version is `0.5.0`.
 
-Gate C / #142 created and reverse-verified `v0.5.0` exactly on `9400ac0044ac333d2cae228554c08d955a816a4c`; the tag must not be moved or recreated. GitHub Release / #144 is publicly published from that existing tag. Final post-release docs sync #143 is complete. PyPI/package-registry publication remains deferred.
+Gate C / #142 historically created and reverse-verified `v0.5.0` exactly on `9400ac0044ac333d2cae228554c08d955a816a4c`; GitHub Release / #144 was published from that tag at the time. The old tag/Release artifact has since been removed, while the commit, Gate evidence, and final post-release docs sync #143 remain retained history. PyPI/package-registry publication remains deferred.
 
 ## v0.6 execution status
 
@@ -302,7 +306,7 @@ Block-9 final head `5312c16cfd877a6fab1346c31e9f0a252be45f57` passed CI #447 / r
 
 ### v0.6 release completion — complete
 
-All nine v0.6 scientific blocks were synchronized through #184/#185 before release hardening. Gate A #186/#187, Gate B #188/#189, Gate C #192, GitHub Release #193, and final post-release documentation synchronization #195/#196 are complete. The released tag remains `v0.6.0 -> c7793b309f41d174c14534bd6d4acdacc2a57636`; distribution/runtime version is `0.6.0`; the public GitHub Release is published; PyPI remains deferred.
+All nine v0.6 scientific blocks were synchronized through #184/#185 before release hardening. Gate A #186/#187, Gate B #188/#189, Gate C #192, GitHub Release #193, and final post-release documentation synchronization #195/#196 are complete historical evidence. At that milestone, `v0.6.0` was reverse-verified on `c7793b309f41d174c14534bd6d4acdacc2a57636`, distribution/runtime version was `0.6.0`, and the GitHub Release was published. The old tag/Release artifact is no longer retained; PyPI remains deferred.
 
 ## v0.7 execution status
 
@@ -441,7 +445,7 @@ Block 5 adds reviewed raw-XAS and normalized-XANES operando adapters that remain
 
 Block 6 adds reviewed exact-grid XRD operando adapters that preserve released strictly increasing 2theta semantics, literal source arrays/order, and compatible intensity/normalization basis. Caller-window integration uses only retained measured points; observed peak position requires one unique retained maximum; caller-supplied compatible `PeakFitResult` center/FWHM consumers reuse reviewed lmfit model conventions without refitting; and heatmap/trace mapping reuses passive Block-3 renderers. No hidden normalization, interpolation/resampling, automatic peak fitting/discovery, phase identification/indexing/database matching, lattice/refinement/phase-fraction inference, or new runtime dependency is introduced. Final exact head `6ddd7331363293593741dccb8b74ec9ed0dea3e2` passed CI #650 / run `32933715614`; expected-head squash merge produced `b5503ea7b48ca421d5ddf49e35b74f8f4e24791f`; post-merge main CI #651 / run `32933955320` passed.
 
-No new runtime dependency, hidden alignment/interpolation/normalization, automatic peak/species/phase inference, v0.7.1, tag, release, or package-registry action was introduced. All six v0.8 scientific implementation blocks are complete. Release Gate A — full installed-wheel/public-API freeze and audit while distribution/runtime version remains `0.7.0` — is next.
+No new runtime dependency, hidden alignment/interpolation/normalization, automatic peak/species/phase inference, v0.7.1, tag, release, or package-registry action was introduced. All six v0.8 scientific implementation blocks are complete. No standalone v0.8 release-hardening/version/tag/publication cycle will follow, and no `v0.8.0` tag or GitHub Release is planned. This state is the scientific foundation carried into ongoing `0.9.0.dev0` development; current `main` remains at distribution/runtime version `0.7.0` until future development integration, and future GitHub Release publication is reserved for a later separately authorized maturity checkpoint.
 
 ## Mandatory development loop
 
@@ -465,7 +469,7 @@ prior-art/license refresh
 
 A feature is not complete because code exists or an old CI run passed. Completion requires the final exact head to satisfy the scientific contract, public API/compatibility expectations, CI, documentation and Issue acceptance criteria.
 
-For release-hardening/version gates, use the same exact-head discipline with release/API/packaging/version review as appropriate.
+Feature Pull Requests continue to require the same exact-head CI and review discipline. GitHub Release frequency is intentionally low: only when a maturity checkpoint Release is separately authorized should release hardening, version finalization, tag creation, and publication be opened as separately scoped work with appropriate release/API/packaging/version review. A development version or milestone number never implies permission to create a tag or GitHub Release; those remain explicit irreversible release actions.
 
 ## Prior-art rule
 
@@ -543,4 +547,4 @@ After each merged scientific Issue, update only documentation whose statements b
 - preceding Issue closure/completion;
 - version/tag/publication boundaries.
 
-The v0.7 release lifecycle and post-release central-state correction are complete. The dedicated v0.8 architecture checkpoint and all six scientific implementation blocks are complete through Issue/PR pairs #253/#254, #257/#258, #263/#264, #267/#268, #271/#272, and #275/#276 respectively; Block 6 merged at `b5503ea7b48ca421d5ddf49e35b74f8f4e24791f` and post-merge main CI #651 / run `32933955320` passed. Begin v0.8 release Gate A from a new scoped Issue and Draft PR: freeze and audit the full installed-wheel/public-API scope while retaining distribution/runtime version `0.7.0`. Preserve immutable `v0.7.0 -> e3062fc12c794f54c7b7613875ec73608a587a59`, the published public GitHub Release, and the PyPI-deferred boundary; Gate B version finalization is a later separate step.
+The v0.7 release lifecycle and post-release central-state correction are complete. The dedicated v0.8 architecture checkpoint and all six scientific implementation blocks are complete through Issue/PR pairs #253/#254, #257/#258, #263/#264, #267/#268, #271/#272, and #275/#276 respectively; Block 6 merged at `b5503ea7b48ca421d5ddf49e35b74f8f4e24791f` and post-merge main CI #651 / run `32933955320` passed. The standalone v0.8 Release path is retired: no v0.8 Gate cycle, `v0.8.0` tag, or GitHub Release is planned. Ongoing development proceeds on the `0.9.0.dev0` line while current `main` remains version `0.7.0` until future development integration. Preserve immutable `v0.7.0 -> e3062fc12c794f54c7b7613875ec73608a587a59` as the only retained stable GitHub Release/tag, preserve the PyPI-deferred boundary, and do not create any new tag or Release without a separately authorized maturity checkpoint.
