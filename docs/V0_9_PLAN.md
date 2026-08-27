@@ -616,7 +616,7 @@ reproducibility, and project-oriented data management. Its project/workspace and
 storage-layout machinery is intentionally deferred beyond v0.9.
 
 - Upstream: https://github.com/glotzerlab/signac
-- License verified from the upstream repository metadata at this checkpoint:
+- License verified from the upstream repository at this checkpoint:
   BSD 3-Clause License.
 - Decision: architecture concepts only; no dependency and no code reuse.
 
