@@ -9,17 +9,20 @@ formal GitHub release evidence and does not supersede GitHub main.
 - Local development branch: dev/v09-local
 - Local bootstrap anchor:
   b75891f0ff319b6f958eb3c1923e78a6411eee8e
-- Bootstrap parent / v0.8 Gate-B code candidate:
+- Original local bootstrap parent / retired v0.8 release-preparation checkpoint:
   c75ddb84c35bfe9d2ddd66a8823c99d773b66c29
+  This ancestor is retained only as local development provenance and is not part of the promoted v0.9 history.
 - Development version: 0.9.0.dev0
 
 The bootstrap anchor is a local development checkpoint. It is not described as
 a released, formally reviewed, or GitHub exact-head-CI-authorized SHA.
 
-Future formal v0.9 work must be replayed or cherry-picked onto the official
-post-v0.8 GitHub main, followed by complete validation on the resulting exact
-head. Local commit SHAs are portable development evidence, not presumed formal
-merge SHAs. The completed v0.8 scientific implementation history and the frozen docs/V0_8_PLAN.md remain untouched.
+Formal v0.9 integration is performed by replaying or cherry-picking the intended
+v0.9 commits onto the official post-v0.8 GitHub main, followed by complete
+validation on the resulting exact head. Local commit SHAs are portable
+development evidence, not presumed formal merge SHAs. The completed v0.8
+scientific implementation history and the frozen docs/V0_8_PLAN.md remain
+untouched.
 
 ## 2. v0.9 mission
 
@@ -35,7 +38,7 @@ Its primary scope is:
 - reproducible publication presets; and
 - a first presentation-only interactive FigureSpec editor prototype.
 
-v0.9 is not another scientific-algorithm expansion release. Existing v0.8
+v0.9 is not another scientific-algorithm expansion phase. Existing v0.8
 Raman, FTIR, XAS, XANES, and XRD implementations are consumed through their
 reviewed public contracts; they are not redesigned by the workflow layer.
 
@@ -682,7 +685,7 @@ and a fresh environment that:
 - confirms import comes from site-packages rather than repository src;
 - passes pip check;
 - runs the applicable installed smoke; and
-- runs the relevant cumulative release audit.
+- runs the relevant cumulative installed-wheel and public-API audit.
 
 Local Windows validation is diagnostic evidence only and must never be
 represented as final GitHub exact-head Ubuntu CI evidence.
@@ -694,7 +697,7 @@ All v0.9 implementation commits remain independently cherry-pickable.
 Expected local history:
 
 ~~~text
-v0.8 Gate-B code candidate
+retired local v0.8 release-preparation ancestor
 → v0.9 bootstrap
 → v0.9 architecture checkpoint
 → Block 1
