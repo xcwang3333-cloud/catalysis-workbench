@@ -12,7 +12,7 @@ import numpy as np
 
 import catalysis_workbench
 import catalysis_workbench.workflow as workflow
-from catalysis_workbench.core import Series
+from catalysis_workbench.core import Axis, Dataset, Series
 
 EXPECTED_VERSION = "0.9.0.dev0"
 EXPECTED_WORKFLOW_ALL = {
@@ -20,11 +20,18 @@ EXPECTED_WORKFLOW_ALL = {
     "BatchItemRecord",
     "BatchRunRecord",
     "OperationDescriptor",
+    "QAFinding",
+    "QAReport",
+    "QAStatus",
     "RecipeStep",
     "StepExecutionRecord",
     "WorkflowRecipe",
     "WorkflowRecipeError",
     "WorkflowRun",
+    "check_digest",
+    "check_finite_values",
+    "check_stable_keys",
+    "check_units",
     "dump_recipe",
     "execute_recipe",
     "get_operation_descriptor",
@@ -33,6 +40,7 @@ EXPECTED_WORKFLOW_ALL = {
     "recipe_from_dict",
     "recipe_to_dict",
     "run_batch",
+    "run_qa",
 }
 EXPECTED_OPERATION_IDS = (
     "catalysis.processing.crop.v1",
@@ -243,6 +251,54 @@ def main() -> None:
     assert batch.environment_evidence == {
         "catalysis_workbench_version": EXPECTED_VERSION
     }
+
+    qa_source = Series(
+        x=np.array([0.0, 0.5, 1.0]),
+        y=np.array([1.0, np.nan, 3.0]),
+        label="qa-source",
+        key="qa-source",
+        x_axis=Axis("potential", unit="V"),
+        y_axis=Axis("response"),
+    )
+    digest_finding = workflow.check_digest(
+        run.record_sha256,
+        run.record_sha256,
+        subject="workflow-run",
+    )
+    finite_x = workflow.check_finite_values(
+        qa_source,
+        components=("x",),
+        subject="qa-source",
+    )
+    finite_y = workflow.check_finite_values(
+        qa_source,
+        components=("y",),
+        subject="qa-source",
+    )
+    unit_x = workflow.check_units(
+        qa_source,
+        expected={"x": "V"},
+        subject="qa-source",
+    )
+    missing_unit = workflow.check_units(
+        qa_source,
+        expected={"y": None},
+        subject="qa-source",
+    )
+    stable_keys = workflow.check_stable_keys(
+        Dataset((qa_source,)),
+        subject="qa-source",
+    )
+    qa_report = workflow.run_qa(
+        (digest_finding, finite_x, unit_x, missing_unit, stable_keys)
+    )
+    assert isinstance(digest_finding, workflow.QAFinding)
+    assert isinstance(qa_report, workflow.QAReport)
+    assert qa_report.status is workflow.QAStatus.PASS
+    assert finite_y.status is workflow.QAStatus.FAIL
+    assert len(digest_finding.finding_sha256) == 64
+    assert len(qa_report.report_sha256) == 64
+    assert workflow.run_qa((finite_y,)).status is workflow.QAStatus.FAIL
 
     for optional_name in ("pymatgen", "pyvista", "vtk"):
         assert optional_name not in sys.modules
