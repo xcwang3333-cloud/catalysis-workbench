@@ -539,9 +539,10 @@ src/catalysis_workbench/visualization/
     editor.py
 ~~~
 
-Current promoted state: _canonical_json.py, workflow/__init__.py, and
-workflow/recipe.py are implemented for Block 1. The remaining files shown above
-remain planned for Blocks 2-6.
+Current promoted state: _canonical_json.py and workflow/__init__.py,
+workflow/recipe.py, workflow/registry.py, workflow/_adapters.py, and
+workflow/execution.py are implemented through Block 2. workflow/batch.py,
+workflow/qa.py, and the visualization files remain planned for Blocks 3-6.
 
 Expected test families are:
 
@@ -615,7 +616,7 @@ reproducibility, and project-oriented data management. Its project/workspace and
 storage-layout machinery is intentionally deferred beyond v0.9.
 
 - Upstream: https://github.com/glotzerlab/signac
-- License verified from the upstream repository at this checkpoint:
+- License verified from the upstream repository metadata at this checkpoint:
   BSD 3-Clause License.
 - Decision: architecture concepts only; no dependency and no code reuse.
 
