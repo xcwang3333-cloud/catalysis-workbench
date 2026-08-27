@@ -163,6 +163,18 @@ def test_units_check_only_evaluates_explicit_expectations() -> None:
     )
 
 
+def test_units_check_is_mapping_order_invariant() -> None:
+    source = _series(x_unit="V", y_unit="mA")
+    x_first = check_units(source, expected={"x": "mV", "y": "A"})
+    y_first = check_units(source, expected={"y": "A", "x": "mV"})
+
+    assert x_first.finding_sha256 == y_first.finding_sha256
+    assert tuple(item["component"] for item in x_first.evidence["violations"]) == (
+        "x",
+        "y",
+    )
+
+
 def test_units_check_is_exact_and_never_converts_units() -> None:
     source = _series(y_unit="mA")
     finding = check_units(source, expected={"y": "A"})
