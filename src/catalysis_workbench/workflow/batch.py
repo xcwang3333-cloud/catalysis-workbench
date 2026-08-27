@@ -5,7 +5,6 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from types import MappingProxyType
-from typing import Any
 
 from catalysis_workbench import __version__
 from catalysis_workbench._canonical_json import (
