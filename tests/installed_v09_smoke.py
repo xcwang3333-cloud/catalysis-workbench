@@ -48,10 +48,16 @@ EXPECTED_OPERATION_IDS = (
     "catalysis.processing.offset.v1",
     "catalysis.processing.normalize.v1",
 )
-PUBLICATION_PRESET_NAME = "catalysis.publication.single-column.v1"
-PUBLICATION_FIGURE_SPEC_SHA256 = (
-    "9022ff993c9ad8c8f7c0ea80111dda2fe9d31006c4f98bffdbb724dc165a0d5f"
+PUBLICATION_PRESET_NAMES = (
+    "catalysis.publication.standard.v1",
+    "catalysis.publication.compact.v1",
+    "catalysis.publication.wide.v1",
 )
+PUBLICATION_FIGURE_SPEC_SHA256 = {
+    PUBLICATION_PRESET_NAMES[0]: "9022ff993c9ad8c8f7c0ea80111dda2fe9d31006c4f98bffdbb724dc165a0d5f",
+    PUBLICATION_PRESET_NAMES[1]: "15daf234e7662e4af13bb7cbd61c51b1559001e7ed11d291a01b0aa26965edc6",
+    PUBLICATION_PRESET_NAMES[2]: "f86f76fdd962c906a629f75a0c84b006ebbbdf7aa0f0bd3b687f5cac79882257",
+}
 SOURCE_TREE = Path(__file__).resolve().parents[1] / "src"
 
 
@@ -96,20 +102,21 @@ def main() -> None:
     assert "catalysis_workbench.processing" not in sys.modules
 
     publication_names = visualization.list_publication_presets()
-    assert publication_names == (PUBLICATION_PRESET_NAME,)
-    publication_spec = visualization.get_publication_preset(PUBLICATION_PRESET_NAME)
-    assert isinstance(publication_spec, visualization.FigureSpec)
-    publication_manifest = visualization.publication_preset_manifest(
-        PUBLICATION_PRESET_NAME
-    )
-    assert publication_manifest["manifest_schema_version"] == 1
-    assert publication_manifest["preset_name"] == PUBLICATION_PRESET_NAME
-    assert publication_manifest["asset_version"] == 1
-    assert publication_manifest["figure_spec"] == publication_spec.to_dict()
-    assert (
-        publication_manifest["figure_spec_sha256"]
-        == PUBLICATION_FIGURE_SPEC_SHA256
-    )
+    assert publication_names == PUBLICATION_PRESET_NAMES
+    for publication_name in PUBLICATION_PRESET_NAMES:
+        publication_spec = visualization.get_publication_preset(publication_name)
+        assert isinstance(publication_spec, visualization.FigureSpec)
+        publication_manifest = visualization.publication_preset_manifest(
+            publication_name
+        )
+        assert publication_manifest["manifest_schema_version"] == 1
+        assert publication_manifest["preset_name"] == publication_name
+        assert publication_manifest["asset_version"] == 1
+        assert publication_manifest["figure_spec"] == publication_spec.to_dict()
+        assert (
+            publication_manifest["figure_spec_sha256"]
+            == PUBLICATION_FIGURE_SPEC_SHA256[publication_name]
+        )
 
     first = _step(
         "crop",
