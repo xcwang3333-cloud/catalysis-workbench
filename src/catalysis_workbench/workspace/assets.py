@@ -72,7 +72,19 @@ def _missing_parent_directories(root: Path, destination: Path) -> tuple[Path, ..
     return tuple(reversed(missing))
 
 
-def _copy_selected_file(source: Path, destination: Path, root: Path) -> str:
+def _remove_created_directories(created_directories: tuple[Path, ...]) -> None:
+    for directory in reversed(created_directories):
+        try:
+            directory.rmdir()
+        except OSError:
+            break
+
+
+def _copy_selected_file(
+    source: Path,
+    destination: Path,
+    root: Path,
+) -> tuple[str, tuple[Path, ...]]:
     if destination.exists() or destination.is_symlink():
         raise WorkspaceError(f"workspace copy destination already exists: {destination!s}")
 
@@ -94,16 +106,20 @@ def _copy_selected_file(source: Path, destination: Path, root: Path) -> str:
                 digest.update(chunk)
             destination_stream.flush()
             os.fsync(destination_stream.fileno())
-        return digest.hexdigest()
+        return digest.hexdigest(), tuple(created_directories)
     except BaseException:
         if created_file:
             destination.unlink(missing_ok=True)
-        for directory in reversed(created_directories):
-            try:
-                directory.rmdir()
-            except OSError:
-                break
+        _remove_created_directories(tuple(created_directories))
         raise
+
+
+def _rollback_copy(
+    destination: Path,
+    created_directories: tuple[Path, ...],
+) -> None:
+    destination.unlink(missing_ok=True)
+    _remove_created_directories(created_directories)
 
 
 def import_asset(
@@ -157,28 +173,25 @@ def import_asset(
             f"workspace copy destination already exists: {serialized_destination!r}"
         )
 
-    digest = _copy_selected_file(source_path, destination_path, root_path)
-    asset = WorkspaceAsset(
-        asset_id=checked_asset_id,
-        asset_type=checked_asset_type,
-        path=serialized_destination,
-        policy="copy",
-        content_sha256=digest,
-    )
-    updated = WorkspaceManifest(
-        schema_version=manifest.schema_version,
-        assets=(*manifest.assets, asset),
+    digest, created_directories = _copy_selected_file(
+        source_path,
+        destination_path,
+        root_path,
     )
     try:
+        asset = WorkspaceAsset(
+            asset_id=checked_asset_id,
+            asset_type=checked_asset_type,
+            path=serialized_destination,
+            policy="copy",
+            content_sha256=digest,
+        )
+        updated = WorkspaceManifest(
+            schema_version=manifest.schema_version,
+            assets=(*manifest.assets, asset),
+        )
         save_workspace(updated, root_path, overwrite=True)
     except BaseException:
-        destination_path.unlink(missing_ok=True)
-        parent = destination_path.parent
-        while parent != root_path:
-            try:
-                parent.rmdir()
-            except OSError:
-                break
-            parent = parent.parent
+        _rollback_copy(destination_path, created_directories)
         raise
     return updated
