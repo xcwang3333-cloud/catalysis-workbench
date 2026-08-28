@@ -84,6 +84,16 @@ def _string_mapping(value: object, *, label: str) -> Mapping[str, str]:
     return MappingProxyType(detached)
 
 
+def _sha256_mapping(value: object, *, label: str) -> Mapping[str, str]:
+    if not isinstance(value, Mapping):
+        raise WorkspaceError(f"{label} must be a mapping")
+    detached: dict[str, str] = {}
+    for key, item in value.items():
+        checked_key = _identifier(key, label=f"{label} key")
+        detached[checked_key] = _sha256(item, label=f"{label}[{checked_key!r}]")
+    return MappingProxyType(detached)
+
+
 def _sha256(value: object, *, label: str) -> str:
     if type(value) is not str or len(value) != 64:
         raise WorkspaceError(f"{label} must be a 64-character lowercase SHA-256")
@@ -101,6 +111,8 @@ class RecipeComposition:
     recipe_sha256: str
     input_assets: Mapping[str, str]
     output_assets: Mapping[str, str]
+    input_asset_sha256: Mapping[str, str]
+    output_asset_sha256: Mapping[str, str]
     composition_sha256: str = field(init=False)
 
     def __post_init__(self) -> None:
@@ -109,6 +121,16 @@ class RecipeComposition:
         recipe_sha256 = _sha256(self.recipe_sha256, label="recipe_sha256")
         input_assets = _string_mapping(self.input_assets, label="input_assets")
         output_assets = _string_mapping(self.output_assets, label="output_assets")
+        input_asset_sha256 = _sha256_mapping(
+            self.input_asset_sha256, label="input_asset_sha256"
+        )
+        output_asset_sha256 = _sha256_mapping(
+            self.output_asset_sha256, label="output_asset_sha256"
+        )
+        if set(input_asset_sha256) != set(input_assets):
+            raise WorkspaceError("input_asset_sha256 must exactly match input_assets keys")
+        if set(output_asset_sha256) != set(output_assets):
+            raise WorkspaceError("output_asset_sha256 must exactly match output_assets keys")
         digest = canonical_json_sha256(
             {
                 "recipe_composition_schema_version": 1,
@@ -117,6 +139,8 @@ class RecipeComposition:
                 "recipe_sha256": recipe_sha256,
                 "input_assets": dict(input_assets),
                 "output_assets": dict(output_assets),
+                "input_asset_sha256": dict(input_asset_sha256),
+                "output_asset_sha256": dict(output_asset_sha256),
             }
         )
         object.__setattr__(self, "composition_id", composition_id)
@@ -124,6 +148,8 @@ class RecipeComposition:
         object.__setattr__(self, "recipe_sha256", recipe_sha256)
         object.__setattr__(self, "input_assets", input_assets)
         object.__setattr__(self, "output_assets", output_assets)
+        object.__setattr__(self, "input_asset_sha256", input_asset_sha256)
+        object.__setattr__(self, "output_asset_sha256", output_asset_sha256)
         object.__setattr__(self, "composition_sha256", digest)
 
 
@@ -139,6 +165,7 @@ class FigureComposition:
     preset_bundle_asset_id: str | None = None
     preset_bundle_sha256: str | None = None
     evidence_record_ids: Sequence[str] = ()
+    evidence_record_sha256: Mapping[str, str] = field(default_factory=dict)
     composition_sha256: str = field(init=False)
 
     def __post_init__(self) -> None:
@@ -169,6 +196,13 @@ class FigureComposition:
         evidence_record_ids = _identifiers(
             self.evidence_record_ids, label="evidence_record_ids"
         )
+        evidence_record_sha256 = _sha256_mapping(
+            self.evidence_record_sha256, label="evidence_record_sha256"
+        )
+        if set(evidence_record_sha256) != set(evidence_record_ids):
+            raise WorkspaceError(
+                "evidence_record_sha256 must exactly match evidence_record_ids"
+            )
         digest = canonical_json_sha256(
             {
                 "figure_composition_schema_version": 1,
@@ -180,6 +214,7 @@ class FigureComposition:
                 "preset_bundle_asset_id": preset_asset,
                 "preset_bundle_sha256": preset_digest,
                 "evidence_record_ids": list(evidence_record_ids),
+                "evidence_record_sha256": dict(evidence_record_sha256),
             }
         )
         object.__setattr__(self, "composition_id", composition_id)
@@ -194,6 +229,7 @@ class FigureComposition:
         object.__setattr__(self, "preset_bundle_asset_id", preset_asset)
         object.__setattr__(self, "preset_bundle_sha256", preset_digest)
         object.__setattr__(self, "evidence_record_ids", evidence_record_ids)
+        object.__setattr__(self, "evidence_record_sha256", evidence_record_sha256)
         object.__setattr__(self, "composition_sha256", digest)
 
 
@@ -262,6 +298,8 @@ _RECIPE_FIELDS = frozenset(
         "recipe_sha256",
         "input_assets",
         "output_assets",
+        "input_asset_sha256",
+        "output_asset_sha256",
     }
 )
 _FIGURE_FIELDS = frozenset(
@@ -274,6 +312,7 @@ _FIGURE_FIELDS = frozenset(
         "preset_bundle_asset_id",
         "preset_bundle_sha256",
         "evidence_record_ids",
+        "evidence_record_sha256",
     }
 )
 _COMPOSITION_FIELDS = frozenset({"schema_version", "recipes", "figures"})
@@ -300,6 +339,8 @@ def _recipe_to_plain_dict(value: RecipeComposition) -> dict[str, object]:
         "recipe_sha256": value.recipe_sha256,
         "input_assets": dict(value.input_assets),
         "output_assets": dict(value.output_assets),
+        "input_asset_sha256": dict(value.input_asset_sha256),
+        "output_asset_sha256": dict(value.output_asset_sha256),
     }
 
 
@@ -313,6 +354,7 @@ def _figure_to_plain_dict(value: FigureComposition) -> dict[str, object]:
         "preset_bundle_asset_id": value.preset_bundle_asset_id,
         "preset_bundle_sha256": value.preset_bundle_sha256,
         "evidence_record_ids": list(value.evidence_record_ids),
+        "evidence_record_sha256": dict(value.evidence_record_sha256),
     }
 
 
@@ -357,6 +399,8 @@ def _composition_from_dict(value: object) -> WorkspaceComposition:
                 recipe_sha256=item["recipe_sha256"],
                 input_assets=item["input_assets"],
                 output_assets=item["output_assets"],
+                input_asset_sha256=item["input_asset_sha256"],
+                output_asset_sha256=item["output_asset_sha256"],
             )
         )
 
@@ -381,6 +425,7 @@ def _composition_from_dict(value: object) -> WorkspaceComposition:
                 preset_bundle_asset_id=item["preset_bundle_asset_id"],
                 preset_bundle_sha256=item["preset_bundle_sha256"],
                 evidence_record_ids=item["evidence_record_ids"],
+                evidence_record_sha256=item["evidence_record_sha256"],
             )
         )
 
@@ -438,6 +483,18 @@ def _verified_copy_asset(
             f"asset {asset.asset_id!r} content digest does not match workspace catalog"
         )
     return asset, path
+
+
+def _asset_content_identity(root: Path, asset_id: str) -> str:
+    asset = _asset_by_id(root, asset_id)
+    digest = asset.content_sha256
+    if digest is None:
+        raise WorkspaceError(
+            f"asset {asset.asset_id!r} requires content_sha256 for exact composition"
+        )
+    if asset.policy == "copy":
+        _verified_copy_asset(root, asset_id)
+    return digest
 
 
 def _snapshot_asset(
@@ -642,16 +699,30 @@ def _validate_recipe_composition(root: Path, item: RecipeComposition) -> None:
             f"recipe composition {item.composition_id!r} output bindings "
             "must exactly match recipe outputs"
         )
-    for asset_id in (*item.input_assets.values(), *item.output_assets.values()):
-        _asset_by_id(root, asset_id)
+    for name, asset_id in item.input_assets.items():
+        observed = _asset_content_identity(root, asset_id)
+        if observed != item.input_asset_sha256[name]:
+            raise WorkspaceError(
+                f"recipe composition {item.composition_id!r} input asset digest mismatch: "
+                f"{name!r}"
+            )
+    for name, asset_id in item.output_assets.items():
+        observed = _asset_content_identity(root, asset_id)
+        if observed != item.output_asset_sha256[name]:
+            raise WorkspaceError(
+                f"recipe composition {item.composition_id!r} output asset digest mismatch: "
+                f"{name!r}"
+            )
 
 
-def _evidence_ids(root: Path) -> set[str]:
+def _evidence_identities(root: Path) -> Mapping[str, str]:
     path = root / "workspace-evidence.json"
     if not path.exists() and not path.is_symlink():
-        return set()
+        return MappingProxyType({})
     ledger = open_evidence_ledger(root)
-    return {record.record_id for record in ledger.records}
+    return MappingProxyType(
+        {record.record_id: record.record_sha256 for record in ledger.records}
+    )
 
 
 def _validate_figure_composition(root: Path, item: FigureComposition) -> None:
@@ -681,13 +752,19 @@ def _validate_figure_composition(root: Path, item: FigureComposition) -> None:
                 f"figure composition {item.composition_id!r} preset digest mismatch"
             )
 
-    available_evidence = _evidence_ids(root)
-    missing = sorted(set(item.evidence_record_ids) - available_evidence)
+    available_evidence = _evidence_identities(root)
+    missing = sorted(set(item.evidence_record_ids) - set(available_evidence))
     if missing:
         raise WorkspaceError(
             f"figure composition {item.composition_id!r} references unknown "
             f"evidence records: {missing!r}"
         )
+    for record_id in item.evidence_record_ids:
+        if available_evidence[record_id] != item.evidence_record_sha256[record_id]:
+            raise WorkspaceError(
+                f"figure composition {item.composition_id!r} evidence digest mismatch: "
+                f"{record_id!r}"
+            )
 
 
 def _validate_composition(value: WorkspaceComposition, root: Path) -> None:
@@ -817,12 +894,22 @@ def bind_recipe_assets(
 
     ordered_inputs = {name: input_assets[name] for name in recipe.inputs}
     ordered_outputs = {name: output_assets[name] for name in recipe.outputs}
+    input_digests = {
+        name: _asset_content_identity(root_path, ordered_inputs[name])
+        for name in recipe.inputs
+    }
+    output_digests = {
+        name: _asset_content_identity(root_path, ordered_outputs[name])
+        for name in recipe.outputs
+    }
     item = RecipeComposition(
         composition_id=composition_id,
         recipe_asset_id=recipe_asset_id,
         recipe_sha256=recipe.recipe_sha256,
         input_assets=ordered_inputs,
         output_assets=ordered_outputs,
+        input_asset_sha256=input_digests,
+        output_asset_sha256=output_digests,
     )
     _validate_recipe_composition(root_path, item)
     updated = _replace_or_append_recipe(composition, item)
@@ -856,6 +943,19 @@ def record_figure_export(
         bundle = load_preset_bundle_asset(root_path, preset_bundle_asset_id)
         preset_sha = bundle.bundle_sha256
 
+    checked_evidence_ids = _identifiers(
+        evidence_record_ids, label="evidence_record_ids"
+    )
+    available_evidence = _evidence_identities(root_path)
+    missing_evidence = sorted(set(checked_evidence_ids) - set(available_evidence))
+    if missing_evidence:
+        raise WorkspaceError(
+            f"figure composition references unknown evidence records: {missing_evidence!r}"
+        )
+    evidence_digests = {
+        record_id: available_evidence[record_id] for record_id in checked_evidence_ids
+    }
+
     item = FigureComposition(
         composition_id=composition_id,
         figure_spec_asset_id=figure_spec_asset_id,
@@ -864,7 +964,8 @@ def record_figure_export(
         exported_figure_sha256=export_sha,
         preset_bundle_asset_id=preset_bundle_asset_id,
         preset_bundle_sha256=preset_sha,
-        evidence_record_ids=evidence_record_ids,
+        evidence_record_ids=checked_evidence_ids,
+        evidence_record_sha256=evidence_digests,
     )
     _validate_figure_composition(root_path, item)
     updated = _replace_or_append_figure(composition, item)
