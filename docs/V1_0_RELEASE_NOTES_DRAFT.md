@@ -73,7 +73,8 @@ The Stable 1.0 Gate-A process adds:
 - Linux/Windows/macOS exact-wheel installation checks on Python 3.11 and 3.14;
 - isolated `[desktop]` installation/import validation on the same matrix;
 - wheel + sdist metadata validation and sdist-to-wheel rebuild checks;
-- release-oriented package metadata and explicit release procedure documentation.
+- release-oriented package metadata and explicit release procedure documentation;
+- BSD 3-Clause project licensing with standardized SPDX and packaged license-file metadata.
 
 ## Intentional non-goals
 
@@ -90,4 +91,4 @@ v1.0 does not introduce:
 
 ## Release status
 
-This document remains a draft while Stable 1.0 maturity gates are open. The project license, final `1.0.0` version candidate, exact tag target, GitHub Release publication, and PyPI/package-registry publication each require their defined review/authorization gate.
+This document remains a draft while Stable 1.0 maturity gates are open. The project license is BSD-3-Clause. The final `1.0.0` version candidate, exact tag target, GitHub Release publication, and PyPI/package-registry publication each remain subject to their defined review and authorization gates.

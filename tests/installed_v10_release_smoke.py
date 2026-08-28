@@ -125,6 +125,9 @@ def _assert_public_exports() -> None:
 def _assert_base_package_metadata() -> None:
     project = metadata("catalysis-workbench")
     assert project["Requires-Python"] == ">=3.11"
+    assert project["License-Expression"] == "BSD-3-Clause"
+    assert "LICENSE" in set(project.get_all("License-File") or ())
+
     extras = set(project.get_all("Provides-Extra") or ())
     assert {"desktop", "dev", "structure", "volumetric3d"}.issubset(extras)
 

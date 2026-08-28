@@ -60,6 +60,8 @@ If a future project phase distributes a standalone application that bundles Qt/P
 
 Stable 1.0 Gate A does not authorize that distribution model.
 
-## Project license remains separate
+## Project license
 
-The repository's own project license has not yet been selected. A root `LICENSE` file and project SPDX metadata require an explicit owner decision and are a blocking Gate-A item. Choosing a project license does not replace or override third-party dependency licenses.
+The repository owner selected the BSD 3-Clause License for CatalysisWorkbench during Stable 1.0 Gate A. The canonical project terms are recorded in the root [`LICENSE`](../LICENSE) file.
+
+Python distribution metadata uses the SPDX expression `BSD-3-Clause` and declares `LICENSE` as a distributed license file. This project-license choice applies to CatalysisWorkbench's own distribution; it does not replace, relicense, or override third-party dependency licenses, including the licenses applicable to Qt/PySide6.

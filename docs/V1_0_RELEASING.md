@@ -33,6 +33,7 @@ Gate A must establish:
 - wheel and sdist build/metadata validation without publication;
 - release-oriented package metadata that does not invent legal or author information;
 - a documented desktop/Qt distribution boundary;
+- a reviewed project license and matching distribution metadata;
 - draft v1.0 release notes;
 - final public-API and compatibility review.
 
@@ -60,13 +61,13 @@ A GitHub Release from an already verified `v1.0.0` tag is a separate publication
 
 Registry publication is a separate decision from GitHub Release publication. Package-name availability, credentials, provenance/trusted-publishing configuration, final artifact hashes and the exact registry target must be checked immediately before any publication attempt.
 
-## Explicit project-license blocker
+## Project license decision
 
-The public repository currently has no root `LICENSE` file and GitHub reports no detected project license. Gate A must not silently choose a license.
+The repository owner selected the BSD 3-Clause License for CatalysisWorkbench during Stable 1.0 Gate A. The root [`LICENSE`](../LICENSE) file is the canonical project license text.
 
-Before Gate A can be promoted to Ready, the repository owner must explicitly choose the project license. The resulting change must then be reviewed as part of the exact Gate-A head, including package metadata and distribution implications.
+Python distribution metadata must declare the SPDX expression `BSD-3-Clause` and include `LICENSE` through the standardized `license-files` metadata. Exact-head Gate-A CI must validate the resulting `License-Expression` and `License-File` core metadata before promotion.
 
-The project-license choice is separate from third-party dependency licenses. See [`DESKTOP_DISTRIBUTION.md`](DESKTOP_DISTRIBUTION.md) for the optional Qt/PySide6 boundary.
+The project license is separate from third-party dependency licenses. See [`DESKTOP_DISTRIBUTION.md`](DESKTOP_DISTRIBUTION.md) for the optional Qt/PySide6 boundary.
 
 ## Public API freeze
 
