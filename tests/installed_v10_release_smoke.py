@@ -54,6 +54,12 @@ REVIEWED_INSTALLED_SMOKES = (
     "installed_v10_block5_smoke.py",
     "installed_v10_block6_smoke.py",
 )
+EXPECTED_PROJECT_URLS = {
+    "Homepage": "https://github.com/xcwang3333-cloud/catalysis-workbench",
+    "Repository": "https://github.com/xcwang3333-cloud/catalysis-workbench",
+    "Issues": "https://github.com/xcwang3333-cloud/catalysis-workbench/issues",
+    "Changelog": "https://github.com/xcwang3333-cloud/catalysis-workbench/blob/main/CHANGELOG.md",
+}
 
 
 def _assert_installed_import() -> None:
@@ -117,6 +123,27 @@ def _assert_base_package_metadata() -> None:
     assert project["Requires-Python"] == ">=3.11"
     extras = set(project.get_all("Provides-Extra") or ())
     assert {"desktop", "dev", "structure", "volumetric3d"}.issubset(extras)
+
+    classifiers = set(project.get_all("Classifier") or ())
+    for classifier in (
+        "Development Status :: 4 - Beta",
+        "Intended Audience :: Science/Research",
+        "Topic :: Scientific/Engineering :: Chemistry",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.14",
+        "Operating System :: OS Independent",
+    ):
+        assert classifier in classifiers, classifier
+
+    urls: dict[str, str] = {}
+    for item in project.get_all("Project-URL") or ():
+        label, separator, url = item.partition(", ")
+        assert separator, item
+        urls[label] = url
+    assert urls == EXPECTED_PROJECT_URLS, urls
+
+    keywords = {item.strip() for item in (project["Keywords"] or "").split(",")}
+    assert {"catalysis", "reproducibility", "visualization"}.issubset(keywords)
 
 
 def _assert_optional_backends_are_lazy() -> None:
