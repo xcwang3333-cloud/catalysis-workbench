@@ -29,8 +29,8 @@ def _assert_installed_import() -> None:
 
 def main() -> None:
     _assert_installed_import()
-    assert catalysis_workbench.__version__ == "1.0.0.dev0"
-    assert distribution_version("catalysis-workbench") == "1.0.0.dev0"
+    assert catalysis_workbench.__version__ == "1.0.0"
+    assert distribution_version("catalysis-workbench") == "1.0.0"
     assert assets.__all__ == ["import_asset"]
 
     forbidden = [
@@ -41,6 +41,7 @@ def main() -> None:
         or name == "pyvista"
         or name.startswith("pyvista.")
         or name == "vtk"
+        or name.startswith("vtk.")
         or name.startswith("vtkmodules.")
         or name == "pymatgen"
         or name.startswith("pymatgen.")
