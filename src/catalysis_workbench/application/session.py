@@ -15,10 +15,8 @@ from catalysis_workbench.workflow import (
     execute_recipe,
     run_qa,
 )
-from catalysis_workbench.workspace import (
-    WorkspaceManifest,
-    open_workspace as _open_workspace,
-)
+from catalysis_workbench.workspace import WorkspaceManifest
+from catalysis_workbench.workspace import open_workspace as _open_workspace
 from catalysis_workbench.workspace.composition import (
     load_figure_spec_asset,
     load_recipe_asset,
