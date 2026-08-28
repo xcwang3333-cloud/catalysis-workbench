@@ -1,0 +1,201 @@
+"""GUI-neutral workspace actions used by desktop and other application frontends."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, replace
+from pathlib import Path
+
+from catalysis_workbench.workspace import WorkspaceManifest, create_workspace, open_workspace
+from catalysis_workbench.workspace.assets import import_asset
+from catalysis_workbench.workspace.evidence import EvidenceLedger, open_evidence_ledger
+
+from .session import ApplicationError, ApplicationSession, ApplicationState
+
+
+@dataclass(frozen=True, slots=True)
+class WorkspaceSnapshot:
+    """Read-only workspace/catalog/evidence snapshot for presentation layers."""
+
+    manifest: WorkspaceManifest
+    evidence: EvidenceLedger | None
+
+
+def _open_root(session: ApplicationSession) -> Path:
+    root = session.state.workspace_root
+    if root is None:
+        raise ApplicationError("no workspace is open")
+    return root
+
+
+def _validate_discard_policy(
+    session: ApplicationSession,
+    *,
+    discard_edits: bool,
+    action: str,
+) -> None:
+    if type(discard_edits) is not bool:
+        raise TypeError("discard_edits must be a bool")
+    state = session.state
+    if (state.recipe_dirty or state.figure_spec_dirty) and not discard_edits:
+        raise ApplicationError(
+            f"save or explicitly discard dirty recipe/FigureSpec state before {action}"
+        )
+
+
+def _advance_after_exact_manifest(
+    session: ApplicationSession,
+    expected_sha256: str,
+) -> ApplicationState:
+    """Advance only after two exact manifest reads without committing on mismatch."""
+
+    root = _open_root(session)
+    before = session.state
+    observed = open_workspace(root)
+    if observed.manifest_sha256 != expected_sha256:
+        raise ApplicationError(
+            "workspace changed concurrently with asset import; refresh explicitly"
+        )
+
+    candidate = replace(
+        before,
+        workspace_manifest_sha256=expected_sha256,
+        last_workflow_run=None,
+        last_qa_report=None,
+        revision=before.revision + 1,
+    )
+    confirmed = open_workspace(root)
+    if confirmed.manifest_sha256 != expected_sha256:
+        raise ApplicationError(
+            "workspace changed concurrently with asset import; refresh explicitly"
+        )
+
+    # Package-internal commit: candidate state is assigned only after both exact reads.
+    session._state = candidate
+    return candidate
+
+
+def create_workspace_in_session(
+    session: ApplicationSession,
+    root: str | Path,
+    *,
+    discard_edits: bool = False,
+) -> ApplicationState:
+    """Create one explicit workspace and open it after an explicit dirty-state policy."""
+
+    if not isinstance(session, ApplicationSession):
+        raise TypeError("session must be an ApplicationSession")
+    _validate_discard_policy(
+        session,
+        discard_edits=discard_edits,
+        action="creating a workspace",
+    )
+    create_workspace(root)
+    return session.open_workspace(root)
+
+
+def open_workspace_in_session(
+    session: ApplicationSession,
+    root: str | Path,
+    *,
+    discard_edits: bool = False,
+) -> ApplicationState:
+    """Open one explicit workspace without silently discarding in-memory edits."""
+
+    if not isinstance(session, ApplicationSession):
+        raise TypeError("session must be an ApplicationSession")
+    _validate_discard_policy(
+        session,
+        discard_edits=discard_edits,
+        action="opening another workspace",
+    )
+    return session.open_workspace(root)
+
+
+def close_workspace_in_session(
+    session: ApplicationSession,
+    *,
+    discard_edits: bool = False,
+) -> ApplicationState:
+    """Close the current workspace without silently discarding in-memory edits."""
+
+    if not isinstance(session, ApplicationSession):
+        raise TypeError("session must be an ApplicationSession")
+    _validate_discard_policy(
+        session,
+        discard_edits=discard_edits,
+        action="closing the workspace",
+    )
+    return session.close_workspace()
+
+
+def import_asset_in_session(
+    session: ApplicationSession,
+    source: str | Path,
+    *,
+    asset_id: str,
+    asset_type: str,
+    policy: str,
+    destination: str | None = None,
+) -> ApplicationState:
+    """Import one explicit asset and advance session state only to that exact manifest."""
+
+    if not isinstance(session, ApplicationSession):
+        raise TypeError("session must be an ApplicationSession")
+    state = session.state
+    if state.recipe_dirty or state.figure_spec_dirty:
+        raise ApplicationError(
+            "save or discard dirty recipe/FigureSpec state before importing an asset"
+        )
+    root = _open_root(session)
+    before = open_workspace(root)
+    if before.manifest_sha256 != state.workspace_manifest_sha256:
+        raise ApplicationError(
+            "workspace changed outside the application session; refresh explicitly"
+        )
+
+    updated = import_asset(
+        root,
+        source,
+        asset_id=asset_id,
+        asset_type=asset_type,
+        policy=policy,
+        destination=destination,
+    )
+    if (
+        len(updated.assets) != len(before.assets) + 1
+        or tuple(updated.assets[:-1]) != tuple(before.assets)
+    ):
+        raise ApplicationError(
+            "workspace changed concurrently with asset import; refresh explicitly"
+        )
+
+    observed = open_workspace(root)
+    if observed.manifest_sha256 != updated.manifest_sha256:
+        raise ApplicationError(
+            "workspace changed concurrently with asset import; refresh explicitly"
+        )
+    return _advance_after_exact_manifest(session, updated.manifest_sha256)
+
+
+def workspace_snapshot(session: ApplicationSession) -> WorkspaceSnapshot:
+    """Return a presentation-safe snapshot without executing or mutating scientific state."""
+
+    if not isinstance(session, ApplicationSession):
+        raise TypeError("session must be an ApplicationSession")
+    root = _open_root(session)
+    state = session.state
+    manifest = open_workspace(root)
+    if manifest.manifest_sha256 != state.workspace_manifest_sha256:
+        raise ApplicationError(
+            "workspace changed outside the application session; refresh explicitly"
+        )
+    try:
+        evidence = open_evidence_ledger(root)
+    except FileNotFoundError:
+        evidence = None
+    observed = open_workspace(root)
+    if observed.manifest_sha256 != manifest.manifest_sha256:
+        raise ApplicationError(
+            "workspace changed while the presentation snapshot was being read"
+        )
+    return WorkspaceSnapshot(manifest=manifest, evidence=evidence)

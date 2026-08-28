@@ -2,624 +2,386 @@
 
 ## 1. Status and authority
 
-This document defines the proposed v1.0 development architecture after completion
-of all six v0.9 implementation Blocks. It is an architecture/scope contract, not
-a release artifact, and does not itself authorize a merge, tag, GitHub Release,
-or package-registry publication.
+This document is the architecture/scope contract for the v1.0 local-workbench development line. It does not itself authorize a merge, stable version, Git tag, GitHub Release, branch deletion, or package-registry publication.
 
-Architecture-planning baseline:
+Architecture checkpoint:
 
-- Repository: `xcwang3333-cloud/catalysis-workbench`
-- Default branch: `main`
-- Exact baseline SHA: `5feec0520c36f418a6d0b84bfe8fd7c331916563`
-- Baseline development version: `0.9.0.dev0`
-- v0.9 Blocks 1-6: complete on `main`
-- Retained stable GitHub Release/tag: `v0.7.0`
-- v0.8/v0.9 routine tag or GitHub Release: not planned
-- PyPI/package-registry publication: separately gated and currently deferred
+- repository: `xcwang3333-cloud/catalysis-workbench`;
+- architecture PR: #287;
+- architecture merge: `00e1d44d1a42df2a7889e21b6d116d26513020ba`;
+- development identity after Block 1: `1.0.0.dev0`;
+- retained stable GitHub Release/tag: `v0.7.0`;
+- routine v0.8/v0.9 tag/GitHub Release: not planned;
+- stable `1.0.0`, v1.0 tag, GitHub Release and PyPI publication: separately gated.
 
-GitHub remote state remains the formal operational source of truth. If this plan
-later drifts from merged code, exact-head CI, PR state, or an explicit user
-decision, live repository state wins and the document must be corrected.
+GitHub remote state remains the operational source of truth. Final exact-head implementation/CI/review evidence belongs to the applicable Pull Request.
 
-The architecture checkpoint keeps version `0.9.0.dev0`. The first approved v1.0
-implementation Block is the appropriate point to begin the `1.0.0.dev0`
-development identity. This plan does not declare a stable `1.0.0` release.
+## 2. Mission
 
-## 2. v1.0 mission
+v1.0 turns the reviewed scientific APIs and v0.9 reproducible-workflow foundation into a coherent local research workbench with:
 
-v1.0 turns the reviewed scientific APIs and v0.9 reproducible workflow layer
-into a coherent local research workbench with explicit project/workspace state,
-persistent evidence, and an application layer suitable for a desktop UI.
-
-Primary scope:
-
-- local reproducible workspace/project state;
+- explicit local workspace/project state;
 - explicit user-controlled asset import/catalog state;
-- persistent run, QA, and figure evidence association;
-- workspace composition of recipes, figures, and generated artifacts;
-- a GUI-neutral application/session controller; and
-- a dependency-gated desktop shell plus v1.0-facing API hardening.
+- persistent evidence association;
+- workspace recipe/figure composition;
+- a GUI-neutral transaction-safe application/session layer; and
+- an optional desktop presentation shell.
 
-v1.0 is not another scientific-algorithm expansion phase. Existing `core`,
-`processing`, `io`, `experimental`, `computation`, `visualization`, and
-`workflow` contracts remain authoritative and are consumed rather than
-redesigned.
+v1.0 is not another scientific-algorithm expansion phase. Existing `core`, `processing`, `io`, `experimental`, `computation`, `visualization`, and `workflow` contracts remain authoritative.
 
-## 3. Architecture boundary
+## 3. Dependency direction
 
 Dependency direction is one-way:
 
-~~~text
+```text
 core / processing / io / experimental / computation / visualization
-                              |
-                              v
-                         workflow
-                              |
-                              v
-                         workspace
-                              |
-                              v
-                        application
-                              |
-                              v
-                    desktop presentation
-~~~
+                              ↓
+                           workflow
+                              ↓
+                          workspace
+                              ↓
+                         application
+                              ↓
+                     desktop presentation
+```
 
-Planned new package boundaries:
+### Workspace
 
-~~~text
-src/catalysis_workbench/workspace/
-src/catalysis_workbench/application/
-~~~
+`catalysis_workbench.workspace` owns explicit persistent local project state and references to reviewed evidence. It does not own scientific algorithms, parser inference, or workflow scheduling.
 
-A desktop-specific package is added only if a separately reviewed desktop-toolkit
-decision authorizes it.
+### Application
 
-### Workspace responsibilities
+`catalysis_workbench.application` owns GUI-neutral session state and user-action orchestration. It coordinates reviewed workspace/workflow/visualization APIs without changing their scientific semantics.
 
-`catalysis_workbench.workspace` owns explicit persistent project state and
-references to reviewed CatalysisWorkbench objects/evidence. It does not own
-scientific algorithms and does not silently execute workflows.
+### Desktop
 
-### Application responsibilities
-
-`catalysis_workbench.application` owns GUI-neutral session state and user-action
-orchestration. It coordinates workspace operations and calls existing public
-workflow, visualization, and scientific APIs. It does not reimplement their
-numerical semantics.
-
-### Desktop responsibilities
-
-The desktop layer is presentation and interaction only. It routes scientific
-operations through reviewed application/workflow contracts and must not contain
-an independent scientific execution engine.
+`catalysis_workbench.desktop` is optional presentation/interaction only. It must not contain a second scientific engine, provenance engine, workspace implementation, parser policy, QA policy, or workflow scheduler.
 
 ## 4. Frozen scientific and workflow invariants
 
-The following remain mandatory throughout v1.0:
+Throughout v1.0:
 
 - no hidden sorting of scientifically meaningful sequences;
 - no hidden interpolation or resampling;
-- no silent normalization;
-- no silent unit conversion;
-- no unsupported species or chemical assignment;
-- no unsupported scientific inference;
-- preserve provenance rather than reconstruct it heuristically;
-- keep numerical semantics explicit;
+- no silent normalization or unit conversion;
+- no automatic chemistry/species/phase interpretation;
+- preserve reviewed provenance rather than reconstructing it heuristically;
 - fail closed on incompatible state;
-- preserve source, acquisition, recipe-step, batch-item, asset, and other
-  user-defined order where meaningful;
+- preserve source, acquisition, recipe-step, batch-item, asset and explicit evidence order where identity-bearing;
 - QA remains evidence-producing and non-mutating;
 - presentation editing never mutates scientific results;
-- serialized state cannot request arbitrary Python callable execution;
-- serialized state cannot trigger dynamic import or automatic operation
-  discovery; and
-- workspace/application convenience adapts to existing scientific APIs, never
-  changes those APIs merely to simplify a UI.
+- serialized/workspace state cannot request arbitrary Python callables;
+- serialized/workspace state cannot trigger dynamic operation imports/discovery; and
+- convenience layers adapt to reviewed scientific APIs rather than changing those APIs to simplify a UI.
 
-v0.9 recipe execution remains literal ordered execution. v1.0 does not silently
-reinterpret `WorkflowRecipe` as a DAG, infer dependencies, topologically sort
-steps, repair forward references, or introduce automatic parallelism.
+v0.9 recipe execution remains literal ordered execution. v1.0 does not reinterpret `WorkflowRecipe` as a DAG, infer dependencies, topologically sort steps, repair forward references, or introduce hidden parallelism.
 
-## 5. Workspace identity, path, and persistence contract
+## 5. Workspace identity and path contract
 
-The first v1.0 workspace is a strict local file-backed abstraction rather than a
-database-backed system.
+The first v1.0 workspace is strict, local and file-backed.
 
-A workspace manifest must have:
+Identity/persistence rules:
 
-- an explicit schema version;
-- an explicit ordered asset list;
-- stable caller-visible asset identifiers;
-- deterministic canonical JSON identity;
-- strict unknown-field rejection;
-- duplicate-key rejection during JSON loading;
-- explicit overwrite behavior with persistent writes defaulting to
-  `overwrite=False`; and
-- complete validation before persistent mutation.
+- explicit schema versions;
+- ordered identity-bearing state;
+- deterministic canonical JSON SHA-256;
+- strict unknown-field and duplicate-key rejection;
+- validation before persistent mutation;
+- explicit overwrite semantics;
+- no absolute workspace root, host, user, PID, timestamp, temp filename or GUI-selection state in deterministic identity.
 
-### Workspace-owned path confinement
+Workspace-owned paths must be explicit relative paths rooted at the workspace root supplied at the IO boundary. The initial contract rejects absolute/drive-qualified paths, `..`, root escape, ambiguous empty paths, workspace-owned symbolic links and symbolic-link traversal.
 
-Every workspace-owned path stored in deterministic state must be a relative path
-whose meaning is rooted explicitly at the workspace root supplied at the I/O
-boundary.
+External references are distinct from workspace-owned copies. An explicit external reference may live outside the workspace root but must never be silently rewritten into a workspace-owned path.
 
-The initial path contract fails closed on:
-
-- absolute paths;
-- drive-qualified paths where applicable;
-- parent traversal components such as `..`;
-- any resolved workspace-owned path that escapes the declared workspace root;
-- ambiguous empty/root-only asset paths; and
-- workspace-owned symbolic-link entries or symbolic-link traversal.
-
-Symlink support is deliberately excluded from the first slice. A future proposal
-to allow symlinks must separately define identity, root confinement, target
-mutation, broken-link, cross-platform, and TOCTOU semantics before support is
-added.
-
-Path validation used for security/root confinement is not scientific-data
-normalization. The implementation may canonicalize only the representation
-required by the reviewed workspace path schema; it must not silently rewrite a
-user-selected external source into a different source.
-
-External references and workspace-owned files are distinct. An external source
-may live outside the workspace root only through an explicit external-reference
-operation and must never be mistaken for a workspace-owned relative path.
-
-### Deterministic workspace identity exclusions
-
-Workspace deterministic identity must not depend on:
-
-- absolute workspace root;
-- host name;
-- user name;
-- PID;
-- timestamps;
-- temporary filenames; or
-- GUI selection state.
-
-Those values may be retained separately as non-identity metadata only if a
-future reviewed use case requires them.
-
-The workspace layer must not crawl directories automatically or infer assets
-from arbitrary files. Discovery is explicit and user-controlled.
+No workspace layer recursively crawls directories or infers assets automatically.
 
 ## 6. Asset contract
 
-A workspace asset is an explicit reference to user-selected or
-CatalysisWorkbench-produced state.
+Assets use caller-visible stable identifiers and explicit policy.
 
-Initial asset categories may include:
+Initial categories include source files, recipes, workflow/batch/QA evidence references, FigureSpec/preset state and exported artifacts.
 
-- source files;
-- serialized `WorkflowRecipe` state;
-- workflow/batch execution evidence;
-- `QAReport` evidence;
-- `FigureSpec` and preset-bundle state; and
-- exported figures or other generated artifacts.
+Asset type is catalog state, not scientific interpretation. The workspace/desktop layers do not infer a scientific technique, parser, species or unit from a filename.
 
-Asset category is not scientific interpretation. The workspace layer must not
-assign chemical meaning, measurement technique, parser, units, or species from
-a filename unless the caller explicitly supplies a reviewed mapping.
+Policies:
 
-File ownership policy is explicit:
+- `reference` retains an explicit external source path;
+- `copy` creates an explicit workspace-owned file;
+- neither policy silently substitutes for the other.
 
-- `reference` keeps an explicit external source reference;
-- `copy` creates a separately validated workspace-owned file; and
-- neither policy may silently substitute for the other.
+Where file bytes are identity-bearing, SHA-256 is calculated from retained bytes rather than using paths as content identity.
 
-Where file bytes are identity-bearing, content digests are computed from the
-actual retained bytes. File paths alone are not treated as scientific content
-identity.
+## 7. Evidence contract
 
-## 7. Persistent evidence contract
+v1.0 persists associations among existing reviewed identities rather than inventing parallel scientific provenance.
 
-v1.0 persists associations between workspace assets and evidence already
-produced by reviewed APIs rather than inventing a second scientific provenance
-system.
+Evidence may reference:
 
-The initial ledger may associate:
+- `WorkflowRecipe.recipe_sha256`;
+- `WorkflowRun.record_sha256`;
+- `BatchRunRecord.record_sha256`;
+- `QAReport.report_sha256`;
+- workspace asset content SHA-256; and
+- figure/export identities composed from reviewed state.
 
-- `WorkflowRun`;
-- `BatchRunRecord`;
-- `QAReport`;
-- recipes and their deterministic identities;
-- figures/specifications and their deterministic identities; and
-- exported artifact identities.
+The first ledger is schema-versioned file-backed state. SQL, ORM, migration frameworks, servers and background services are excluded.
 
-The first implementation uses explicit schema-versioned files and ordered
-manifests. SQL, an ORM, a migration framework, a background service, or a server
-is not required for the first v1.0 slice.
+## 8. Block 1 — Workspace foundation — complete
 
-The ledger records what reviewed APIs produced; it does not decide what
-scientific result should have been produced.
+PR #288; squash merge `a8ee1f8f09747c3932e437b481e9ec98d6724a53`.
 
-## 8. Block 1 — Workspace foundation
+Delivered:
 
-Planned package:
+- `WorkspaceManifest`, `WorkspaceAsset`;
+- `create_workspace()`, `open_workspace()`, `save_workspace()`;
+- immutable ordered asset state;
+- deterministic canonical JSON/SHA-256 identity;
+- explicit root confinement and fail-closed symlink behavior;
+- transaction-safe persistence hardening; and
+- development version transition to `1.0.0.dev0`.
 
-~~~text
-src/catalysis_workbench/workspace/
-    __init__.py
-    manifest.py
-    persistence.py
-~~~
+No crawling, scientific import, workflow execution, database or new dependency was introduced.
 
-Minimum planned public concepts:
+## 9. Block 2 — Explicit asset import/catalog — complete
 
-- `WorkspaceManifest`;
-- `WorkspaceAsset`;
-- `create_workspace()`;
-- `open_workspace()`; and
-- `save_workspace()`.
+PR #289; squash merge `ebf449c328346948363b831e8c2ef731b23644e2`.
 
-Required semantics:
-
-- frozen/deeply immutable manifest state;
-- explicit ordered assets;
-- strict schema-versioned JSON;
-- deterministic manifest SHA-256;
-- explicit workspace root supplied only at I/O boundaries;
-- reviewed root-confinement checks for every workspace-owned path;
-- reject absolute, parent-traversing, root-escaping, and symlink workspace-owned
-  paths in the initial slice;
-- validate all candidate state before persistent mutation;
-- no directory crawling;
-- no automatic scientific import;
-- no workflow execution;
-- no database; and
-- no new dependency.
-
-Block 1 begins the `1.0.0.dev0` development identity only after the architecture
-checkpoint is approved for implementation.
-
-## 9. Block 2 — Explicit asset import and catalog
-
-Planned extension:
-
-~~~text
-src/catalysis_workbench/workspace/assets.py
-~~~
-
-Required semantics:
+Delivered `workspace.assets.import_asset()` with:
 
 - explicit caller-selected source;
-- explicit stable asset key;
-- explicit `reference` versus `copy` policy;
-- content digest where file bytes are part of identity;
-- literal caller asset order;
-- collision detection before mutation;
-- workspace-owned destinations must satisfy Block-1 root confinement;
-- external references remain explicitly external and are never rewritten into
-  workspace-owned paths;
-- no parser guessing from filename or extension as scientific authority;
-- no recursive scanning;
-- no silent file move/delete;
-- no hidden source substitution; and
-- no new dependency.
+- stable asset ID and explicit asset type;
+- explicit `reference` versus `copy`;
+- retained-byte content digest;
+- literal caller order;
+- collision prevalidation;
+- Block-1 path confinement for copies;
+- external references remaining explicitly external;
+- source retention/no silent move-delete;
+- no recursive scanning or parser guessing; and
+- rollback limited to paths created by the failed copy import.
 
-The existing `catalysis_workbench.io` layer remains responsible for actual
-reviewed data reading. The workspace catalog stores explicit references and does
-not become a second IO implementation.
+The reviewed `catalysis_workbench.io` layer remains the scientific IO authority.
 
-## 10. Block 3 — Persistent run and evidence ledger
+## 10. Block 3 — Persistent evidence ledger — complete
 
-Planned extension:
+Promoted implementation: PR #291; squash merge `7cd8ea4500ac5c3d6beab3234935826a6d48e030`.
 
-~~~text
-src/catalysis_workbench/workspace/evidence.py
-~~~
+Delivered schema-versioned local evidence records and ledger persistence with deterministic ordered identity and explicit links to current workspace assets/related records.
 
-Required semantics:
+Block 3 reuses existing reviewed recipe/run/batch/QA/content digests. It does not execute workflows or QA, retry failures, invent traceback/timestamp provenance, or require a database.
 
-- explicit association between assets, recipes, runs, QA reports, and artifacts;
-- deterministic ordered record identity;
-- reuse existing public evidence/digest state where available;
-- no invented scientific provenance;
-- no timestamps in deterministic identity;
-- no free-form traceback text in deterministic identity;
-- no automatic retry or execution; and
-- no database dependency in the initial implementation.
+PR #290 was not the promoted Block-3 implementation; live GitHub state remains authoritative for superseded PR cleanup.
 
-## 11. Block 4 — Workspace workflow and figure composition
+## 11. Block 4 — Workspace recipe/figure composition — complete
 
-Planned responsibilities:
+PR #292; squash merge `84ba0ae04e56482333d0953af576c2979fc02848`.
 
-- save/load recipes through the reviewed v0.9 serialization contract;
-- associate recipes with explicit input/output assets;
-- save/load `FigureSpec` and reproducible preset bundles through reviewed
-  serialization bridges;
-- associate exported figures with the exact presentation/evidence state that
-  produced them; and
-- expose an ordered recipe editing model suitable for a future GUI.
+Delivered:
 
-Required boundary:
+- recipe snapshot/load through reviewed v0.9 serializers;
+- explicit recipe input/output asset associations;
+- content SHA-256 pinning for associated assets;
+- FigureSpec and preset-bundle snapshot bridges;
+- figure export/evidence composition with evidence digest pinning;
+- literal ordered recipe insert/replace/remove/move helpers; and
+- reserved workspace-composition metadata ownership.
 
-- ordered recipe editing is not DAG execution;
-- no topological sort;
-- no arbitrary callable insertion;
-- no dynamic operation import;
-- no automatic operation discovery;
-- no hidden scientific parameter defaults beyond existing reviewed public
-  operation contracts; and
-- no scientific-data mutation by workspace composition.
+Ordered editing is not DAG execution. No topological sort, operation discovery, dynamic imports, arbitrary callables or scientific-data mutation is introduced.
 
-## 12. Block 5 — GUI-neutral application/session controller
+## 12. Block 5 — GUI-neutral application/session controller — complete
 
-Planned package:
+PR #293; squash merge `81900cdd73db7cb02febbcebf619cbcd25cdf1d0`.
 
-~~~text
-src/catalysis_workbench/application/
-    __init__.py
-    session.py
-    commands.py
-~~~
+Delivered:
 
-Minimum responsibilities:
+- immutable `ApplicationState`;
+- transaction-safe `ApplicationSession`;
+- explicit workspace open/close/refresh and asset selection;
+- recipe select/edit/save through reviewed composition APIs;
+- explicit workflow execution through `execute_recipe()` using caller-supplied inputs and identities;
+- QA aggregation only from explicit reviewed findings;
+- FigureSpec select/edit/save through reviewed APIs; and
+- fail-closed manifest race/TOCTOU handling.
 
-- open/close/select workspace state;
-- explicit asset selection;
-- recipe selection and ordered editing orchestration;
-- explicit workflow execution through `catalysis_workbench.workflow`;
-- QA invocation through reviewed QA APIs;
-- figure-state selection/editing through reviewed visualization APIs; and
-- immutable or transaction-safe application-state updates.
+Application import remains GUI-toolkit-free and headless-testable.
 
-The controller must be testable without opening a GUI window. Invalid commands
-must fail before committed application state is mutated.
+## 13. Block 6 — Optional desktop shell + v1.0 API hardening — current final development block
 
-Block 5 must not import a future desktop toolkit at top-level package import.
+Tracked by PR #294. Final exact-head promotion evidence is recorded in that PR.
 
-## 13. Block 6 — Desktop shell and v1.0 API hardening
+### Authorized dependency decision
 
-Target user-facing capabilities:
+The separately approved GUI dependency is:
+
+```text
+optional extra: desktop
+PySide6-Essentials>=6.11.2,<6.12
+```
+
+The dependency is optional, not a normal runtime dependency. The first shell needs Qt Core/Gui/Widgets and does not require the larger PySide6 Addons wheel.
+
+The base install and lower layers remain Qt-free. `catalysis_workbench.desktop` itself is lazy; importing the package does not load PySide6. Requesting a desktop class/launcher without the extra raises a targeted dependency error.
+
+### User-facing scope
+
+Block 6 provides:
 
 - local workspace creation/opening;
 - project/asset navigation;
-- explicit file chooser/import action;
-- ordered recipe editor;
+- explicit file chooser/import;
+- ordered recipe inspection/editing/save;
 - run/result/evidence inspection;
-- scientific QA evidence view;
-- integration of the existing FigureSpec editor; and
-- export-oriented presentation controls.
+- scientific QA evidence inspection;
+- FigureSpec presentation controls;
+- explicit integration with the existing Matplotlib FigureSpec editor; and
+- export-oriented presentation state.
 
-A complete desktop shell likely requires a dedicated GUI toolkit. No new runtime
-or optional GUI dependency is authorized by this document.
+### Application hardening
 
-Before `pyproject.toml` is changed for PySide6 or another GUI framework, stop
-and report:
+Desktop-facing workspace operations are routed through GUI-neutral application wrappers. Workspace create/open/close/import transitions fail closed around dirty recipe/FigureSpec state unless discard is explicit.
 
-- dependency name and exact role;
-- runtime versus optional-dependency placement;
-- current license and distribution implications;
-- installation/wheel burden on supported platforms;
-- headless-CI implications;
-- import/lazy-loading strategy;
-- viable no-new-dependency alternative; and
-- public-API impact.
+The shell does not infer workflow runtime inputs from catalog files, auto-select QA checks, guess scientific parsers from file extensions, or create a second persistence implementation.
 
-If no toolkit is authorized, Block 6 narrows to application-controller/API
-hardening and integration with the existing Matplotlib FigureSpec editor. A
-complete desktop shell remains deferred rather than forcing an unreviewed
-dependency.
+### CI and packaging
 
-Final v1.0 hardening includes installed-wheel/public-API audit, import-laziness
-checks, version identity, documentation synchronization, and compatibility
-review. Stable `1.0.0`, a tag, GitHub Release, or PyPI publication remain
-separately authorized decisions.
+Existing `test`, `package-smoke` and `volumetric3d-smoke` remain Qt-free.
+
+A separate `desktop-smoke`:
+
+- builds the exact wheel;
+- installs `catalysis-workbench[desktop]` in a fresh environment;
+- runs `pip check`;
+- uses `QT_QPA_PLATFORM=offscreen`;
+- creates/destroys the Qt application/window without a persistent event loop; and
+- exercises representative workspace, asset, recipe, evidence/QA and figure bindings.
+
+Base-wheel smoke separately protects Qt import laziness and verifies application/workspace use without the desktop extra.
+
+See [`DESKTOP.md`](DESKTOP.md).
 
 ## 14. Explicit non-goals
 
-Unless separately re-architected later, v1.0 does not include:
+Current v1.0 does not include:
 
-- new scientific-analysis algorithms merely to fill the GUI;
+- new scientific-analysis algorithms merely to populate the GUI;
 - a new DAG/workflow execution engine;
 - implicit dependency inference or topological scheduling;
-- multiprocessing, distributed queues, cloud execution, or HPC scheduling;
+- multiprocessing/distributed/cloud/HPC scheduling;
 - instrument control;
-- cloud synchronization;
-- collaborative multi-user server state;
-- an online plugin marketplace;
+- cloud synchronization or collaborative multi-user server state;
+- online plugin marketplace;
 - arbitrary third-party code execution from workspace files;
-- automatic recursive file discovery;
-- automatic chemistry/species assignment;
-- silent scientific correction or data cleaning;
+- automatic recursive discovery;
+- automatic chemistry/species/phase assignment;
+- silent scientific correction/cleaning;
 - mandatory SQL/database infrastructure; or
-- package-registry publication as a side effect of v1.0 development.
+- package-registry publication as a feature side effect.
 
-## 15. Prior-art and license review
+## 15. Prior-art and license decisions
 
-The repositories below are architecture references only. No external source code
-is copied, adapted, vendored, or added as a dependency by this plan.
+References are architecture/UX concepts only unless separately stated. No external source, widget code, asset, schema or dependency is copied merely by being surveyed.
 
-### signac
+### signac — BSD-3-Clause
 
-Upstream: https://github.com/glotzerlab/signac
+Reference for file-system-oriented project/data organization and reproducibility metadata separation. No dependency/code reuse.
 
-Useful concepts:
+### pyiron_base — BSD-3-Clause
 
-- file-system-oriented management of heterogeneous data spaces;
-- explicit project/state organization; and
-- reproducibility-oriented metadata separation.
+Reference for project/job/application layering and separation from scientific backends. No dependency/code reuse.
 
-License verified from upstream repository metadata at this checkpoint: BSD
-3-Clause License.
+### AiiDA core — MIT
 
-Decision: workspace/data-management concepts only; no dependency and no code
-reuse.
+Reference for provenance/orchestration separation. AiiDA database/scheduler/daemon/SSH/distributed infrastructure is deliberately outside v1.0. No dependency/code reuse.
 
-### pyiron_base
+### Orange3 — GPL-3.0+
 
-Upstream: https://github.com/pyiron/pyiron_base
+Reference for desktop interaction and analysis/presentation separation only. No GPL code/widgets/assets are copied or adapted and Orange3 is not a dependency.
 
-Useful concepts:
+### napari — BSD-3-Clause
 
-- an integrated materials-science work environment;
-- separation between project/job management and scientific backends; and
-- workflow-management boundaries.
-
-License verified from upstream repository metadata at this checkpoint: BSD
-3-Clause License.
-
-Decision: project/job/application layering concepts only; no dependency and no
-code reuse.
-
-### AiiDA core
-
-Upstream: https://github.com/aiidateam/aiida-core
-
-Useful concepts:
-
-- explicit workflow/provenance separation;
-- durable provenance as a first-class concern; and
-- separation of orchestration from scientific code.
-
-License verified from upstream `LICENSE.txt` at this checkpoint: MIT License.
-
-AiiDA's database, scheduler, daemon, SSH, distributed workflow, and broader
-infrastructure scope substantially exceed the deliberately local v1.0 scope.
-
-Decision: provenance/layering concepts only; no dependency and no code reuse.
-
-### Orange3
-
-Upstream: https://github.com/biolab/orange3
-
-Useful concepts:
-
-- desktop-oriented interactive data analysis;
-- visual-programming and inspector-style interaction patterns; and
-- separation between user interaction and analytical components.
-
-License verified from upstream `LICENSE` at this checkpoint: GNU GPL-3.0+.
-
-Decision: UX/interaction concepts only. No code, widgets, assets, or source are
-copied or adapted, and Orange3 is not added as a dependency.
+Block-6 architecture reference for separating Qt main-window/presentation infrastructure from analytical/model concerns and for optional Qt-oriented packaging patterns. No napari source, widget code, assets, schema or dependency is copied/adapted/vendored.
 
 ### Existing v0.9 references
 
-The v0.9 architecture already records Kedro, signac, SciencePlots, and
-Matplotlib event/widget references. Those decisions remain valid. v1.0 does not
-retroactively broaden their reuse permissions or dependency status.
+Kedro, signac, SciencePlots and Matplotlib widget/event references recorded by the v0.9 architecture remain valid within their original boundaries. v1.0 does not broaden reuse permissions.
 
-Any later proposal to copy or adapt external code requires a new exact-version
-license/provenance review even when architecture-level license information is
-known.
+Any future proposal to copy/adapt external code requires an exact-version provenance/license review.
 
 ## 16. Dependency policy
 
-Target for Blocks 1-5:
+Blocks 1-5 introduced no new runtime or optional dependency.
 
-~~~text
-NEW RUNTIME DEPENDENCY REQUIRED: NO
-NEW OPTIONAL DEPENDENCY REQUIRED: NO
-~~~
+Block 6 has one separately authorized optional GUI dependency:
 
-Block 6 desktop-toolkit status:
+```text
+PySide6-Essentials>=6.11.2,<6.12
+```
 
-~~~text
-NEW GUI DEPENDENCY: NOT YET AUTHORIZED
-~~~
+No dependency is added merely because a prior-art project uses it.
 
-No dependency is added merely because a reference project uses one.
+Any future dependency change requires a fresh review of role, placement, current license/distribution implications, wheel burden/platform coverage, headless CI, lazy import strategy, public API impact and viable no-new-dependency alternative.
 
 ## 17. Validation discipline
 
-Every implementation Block requires at minimum:
+Every implementation head requires at minimum:
 
-~~~bash
+```bash
 python -m ruff check .
 python -m pytest
-~~~
+```
 
-Blocks changing public API, packaging, version identity, installed behavior, or
-optional dependencies also require:
+Public API, packaging or dependency changes additionally require exact-wheel/fresh-environment validation and `pip check`.
 
-~~~bash
-python -m build
-~~~
+Desktop validation additionally requires:
 
-and a fresh environment that:
+- base-environment Qt-laziness checks;
+- fresh `[desktop]` wheel installation;
+- offscreen Qt smoke without a persistent event loop; and
+- headless-testable application/controller paths.
 
-- installs the exact wheel;
-- confirms imports come from site-packages rather than repository `src`;
-- passes `pip check`;
-- runs the applicable installed smoke; and
-- runs cumulative public-API/package audit coverage.
-
-Desktop/UI Blocks additionally require headless controller tests. Any toolkit
-later authorized must have a CI-safe import/headless strategy before formal
-implementation.
-
-Local validation is diagnostic/development evidence only. Formal promotion
-requires GitHub exact-head CI on the PR head and final review of that same head.
+Local validation is diagnostic only. Formal promotion requires GitHub CI and final review on the same exact PR head.
 
 ## 18. Git and promotion discipline
 
-Every v1.0 phase starts from the latest verified `main` on its own scoped feature
-branch.
-
-Default formal path:
-
-~~~text
+```text
 latest exact main
 → scoped feature branch
 → implementation + focused validation
-→ full pre-push validation at block freeze
 → Draft PR
 → exact-head GitHub CI
 → formal diff/review
-→ fixes and new exact-head CI when required
+→ fixes and fresh exact-head CI when required
 → final review of final head
 → Ready
 → separate user merge authorization
 → expected-head squash merge
-→ exact main-head verification
+→ exact main verification
 → post-merge main CI verification
-~~~
+```
 
 No direct push to `main`.
 
-Without separate explicit authorization, do not:
+Without separate explicit authorization, do not merge, delete a branch, create/move a v1.0 tag, create a GitHub Release, finalize stable `1.0.0`, or publish to a package registry.
 
-- merge a PR;
-- delete a branch;
-- create a v1.0 tag;
-- create a GitHub Release; or
-- publish to PyPI/package registry.
+## 19. Documentation state
 
-## 19. Documentation-state note
+The earlier central README/MASTER_PLAN/ROADMAP descriptions that said current `main` remained at `0.7.0` or future work was only `0.9.0.dev0` were descriptive drift. Block 6 intentionally synchronizes those central documents to the real v1.0 `1.0.0.dev0` development state.
 
-At this architecture checkpoint, live `main` reports `0.9.0.dev0` in both
-`pyproject.toml` and `catalysis_workbench.__version__`, while portions of the
-central README/master-plan narrative still describe the earlier pre-promotion
-state in which `main` remained at `0.7.0`.
-
-That descriptive drift does not change the v1.0 technical baseline. Central
-README/MASTER_PLAN/ROADMAP synchronization should be handled deliberately as a
-scoped documentation update rather than silently mixed into scientific or
-workspace code.
+Historical release/scientific details remain retained in version-specific plans/releasing documents and GitHub provenance rather than being duplicated indefinitely in central status files.
 
 ## 20. Stop conditions
 
-Stop architecture or implementation and report before proceeding if a proposed
-change requires:
+Stop implementation and report before proceeding if a proposed change requires an unreviewed:
 
-- a new runtime dependency;
-- a new optional dependency;
-- modification of existing scientific numerical semantics;
-- reinterpretation of literal recipe order as DAG semantics;
-- arbitrary callable execution from serialized/workspace state;
-- dynamic imports based on serialized/workspace state;
-- automatic operation discovery;
-- hidden recursive file discovery;
-- hidden sequence sorting;
-- ambiguous or non-confined workspace-owned path semantics;
-- symlink support without an explicit reviewed identity/confinement contract;
-- scientific auto-correction by QA or application code;
+- runtime or optional dependency;
+- modification of established scientific numerical semantics;
+- reinterpretation of recipe order as DAG semantics;
+- arbitrary callable execution/dynamic imports from serialized state;
+- automatic operation/parser/chemistry discovery;
+- hidden recursive discovery or sequence sorting;
+- ambiguous workspace path ownership/symlink behavior;
+- scientific auto-correction by QA/application/desktop code;
 - GUI mutation of scientific results outside reviewed APIs;
-- an unclear workspace/application/science ownership boundary;
-- a database/server/cloud requirement not already reviewed; or
-- a destructive Git operation.
+- database/server/cloud/background-service architecture; or
+- destructive Git/release operation.
