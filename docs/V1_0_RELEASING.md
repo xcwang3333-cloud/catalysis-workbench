@@ -2,80 +2,109 @@
 
 This document defines the release-maturity process for the frozen v1.0 local-workbench implementation. GitHub is the operational source of truth. Every gate must be reviewed and validated on its exact head; evidence from an older head becomes stale after any change.
 
-## Frozen development baseline
+## Frozen release baseline
 
-- completion-checkpoint main: `079f472fe53c2c1386677299c8708ab2f0ee681d`;
-- development version: `1.0.0.dev0`;
+- completion-checkpoint main before Gate A: `079f472fe53c2c1386677299c8708ab2f0ee681d`;
 - v1.0 Blocks 1–6: complete and merged;
 - completion checkpoint: PR #295;
-- post-checkpoint main CI: #738 / run `33157868457`, success;
-- retained stable tag/Release: `v0.7.0 -> e3062fc12c794f54c7b7613875ec73608a587a59`;
-- Gate-A tracking: Issue #296;
-- Gate-A branch: `chore/v10-stable-readiness`.
+- Gate A tracking: Issue #296 / PR #297;
+- Gate A reviewed head: `8e152eb25f9fd32b4ed17b3353e0c3d6bffb35dc`;
+- Gate A squash merge / Gate-B exact baseline: `1e98dd25f7e9e0ba9d89ab86e7551b6a2da96307`;
+- Gate A post-merge CI: #743 / run `33161697186`, 4/4 jobs success;
+- Gate A post-merge Stable 1.0 Readiness: #5 / run `33161697170`, 8/8 jobs success;
+- project license: `BSD-3-Clause`;
+- Gate-B tracking: Issue #298;
+- Gate-B branch: `release/v1.0.0-final-candidate`;
+- Gate-B candidate version: `1.0.0`;
+- retained stable tag/GitHub Release before v1.0: `v0.7.0 -> e3062fc12c794f54c7b7613875ec73608a587a59`.
 
-Stable `1.0.0`, a `v1.0.0` tag, GitHub Release publication, and PyPI/package-registry publication are not implied by this baseline.
+Gate B creates a reviewed final-version candidate only. A `v1.0.0` tag, GitHub Release, and PyPI/package-registry publication remain separately authorized operations.
 
-## Release gate model
+## Gate A — frozen-scope release hardening — complete
 
-The established v0.7 release discipline remains authoritative in structure.
+Gate A retained version `1.0.0.dev0` and introduced no scientific or application/desktop runtime-semantic expansion.
 
-### Gate A — frozen-scope release hardening
-
-Gate A retains version `1.0.0.dev0` and may only harden release readiness. It must not add scientific functionality or expand application/desktop semantics.
-
-Gate A must establish:
+Gate A established:
 
 - a unified installed-wheel audit for the documented v1.0 public surface;
-- continued reuse of the reviewed historical scientific installed-wheel audits;
-- clean base-package isolation from optional Qt/PySide6, pymatgen, PyVista, and VTK backends;
-- fresh exact-wheel base and `[desktop]` installation checks on Linux, Windows, and macOS;
-- lower/current Python validation at Python 3.11 and 3.14;
+- continued reuse of reviewed historical scientific installed-wheel audits;
+- clean base-package isolation from optional Qt/PySide6, pymatgen, PyVista and VTK backends;
+- fresh exact-wheel base and `[desktop]` checks on Linux, Windows and macOS;
+- Python 3.11 and 3.14 platform validation;
 - wheel and sdist build/metadata validation without publication;
-- release-oriented package metadata that does not invent legal or author information;
-- a documented desktop/Qt distribution boundary;
-- a reviewed project license and matching distribution metadata;
+- BSD-3-Clause project licensing with PEP 639 `License-Expression` / `License-File` validation;
+- release-oriented package metadata;
+- documented desktop/Qt distribution boundaries;
 - draft v1.0 release notes;
 - final public-API and compatibility review.
 
-Gate A is not complete while any explicit release blocker remains unresolved.
+### Gate A evidence
 
-### Gate B — final-version candidate
+| Evidence | State |
+| --- | --- |
+| exact base | `079f472fe53c2c1386677299c8708ab2f0ee681d` |
+| final reviewed head | `8e152eb25f9fd32b4ed17b3353e0c3d6bffb35dc` |
+| final PR CI | CI #742 / run `33160697408` — 4/4 success |
+| final PR Stable Readiness | #4 / run `33160697543` — 8/8 success |
+| formal review | `5049957692` — no remaining blocker |
+| merge gate | behind=0, mergeable=true, unresolved review threads=0 |
+| squash merge / Gate-B baseline | `1e98dd25f7e9e0ba9d89ab86e7551b6a2da96307` |
+| post-merge CI | CI #743 / run `33161697186` — 4/4 success |
+| post-merge Stable Readiness | #5 / run `33161697170` — 8/8 success |
+| version after Gate A | `1.0.0.dev0` |
+| project license | `BSD-3-Clause` |
 
-Gate B is a later, separately scoped change. Only after Gate A is merged and post-merge validated may Gate B synchronize the reviewed candidate from `1.0.0.dev0` to `1.0.0`.
+## Gate B — final-version candidate — in progress
 
-Gate B must limit version-sensitive changes to the distribution/runtime version and exact release-audit expectations, plus any documentation status that must describe the final candidate. It must repeat exact-wheel, cross-platform and artifact validation on the final version.
+Tracking: Issue #298. Branch: `release/v1.0.0-final-candidate`. Exact base: `1e98dd25f7e9e0ba9d89ab86e7551b6a2da96307`.
 
-Gate B creates no tag, GitHub Release, or registry artifact.
+Gate B owns only final candidate synchronization and exact-wheel validation:
 
-### Gate C — tag creation and reverse verification
+- `[project].version`: `1.0.0.dev0` -> `1.0.0`;
+- runtime `__version__`: `1.0.0.dev0` -> `1.0.0`;
+- Stable 1.0 Readiness expected version/artifact checks: `1.0.0.dev0` -> `1.0.0`;
+- distribution Development Status: Beta -> Production/Stable, with installed-wheel assertion;
+- version-sensitive release-procedure/release-note status synchronization;
+- no scientific/API/dependency/optional-backend/runtime-semantic expansion.
 
-Creating `v1.0.0` requires separate explicit authorization after a reviewed Gate-B release commit exists. The tag target must be an exact immutable commit SHA and must be independently reverse-verified after creation.
+The exact Gate-B candidate must pass the ordinary CI suite plus the complete Stable 1.0 Readiness workflow: unified release audit, artifact validation, and Linux/Windows/macOS × Python 3.11/3.14 isolated base + `[desktop]` checks.
+
+### Gate B evidence
+
+| Evidence | State |
+| --- | --- |
+| exact base | `1e98dd25f7e9e0ba9d89ab86e7551b6a2da96307` |
+| candidate version | `1.0.0` |
+| final Gate-B head | pending |
+| exact-head ordinary CI | pending |
+| exact-head Stable 1.0 Readiness | pending |
+| formal release/API/packaging review | pending |
+| unresolved review threads | pending |
+| merge gate | pending |
+| squash merge / reviewed release commit | pending |
+| retained `v0.7.0` invariant | `e3062fc12c794f54c7b7613875ec73608a587a59` |
+
+Gate B creates no tag, GitHub Release, or package-registry artifact.
+
+## Gate C — tag creation and reverse verification
+
+Creating `v1.0.0` requires a new explicit authorization after Gate B is merged and its reviewed release commit is post-merge validated. The tag target must be an exact immutable commit SHA and must be independently reverse-verified after creation.
 
 No tag may be created, moved, recreated, or inferred as a side effect of Gate A or Gate B.
 
-### GitHub Release publication
+## GitHub Release publication
 
-A GitHub Release from an already verified `v1.0.0` tag is a separate publication decision. Release notes must describe the reviewed scientific, workflow, workspace, application and optional desktop scope without claiming functionality that is not in the tagged commit.
+A GitHub Release from an already verified `v1.0.0` tag is a separate publication decision. Release notes must describe the reviewed scientific, workflow, workspace, application and optional desktop scope without claiming functionality absent from the tagged commit.
 
-### PyPI/package-registry publication
+## PyPI/package-registry publication
 
-Registry publication is a separate decision from GitHub Release publication. Package-name availability, credentials, provenance/trusted-publishing configuration, final artifact hashes and the exact registry target must be checked immediately before any publication attempt.
-
-## Project license decision
-
-The repository owner selected the BSD 3-Clause License for CatalysisWorkbench during Stable 1.0 Gate A. The root [`LICENSE`](../LICENSE) file is the canonical project license text.
-
-Python distribution metadata must declare the SPDX expression `BSD-3-Clause` and include `LICENSE` through the standardized `license-files` metadata. Exact-head Gate-A CI must validate the resulting `License-Expression` and `License-File` core metadata before promotion.
-
-The project license is separate from third-party dependency licenses. See [`DESKTOP_DISTRIBUTION.md`](DESKTOP_DISTRIBUTION.md) for the optional Qt/PySide6 boundary.
+Registry publication is separate from GitHub Release publication. Package-name availability, credentials, provenance/trusted-publishing configuration, final artifact hashes and the exact registry target must be checked immediately before any publication attempt.
 
 ## Public API freeze
 
-For stable 1.0, supported public imports are the package-level names intentionally listed by each documented package's `__all__`. Gate A audits these surfaces from an installed wheel.
+For Stable 1.0, supported public imports are the package-level names intentionally listed by each documented package's `__all__`. Implementation-only modules and names are not promoted merely because they are importable from a source checkout.
 
-Implementation-only modules and names that are not documented/publicly exported are not promoted merely because they are importable from a source checkout.
-
-The dependency direction remains:
+Dependency direction remains:
 
 ```text
 core / processing / io / experimental / computation / visualization
@@ -89,24 +118,13 @@ core / processing / io / experimental / computation / visualization
                      desktop presentation
 ```
 
-Stable release hardening must not invert this direction.
+Release hardening must not invert this direction.
 
-## Platform support evidence
+## Platform and artifact evidence
 
-Gate A validates installation on GitHub-hosted Linux, Windows, and macOS runners using Python 3.11 and 3.14. This is release-candidate installation evidence, not a claim that every possible OS/Python/environment combination is supported indefinitely.
+Stable 1.0 release gates validate exact candidate wheels on GitHub-hosted Linux, Windows and macOS runners using Python 3.11 and 3.14. The deeper Ubuntu behavior gates remain Ruff/full pytest, cumulative installed public/scientific API audits, optional scientific adapter checks, examples, volumetric 3-D smoke and Qt offscreen desktop smoke.
 
-The existing Ubuntu jobs remain the deeper behavior gates:
-
-- full Ruff + pytest;
-- cumulative base-wheel/public-API/scientific adapter/examples audit;
-- PyVista/VTK headless volumetric 3-D smoke;
-- Qt offscreen desktop behavioral smoke.
-
-The cross-platform release matrix adds isolated exact-wheel base + desktop installation/import checks rather than duplicating the full scientific suite on every runner.
-
-## Artifact gate
-
-Gate A and Gate B must both build a wheel and source distribution from the exact reviewed head, run package metadata validation, and prove the sdist can be used to rebuild a wheel. Building artifacts does not authorize uploading them anywhere.
+Gate A and Gate B must both build wheel and sdist artifacts from the exact reviewed head, run metadata validation, and prove that the sdist can rebuild a wheel. Building artifacts never authorizes uploading them.
 
 ## Mandatory evidence discipline
 
