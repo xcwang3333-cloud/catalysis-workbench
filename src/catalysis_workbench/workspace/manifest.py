@@ -154,7 +154,7 @@ class WorkspaceManifest:
 
         locations = tuple((asset.policy, asset.path) for asset in assets)
         if len(set(locations)) != len(locations):
-            raise WorkspaceError("workspace asset locations must be unique")
+            raise WorkspaceError("workspace asset paths must be unique within each policy")
 
         object.__setattr__(self, "assets", assets)
         try:
