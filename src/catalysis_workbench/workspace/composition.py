@@ -25,6 +25,7 @@ from catalysis_workbench.workflow import (
 from .assets import _sha256_file, import_asset
 from .evidence import open_evidence_ledger
 from .manifest import WorkspaceAsset, WorkspaceError, _identifier
+
 if TYPE_CHECKING:
     from catalysis_workbench.visualization import FigurePresetBundle, FigureSpec
 
