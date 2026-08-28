@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from catalysis_workbench.workspace import WorkspaceManifest, create_workspace, open_workspace
@@ -40,6 +40,38 @@ def _validate_discard_policy(
         raise ApplicationError(
             f"save or explicitly discard dirty recipe/FigureSpec state before {action}"
         )
+
+
+def _advance_after_exact_manifest(
+    session: ApplicationSession,
+    expected_sha256: str,
+) -> ApplicationState:
+    """Advance only after two exact manifest reads without committing on mismatch."""
+
+    root = _open_root(session)
+    before = session.state
+    observed = open_workspace(root)
+    if observed.manifest_sha256 != expected_sha256:
+        raise ApplicationError(
+            "workspace changed concurrently with asset import; refresh explicitly"
+        )
+
+    candidate = replace(
+        before,
+        workspace_manifest_sha256=expected_sha256,
+        last_workflow_run=None,
+        last_qa_report=None,
+        revision=before.revision + 1,
+    )
+    confirmed = open_workspace(root)
+    if confirmed.manifest_sha256 != expected_sha256:
+        raise ApplicationError(
+            "workspace changed concurrently with asset import; refresh explicitly"
+        )
+
+    # Package-internal commit: candidate state is assigned only after both exact reads.
+    session._state = candidate
+    return candidate
 
 
 def create_workspace_in_session(
@@ -142,12 +174,7 @@ def import_asset_in_session(
         raise ApplicationError(
             "workspace changed concurrently with asset import; refresh explicitly"
         )
-    refreshed = session.refresh_workspace()
-    if refreshed.workspace_manifest_sha256 != updated.manifest_sha256:
-        raise ApplicationError(
-            "application session did not advance to the imported workspace manifest"
-        )
-    return refreshed
+    return _advance_after_exact_manifest(session, updated.manifest_sha256)
 
 
 def workspace_snapshot(session: ApplicationSession) -> WorkspaceSnapshot:

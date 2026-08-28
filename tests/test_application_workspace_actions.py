@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+import catalysis_workbench.application.workspace_actions as workspace_actions
 from catalysis_workbench.application import (
     ApplicationError,
     ApplicationSession,
@@ -139,6 +140,55 @@ def test_open_and_close_reject_dirty_state_without_explicit_discard(
 
     closed = close_workspace_in_session(session)
     assert closed.workspace_root is None
+
+
+def test_import_manifest_race_does_not_commit_session_state(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root = tmp_path / "workspace"
+    source = tmp_path / "primary.dat"
+    concurrent = tmp_path / "concurrent.dat"
+    source.write_bytes(b"primary")
+    concurrent.write_bytes(b"concurrent")
+    create_workspace(root)
+    session = ApplicationSession()
+    session.open_workspace(root)
+    original_state = session.state
+
+    real_open = workspace_actions.open_workspace
+    open_calls = 0
+
+    def racing_open(path: str | Path):
+        nonlocal open_calls
+        open_calls += 1
+        if open_calls == 4:
+            import_asset(
+                root,
+                concurrent,
+                asset_id="concurrent",
+                asset_type="source_file",
+                policy="reference",
+            )
+        return real_open(path)
+
+    monkeypatch.setattr(workspace_actions, "open_workspace", racing_open)
+
+    with pytest.raises(ApplicationError, match="concurrently"):
+        workspace_actions.import_asset_in_session(
+            session,
+            source,
+            asset_id="primary",
+            asset_type="source_file",
+            policy="reference",
+        )
+
+    assert session.state is original_state
+    manifest = real_open(root)
+    assert tuple(asset.asset_id for asset in manifest.assets) == (
+        "primary",
+        "concurrent",
+    )
 
 
 def test_snapshot_rejects_external_manifest_drift(tmp_path: Path) -> None:
