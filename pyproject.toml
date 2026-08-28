@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "catalysis-workbench"
-version = "1.0.0.dev0"
+version = "1.0.0"
 description = "Reproducible local workbench for catalysis data analysis, workflows, evidence, and publication visualization."
 readme = "README.md"
 license = "BSD-3-Clause"
@@ -18,7 +18,7 @@ keywords = [
   "visualization",
 ]
 classifiers = [
-  "Development Status :: 4 - Beta",
+  "Development Status :: 5 - Production/Stable",
   "Intended Audience :: Science/Research",
   "Topic :: Scientific/Engineering :: Chemistry",
   "Programming Language :: Python :: 3",
