@@ -2,11 +2,10 @@
 
 ## 1. Status and authority
 
-This document defines the proposed v1.0 development architecture for
-CatalysisWorkbench after completion of all six v0.9 implementation Blocks.
-It is an architecture and scope contract, not a release artifact, and does not
-by itself authorize a merge, tag, GitHub Release, or package-registry
-publication.
+This document defines the proposed v1.0 development architecture after completion
+of all six v0.9 implementation Blocks. It is an architecture/scope contract, not
+a release artifact, and does not itself authorize a merge, tag, GitHub Release,
+or package-registry publication.
 
 Architecture-planning baseline:
 
@@ -19,40 +18,37 @@ Architecture-planning baseline:
 - v0.8/v0.9 routine tag or GitHub Release: not planned
 - PyPI/package-registry publication: separately gated and currently deferred
 
-GitHub remote state remains the formal operational source of truth. If this
-planning document later drifts from merged code, exact-head CI, PR state, or an
-explicit user decision, the live repository state wins and the document must be
-corrected.
+GitHub remote state remains the formal operational source of truth. If this plan
+later drifts from merged code, exact-head CI, PR state, or an explicit user
+decision, live repository state wins and the document must be corrected.
 
-The architecture checkpoint itself retains version `0.9.0.dev0`. The first
-approved v1.0 implementation Block is the appropriate point to begin the
-`1.0.0.dev0` development identity. A stable `1.0.0` version is not declared by
-this architecture document.
+The architecture checkpoint keeps version `0.9.0.dev0`. The first approved v1.0
+implementation Block is the appropriate point to begin the `1.0.0.dev0`
+development identity. This plan does not declare a stable `1.0.0` release.
 
 ## 2. v1.0 mission
 
 v1.0 turns the reviewed scientific APIs and v0.9 reproducible workflow layer
 into a coherent local research workbench with explicit project/workspace state,
-persistent evidence, and an application layer suitable for a desktop user
-interface.
+persistent evidence, and an application layer suitable for a desktop UI.
 
-The primary v1.0 scope is:
+Primary scope:
 
-- a local reproducible workspace/project abstraction;
-- explicit user-controlled asset import and catalog state;
+- local reproducible workspace/project state;
+- explicit user-controlled asset import/catalog state;
 - persistent run, QA, and figure evidence association;
 - workspace composition of recipes, figures, and generated artifacts;
 - a GUI-neutral application/session controller; and
-- a dependency-gated local desktop shell with a stable v1.0-facing application
-  contract.
+- a dependency-gated desktop shell plus v1.0-facing API hardening.
 
-v1.0 is not another scientific-algorithm expansion phase. Existing core,
-processing, experimental, computation, visualization, and workflow contracts
-remain authoritative and are consumed rather than redesigned.
+v1.0 is not another scientific-algorithm expansion phase. Existing `core`,
+`processing`, `io`, `experimental`, `computation`, `visualization`, and
+`workflow` contracts remain authoritative and are consumed rather than
+redesigned.
 
 ## 3. Architecture boundary
 
-The v1.0 dependency direction is:
+Dependency direction is one-way:
 
 ~~~text
 core / processing / io / experimental / computation / visualization
@@ -70,32 +66,32 @@ core / processing / io / experimental / computation / visualization
                     desktop presentation
 ~~~
 
-The intended new package boundaries are:
+Planned new package boundaries:
 
 ~~~text
 src/catalysis_workbench/workspace/
 src/catalysis_workbench/application/
 ~~~
 
-A desktop-specific package is added only if the separately reviewed desktop
-toolkit decision authorizes it.
+A desktop-specific package is added only if a separately reviewed desktop-toolkit
+decision authorizes it.
 
-### workspace responsibilities
+### Workspace responsibilities
 
 `catalysis_workbench.workspace` owns explicit persistent project state and
 references to reviewed CatalysisWorkbench objects/evidence. It does not own
-scientific algorithms or silently execute workflows.
+scientific algorithms and does not silently execute workflows.
 
-### application responsibilities
+### Application responsibilities
 
 `catalysis_workbench.application` owns GUI-neutral session state and user-action
 orchestration. It coordinates workspace operations and calls existing public
-workflow/visualization/scientific APIs. It does not reimplement their numerical
-semantics.
+workflow, visualization, and scientific APIs. It does not reimplement their
+numerical semantics.
 
-### desktop responsibilities
+### Desktop responsibilities
 
-The desktop layer is presentation and interaction only. It must route scientific
+The desktop layer is presentation and interaction only. It routes scientific
 operations through reviewed application/workflow contracts and must not contain
 an independent scientific execution engine.
 
@@ -109,26 +105,26 @@ The following remain mandatory throughout v1.0:
 - no silent unit conversion;
 - no unsupported species or chemical assignment;
 - no unsupported scientific inference;
-- provenance is preserved rather than reconstructed heuristically;
-- numerical semantics are explicit;
-- incompatible state fails closed;
-- source, acquisition, recipe-step, batch-item, asset, and other user-defined
-  order is preserved wherever meaningful;
+- preserve provenance rather than reconstruct it heuristically;
+- keep numerical semantics explicit;
+- fail closed on incompatible state;
+- preserve source, acquisition, recipe-step, batch-item, asset, and other
+  user-defined order where meaningful;
 - QA remains evidence-producing and non-mutating;
 - presentation editing never mutates scientific results;
 - serialized state cannot request arbitrary Python callable execution;
 - serialized state cannot trigger dynamic import or automatic operation
   discovery; and
-- workspace/application convenience must adapt to existing scientific APIs,
-  never change those APIs merely to simplify the UI.
+- workspace/application convenience adapts to existing scientific APIs, never
+  changes those APIs merely to simplify a UI.
 
 v0.9 recipe execution remains literal ordered execution. v1.0 does not silently
-reinterpret a `WorkflowRecipe` as a DAG, infer dependencies, topologically sort
+reinterpret `WorkflowRecipe` as a DAG, infer dependencies, topologically sort
 steps, repair forward references, or introduce automatic parallelism.
 
-## 5. Workspace identity and persistence contract
+## 5. Workspace identity, path, and persistence contract
 
-The initial workspace is a strict local file-backed abstraction rather than a
+The first v1.0 workspace is a strict local file-backed abstraction rather than a
 database-backed system.
 
 A workspace manifest must have:
@@ -136,13 +132,43 @@ A workspace manifest must have:
 - an explicit schema version;
 - an explicit ordered asset list;
 - stable caller-visible asset identifiers;
-- relative workspace paths where a workspace-owned file is referenced;
 - deterministic canonical JSON identity;
 - strict unknown-field rejection;
 - duplicate-key rejection during JSON loading;
 - explicit overwrite behavior with persistent writes defaulting to
   `overwrite=False`; and
-- fail-closed validation before persistent mutation.
+- complete validation before persistent mutation.
+
+### Workspace-owned path confinement
+
+Every workspace-owned path stored in deterministic state must be a relative path
+whose meaning is rooted explicitly at the workspace root supplied at the I/O
+boundary.
+
+The initial path contract fails closed on:
+
+- absolute paths;
+- drive-qualified paths where applicable;
+- parent traversal components such as `..`;
+- any resolved workspace-owned path that escapes the declared workspace root;
+- ambiguous empty/root-only asset paths; and
+- workspace-owned symbolic-link entries or symbolic-link traversal.
+
+Symlink support is deliberately excluded from the first slice. A future proposal
+to allow symlinks must separately define identity, root confinement, target
+mutation, broken-link, cross-platform, and TOCTOU semantics before support is
+added.
+
+Path validation used for security/root confinement is not scientific-data
+normalization. The implementation may canonicalize only the representation
+required by the reviewed workspace path schema; it must not silently rewrite a
+user-selected external source into a different source.
+
+External references and workspace-owned files are distinct. An external source
+may live outside the workspace root only through an explicit external-reference
+operation and must never be mistaken for a workspace-owned relative path.
+
+### Deterministic workspace identity exclusions
 
 Workspace deterministic identity must not depend on:
 
@@ -157,8 +183,8 @@ Workspace deterministic identity must not depend on:
 Those values may be retained separately as non-identity metadata only if a
 future reviewed use case requires them.
 
-The workspace layer must not automatically crawl directories or infer assets
-from arbitrary files. Discovery is user-controlled and explicit.
+The workspace layer must not crawl directories automatically or infer assets
+from arbitrary files. Discovery is explicit and user-controlled.
 
 ## 6. Asset contract
 
@@ -178,16 +204,23 @@ Asset category is not scientific interpretation. The workspace layer must not
 assign chemical meaning, measurement technique, parser, units, or species from
 a filename unless the caller explicitly supplies a reviewed mapping.
 
-Any file ownership policy must be explicit. Referencing an external file and
-copying a file into workspace-owned storage are different operations and must not
-be silently substituted for one another.
+File ownership policy is explicit:
+
+- `reference` keeps an explicit external source reference;
+- `copy` creates a separately validated workspace-owned file; and
+- neither policy may silently substitute for the other.
+
+Where file bytes are identity-bearing, content digests are computed from the
+actual retained bytes. File paths alone are not treated as scientific content
+identity.
 
 ## 7. Persistent evidence contract
 
-v1.0 should persist associations between workspace assets and evidence already
-produced by reviewed APIs rather than inventing a second provenance system.
+v1.0 persists associations between workspace assets and evidence already
+produced by reviewed APIs rather than inventing a second scientific provenance
+system.
 
-The initial persistent evidence ledger may associate:
+The initial ledger may associate:
 
 - `WorkflowRun`;
 - `BatchRunRecord`;
@@ -196,9 +229,12 @@ The initial persistent evidence ledger may associate:
 - figures/specifications and their deterministic identities; and
 - exported artifact identities.
 
-The first implementation should use explicit schema-versioned files and ordered
-manifests. A SQL database, ORM, migration framework, background service, or
-server is not required for the first v1.0 slice.
+The first implementation uses explicit schema-versioned files and ordered
+manifests. SQL, an ORM, a migration framework, a background service, or a server
+is not required for the first v1.0 slice.
+
+The ledger records what reviewed APIs produced; it does not decide what
+scientific result should have been produced.
 
 ## 8. Block 1 — Workspace foundation
 
@@ -225,16 +261,19 @@ Required semantics:
 - explicit ordered assets;
 - strict schema-versioned JSON;
 - deterministic manifest SHA-256;
-- relative paths only for workspace-owned entries;
-- explicit workspace root supplied at I/O boundaries;
+- explicit workspace root supplied only at I/O boundaries;
+- reviewed root-confinement checks for every workspace-owned path;
+- reject absolute, parent-traversing, root-escaping, and symlink workspace-owned
+  paths in the initial slice;
+- validate all candidate state before persistent mutation;
 - no directory crawling;
 - no automatic scientific import;
 - no workflow execution;
 - no database; and
 - no new dependency.
 
-Block 1 begins the `1.0.0.dev0` development identity if and only if the
-architecture checkpoint has been approved for implementation.
+Block 1 begins the `1.0.0.dev0` development identity only after the architecture
+checkpoint is approved for implementation.
 
 ## 9. Block 2 — Explicit asset import and catalog
 
@@ -248,14 +287,17 @@ Required semantics:
 
 - explicit caller-selected source;
 - explicit stable asset key;
-- explicit reference-versus-copy policy;
+- explicit `reference` versus `copy` policy;
 - content digest where file bytes are part of identity;
 - literal caller asset order;
 - collision detection before mutation;
+- workspace-owned destinations must satisfy Block-1 root confinement;
+- external references remain explicitly external and are never rewritten into
+  workspace-owned paths;
 - no parser guessing from filename or extension as scientific authority;
 - no recursive scanning;
 - no silent file move/delete;
-- no hidden path normalization that changes user intent; and
+- no hidden source substitution; and
 - no new dependency.
 
 The existing `catalysis_workbench.io` layer remains responsible for actual
@@ -274,24 +316,20 @@ Required semantics:
 
 - explicit association between assets, recipes, runs, QA reports, and artifacts;
 - deterministic ordered record identity;
-- reuse of existing public evidence/digest state where available;
+- reuse existing public evidence/digest state where available;
 - no invented scientific provenance;
 - no timestamps in deterministic identity;
 - no free-form traceback text in deterministic identity;
 - no automatic retry or execution; and
 - no database dependency in the initial implementation.
 
-The evidence ledger records what reviewed APIs produced; it does not decide what
-scientific result should have been produced.
-
 ## 11. Block 4 — Workspace workflow and figure composition
 
 Planned responsibilities:
 
-- save/load recipes inside a workspace through the reviewed v0.9 recipe
-  serialization contract;
+- save/load recipes through the reviewed v0.9 serialization contract;
 - associate recipes with explicit input/output assets;
-- save/load `FigureSpec` and reproducible preset bundles through their reviewed
+- save/load `FigureSpec` and reproducible preset bundles through reviewed
   serialization bridges;
 - associate exported figures with the exact presentation/evidence state that
   produced them; and
@@ -304,9 +342,9 @@ Required boundary:
 - no arbitrary callable insertion;
 - no dynamic operation import;
 - no automatic operation discovery;
-- no hidden scientific parameter defaults beyond the existing reviewed public
+- no hidden scientific parameter defaults beyond existing reviewed public
   operation contracts; and
-- no scientific data mutation by workspace composition.
+- no scientific-data mutation by workspace composition.
 
 ## 12. Block 5 — GUI-neutral application/session controller
 
@@ -319,7 +357,7 @@ src/catalysis_workbench/application/
     commands.py
 ~~~
 
-Minimum planned responsibilities:
+Minimum responsibilities:
 
 - open/close/select workspace state;
 - explicit asset selection;
@@ -327,7 +365,7 @@ Minimum planned responsibilities:
 - explicit workflow execution through `catalysis_workbench.workflow`;
 - QA invocation through reviewed QA APIs;
 - figure-state selection/editing through reviewed visualization APIs; and
-- immutable or transaction-safe application state updates.
+- immutable or transaction-safe application-state updates.
 
 The controller must be testable without opening a GUI window. Invalid commands
 must fail before committed application state is mutated.
@@ -350,31 +388,31 @@ Target user-facing capabilities:
 A complete desktop shell likely requires a dedicated GUI toolkit. No new runtime
 or optional GUI dependency is authorized by this document.
 
-Before `pyproject.toml` is changed for a toolkit such as PySide6 or another GUI
-framework, stop and report:
+Before `pyproject.toml` is changed for PySide6 or another GUI framework, stop
+and report:
 
 - dependency name and exact role;
-- runtime versus optional dependency placement;
+- runtime versus optional-dependency placement;
 - current license and distribution implications;
 - installation/wheel burden on supported platforms;
-- headless CI implications;
+- headless-CI implications;
 - import/lazy-loading strategy;
 - viable no-new-dependency alternative; and
-- public API impact.
+- public-API impact.
 
-If no toolkit is authorized, Block 6 is narrowed to application-controller/API
-hardening and integration with the already available Matplotlib FigureSpec
-editor; a complete desktop shell remains deferred rather than forcing an
-unreviewed dependency.
+If no toolkit is authorized, Block 6 narrows to application-controller/API
+hardening and integration with the existing Matplotlib FigureSpec editor. A
+complete desktop shell remains deferred rather than forcing an unreviewed
+dependency.
 
 Final v1.0 hardening includes installed-wheel/public-API audit, import-laziness
 checks, version identity, documentation synchronization, and compatibility
-review. Stable `1.0.0`, tag, Release, or PyPI publication remain separately
-authorized decisions.
+review. Stable `1.0.0`, a tag, GitHub Release, or PyPI publication remain
+separately authorized decisions.
 
 ## 14. Explicit non-goals
 
-Unless separately re-architected in a later version, v1.0 does not include:
+Unless separately re-architected later, v1.0 does not include:
 
 - new scientific-analysis algorithms merely to fill the GUI;
 - a new DAG/workflow execution engine;
@@ -393,8 +431,8 @@ Unless separately re-architected in a later version, v1.0 does not include:
 
 ## 15. Prior-art and license review
 
-The repositories below are architecture references only. No external source
-code is copied, adapted, vendored, or added as a dependency by this plan.
+The repositories below are architecture references only. No external source code
+is copied, adapted, vendored, or added as a dependency by this plan.
 
 ### signac
 
@@ -403,11 +441,11 @@ Upstream: https://github.com/glotzerlab/signac
 Useful concepts:
 
 - file-system-oriented management of heterogeneous data spaces;
-- explicit project/state organization;
+- explicit project/state organization; and
 - reproducibility-oriented metadata separation.
 
-License verified from upstream repository metadata at this architecture
-checkpoint: BSD 3-Clause License.
+License verified from upstream repository metadata at this checkpoint: BSD
+3-Clause License.
 
 Decision: workspace/data-management concepts only; no dependency and no code
 reuse.
@@ -419,11 +457,11 @@ Upstream: https://github.com/pyiron/pyiron_base
 Useful concepts:
 
 - an integrated materials-science work environment;
-- separation between project/job management and scientific backends;
+- separation between project/job management and scientific backends; and
 - workflow-management boundaries.
 
-License verified from upstream repository metadata at this architecture
-checkpoint: BSD 3-Clause License.
+License verified from upstream repository metadata at this checkpoint: BSD
+3-Clause License.
 
 Decision: project/job/application layering concepts only; no dependency and no
 code reuse.
@@ -435,11 +473,10 @@ Upstream: https://github.com/aiidateam/aiida-core
 Useful concepts:
 
 - explicit workflow/provenance separation;
-- durable provenance as a first-class concern;
+- durable provenance as a first-class concern; and
 - separation of orchestration from scientific code.
 
-License verified from upstream `LICENSE.txt` at this architecture checkpoint:
-MIT License.
+License verified from upstream `LICENSE.txt` at this checkpoint: MIT License.
 
 AiiDA's database, scheduler, daemon, SSH, distributed workflow, and broader
 infrastructure scope substantially exceed the deliberately local v1.0 scope.
@@ -453,11 +490,10 @@ Upstream: https://github.com/biolab/orange3
 Useful concepts:
 
 - desktop-oriented interactive data analysis;
-- visual-programming and inspector-style interaction patterns;
-- clear separation between user interaction and analytical components.
+- visual-programming and inspector-style interaction patterns; and
+- separation between user interaction and analytical components.
 
-License verified from upstream `LICENSE` at this architecture checkpoint:
-GNU GPL-3.0+.
+License verified from upstream `LICENSE` at this checkpoint: GNU GPL-3.0+.
 
 Decision: UX/interaction concepts only. No code, widgets, assets, or source are
 copied or adapted, and Orange3 is not added as a dependency.
@@ -481,7 +517,7 @@ NEW RUNTIME DEPENDENCY REQUIRED: NO
 NEW OPTIONAL DEPENDENCY REQUIRED: NO
 ~~~
 
-Block 6 desktop toolkit status:
+Block 6 desktop-toolkit status:
 
 ~~~text
 NEW GUI DEPENDENCY: NOT YET AUTHORIZED
@@ -514,8 +550,8 @@ and a fresh environment that:
 - runs cumulative public-API/package audit coverage.
 
 Desktop/UI Blocks additionally require headless controller tests. Any toolkit
-later authorized must have a CI-safe import/headless strategy before it enters
-formal implementation.
+later authorized must have a CI-safe import/headless strategy before formal
+implementation.
 
 Local validation is diagnostic/development evidence only. Formal promotion
 requires GitHub exact-head CI on the PR head and final review of that same head.
@@ -580,6 +616,8 @@ change requires:
 - automatic operation discovery;
 - hidden recursive file discovery;
 - hidden sequence sorting;
+- ambiguous or non-confined workspace-owned path semantics;
+- symlink support without an explicit reviewed identity/confinement contract;
 - scientific auto-correction by QA or application code;
 - GUI mutation of scientific results outside reviewed APIs;
 - an unclear workspace/application/science ownership boundary;
