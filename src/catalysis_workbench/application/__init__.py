@@ -9,6 +9,12 @@ from .commands import (
     apply_recipe_edit,
 )
 from .session import ApplicationError, ApplicationSession, ApplicationState
+from .workspace_actions import (
+    WorkspaceSnapshot,
+    create_workspace_in_session,
+    import_asset_in_session,
+    workspace_snapshot,
+)
 
 __all__ = [
     "ApplicationError",
@@ -19,5 +25,9 @@ __all__ = [
     "RecipeEditCommand",
     "RemoveRecipeStepCommand",
     "ReplaceRecipeStepCommand",
+    "WorkspaceSnapshot",
     "apply_recipe_edit",
+    "create_workspace_in_session",
+    "import_asset_in_session",
+    "workspace_snapshot",
 ]
