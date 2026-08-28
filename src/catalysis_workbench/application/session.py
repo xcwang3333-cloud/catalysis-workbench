@@ -15,7 +15,10 @@ from catalysis_workbench.workflow import (
     execute_recipe,
     run_qa,
 )
-from catalysis_workbench.workspace import open_workspace as _open_workspace
+from catalysis_workbench.workspace import (
+    WorkspaceManifest,
+    open_workspace as _open_workspace,
+)
 from catalysis_workbench.workspace.composition import (
     load_figure_spec_asset,
     load_recipe_asset,
@@ -27,7 +30,6 @@ from .commands import RecipeEditCommand, apply_recipe_edit
 
 if TYPE_CHECKING:
     from catalysis_workbench.visualization import FigureSpec
-    from catalysis_workbench.workspace import WorkspaceManifest
 
 
 class ApplicationError(RuntimeError):
@@ -127,6 +129,11 @@ class ApplicationState:
             raise ApplicationError(
                 "selected_figure_spec_asset_id and figure_spec must be present together"
             )
+        if self.figure_spec is not None:
+            from catalysis_workbench.visualization import FigureSpec
+
+            if not isinstance(self.figure_spec, FigureSpec):
+                raise TypeError("figure_spec must be a FigureSpec or None")
         if type(self.figure_spec_dirty) is not bool:
             raise TypeError("figure_spec_dirty must be a bool")
         if self.figure_spec_dirty and self.figure_spec is None:
@@ -174,7 +181,30 @@ class ApplicationSession:
         """Return the current immutable application state."""
         return self._state
 
+    def _workspace_root(self) -> Path:
+        root = self._state.workspace_root
+        if root is None:
+            raise ApplicationError("no workspace is open")
+        return root
+
+    def _assert_manifest_unchanged(self, expected_sha256: str) -> WorkspaceManifest:
+        manifest = _open_workspace(self._workspace_root())
+        if manifest.manifest_sha256 != expected_sha256:
+            raise ApplicationError(
+                "workspace changed during the application command; refresh explicitly"
+            )
+        return manifest
+
     def _commit(self, **changes: Any) -> ApplicationState:
+        if (
+            self._state.workspace_root is not None
+            and "workspace_root" not in changes
+            and "workspace_manifest_sha256" not in changes
+        ):
+            expected = self._state.workspace_manifest_sha256
+            if expected is None:
+                raise ApplicationError("open application state lost its manifest identity")
+            self._assert_manifest_unchanged(expected)
         candidate = replace(
             self._state,
             revision=self._state.revision + 1,
@@ -187,6 +217,11 @@ class ApplicationSession:
         """Open one explicit existing workspace and reset transient selections."""
         manifest = _open_workspace(root)
         root_path = Path(root).resolve(strict=True)
+        observed = _open_workspace(root_path)
+        if observed.manifest_sha256 != manifest.manifest_sha256:
+            raise ApplicationError(
+                "workspace changed while it was being opened; retry explicitly"
+            )
         return self._commit(
             workspace_root=root_path,
             workspace_manifest_sha256=manifest.manifest_sha256,
@@ -216,12 +251,6 @@ class ApplicationSession:
             last_workflow_run=None,
             last_qa_report=None,
         )
-
-    def _workspace_root(self) -> Path:
-        root = self._state.workspace_root
-        if root is None:
-            raise ApplicationError("no workspace is open")
-        return root
 
     def _current_manifest(self) -> WorkspaceManifest:
         root = self._workspace_root()
@@ -269,6 +298,11 @@ class ApplicationSession:
             figure_spec = load_figure_spec_asset(
                 root,
                 self._state.selected_figure_spec_asset_id,
+            )
+        observed = _open_workspace(root)
+        if observed.manifest_sha256 != manifest.manifest_sha256:
+            raise ApplicationError(
+                "workspace changed while it was being refreshed; retry explicitly"
             )
         return self._commit(
             workspace_manifest_sha256=manifest.manifest_sha256,
@@ -325,7 +359,7 @@ class ApplicationSession:
         destination: str,
     ) -> ApplicationState:
         """Snapshot the current recipe through the reviewed workspace bridge."""
-        self._current_manifest()
+        before = self._current_manifest()
         root = self._workspace_root()
         recipe = self._state.recipe
         if recipe is None:
@@ -336,7 +370,15 @@ class ApplicationSession:
             asset_id=asset_id,
             destination=destination,
         )
+        expected = WorkspaceManifest(
+            schema_version=before.schema_version,
+            assets=(*before.assets, asset),
+        )
         manifest = _open_workspace(root)
+        if manifest.manifest_sha256 != expected.manifest_sha256:
+            raise ApplicationError(
+                "workspace changed concurrently with recipe save; refresh explicitly"
+            )
         return self._commit(
             workspace_manifest_sha256=manifest.manifest_sha256,
             selected_recipe_asset_id=asset.asset_id,
@@ -389,7 +431,7 @@ class ApplicationSession:
         destination: str,
     ) -> ApplicationState:
         """Snapshot the current FigureSpec through the reviewed workspace bridge."""
-        self._current_manifest()
+        before = self._current_manifest()
         root = self._workspace_root()
         spec = self._state.figure_spec
         if spec is None:
@@ -400,7 +442,15 @@ class ApplicationSession:
             asset_id=asset_id,
             destination=destination,
         )
+        expected = WorkspaceManifest(
+            schema_version=before.schema_version,
+            assets=(*before.assets, asset),
+        )
         manifest = _open_workspace(root)
+        if manifest.manifest_sha256 != expected.manifest_sha256:
+            raise ApplicationError(
+                "workspace changed concurrently with FigureSpec save; refresh explicitly"
+            )
         return self._commit(
             workspace_manifest_sha256=manifest.manifest_sha256,
             selected_figure_spec_asset_id=asset.asset_id,
