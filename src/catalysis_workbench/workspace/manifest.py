@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import PurePosixPath, PureWindowsPath
+from string import hexdigits
 from typing import Any
 
 from catalysis_workbench._canonical_json import (
@@ -19,6 +20,7 @@ class WorkspaceError(ValueError):
 
 
 _MANIFEST_FILENAME = "workspace.json"
+_ASSET_POLICIES = frozenset({"copy", "reference"})
 
 
 def _identifier(value: object, *, label: str) -> str:
@@ -30,6 +32,22 @@ def _identifier(value: object, *, label: str) -> str:
         canonical_json_bytes(value)
     except CanonicalJSONError as exc:
         raise WorkspaceError(f"{label} must be valid UTF-8") from exc
+    return value
+
+
+def _asset_policy(value: object) -> str:
+    if type(value) is not str or value not in _ASSET_POLICIES:
+        raise WorkspaceError("asset policy must be 'copy' or 'reference'")
+    return value
+
+
+def _content_sha256(value: object | None) -> str | None:
+    if value is None:
+        return None
+    if type(value) is not str or len(value) != 64:
+        raise WorkspaceError("content_sha256 must be a 64-character lowercase SHA-256")
+    if value != value.lower() or any(character not in hexdigits.lower() for character in value):
+        raise WorkspaceError("content_sha256 must be a 64-character lowercase SHA-256")
     return value
 
 
@@ -65,13 +83,32 @@ def _workspace_owned_path(value: object) -> str:
     return normalized
 
 
+def _external_reference_path(value: object) -> str:
+    if type(value) is not str or not value:
+        raise WorkspaceError("external reference path must be a non-empty string")
+    try:
+        canonical_json_bytes(value)
+    except CanonicalJSONError as exc:
+        raise WorkspaceError("external reference path must be valid UTF-8") from exc
+    if "\x00" in value:
+        raise WorkspaceError("external reference path must not contain NUL")
+
+    posix = PurePosixPath(value)
+    windows = PureWindowsPath(value)
+    if not posix.is_absolute() and not windows.is_absolute():
+        raise WorkspaceError("external reference path must be absolute")
+    return value
+
+
 @dataclass(frozen=True, slots=True)
 class WorkspaceAsset:
-    """One explicitly identified workspace-owned asset entry."""
+    """One explicitly identified workspace asset entry."""
 
     asset_id: str
     asset_type: str
     path: str
+    policy: str = "copy"
+    content_sha256: str | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "asset_id", _identifier(self.asset_id, label="asset_id"))
@@ -80,7 +117,17 @@ class WorkspaceAsset:
             "asset_type",
             _identifier(self.asset_type, label="asset_type"),
         )
-        object.__setattr__(self, "path", _workspace_owned_path(self.path))
+        policy = _asset_policy(self.policy)
+        object.__setattr__(self, "policy", policy)
+        if policy == "copy":
+            checked_path = _workspace_owned_path(self.path)
+        else:
+            checked_path = _external_reference_path(self.path)
+        object.__setattr__(self, "path", checked_path)
+        digest = _content_sha256(self.content_sha256)
+        if policy == "reference" and digest is None:
+            raise WorkspaceError("reference assets require content_sha256")
+        object.__setattr__(self, "content_sha256", digest)
 
 
 @dataclass(frozen=True, slots=True)
@@ -105,9 +152,9 @@ class WorkspaceManifest:
         if len(set(asset_ids)) != len(asset_ids):
             raise WorkspaceError("workspace asset_id values must be unique")
 
-        paths = tuple(asset.path for asset in assets)
-        if len(set(paths)) != len(paths):
-            raise WorkspaceError("workspace asset paths must be unique")
+        locations = tuple((asset.policy, asset.path) for asset in assets)
+        if len(set(locations)) != len(locations):
+            raise WorkspaceError("workspace asset paths must be unique within each policy")
 
         object.__setattr__(self, "assets", assets)
         try:
@@ -120,37 +167,45 @@ class WorkspaceManifest:
 
 
 _MANIFEST_FIELDS = frozenset({"schema_version", "assets"})
-_ASSET_FIELDS = frozenset({"asset_id", "asset_type", "path"})
+_ASSET_REQUIRED_FIELDS = frozenset({"asset_id", "asset_type", "path"})
+_ASSET_OPTIONAL_FIELDS = frozenset({"policy", "content_sha256"})
 
 
 def _required_fields(
     value: Mapping[object, object],
     *,
     required: frozenset[str],
+    optional: frozenset[str] = frozenset(),
     label: str,
 ) -> None:
     if not all(type(key) is str for key in value):
         raise WorkspaceError(f"{label} field names must be strings")
     fields = set(value)
     missing = sorted(required - fields)
-    unknown = sorted(fields - required)
+    unknown = sorted(fields - required - optional)
     if missing or unknown:
         raise WorkspaceError(
             f"invalid {label} fields; missing={missing!r}, unknown={unknown!r}"
         )
 
 
+def _asset_to_plain_dict(asset: WorkspaceAsset) -> dict[str, Any]:
+    result: dict[str, Any] = {
+        "asset_id": asset.asset_id,
+        "asset_type": asset.asset_type,
+        "path": asset.path,
+    }
+    if asset.policy != "copy" or asset.content_sha256 is not None:
+        result["policy"] = asset.policy
+    if asset.content_sha256 is not None:
+        result["content_sha256"] = asset.content_sha256
+    return result
+
+
 def _manifest_to_plain_dict(manifest: WorkspaceManifest) -> dict[str, Any]:
     return {
         "schema_version": manifest.schema_version,
-        "assets": [
-            {
-                "asset_id": asset.asset_id,
-                "asset_type": asset.asset_type,
-                "path": asset.path,
-            }
-            for asset in manifest.assets
-        ],
+        "assets": [_asset_to_plain_dict(asset) for asset in manifest.assets],
     }
 
 
@@ -169,7 +224,8 @@ def _manifest_from_dict(value: object) -> WorkspaceManifest:
             raise WorkspaceError(f"serialized workspace asset {index} must be an object")
         _required_fields(
             asset,
-            required=_ASSET_FIELDS,
+            required=_ASSET_REQUIRED_FIELDS,
+            optional=_ASSET_OPTIONAL_FIELDS,
             label=f"workspace asset {index}",
         )
         parsed_assets.append(
@@ -177,6 +233,8 @@ def _manifest_from_dict(value: object) -> WorkspaceManifest:
                 asset_id=asset["asset_id"],
                 asset_type=asset["asset_type"],
                 path=asset["path"],
+                policy=asset.get("policy", "copy"),
+                content_sha256=asset.get("content_sha256"),
             )
         )
 
