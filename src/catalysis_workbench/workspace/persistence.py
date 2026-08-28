@@ -58,7 +58,8 @@ def _owned_path(root: Path, serialized_path: str) -> Path:
 
 def _validate_owned_paths(manifest: WorkspaceManifest, root: Path) -> None:
     for asset in manifest.assets:
-        _owned_path(root, asset.path)
+        if asset.policy == "copy":
+            _owned_path(root, asset.path)
 
 
 def _payload(manifest: WorkspaceManifest) -> bytes:
