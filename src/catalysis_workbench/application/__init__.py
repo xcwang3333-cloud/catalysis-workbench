@@ -1,5 +1,22 @@
 """GUI-neutral CatalysisWorkbench application/session API."""
 
+from .analysis import (
+    AnalysisDocument,
+    AnalysisDocumentError,
+    AnalysisProjectError,
+    AnalysisProjectSnapshot,
+    AnalysisSession,
+    AnalysisSessionError,
+    AnalysisSessionState,
+    AnalysisTaskDescriptor,
+    AnalysisTaskError,
+    LegacyWorkspaceError,
+    analysis_task_catalog,
+    create_analysis_project,
+    get_analysis_task_descriptor,
+    open_analysis_project,
+    save_analysis_project,
+)
 from .commands import (
     InsertRecipeStepCommand,
     MoveRecipeStepCommand,
@@ -19,19 +36,34 @@ from .workspace_actions import (
 )
 
 __all__ = [
+    "AnalysisDocument",
+    "AnalysisDocumentError",
+    "AnalysisProjectError",
+    "AnalysisProjectSnapshot",
+    "AnalysisSession",
+    "AnalysisSessionError",
+    "AnalysisSessionState",
+    "AnalysisTaskDescriptor",
+    "AnalysisTaskError",
     "ApplicationError",
     "ApplicationSession",
     "ApplicationState",
     "InsertRecipeStepCommand",
+    "LegacyWorkspaceError",
     "MoveRecipeStepCommand",
     "RecipeEditCommand",
     "RemoveRecipeStepCommand",
     "ReplaceRecipeStepCommand",
     "WorkspaceSnapshot",
+    "analysis_task_catalog",
     "apply_recipe_edit",
     "close_workspace_in_session",
+    "create_analysis_project",
     "create_workspace_in_session",
+    "get_analysis_task_descriptor",
     "import_asset_in_session",
+    "open_analysis_project",
     "open_workspace_in_session",
+    "save_analysis_project",
     "workspace_snapshot",
 ]

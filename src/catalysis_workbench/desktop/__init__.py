@@ -47,11 +47,20 @@ def __getattr__(name: str):
                 raise _dependency_error(exc) from exc
             raise
         return CatalysisWorkbenchMainWindow
+    if name == "CatalysisWorkbenchWindow":
+        try:
+            from .workbench_window import CatalysisWorkbenchWindow
+        except ModuleNotFoundError as exc:
+            if exc.name == "PySide6" or (exc.name or "").startswith("PySide6."):
+                raise _dependency_error(exc) from exc
+            raise
+        return CatalysisWorkbenchWindow
     raise AttributeError(name)
 
 
 __all__ = [
     "CatalysisWorkbenchMainWindow",
+    "CatalysisWorkbenchWindow",
     "DesktopDependencyError",
     "desktop_available",
     "launch_desktop",

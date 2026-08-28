@@ -21,7 +21,12 @@ class WorkspaceError(ValueError):
 
 _MANIFEST_FILENAME = "workspace.json"
 _RESERVED_WORKSPACE_METADATA = frozenset(
-    {_MANIFEST_FILENAME, "workspace-evidence.json", "workspace-composition.json"}
+    {
+        _MANIFEST_FILENAME,
+        "project.json",
+        "workspace-evidence.json",
+        "workspace-composition.json",
+    }
 )
 _ASSET_POLICIES = frozenset({"copy", "reference"})
 

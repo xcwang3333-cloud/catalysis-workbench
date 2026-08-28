@@ -53,7 +53,7 @@ jobs:
           .venv-smoke/bin/python -m pip install dist/catalysis_workbench-*.whl
           .venv-smoke/bin/python -m pip check
 
-      - name: Audit installed public API and cumulative v0.7/v0.8/v0.9/v1.0 scope
+      - name: Audit installed public API and cumulative v0.7/v0.8/v0.9/v1.0/v1.1 scope
         run: |
           .venv-smoke/bin/python tests/installed_api_smoke.py
           .venv-smoke/bin/python tests/installed_color_scales_smoke.py
@@ -76,6 +76,7 @@ jobs:
           .venv-smoke/bin/python tests/installed_v10_block4_smoke.py
           .venv-smoke/bin/python tests/installed_v10_block5_smoke.py
           .venv-smoke/bin/python tests/installed_v10_block6_smoke.py
+          .venv-smoke/bin/python tests/installed_v11_block1_smoke.py
 
       - name: Audit installed structure/electronic/bonding/ELFCAR/band/PROCAR/LOCPOT adapters
         run: |
@@ -167,8 +168,10 @@ jobs:
           .venv-desktop/bin/python -m pip install "catalysis-workbench[desktop] @ file://${wheel_path}"
           .venv-desktop/bin/python -m pip check
 
-      - name: Audit installed offscreen desktop shell
+      - name: Audit installed offscreen desktop shells
         env:
           QT_QPA_PLATFORM: "offscreen"
           MPLBACKEND: "Agg"
-        run: .venv-desktop/bin/python tests/installed_v10_desktop_smoke.py
+        run: |
+          .venv-desktop/bin/python tests/installed_v10_desktop_smoke.py
+          .venv-desktop/bin/python tests/installed_v11_block1_desktop_smoke.py
