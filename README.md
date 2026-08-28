@@ -1,280 +1,175 @@
 # CatalysisWorkbench
 
-**CatalysisWorkbench** is a Python workbench for quantitative post-processing, comparative analysis, and publication-quality visualization of catalysis experimental, characterization, and computational data.
+CatalysisWorkbench is a local Python workbench for quantitative catalysis data post-processing, reproducible workflows, scientific QA/evidence, and publication-quality visualization.
 
-As of 2026-08-27, `v0.7.0` is the only currently retained stable GitHub Release/tag. v0.1-v0.6 remain valid historical development/release milestones, but their old GitHub Release/tag artifacts were intentionally removed during repository cleanup; their Issues, Pull Requests, commits, CI runs, release gates, and release-specific documentation remain retained as provenance. The completed v0.8 operando/time-resolved scientific implementation is a development milestone and will not receive a standalone `v0.8.0` tag or GitHub Release. Current `main` remains at distribution/runtime version `0.7.0` until future development work is formally integrated, while continuing development proceeds on the `0.9.0.dev0` line. Future GitHub Releases are reserved for infrequent maturity checkpoints rather than every minor development boundary, and PyPI/package-registry publication remains a separate deferred decision.
+## Current development state
 
-The reviewed v0.1 scientific foundation covers common one-dimensional XY workflows: tabular import, reusable processing, LSV/polarization curves, XRD, Raman, and exact-size PNG/SVG/PDF export. The historical v0.2 quantitative-electrochemistry milestone completed shared electrochemistry quantity/provenance conventions, scatter/bar rendering, Tafel analysis, Faradaic efficiency, product partial-current density, activity normalization, TOF/TOFapp, CV/Cdl/ECSA, stability analysis, and RRDE/Koutecky-Levich basics at version `0.2.0`. The historical v0.3 extended-characterization milestone completed reviewed FTIR / ATR-FTIR, TGA / DTG / TPR / TPD thermal analysis, basic gas-sorption isotherm processing/publication plotting, and ICP/elemental-composition integration at version `0.3.0`.
+The active development identity is `1.0.0.dev0` on the v1.0 line. The reviewed v1.0 architecture adds a local workspace, explicit asset catalog, persistent evidence ledger, recipe/FigureSpec composition, a GUI-neutral application session, and an optional desktop presentation shell on top of the existing scientific APIs.
 
-Historically, v0.4 was tagged as `v0.4.0` on reviewed release commit `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6`, and its GitHub Release was published from that tag at the time; the old tag/Release artifact is no longer retained. The shared constrained peak-fitting foundation was reviewed and merged through Issue #75 / PR #76 at `b6f428d96df9950373c17e5de487ac4113a2aacc`. The XPS preparation layer was reviewed and merged through Issue #79 / PR #80 at `a13dbd541b299f79d83e47f079c4638b082a8061`, followed by constrained XPS fitting through Issue #83 / PR #84 at `7897393e1e1e9e4d23fad774b4eeecdd70e2a90b` and XPS publication plotting/diagnostics through Issue #87 / PR #88 at `3eab8c8e936cf1897081b7a396306288e517a3bb`. The initial EIS layer completed Issue #91 / PR #92 at `cd8dd171a16576067934a13ad3ac41d0fb18d55a`. Quantitative BET completed Issue #95 / PR #96 at `c76a49d64e096d6db001c27c598356baa797f3a9`. Product calibration and inverse sample quantification completed the planned scientific scope through Issue #99 / PR #100 at `adc0f50178d899b4f257842da6e7bac553a25254`. Gate A / Issue #103 / PR #104 completed the unified fresh-wheel/public-API audit at merge commit `ce06abc11559fa7679869fc83a59356735ce6824`; Gate B / Issue #105 / PR #106 finalized and exact-wheel validated version `0.4.0`; Gate C / Issue #107 created and reverse-verified tag `v0.4.0`.
+Release status remains deliberately separate from development state:
 
-v0.5 remains a historical development/release milestone finalized at version `0.5.0`. The reviewed scientific scope includes explicit XAS/XANES preparation and normalization; FT-EXAFS and WT-EXAFS transforms/visualization; neutral EXAFS fitting-result summaries; immutable atomic structures with optional POSCAR/CONTCAR/CIF/XYZ adapters; explicit periodic-image geometry, coordination and caller-mapped structure comparison; renderer-neutral static structure visualization; and explicit total/relative/reaction/adsorption-energy post-processing. Gate A release hardening completed through #136/#137 at `0ffcd7e4a89340d993468039ba83b44bc7638050`; Gate B finalized and exact-wheel validated distribution/runtime version `0.5.0` through #138/#139 at release commit `9400ac0044ac333d2cae228554c08d955a816a4c`; Gate C / #142 reverse-verified tag `v0.5.0` exactly on that commit, and the historical GitHub Release was published with reviewed release notes. Its old tag/GitHub Release artifact is no longer retained. PyPI/package-registry publication remains deferred.
+- `v0.7.0` is the only currently retained stable GitHub Release/tag and remains fixed on `e3062fc12c794f54c7b7613875ec73608a587a59`;
+- v0.8 is a completed operando/time-resolved scientific implementation milestone with no routine tag or GitHub Release;
+- v0.9 is the completed reproducible-workflow development foundation carried into v1.0, with no routine tag or GitHub Release;
+- `1.0.0.dev0` is a development version, not a stable release;
+- stable `1.0.0`, a v1.0 tag, GitHub Release, and PyPI/package-registry publication all require separate explicit authorization.
 
-v0.6 remains a historical development/release milestone finalized at version `0.6.0`. Its reviewed computation scope adds electronic-structure and volumetric semantics/adapters; DOS/PDOS processing and passive plotting; band-center / DOS first-moment analysis; Bader-result parsing and explicit charge accounting; COHP/ICOHP parsing and bonding analysis; explicit geometry–bonding correlation datasets; CHE/free-energy thermodynamics; passive free-energy diagrams; and charge-density-difference arithmetic with strict common-grid/co-registration validation. Gate A release hardening completed through #186/#187 at `c70481e34f6e3f2bf81724f4a30370fec58c1e7b`; Gate B finalized and exact-wheel validated distribution/runtime version `0.6.0` through #188/#189 at reviewed release commit `c7793b309f41d174c14534bd6d4acdacc2a57636`; Gate C / #192 reverse-verified `v0.6.0` exactly on that commit, and the historical GitHub Release was published with reviewed release notes. Its old tag/GitHub Release artifact is no longer retained. PyPI/package-registry publication remains deferred.
+Live GitHub state is authoritative if descriptive documentation drifts.
 
-v0.7 is the currently retained stable GitHub Release/tag as `v0.7.0`. Its reviewed advanced computational-visualization scope adds immutable scalar-field and volumetric-scene state; charge-density-difference, electron-density and ELF visualization; band-structure and PROCAR/fat-band processing; LOCPOT planar-potential/work-function analysis; explicit NEB image-energy/barrier plots; and optional PyVista/VTK-based static volumetric 3-D rendering/export. Gate A completed through #231/#232 at `d718df1338b5a84d71c43a09a41c855c43cbacda`; Gate B finalized and exact-wheel validated distribution/runtime version `0.7.0` through #233/#234 at release commit `e3062fc12c794f54c7b7613875ec73608a587a59`; Gate C #237/#238 created and reverse-verified `v0.7.0` exactly on that commit. The retained public GitHub Release `CatalysisWorkbench v0.7.0` is published from that verified tag. Post-release Issue #245 / PR #246 added the backwards-compatible `symmetric_color_limits()` maintenance primitive as v0.8 heatmap groundwork now consumed by Block 3. PyPI/package-registry publication remains deferred.
+## Installation
 
-## Install from a source checkout
+CatalysisWorkbench targets Python 3.11+.
 
-CatalysisWorkbench currently targets Python 3.11+.
-
-```bash
-python -m pip install -e .
-```
-
-For development and tests:
+Base installation from a source checkout:
 
 ```bash
-python -m pip install -e ".[dev]"
+python -m pip install .
 ```
 
-The historical tagged v0.1.0 milestone used a separate release-hardening gate followed by a final-version gate; see [`docs/RELEASING.md`](docs/RELEASING.md). v0.2 followed the dedicated Gate A/B/C procedure in [`docs/V0_2_RELEASING.md`](docs/V0_2_RELEASING.md), v0.3 followed the same separation in [`docs/V0_3_RELEASING.md`](docs/V0_3_RELEASING.md), v0.4 used [`docs/V0_4_RELEASING.md`](docs/V0_4_RELEASING.md), v0.5 used [`docs/V0_5_RELEASING.md`](docs/V0_5_RELEASING.md), v0.6 used [`docs/V0_6_RELEASING.md`](docs/V0_6_RELEASING.md), and v0.7 used [`docs/V0_7_RELEASING.md`](docs/V0_7_RELEASING.md). Historically, `v0.3.0` was reverse-verified on release commit `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`, `v0.4.0` on `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6`, `v0.5.0` on `9400ac0044ac333d2cae228554c08d955a816a4c`, and `v0.6.0` on `c7793b309f41d174c14534bd6d4acdacc2a57636`; those old tags and GitHub Releases are no longer retained, while the historical documents remain authoritative evidence for their release gates. The retained `v0.7.0` tag remains fixed on `e3062fc12c794f54c7b7613875ec73608a587a59`, and its GitHub Release is the only currently retained stable Release. A Git tag or GitHub Release does not itself publish a package-registry artifact, and PyPI publication is currently deferred.
+Development/test environment:
 
-## Quickstart: CSV -> LSV processing -> publication export
+```bash
+python -m pip install ".[dev]"
+```
+
+Optional structure adapters:
+
+```bash
+python -m pip install ".[structure]"
+```
+
+Optional volumetric 3-D backend:
+
+```bash
+python -m pip install ".[volumetric3d]"
+```
+
+Optional v1.0 desktop shell:
+
+```bash
+python -m pip install ".[desktop]"
+python -m catalysis_workbench.desktop
+```
+
+The desktop extra uses `PySide6-Essentials>=6.11.2,<6.12`. Qt is not an ordinary runtime dependency. Importing `catalysis_workbench.desktop` remains lazy and does not load PySide6 until a desktop class or launcher is requested. See [`docs/DESKTOP.md`](docs/DESKTOP.md).
+
+## Architecture
+
+The dependency direction is intentionally one-way:
+
+```text
+core / processing / io / experimental / computation / visualization
+                              ↓
+                           workflow
+                              ↓
+                          workspace
+                              ↓
+                         application
+                              ↓
+                     desktop presentation
+```
+
+Responsibilities remain separated:
+
+- scientific packages own numerical and scientific semantics;
+- `workflow` owns reviewed literal recipe execution, batching, QA, and deterministic run evidence;
+- `workspace` owns explicit local project state, asset identity, evidence associations, and recipe/figure composition;
+- `application` owns GUI-neutral transaction-safe session state and user-action orchestration;
+- `desktop` owns presentation and interaction only.
+
+The desktop/workspace layers do not infer chemistry, select parsers from filenames as scientific authority, discover arbitrary operations, execute serialized callables, reinterpret ordered recipes as DAGs, or silently normalize/convert scientific state.
+
+## v1.0 workspace and application surface
+
+The v1.0 development line adds:
+
+- strict file-backed `WorkspaceManifest` persistence with deterministic SHA-256 identity and confined workspace-owned paths;
+- explicit asset import with caller-selected source, stable asset ID/type, and explicit `copy` versus `reference` policy;
+- deterministic persistent evidence records referencing existing reviewed recipe/run/batch/QA identities;
+- workspace composition for recipe snapshots, explicit input/output assets, FigureSpec/preset state, exported figures, and pinned evidence/content digests;
+- a headless `ApplicationSession` with transaction-safe workspace state, ordered recipe editing, explicit workflow execution, explicit QA aggregation, and FigureSpec editing;
+- an optional Qt Widgets desktop shell for workspace creation/opening, asset navigation/import, recipe inspection/editing, run/evidence/QA inspection, FigureSpec presentation controls, and integration with the existing Matplotlib FigureSpec editor.
+
+Workspace/application convenience never replaces the existing reviewed scientific IO, workflow, QA, or visualization contracts.
+
+## Scientific capability summary
+
+CatalysisWorkbench retains the reviewed scientific scope developed through v0.8:
+
+- electrochemistry: LSV/polarization processing, Tafel, Faradaic efficiency, product partial-current density, activity normalization, TOF/TOFapp, CV/Cdl/ECSA, stability, RRDE/Koutecky-Levich, and EIS;
+- characterization: XRD, Raman, FTIR/ATR-FTIR, TGA/DTG/TPR/TPD, gas sorption/BET, ICP/composition, XPS, XAS/XANES, FT-EXAFS, WT-EXAFS, and neutral EXAFS fit summaries;
+- product analysis: explicit calibration, inverse quantification, named factors, replicate summaries, and passive calibration plotting;
+- computation: atomic structures, explicit periodic geometry, DFT energy bookkeeping, DOS/PDOS, band centers, Bader, COHP/ICOHP, geometry-bonding correlations, CHE/free-energy state, charge-density difference, band/PROCAR/LOCPOT/NEB processing, and optional static volumetric 3-D rendering;
+- operando/time-resolved: immutable exact-grid stacks, exact measured-point operations, passive waterfall/heatmap/cut/trace rendering, Raman/FTIR/XAS/XANES/XRD adapters, explicit descriptor trajectories, and explicit Pearson cross-modal comparison.
+
+Scientific transformations remain explicit and fail closed on incompatible state. Plotting and desktop presentation remain passive consumers of reviewed scientific results.
+
+## Basic Python workflow
 
 ```python
-from catalysis_workbench.experimental.echem import (
-    LSVProcessingConfig,
-    plot_lsv,
-    process_lsv,
-    rhe_offset_from_she,
-)
 from catalysis_workbench.io import read_csv
-from catalysis_workbench.visualization import FigureSpec, export_figure, get_preset
+from catalysis_workbench.experimental.echem import LSVProcessingConfig, process_lsv
+from catalysis_workbench.visualization import export_figure, get_preset
+from catalysis_workbench.experimental.echem import plot_lsv
 
 raw = read_csv(
     "examples/data/lsv_example.csv",
     x="Potential [V]",
     y="Current [mA]",
-    source_id="quickstart-lsv",
+    source_id="example",
 )
-
-rhe_offset_v = rhe_offset_from_she(
-    reference_potential_vs_she_v=0.210,
-    ph=13.0,
-    temperature_k=298.15,
-)
-
 processed = process_lsv(
     raw[0],
     LSVProcessingConfig(
-        rhe_offset_v=rhe_offset_v,
+        rhe_offset_v=0.97,
         source_reference="Ag/AgCl",
         resistance_ohm=5.0,
         electrode_area_cm2=0.196,
         normalize_to_current_density=True,
     ),
 )
-
-spec: FigureSpec = (
-    get_preset("publication")
-    .with_layout(figure_width_in=3.5, figure_height_in=2.625)
-    .with_style(axis_label_size=8, tick_label_size=7, line_width=1.2)
-    .with_export(dpi=300)
-)
-
+spec = get_preset("publication").with_export(dpi=300)
 fig, _ = plot_lsv(processed, spec)
 export_figure(fig, "lsv.svg", spec=spec)
-export_figure(fig, "lsv.pdf", spec=spec)
-export_figure(fig, "lsv.png", spec=spec)
 ```
 
-The processing API does not silently guess a reference electrode, pH, reference potential, current sign, or electrode area. Those choices remain explicit and are stored in provenance.
+The library does not silently guess reference electrodes, pH, current sign, electrode area, scientific units, chemistry, or analysis parameters.
 
-Seven complete compact examples are available in [`examples/`](examples/):
+## Public package map
 
-```bash
-python examples/lsv_quickstart.py
-python examples/xrd_quickstart.py
-python examples/raman_quickstart.py
-python examples/ftir_quickstart.py
-python examples/thermal_quickstart.py
-python examples/sorption_quickstart.py
-python examples/composition_quickstart.py
-```
+- `catalysis_workbench.core` — shared immutable scientific data models.
+- `catalysis_workbench.io` — reviewed tabular/scientific file readers.
+- `catalysis_workbench.processing` — reusable numerical processing and shared constrained fitting.
+- `catalysis_workbench.experimental` — electrochemistry, characterization, product, and operando analysis.
+- `catalysis_workbench.computation` — atomistic/DFT post-processing.
+- `catalysis_workbench.visualization` — immutable figure specifications and publication renderers.
+- `catalysis_workbench.workflow` — reproducible recipes, explicit execution/batching, QA, and evidence.
+- `catalysis_workbench.workspace` — local project persistence, asset/evidence/composition state.
+- `catalysis_workbench.application` — GUI-neutral transaction-safe session/controller API.
+- `catalysis_workbench.desktop` — optional lazy-loaded Qt presentation shell.
 
-## Shared constrained peak fitting
+Package-level `__all__` surfaces define supported public imports; implementation-only names should be treated as internal during development.
 
-The v0.4 shared fitting API is exported from `catalysis_workbench.processing`.
+## Development and release governance
 
-```python
-import numpy as np
-from catalysis_workbench.core import Axis, Series
-from catalysis_workbench.processing import (
-    FitParameterSpec,
-    PeakComponentSpec,
-    PeakFitSpec,
-    fit_peaks,
-)
-
-x = np.linspace(-5.0, 5.0, 401)
-y = 12.0 / (0.8 * np.sqrt(2.0 * np.pi)) * np.exp(
-    -((x - 0.75) ** 2) / (2.0 * 0.8**2)
-)
-source = Series(
-    x=x,
-    y=y,
-    key="synthetic",
-    x_axis=Axis("energy", unit="eV"),
-    y_axis=Axis("intensity", unit="counts"),
-)
-peak = PeakComponentSpec(
-    key="peak_a",
-    model="gaussian",
-    parameters={
-        "amplitude": FitParameterSpec(10.0, lower=0.0),
-        "center": FitParameterSpec(0.5, lower=-2.0, upper=2.0),
-        "sigma": FitParameterSpec(1.0, lower=0.1, upper=2.0),
-    },
-)
-result = fit_peaks(source, PeakFitSpec(-4.0, 4.0, (peak,)))
-print(result.parameters["peak_a.center"].value)
-```
-
-The initial reviewed line-shape set is Gaussian, Lorentzian, Voigt, pseudo-Voigt, and Doniach. Fit regions, component count, initial parameters, bounds/ties, background, and optional weights are caller-visible. The library does not automatically detect peaks, assign chemistry, smooth/normalize spectra, select a baseline/background, or infer XPS constraints. Full semantics are documented in [`docs/PEAK_FITTING.md`](docs/PEAK_FITTING.md).
-
-## XPS preparation, constrained fitting, plotting, and diagnostics
-
-The reviewed XPS numerical API is exported from `catalysis_workbench.experimental.characterization`.
-
-```python
-from catalysis_workbench.experimental.characterization import (
-    linear_xps_background,
-    prepare_xps_region,
-    shift_xps_binding_energy,
-    shirley_xps_background,
-    validate_xps_series,
-)
-
-validate_xps_series(source)
-corrected = shift_xps_binding_energy(
-    source,
-    0.25,
-    reference="caller-supplied reference",
-)
-region = prepare_xps_region(corrected, 282.0, 292.0)
-background = shirley_xps_background(region)
-```
-
-XPS x data must explicitly identify binding energy in eV. Energy correction is exactly `E_corrected = E_source + shift_ev`; no chemical label triggers automatic charge correction or literature lookup. Region selection uses measured points only and preserves source storage direction. Linear and Shirley backgrounds use the exact prepared grid; the Shirley calculation exposes convergence settings and fails explicitly if its integral is invalid or does not converge.
-
-Constrained XPS fitting is a thin consumer of the shared fitting API. `XPSDoubletSpec` requires a caller-supplied signed separation, amplitude ratio, and explicit ratios for all remaining model shape/width parameters; no p/d/f textbook ratios are embedded. `fit_xps_peaks()` accepts explicit single components and/or doublets and rejects prepared backgrounds unless their source key/digest, eV and intensity units, source direction, x grid/order, observed intensities, and fit-region coverage match exactly. `XPSPeakFitResult` composes XPS preparation/background/doublet provenance with the immutable shared fit result.
-
-`plot_xps_fit()` is a passive lazy plotting adapter over `XPSPeakFitResult`: it renders the exact retained observed/background/component/best-fit arrays and, when requested, the reviewed physical residual without fitting or model reevaluation. Binding-energy reversal is display-only. `FigureSpec.series_styles` addresses deterministic XPS layer keys plus the actual component keys. `summarize_xps_fit()` returns immutable `XPSFitDiagnostics` copied from already-computed fit/statistical/uncertainty state. Full semantics and license boundaries are documented in [`docs/XPS.md`](docs/XPS.md).
-
-## EIS analysis and publication plotting
-
-The reviewed initial EIS API is exported from `catalysis_workbench.experimental.echem`. EIS data use the existing immutable core `Series`: frequency is explicit in Hz and impedance is stored literally as complex `Z = Z' + jZ''` in ohm. The first circuit vocabulary contains ideal R, C, and CPE elements with explicit series/parallel composition; topology, initial values, fixed/vary state, bounds, and optional residual weights remain caller-visible.
-
-`fit_eis()` uses SciPy trust-region least squares over deterministic real+imag residual channels while retaining the physical complex residual as exactly `Z_observed - Z_best_fit`. `EISFitResult` fail-closes reconstructed state against its circuit, fitted parameters, frequency direction, units, retained arrays, weights, and objective metadata rather than trusting contradictory provenance. `plot_eis_nyquist()` and `plot_eis_bode()` are lazy passive renderers over exact retained complex data; the common `-Im(Z)` Nyquist convention is display-only and Bode phase uses the principal complex angle without hidden phase unwrapping or reordering. Full equations, domains, fitting semantics, plotting conventions, diagnostics, and license boundaries are documented in [`docs/EIS.md`](docs/EIS.md).
-
-## Quantitative BET fitting
-
-The reviewed quantitative BET API is exported from `catalysis_workbench.experimental.characterization` and consumes the existing prepared gas-sorption `Series` / `SorptionCondition` / `SorptionWindow` state. `evaluate_bet_region()` retains exact measured candidate points, the BET and Rouquerol transforms, OLS diagnostics, and independent physical-consistency state. `fit_bet()` fails closed unless the required positive-parameter, increasing `n(1-p)`, and monolayer-loading-inside-region checks all pass.
-
-Surface area calculation requires caller-visible loading conversion inputs and a positive molecular cross-sectional area; the library does not infer gas properties from an adsorbate label. BET preprocessing provenance is also fail-closed: reviewed sorption preparation, measured-point crop, and explicit relative-pressure conversion are accepted, while unknown or y/grid-altering transformations are rejected. `plot_bet_fit()` is a lazy passive adapter over retained BET points and retained OLS fit arrays and performs no fitting, region search, conversion, sorting, smoothing, or resampling. Full equations, result semantics, validation evidence, and deferred automatic-region workflows are documented in [`docs/BET.md`](docs/BET.md).
-
-## Product calibration and sample quantification
-
-The reviewed product-analysis API is exported from `catalysis_workbench.experimental.product`. It consumes already integrated analytical responses and keeps calibration upstream of the existing Faradaic-efficiency/product-rate layer. `fit_calibration()` supports an explicit linear calibration with either a free intercept or an exactly fixed zero intercept, optional measured-point-only `CalibrationRange`, retained regression/residual state, and fail-closed immutable reconstruction.
-
-`quantify_response()` separately inverts a reviewed calibration, requires an exact response-unit match, rejects extrapolation by default, rejects negative inferred quantities instead of clipping them, and applies only explicit ordered positive dimensionless `QuantificationFactor` values. Replicate summaries report arithmetic mean, sample SD and RSD when defined. `plot_calibration()` is a lazy passive `FigureSpec` adapter over retained calibration points and fit-line arrays. Raw GC/HPLC/NMR parsing, peak detection/integration/assignment, hidden response-factor libraries, automatic model/range selection, and FE/electron-stoichiometry calculation remain outside this layer. Full semantics and prior-art/license boundaries are documented in [`docs/PRODUCT_CALIBRATION.md`](docs/PRODUCT_CALIBRATION.md).
-
-## v0.5 XAS, structure, and DFT post-processing
-
-The reviewed v0.5 characterization stack adds explicit XAS/XANES preparation and normalization, FT-EXAFS, WT-EXAFS, and neutral EXAFS fitting-result summaries. Numerical transform state is retained and plotting remains passive; the library does not become a full FEFF/Artemis fitting environment.
-
-The computation stack adds immutable atomic structures, optional POSCAR/CONTCAR/CIF/XYZ adapters through the reviewed `structure` extra, explicit periodic-image geometry/coordination/comparison, renderer-neutral static structure scenes, and basic DFT energy ledgers/relative/reaction/adsorption-energy post-processing. Structure visual radii/colors never feed back into scientific bond/coordination analysis, and DFT helpers do not apply CHE, ZPE, entropy, chemical-potential, or stoichiometric inference.
-
-See [`docs/V0_5_PLAN.md`](docs/V0_5_PLAN.md), [`docs/XAS.md`](docs/XAS.md), [`docs/EXAFS.md`](docs/EXAFS.md), [`docs/WT_EXAFS.md`](docs/WT_EXAFS.md), [`docs/EXAFS_FIT_SUMMARIES.md`](docs/EXAFS_FIT_SUMMARIES.md), [`docs/STRUCTURES.md`](docs/STRUCTURES.md), [`docs/STRUCTURE_GEOMETRY.md`](docs/STRUCTURE_GEOMETRY.md), [`docs/STRUCTURE_VISUALIZATION.md`](docs/STRUCTURE_VISUALIZATION.md), and [`docs/DFT_ENERGETICS.md`](docs/DFT_ENERGETICS.md) for the reviewed contracts.
-
-## v0.6 electronic structure and catalysis thermodynamics
-
-The reviewed v0.6 computation stack adds explicit electronic-structure, bonding, thermodynamic, and volumetric post-processing while preserving the project rule that scientific transformations are caller-visible and plotting remains passive.
-
-The release includes immutable electronic DOS/volumetric state and reviewed adapters; DOS/PDOS traces and band-center analysis; Bader charge accounting; source-sign COHP/ICOHP state; explicit geometry–bonding correlation datasets; CHE/free-energy bookkeeping and passive free-energy diagrams; and charge-density-difference arithmetic using `Δn(r)=n_combined(r)-Σc_i n_reference_i(r)` with strict grid/lattice/unit/component/registration checks. The library does not silently interpolate or align volumetric data, infer charge references or oxidation states, reinterpret bonding signs, infer pathways, or recompute CHE state inside plotting.
-
-See [`docs/V0_6_PLAN.md`](docs/V0_6_PLAN.md), [`docs/V0_6_RELEASING.md`](docs/V0_6_RELEASING.md), [`docs/ELECTRONIC_STRUCTURE.md`](docs/ELECTRONIC_STRUCTURE.md), [`docs/BADER.md`](docs/BADER.md), [`docs/BONDING.md`](docs/BONDING.md), [`docs/GEOMETRY_BONDING_CORRELATION.md`](docs/GEOMETRY_BONDING_CORRELATION.md), [`docs/CHE_THERMODYNAMICS.md`](docs/CHE_THERMODYNAMICS.md), [`docs/FREE_ENERGY_DIAGRAMS.md`](docs/FREE_ENERGY_DIAGRAMS.md), and [`docs/CHARGE_DENSITY_DIFFERENCE.md`](docs/CHARGE_DENSITY_DIFFERENCE.md) for the reviewed contracts.
-
-## Public API map
-
-The supported import surfaces are intentionally organized by responsibility rather than re-exporting every object from the package root.
-
-- `catalysis_workbench.core`: `Axis`, `Series`, `Dataset`.
-- `catalysis_workbench.io`: `read_csv`, `read_txt`, `read_excel`, `read_tabular`, `TabularReadError`.
-- `catalysis_workbench.processing`: crop, normalization, offset, Savitzky-Golay smoothing, interpolation, integration, explicit baseline subtraction, Dataset mapping, processing errors/results, plus the reviewed shared constrained peak-fitting contracts and `fit_peaks`.
-- `catalysis_workbench.experimental.echem`: reviewed LSV processing/configuration; explicit electrochemistry quantity/reference/provenance helpers; Tafel fitting; Faradaic-efficiency analysis and closure QA; product partial-current density and closure QA; catalyst-/metal-mass and ECSA activity normalization; TOF/TOFapp; CV/Cdl/ECSA; stability analysis; RRDE metrics; Koutecky-Levich fitting/apparent electron-number helpers; explicit EIS validation, R/C/CPE circuit evaluation/fitting, EIS diagnostics, and lazy Nyquist/Bode publication adapters.
-- `catalysis_workbench.experimental.characterization`: XRD, Raman, FTIR/ATR-FTIR, TGA/DTG/TPR/TPD, basic gas-sorption, ICP/elemental-composition, quantitative BET, XPS preparation/constrained fitting/plotting/diagnostics, explicit XAS/XANES preparation/normalization/comparison, FT-EXAFS, WT-EXAFS, EXAFS fitting-result summaries, and their passive publication adapters.
-- `catalysis_workbench.experimental.product`: `CalibrationRange`, `CalibrationFitResult`, `QuantificationFactor`, `QuantificationResult`, `QuantificationSummary`, `fit_calibration`, `quantify_response`, `summarize_quantification_replicates`, and lazy `plot_calibration`.
-- `catalysis_workbench.experimental.operando`: immutable frame-coordinate/stack/trace state; exact measured-point selection/cuts and explicit Pearson comparison; passive waterfall/heatmap/cut/trace rendering; reviewed Raman/FTIR, XAS/XANES, and XRD exact-grid adapters plus explicit caller-window and compatible fit-derived trajectories; all domain consumers retain reconstructible provenance and fail closed rather than aligning, interpolating, assigning chemistry/phases, or refitting implicitly.
-- `catalysis_workbench.computation`: immutable atomic structures and file adapters; explicit periodic-image geometry/coordination/comparison; renderer-neutral structure scenes; explicit DFT energy ledgers; reviewed electronic-structure/volumetric state and adapters; DOS/PDOS processing; band-center analysis; Bader results/charge accounting; COHP/ICOHP bonding state; geometry–bonding correlations; CHE/free-energy thermodynamics and diagram state; and charge-density-difference calculation with strict co-registration validation.
-- `catalysis_workbench.visualization`: `FigureSpec`, `LayoutSpec`, `PlotStyle`, `SeriesStyle`, annotations/export settings, presets, shared curve/scatter/bar renderers, `symmetric_color_limits`, `plot_structure`, `plot_relative_energies`, and `export_figure`.
-
-Objects or functions in implementation modules that are not exported by these package-level `__all__` surfaces should be treated as internal and may change during development.
-
-## Scope
-
-CatalysisWorkbench focuses on data that require secondary processing before they can be interpreted or used in an SCI figure.
-
-### Experimental data
-
-- Electrochemistry: the historical v0.2 core completed LSV/polarization processing, shared quantity/provenance conventions, Tafel, Faradaic efficiency, partial current density, mass/ECSA activity normalization, TOF/TOFapp, CV/Cdl/ECSA, stability, and RRDE/K-L basics. The historical v0.4 milestone added EIS semantics, basic equivalent-circuit fitting, Nyquist/Bode plotting, and diagnostics.
-- Characterization: XRD, Raman, FTIR/ATR-FTIR, TGA/DTG/TPR/TPD, basic gas-sorption, and ICP/composition were implemented by the historical v0.3 milestone. The historical v0.4 milestone added the shared constrained peak-fitting foundation, XPS preparation/constrained fitting/publication plotting/diagnostics, and quantitative BET. v0.5 added reviewed XAS/XANES, FT-EXAFS, WT-EXAFS and EXAFS fitting-summary post-processing.
-- Product analysis: the historical v0.4 milestone added explicit linear calibration, inverse quantification, extrapolation state, named dimensionless factors, replicate summaries and passive calibration plotting. Raw vendor-file parsing, chromatographic/NMR peak integration and product assignment remain later/out-of-scope work.
-- Operando/time-resolved: all six v0.8 scientific blocks are implemented on `main`: immutable exact-grid frame/stack state; exact measured-point operations, derived traces, and explicit cross-modal Pearson comparison; passive waterfall/heatmap/cut/trace rendering; reviewed Raman/FTIR and XAS/XANES adapters with explicit caller-window/compatible fit-derived trajectories; and reviewed XRD exact-grid adapters with normalization-basis compatibility, measured-point window integral/unique observed-maximum position, and compatible caller-supplied fit center/FWHM consumers. No hidden alignment, interpolation/resampling, preprocessing, chemistry/species assignment, XRD phase inference, or refinement is introduced. This completed v0.8 scope is a scientific implementation milestone, not a standalone Release target: no v0.8 Gate A/B/C publication cycle, `v0.8.0` tag, or GitHub Release is planned. Current `main` remains at distribution/runtime version `0.7.0` until future development work is formally integrated, and continuing development proceeds on the `0.9.0.dev0` line.
-
-### Computational data
-
-v0.5 implements immutable atomic structures, POSCAR/CONTCAR/CIF/XYZ adapters, explicit periodic-image geometry/coordination/comparison, static renderer-neutral structure visualization, and explicit total/relative/reaction/adsorption-energy post-processing. v0.6 adds reviewed electronic-structure and catalysis-thermodynamics post-processing: DOS/PDOS, band-center analysis, Bader charge accounting, COHP/ICOHP, geometry–bonding correlations, CHE/free-energy state and diagrams, and charge-density-difference arithmetic with strict co-registration validation. v0.7 adds reviewed scalar-field/volumetric scenes, density/ELF visualization, band structures, PROCAR/fat bands, LOCPOT/work functions, NEB barriers, and optional static volumetric 3-D rendering/export.
-
-### Visualization
-
-The shared visualization layer provides publication-ready curve, scatter, categorical bar, XAS/EXAFS map, static structure, relative-energy, DOS/PDOS, free-energy-diagram, band/fat-band, work-function, NEB-barrier, exact scalar-field slice, optional static volumetric 3-D rendering, and v0.8 passive operando waterfall/heatmap/cut/trace rendering with adjustable figure/axes geometry, typography, lines/markers, ticks, legends, annotations, limits, presets, explicit errors where supplied, stable-key styling, explicit symmetric zero-centered color limits, and exact-size export. Scientific renderers remain passive consumers of reviewed retained state; operando heatmaps use caller-selected ordinal or strictly monotonic coordinate display geometry without resampling. Interactive editing remains later scope.
-
-## Out of scope
-
-CatalysisWorkbench is not intended to manage synthesis records, laboratory notebooks, inventory, TEM/SEM image processing, instrument control, HPC job submission, or complete VASP workflow management.
-
-## Architecture
+Every feature follows the same promotion discipline:
 
 ```text
-src/catalysis_workbench/
-├── core/              # Shared scientific data models
-├── io/                # Excel/CSV/TXT and scientific file readers
-├── processing/        # Reusable mathematical processing + shared fitting
-├── experimental/      # Experimental analysis
-│   ├── echem/
-│   ├── characterization/
-│   ├── operando/
-│   └── product/
-├── computation/       # DFT and atomistic post-processing
-└── visualization/     # Publication-quality rendering
+latest verified main
+→ scoped branch
+→ implementation + regression tests
+→ Draft PR
+→ exact-head GitHub CI
+→ formal review
+→ fixes + fresh exact-head CI when required
+→ final review on final head
+→ Ready
+→ separate merge authorization
+→ expected-head squash merge
+→ exact main-head verification
+→ post-merge CI verification
 ```
 
-Scientific calculation and visualization are deliberately separated:
+Ready status is not merge authorization. Branch deletion, tags, GitHub Releases, stable-version finalization, and package-registry publication are separately gated operations.
 
-```text
-Raw data -> I/O -> standardized data -> scientific analysis -> result -> visualization/export
-```
-
-A catalyst or sample name remains lightweight metadata on a data series; CatalysisWorkbench does not introduce a laboratory sample-management system.
-
-## Release and development status
-
-As of 2026-08-27, `v0.7.0` is the only currently retained stable GitHub Release/tag, fixed on `e3062fc12c794f54c7b7613875ec73608a587a59`. v0.1-v0.6 remain historical validated development/release milestones, but their old GitHub Release/tag artifacts have been intentionally removed; their Issues, Pull Requests, commits, CI runs, Gate evidence, and release-specific documentation remain retained as provenance. All six v0.8 scientific implementation blocks are complete, but no standalone v0.8 release cycle, `v0.8.0` tag, or GitHub Release is planned. Current remote `main` remains at distribution/runtime version `0.7.0` before future v0.9 integration; `0.9.0.dev0` is the continuing development line, not a stable Release. Future GitHub Releases are intentionally low-frequency maturity checkpoints, and PyPI/package-registry publication remains deferred unless separately authorized.
-
-v0.7 scientific implementation and all release gates are complete. Architecture checkpoint #197/#198 froze the seven-block scope; blocks #202/#203 through #227/#228 delivered the scalar-field/volumetric-scene foundation, density/ELF visualization, band structures, PROCAR/fat bands, LOCPOT/work functions, NEB barriers, and optional static volumetric 3-D rendering. Gate A #231/#232 hardened the frozen scope; Gate B #233/#234 finalized `0.7.0` at release commit `e3062fc12c794f54c7b7613875ec73608a587a59`; Gate C #237/#238 created and reverse-verified `v0.7.0` on that exact commit; the retained public GitHub Release is complete; and #243/#244 synchronized publication evidence. Post-release #245/#246 added explicit zero-centered color limits without changing version or release artifacts. The v0.8 six-block operando/time-resolved architecture is frozen through Issue #249 / PR #250 at `fa7baaf8ce68369b0e732faf4e7621a818db92b6`; post-merge CI #550 / run `32920821932` passed. Block 1 completed through Issue #253 / PR #254: final exact head `eadf5b2e6630b137922f365a88f4b9ef3c43b12b` passed CI #561 / run `32922150384`, expected-head squash merge produced `45d0515dd5c1c70f15f4d5cd76ba2a359dc66bb2`, and post-merge main CI #562 / run `32922349620` passed. Block 2 completed through Issue #257 / PR #258: final exact head `9fc8e372f15015de1d65705cedd0ad68414613b7` passed CI #580 / run `32925586441`, formal review 1's fail-closed result-state blocker was fixed and regression-tested, formal review 2 `5026418909` found no blockers with zero unresolved threads, expected-head squash merge produced `86cd463e288eca08c7917945fafbf630493ede92`, and post-merge main CI #581 / run `32925811342` passed. Block 3 completed through Issue #263 / PR #264: final exact head `37c69c18e3e81bd228eadf3c4c2e3b5b8540a8a1` passed CI #594 / run `32927718634` with Ruff, all 1157 tests, fresh-wheel Block-3 audit, and volumetric3d smoke; formal reviews `5026595721`, `5026596493` found no blockers with zero unresolved threads; expected-head squash merge produced `4a5b5ee0f75321dbf3a679ab616ac69972e34575`, and post-merge main CI #595 / run `32928011235` passed. Block 4 completed through Issue #267 / PR #268: final exact head `45314c9c16c5460c8a9d574ec3fb43c6dfef722f` passed CI #612 / run `32930071404`; formal reviews `5026779773`, `5026780870` found no blockers with zero unresolved threads; expected-head squash merge produced `d46b57c5c558a06880e58d1b0bb15b6fd1c96a8c`, and post-merge main CI #613 / run `32930335459` passed. Block 5 completed through Issue #271 / PR #272: final exact head `a7fc080cd564191205dd8d8f8882b6e60e891ce5` passed CI #637 / run `32931971740` with Ruff, all 1177 tests, fresh-wheel Block-5 audit, and volumetric3d smoke; formal reviews `5026944037`, `5026945010` found no blockers with zero unresolved threads; expected-head squash merge produced `b3aa8f59834f4c3fe5e4bffe94111b60ca360570`, and post-merge main CI #638 / run `32932720710` passed. Block 6 completed through Issue #275 / PR #276: final exact head `6ddd7331363293593741dccb8b74ec9ed0dea3e2` passed CI #650 / run `32933715614` with Ruff, all 1186 tests, fresh-wheel Block-6 audit, and volumetric3d smoke; formal reviews `5027028638`, `5027030329` found no blockers with zero unresolved threads; expected-head squash merge produced `b5503ea7b48ca421d5ddf49e35b74f8f4e24791f`, and post-merge main CI #651 / run `32933955320` passed. All six v0.8 scientific implementation blocks are complete. The standalone v0.8 Release path is retired: no v0.8 release Gate cycle, `v0.8.0` tag, or GitHub Release will follow. These capabilities instead form the scientific foundation carried into ongoing `0.9.0.dev0` development; current `main` remains version `0.7.0` until future development integration.
-
-New functionality follows a strict feature loop: prior-art scan with license recording, implementation/regression tests, Draft PR, exact-head CI, scientific/API/compatibility review, direct fixes, fresh CI after every head change, second review on the final exact head, Ready/merge gate, expected-head squash merge, `main` verification, then Issue closure.
-
-See [`docs/MASTER_PLAN.md`](docs/MASTER_PLAN.md) for the project-wide execution model and historical checkpoint, [`docs/V0_8_PLAN.md`](docs/V0_8_PLAN.md) for the frozen v0.8 architecture and six-block implementation order, [`docs/V0_7_PLAN.md`](docs/V0_7_PLAN.md) for the v0.7 architecture/scientific implementation record, [`docs/V0_7_RELEASING.md`](docs/V0_7_RELEASING.md) for v0.7 Gate A/B/C and publication evidence, [`docs/V0_6_RELEASING.md`](docs/V0_6_RELEASING.md) for the preceding v0.6 release-gate record, and [`docs/ROADMAP.md`](docs/ROADMAP.md) for the long-range release scope. Live GitHub state remains authoritative over historical planning snapshots.
-
-## Roadmap
-
-- **v0.1-v0.6:** historical completed development/release milestones with their implementation and Gate evidence retained; old GitHub Release/tag artifacts are no longer retained.
-- **v0.7:** currently retained stable GitHub Release/tag `v0.7.0`, fixed on `e3062fc12c794f54c7b7613875ec73608a587a59`; PyPI deferred.
-- **v0.8:** completed scientific implementation milestone for operando/time-resolved Raman/IR, XAS, and XRD stacks, waterfalls, heatmaps, descriptor trajectories, and explicit cross-modal correlation; no standalone tag or GitHub Release.
-- **v0.9:** ongoing/next `0.9.0.dev0` development line for reproducible workflows and first interactive-editor work; not a stable Release.
-- **v1.0:** planned stable local catalysis data workbench and GUI.
-
-The `main` branch is kept stable. New work should be developed through feature/release branches and pull requests, and live GitHub repository state remains authoritative if descriptive documentation becomes stale.
+See [`docs/MASTER_PLAN.md`](docs/MASTER_PLAN.md) for the current execution map, [`docs/ROADMAP.md`](docs/ROADMAP.md) for release direction, [`docs/V1_0_PLAN.md`](docs/V1_0_PLAN.md) for the v1.0 architecture contract, [`docs/DESKTOP.md`](docs/DESKTOP.md) for desktop behavior, and the retained `docs/V0_X_*` files for historical release/scientific evidence.
