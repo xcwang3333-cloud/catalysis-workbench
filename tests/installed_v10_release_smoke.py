@@ -106,7 +106,6 @@ def _assert_public_exports() -> None:
     assert tuple(desktop.__all__) == (
         "CatalysisWorkbenchMainWindow",
         "DesktopDependencyError",
-        "DesktopHandle",
         "desktop_available",
         "launch_desktop",
     )
