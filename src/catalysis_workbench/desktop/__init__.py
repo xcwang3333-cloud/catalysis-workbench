@@ -58,9 +58,11 @@ def __getattr__(name: str):
     raise AttributeError(name)
 
 
+# Preserve the frozen v1.0 top-level desktop export contract.  The v1.1
+# workbench window is deliberately available as an explicit attribute/module
+# without widening this tuple until a separately reviewed public-API release.
 __all__ = [
     "CatalysisWorkbenchMainWindow",
-    "CatalysisWorkbenchWindow",
     "DesktopDependencyError",
     "desktop_available",
     "launch_desktop",

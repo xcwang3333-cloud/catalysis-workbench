@@ -12,7 +12,8 @@ from catalysis_workbench.application import (
     open_analysis_project,
     save_analysis_project,
 )
-from catalysis_workbench.workspace import create_workspace, open_workspace
+from catalysis_workbench.workspace import WorkspaceAsset, create_workspace, open_workspace
+from catalysis_workbench.workspace.manifest import WorkspaceError
 
 
 def _document(title: str = "Pb nuclearity CO₂RR") -> AnalysisDocument:
@@ -48,12 +49,24 @@ def test_title_save_does_not_change_workspace_manifest_identity(tmp_path: Path) 
     assert after.workspace_manifest_sha256 == workspace_before
 
 
+def test_project_json_is_reserved_workspace_metadata() -> None:
+    with pytest.raises(WorkspaceError, match="reserved workspace metadata"):
+        WorkspaceAsset(
+            asset_id="project-control-state",
+            asset_type="metadata",
+            path="project.json",
+        )
+
+
 def test_external_project_mutation_is_fail_closed(tmp_path: Path) -> None:
     root = tmp_path / "project"
     snapshot = create_analysis_project(_document(), root)
     project_path = root / "project.json"
     text = project_path.read_text(encoding="utf-8")
-    project_path.write_text(text.replace("Pb nuclearity CO₂RR", "External edit"), encoding="utf-8")
+    project_path.write_text(
+        text.replace("Pb nuclearity CO₂RR", "External edit"),
+        encoding="utf-8",
+    )
 
     with pytest.raises(AnalysisProjectError, match="changed outside"):
         save_analysis_project(
@@ -69,7 +82,8 @@ def test_external_workspace_mutation_is_fail_closed(tmp_path: Path) -> None:
     snapshot = create_analysis_project(_document(), root)
     workspace_path = root / "workspace.json"
     workspace_path.write_text(
-        '{"assets":[{"asset_id":"x","asset_type":"data","path":"data/x"}],"schema_version":1}\n',
+        '{"assets":[{"asset_id":"x","asset_type":"data","path":"data/x"}],'
+        '"schema_version":1}\n',
         encoding="utf-8",
     )
 
@@ -92,6 +106,54 @@ def test_existing_target_and_legacy_workspace_are_rejected(tmp_path: Path) -> No
     create_workspace(legacy)
     with pytest.raises(LegacyWorkspaceError, match="legacy CatalysisWorkbench workspace"):
         open_analysis_project(legacy)
+
+
+@pytest.mark.parametrize(
+    ("payload", "message"),
+    (
+        ("not-json\n", "cannot load project.json"),
+        (
+            '{"document":{"schema_version":1,"task_id":"lsv","title":"LSV"},'
+            '"schema_version":2}\n',
+            "project schema_version",
+        ),
+        (
+            '{"document":{"schema_version":1,"task_id":"unknown","title":"LSV"},'
+            '"schema_version":1}\n',
+            "unknown analysis task_id",
+        ),
+    ),
+)
+def test_malformed_unknown_schema_or_unknown_task_fails_closed(
+    tmp_path: Path,
+    payload: str,
+    message: str,
+) -> None:
+    root = tmp_path / "project"
+    create_workspace(root)
+    (root / "project.json").write_text(payload, encoding="utf-8")
+
+    with pytest.raises(AnalysisProjectError, match=message):
+        open_analysis_project(root)
+
+
+def test_failed_first_save_rolls_back_only_its_exact_new_workspace(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from catalysis_workbench.application.analysis import persistence
+
+    root = tmp_path / "project"
+
+    def fail_after_write(_root: str | Path):
+        raise AnalysisProjectError("injected verification failure")
+
+    monkeypatch.setattr(persistence, "open_analysis_project", fail_after_write)
+
+    with pytest.raises(AnalysisProjectError, match="injected verification failure"):
+        persistence.create_analysis_project(_document(), root)
+
+    assert not root.exists()
 
 
 def test_project_json_symlink_is_rejected(tmp_path: Path) -> None:
