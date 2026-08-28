@@ -15,7 +15,7 @@ import catalysis_workbench
 import catalysis_workbench.visualization as visualization
 from catalysis_workbench.core import Axis, Series
 
-EXPECTED_VERSION = "1.0.0.dev0"
+EXPECTED_VERSION = "1.0.0"
 EXPECTED_PUBLIC_API = {
     "FigureEditorState",
     "FigureSpecEditorController",
