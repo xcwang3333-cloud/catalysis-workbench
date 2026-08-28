@@ -9,7 +9,7 @@ import catalysis_workbench
 import catalysis_workbench.application as application
 import catalysis_workbench.desktop as desktop
 
-EXPECTED_VERSION = "1.0.0.dev0"
+EXPECTED_VERSION = "1.0.0"
 PUBLIC_V10_MODULES = (
     "catalysis_workbench.workflow",
     "catalysis_workbench.workspace",
