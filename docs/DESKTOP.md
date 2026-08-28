@@ -101,7 +101,7 @@ The regular CI remains Qt-free for base application tests and separately install
 - the existing frozen v1.0 desktop smoke; and
 - a fresh-wheel v1.1 Home/Analysis desktop smoke.
 
-The stable v1.0 release-readiness workflow remains an exact `1.0.0` compatibility audit. Distribution-version changes for the v1.1 development line require separate release-planning review and are not folded into Block 1.
+The development candidate is `1.1.0.dev0`. The existing Stable 1.0 Readiness workflow remains active as a frozen v1.0 API/desktop compatibility audit while its candidate-version and artifact checks follow the currently built v1.1 development wheel.
 
 ## Release boundary
 

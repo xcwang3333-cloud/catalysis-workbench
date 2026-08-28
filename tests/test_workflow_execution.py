@@ -339,7 +339,7 @@ def test_external_bindings_must_match_recipe_exactly(
         execute_recipe(_chain_recipe(), inputs, input_identities=identities)
 
 
-@pytest.mark.parametrize("identity", ["", " source", "source ", "\ud800"])
+@pytest.mark.parametrize("identity", ["", " source", "source ", chr(0xD800)])
 def test_input_identity_must_be_explicit_valid_utf8(identity: str) -> None:
     with pytest.raises(ValueError):
         execute_recipe(
@@ -378,7 +378,7 @@ def test_run_records_only_deterministic_environment_evidence() -> None:
         {"source": _series()},
         input_identities={"source": "source-fixture-v1"},
     )
-    assert run.environment_evidence == {"catalysis_workbench_version": "1.0.0"}
+    assert run.environment_evidence == {"catalysis_workbench_version": "1.1.0.dev0"}
     assert all(
         forbidden not in run.environment_evidence
         for forbidden in ("timestamp", "duration", "host", "user", "pid", "path")

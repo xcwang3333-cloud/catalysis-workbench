@@ -122,7 +122,7 @@ Block 1 must keep all frozen v1.0 installed-wheel and desktop smoke tests passin
 
 ### Development-version note
 
-The stable v1.0 release-readiness workflow is deliberately frozen around the exact `1.0.0` distribution and runs on pull requests as a compatibility audit. Block 1 therefore does not change distribution metadata to `1.1.0.dev0`; doing so would require a separate review of release-line CI semantics rather than coupling release infrastructure changes to the Home/document implementation. A v1.1 development-version bootstrap is deferred to that separate release-planning decision.
+Block 1 bootstraps the v1.1 development line at `1.1.0.dev0`. Distribution/runtime identity, historical installed-smoke current-version assertions, workflow provenance version evidence, and release-readiness candidate/artifact checks are synchronized mechanically to that development identity. The Stable 1.0 compatibility audit remains active and continues to enforce the frozen v1.0 public/desktop surface. This development-version bootstrap creates no tag, GitHub Release, or registry publication.
 
 ## Block 1 non-scope
 

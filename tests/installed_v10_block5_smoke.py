@@ -21,7 +21,7 @@ from catalysis_workbench.workspace.composition import (
     save_recipe_asset,
 )
 
-EXPECTED_VERSION = "1.0.0"
+EXPECTED_VERSION = "1.1.0.dev0"
 
 assert catalysis_workbench.__version__ == EXPECTED_VERSION
 assert "PySide6" not in sys.modules
@@ -94,7 +94,7 @@ with tempfile.TemporaryDirectory() as directory:
     assert report.status.value == "pass"
     assert session.state.last_qa_report is report
 
-    session.select_figure_spec("figure-spec")
+    session.select_figure_spec("figure")
     edited = session.update_figure_spec(title="Edited Block 5")
     assert edited.figure_spec.title == "Edited Block 5"
     assert edited.figure_spec_dirty is True
