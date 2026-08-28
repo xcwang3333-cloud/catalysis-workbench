@@ -91,7 +91,7 @@ jobs:
       - name: Validate distribution metadata
         run: |
           python -m twine check dist/*
-          python -c "from pathlib import Path; files=list(Path('dist').iterdir()); assert len([p for p in files if p.suffix == '.whl']) == 1, files; assert len([p for p in files if p.name.endswith('.tar.gz')]) == 1, files; assert all('1.0.0' in p.name and 'dev0' not in p.name for p in files), files"
+          python -c "from pathlib import Path; files=list(Path('dist').iterdir()); wheels=[p.name for p in files if p.suffix == '.whl']; sdists=[p.name for p in files if p.name.endswith('.tar.gz')]; assert len(wheels) == 1, files; assert len(sdists) == 1, files; assert wheels[0].startswith('catalysis_workbench-1.0.0-'), wheels; assert sdists == ['catalysis_workbench-1.0.0.tar.gz'], sdists"
 
       - name: Rebuild a wheel from the sdist
         run: python -m pip wheel dist/catalysis_workbench-*.tar.gz --no-deps --wheel-dir rebuilt
