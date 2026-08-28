@@ -7,23 +7,15 @@ import numpy as np
 import pytest
 
 from catalysis_workbench.core import Series
-from catalysis_workbench.workflow import (
+from catalysis_workbench.processing import ProcessingError
+from catalysis_workbench.workflow import batch as batch_module
+from catalysis_workbench.workflow.batch import (
     BatchItem,
     BatchItemRecord,
-    RecipeStep,
-    WorkflowRecipe,
-    register_operation,
+    BatchRunRecord,
     run_batch,
 )
-
-
-def _series(*, key: str = "source") -> Series:
-    return Series(
-        x=np.array([0.0, 1.0, 2.0]),
-        y=np.array([1.0, 2.0, 3.0]),
-        key=key,
-        label=key,
-    )
+from catalysis_workbench.workflow.recipe import RecipeStep, WorkflowRecipe
 
 
 def _recipe() -> WorkflowRecipe:
@@ -32,170 +24,278 @@ def _recipe() -> WorkflowRecipe:
         inputs=("source",),
         steps=(
             RecipeStep(
-                step_id="offset",
-                operation_id="catalysis.processing.offset.v1",
+                step_id="crop",
+                operation_id="catalysis.processing.crop.v1",
                 inputs={"series": "source"},
                 outputs={"series": "result"},
-                parameters={"value": 1.0},
+                parameters={"x_min": 0.0, "x_max": 3.0},
             ),
         ),
         outputs={"result": "result"},
     )
 
 
-def _item(item_id: str, source_identity: str) -> BatchItem:
-    return BatchItem(
-        item_id=item_id,
-        inputs={"source": _series(key=item_id)},
-        input_identities={"source": source_identity},
+def _series(*, shift: float = 0.0) -> Series:
+    return Series(
+        x=np.array([0.0, 1.0, 2.0, 3.0]) + shift,
+        y=np.array([1.0, 2.0, 4.0, 8.0]),
+        label="source",
+        key="source",
     )
 
 
-def test_batch_preserves_literal_item_order() -> None:
-    batch = run_batch(
-        _recipe(),
+def _item(key: str, identity: str, *, shift: float = 0.0) -> BatchItem:
+    return BatchItem(
+        key=key,
+        inputs={"source": _series(shift=shift)},
+        input_identities={"source": identity},
+    )
+
+
+def test_batch_item_is_frozen_and_detached_from_input_mappings() -> None:
+    inputs = {"source": _series()}
+    identities = {"source": "source-v1"}
+    item = BatchItem(
+        key="item-1",
+        inputs=inputs,
+        input_identities=identities,
+    )
+    inputs["extra"] = _series()
+    identities["source"] = "changed"
+
+    assert isinstance(item.inputs, MappingProxyType)
+    assert isinstance(item.input_identities, MappingProxyType)
+    assert tuple(item.inputs) == ("source",)
+    assert item.input_identities == {"source": "source-v1"}
+    with pytest.raises(FrozenInstanceError):
+        item.key = "changed"  # type: ignore[misc]
+    with pytest.raises(TypeError):
+        item.inputs["source"] = _series()  # type: ignore[index]
+
+
+@pytest.mark.parametrize(
+    ("inputs", "identities"),
+    [
+        ({"source": _series()}, {}),
+        ({}, {"source": "source-v1"}),
+        ({"source": _series()}, {"other": "source-v1"}),
+    ],
+)
+def test_batch_item_requires_identity_for_every_named_input(
+    inputs: dict[str, object],
+    identities: dict[str, str],
+) -> None:
+    with pytest.raises(ValueError, match="same names"):
+        BatchItem(
+            key="item-1",
+            inputs=inputs,
+            input_identities=identities,
+        )
+
+
+@pytest.mark.parametrize("key", ["", " item", "item ", "\ud800"])
+def test_batch_item_key_must_be_stable_utf8(key: str) -> None:
+    with pytest.raises(ValueError):
+        _item(key, "source-v1")
+
+
+def test_run_batch_preserves_literal_caller_order() -> None:
+    recipe = _recipe()
+    result = run_batch(
+        recipe,
         (
             _item("second", "source-2"),
             _item("first", "source-1"),
         ),
     )
-    assert tuple(item.item_id for item in batch.items) == ("second", "first")
-    assert tuple(item.status for item in batch.items) == ("success", "success")
+
+    assert isinstance(result, BatchRunRecord)
+    assert tuple(item.key for item in result.items) == ("second", "first")
+    assert all(item.status == "success" for item in result.items)
+    assert all(
+        isinstance(item.workflow_run, batch_module.WorkflowRun)
+        for item in result.items
+    )
 
 
-def test_batch_rejects_duplicate_item_ids() -> None:
-    with pytest.raises(ValueError, match="batch item ids must be unique"):
+def test_run_batch_uses_same_recipe_for_every_item(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    recipe = _recipe()
+    original = batch_module.execute_recipe
+    recipe_ids: list[int] = []
+
+    def record_call(
+        passed_recipe: WorkflowRecipe,
+        inputs: object,
+        *,
+        input_identities: object,
+    ) -> batch_module.WorkflowRun:
+        recipe_ids.append(id(passed_recipe))
+        return original(
+            passed_recipe,
+            inputs,  # type: ignore[arg-type]
+            input_identities=input_identities,  # type: ignore[arg-type]
+        )
+
+    monkeypatch.setattr(batch_module, "execute_recipe", record_call)
+    run_batch(
+        recipe,
+        (
+            _item("one", "source-1"),
+            _item("two", "source-2"),
+        ),
+    )
+    assert recipe_ids == [id(recipe), id(recipe)]
+
+
+def test_duplicate_item_keys_fail_before_any_execution(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[str] = []
+
+    def fail_if_called(*args: object, **kwargs: object) -> object:
+        calls.append("called")
+        raise AssertionError("execute_recipe must not be called")
+
+    monkeypatch.setattr(batch_module, "execute_recipe", fail_if_called)
+    with pytest.raises(ValueError, match="keys must be unique"):
         run_batch(
             _recipe(),
             (
-                _item("same", "source-1"),
-                _item("same", "source-2"),
+                _item("duplicate", "source-1"),
+                _item("duplicate", "source-2"),
             ),
         )
+    assert calls == []
 
 
-def test_batch_records_successful_outputs() -> None:
-    batch = run_batch(_recipe(), (_item("one", "source-1"),))
-    item = batch.items[0]
-    assert item.status == "success"
-    assert item.workflow_run is not None
-    assert item.failure is None
-    assert np.array_equal(item.workflow_run.outputs["result"].y, np.array([2.0, 3.0, 4.0]))
+def test_invalid_error_policy_fails_before_execution(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[str] = []
+
+    def fail_if_called(*args: object, **kwargs: object) -> object:
+        calls.append("called")
+        raise AssertionError("execute_recipe must not be called")
+
+    monkeypatch.setattr(batch_module, "execute_recipe", fail_if_called)
+    with pytest.raises(ValueError, match="error_policy"):
+        run_batch(
+            _recipe(),
+            (_item("one", "source-1"),),
+            error_policy="retry",
+        )
+    assert calls == []
 
 
-def test_batch_record_identity_changes_with_item_identity() -> None:
-    first = run_batch(_recipe(), (_item("one", "source-1"),))
-    second = run_batch(_recipe(), (_item("one", "source-2"),))
-    assert first.record_sha256 != second.record_sha256
+def test_raise_policy_propagates_first_failure_and_stops(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    original = batch_module.execute_recipe
+    calls: list[str] = []
+
+    def record_call(
+        recipe: WorkflowRecipe,
+        inputs: object,
+        *,
+        input_identities: object,
+    ) -> batch_module.WorkflowRun:
+        identities = input_identities  # type: ignore[assignment]
+        calls.append(identities["source"])
+        return original(
+            recipe,
+            inputs,  # type: ignore[arg-type]
+            input_identities=identities,  # type: ignore[arg-type]
+        )
+
+    monkeypatch.setattr(batch_module, "execute_recipe", record_call)
+    with pytest.raises(ProcessingError, match="selected no points"):
+        run_batch(
+            _recipe(),
+            (
+                _item("good", "good-v1"),
+                _item("bad", "bad-v1", shift=10.0),
+                _item("later", "later-v1"),
+            ),
+            error_policy="raise",
+        )
+    assert calls == ["good-v1", "bad-v1"]
 
 
-def test_batch_record_identity_changes_with_literal_item_order() -> None:
+def test_record_policy_retains_failure_code_and_continues() -> None:
+    result = run_batch(
+        _recipe(),
+        (
+            _item("good", "good-v1"),
+            _item("bad", "bad-v1", shift=10.0),
+            _item("later", "later-v1"),
+        ),
+        error_policy="record",
+    )
+
+    assert tuple(item.status for item in result.items) == (
+        "success",
+        "failure",
+        "success",
+    )
+    failed = result.items[1]
+    assert failed.workflow_run is None
+    assert failed.failure_code is not None
+    assert failed.failure_code.endswith(".ProcessingError")
+    assert "selected no points" not in failed.failure_code
+
+
+def test_batch_records_are_deterministic_for_same_order_and_identities() -> None:
     recipe = _recipe()
     first = run_batch(
         recipe,
-        (_item("one", "source-1"), _item("two", "source-2")),
+        (
+            _item("one", "source-1"),
+            _item("two", "source-2"),
+        ),
+        error_policy="record",
     )
     second = run_batch(
         recipe,
-        (_item("two", "source-2"), _item("one", "source-1")),
+        (
+            _item("one", "source-1"),
+            _item("two", "source-2"),
+        ),
+        error_policy="record",
+    )
+
+    assert tuple(item.record_sha256 for item in first.items) == tuple(
+        item.record_sha256 for item in second.items
+    )
+    assert first.record_sha256 == second.record_sha256
+
+
+def test_batch_record_identity_is_order_sensitive() -> None:
+    recipe = _recipe()
+    first = run_batch(
+        recipe,
+        (
+            _item("one", "source-1"),
+            _item("two", "source-2"),
+        ),
+    )
+    second = run_batch(
+        recipe,
+        (
+            _item("two", "source-2"),
+            _item("one", "source-1"),
+        ),
     )
     assert first.record_sha256 != second.record_sha256
 
 
-def test_batch_failure_policy_raise_re_raises() -> None:
-    recipe = WorkflowRecipe(
-        schema_version=1,
-        inputs=("source",),
-        steps=(
-            RecipeStep(
-                step_id="unknown",
-                operation_id="test.batch.unknown.raise",
-                inputs={"series": "source"},
-                outputs={"series": "result"},
-                parameters={},
-            ),
-        ),
-        outputs={"result": "result"},
-    )
-    with pytest.raises(ValueError, match="unknown workflow operation"):
-        run_batch(recipe, (_item("one", "source-1"),), error_policy="raise")
+def test_batch_item_record_identity_changes_with_input_identity() -> None:
+    recipe = _recipe()
+    first = run_batch(recipe, (_item("one", "source-A"),))
+    second = run_batch(recipe, (_item("one", "source-B"),))
 
-
-def test_batch_failure_policy_record_is_deterministic() -> None:
-    def explode(*, series: Series, label: str) -> dict[str, object]:
-        del series
-        raise RuntimeError(f"boom {label}")
-
-    operation_id = "test.batch.explode.record"
-    try:
-        register_operation(operation_id, explode)
-    except ValueError:
-        pass
-
-    recipe = WorkflowRecipe(
-        schema_version=1,
-        inputs=("source",),
-        steps=(
-            RecipeStep(
-                step_id="explode",
-                operation_id=operation_id,
-                inputs={"series": "source"},
-                outputs={"series": "result"},
-                parameters={"label": "batch"},
-            ),
-        ),
-        outputs={"result": "result"},
-    )
-
-    first = run_batch(recipe, (_item("one", "source-1"),), error_policy="record")
-    second = run_batch(recipe, (_item("one", "source-1"),), error_policy="record")
-    item = first.items[0]
-    assert item.status == "failed"
-    assert item.workflow_run is None
-    assert item.failure is not None
-    assert item.failure.error_type == "RuntimeError"
-    assert item.failure.message == "boom batch"
-    assert "traceback" not in item.failure.to_dict()
-    assert first.record_sha256 == second.record_sha256
-
-
-def test_batch_failure_record_identity_changes_with_failure_message() -> None:
-    def explode(*, series: Series, label: str) -> dict[str, object]:
-        del series
-        raise RuntimeError(f"boom {label}")
-
-    operation_id = "test.batch.explode.identity"
-    try:
-        register_operation(operation_id, explode)
-    except ValueError:
-        pass
-
-    def _failing_recipe(label: str) -> WorkflowRecipe:
-        return WorkflowRecipe(
-            schema_version=1,
-            inputs=("source",),
-            steps=(
-                RecipeStep(
-                    step_id="explode",
-                    operation_id=operation_id,
-                    inputs={"series": "source"},
-                    outputs={"series": "result"},
-                    parameters={"label": label},
-                ),
-            ),
-            outputs={"result": "result"},
-        )
-
-    first = run_batch(
-        _failing_recipe("first"),
-        (_item("one", "source-1"),),
-        error_policy="record",
-    )
-    second = run_batch(
-        _failing_recipe("second"),
-        (_item("one", "source-1"),),
-        error_policy="record",
-    )
+    assert first.items[0].record_sha256 != second.items[0].record_sha256
     assert first.record_sha256 != second.record_sha256
 
 
