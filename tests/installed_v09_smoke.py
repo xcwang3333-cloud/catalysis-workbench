@@ -14,7 +14,7 @@ import catalysis_workbench
 import catalysis_workbench.workflow as workflow
 from catalysis_workbench.core import Axis, Dataset, Series
 
-EXPECTED_VERSION = "0.9.0.dev0"
+EXPECTED_VERSION = "1.0.0.dev0"
 EXPECTED_WORKFLOW_ALL = {
     "BatchItem",
     "BatchItemRecord",

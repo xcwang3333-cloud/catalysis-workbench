@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+import tempfile
 from pathlib import Path, PurePosixPath
 
 from catalysis_workbench._canonical_json import (
@@ -68,6 +70,31 @@ def _payload(manifest: WorkspaceManifest) -> bytes:
         raise WorkspaceError("workspace manifest cannot be serialized") from exc
 
 
+def _replace_manifest_atomically(manifest_path: Path, payload: bytes) -> None:
+    root = manifest_path.parent
+    temporary_path: Path | None = None
+    descriptor: int | None = None
+    try:
+        descriptor, temporary_name = tempfile.mkstemp(
+            prefix=".workspace-",
+            suffix=".tmp",
+            dir=root,
+        )
+        temporary_path = Path(temporary_name)
+        with os.fdopen(descriptor, "wb") as stream:
+            descriptor = None
+            stream.write(payload)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary_path, manifest_path)
+        temporary_path = None
+    finally:
+        if descriptor is not None:
+            os.close(descriptor)
+        if temporary_path is not None:
+            temporary_path.unlink(missing_ok=True)
+
+
 def create_workspace(root: str | Path) -> WorkspaceManifest:
     """Create an empty workspace directory and canonical manifest."""
 
@@ -110,8 +137,10 @@ def save_workspace(
     manifest_path = root_path / _MANIFEST_FILENAME
     if manifest_path.is_symlink():
         raise WorkspaceError("workspace manifest file must not be a symbolic link")
-    mode = "wb" if overwrite else "xb"
-    with manifest_path.open(mode) as stream:
+    if overwrite:
+        _replace_manifest_atomically(manifest_path, payload)
+        return
+    with manifest_path.open("xb") as stream:
         stream.write(payload)
 
 

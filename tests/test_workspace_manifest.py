@@ -169,6 +169,25 @@ def test_save_allows_explicit_overwrite(tmp_path: Path) -> None:
     assert open_workspace(root).manifest_sha256 == manifest.manifest_sha256
 
 
+def test_overwrite_replaces_hardlink_without_mutating_external_target(tmp_path: Path) -> None:
+    root = tmp_path / "project"
+    create_workspace(root)
+    external = tmp_path / "external.txt"
+    external.write_text("external-content", encoding="utf-8")
+    manifest_path = root / "workspace.json"
+    manifest_path.unlink()
+    try:
+        os.link(external, manifest_path)
+    except (OSError, NotImplementedError) as exc:
+        pytest.skip(f"hard links unavailable: {exc}")
+
+    manifest = _manifest()
+    save_workspace(manifest, root, overwrite=True)
+
+    assert external.read_text(encoding="utf-8") == "external-content"
+    assert open_workspace(root).manifest_sha256 == manifest.manifest_sha256
+
+
 def test_save_requires_bool_overwrite(tmp_path: Path) -> None:
     root = tmp_path / "project"
     create_workspace(root)
