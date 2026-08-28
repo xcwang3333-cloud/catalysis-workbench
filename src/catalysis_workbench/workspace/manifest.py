@@ -20,6 +20,7 @@ class WorkspaceError(ValueError):
 
 
 _MANIFEST_FILENAME = "workspace.json"
+_RESERVED_WORKSPACE_METADATA = frozenset({_MANIFEST_FILENAME, "workspace-evidence.json"})
 _ASSET_POLICIES = frozenset({"copy", "reference"})
 
 
@@ -78,8 +79,9 @@ def _workspace_owned_path(value: object) -> str:
     if path.is_absolute():
         raise WorkspaceError("workspace asset path must be relative")
     normalized = path.as_posix()
-    if normalized.casefold() == _MANIFEST_FILENAME.casefold():
-        raise WorkspaceError(f"{_MANIFEST_FILENAME!r} is reserved workspace metadata")
+    reserved = {name.casefold() for name in _RESERVED_WORKSPACE_METADATA}
+    if normalized.casefold() in reserved:
+        raise WorkspaceError(f"{normalized!r} is reserved workspace metadata")
     return normalized
 
 
