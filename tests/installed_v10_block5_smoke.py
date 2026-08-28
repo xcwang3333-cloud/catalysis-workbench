@@ -94,7 +94,7 @@ with tempfile.TemporaryDirectory() as directory:
     assert report.status.value == "pass"
     assert session.state.last_qa_report is report
 
-    session.select_figure_spec("figure")
+    session.select_figure_spec("figure-spec")
     edited = session.update_figure_spec(title="Edited Block 5")
     assert edited.figure_spec.title == "Edited Block 5"
     assert edited.figure_spec_dirty is True
