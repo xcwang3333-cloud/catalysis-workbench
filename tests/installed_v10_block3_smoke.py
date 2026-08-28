@@ -8,6 +8,7 @@ from importlib.metadata import version as distribution_version
 from pathlib import Path
 
 import catalysis_workbench
+from catalysis_workbench.workflow.recipe import RecipeStep, WorkflowRecipe
 from catalysis_workbench.workspace import create_workspace
 from catalysis_workbench.workspace.assets import import_asset
 from catalysis_workbench.workspace.evidence import (
@@ -19,7 +20,6 @@ from catalysis_workbench.workspace.evidence import (
     load_evidence_ledger,
     recipe_evidence,
 )
-from catalysis_workbench.workflow.recipe import RecipeStep, WorkflowRecipe
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_TREE = (ROOT / "src").resolve()
