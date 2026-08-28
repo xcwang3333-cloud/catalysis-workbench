@@ -566,6 +566,8 @@ def test_composition_values_are_immutable() -> None:
         recipe_sha256="a" * 64,
         input_assets={"raw": "input"},
         output_assets={"result": "output"},
+        input_asset_sha256={"raw": "b" * 64},
+        output_asset_sha256={"result": "c" * 64},
     )
     value = WorkspaceComposition(schema_version=1, recipes=(item,), figures=())
 
@@ -623,6 +625,8 @@ def test_composition_dataclasses_reject_duplicate_global_ids() -> None:
         recipe_sha256="a" * 64,
         input_assets={},
         output_assets={},
+        input_asset_sha256={},
+        output_asset_sha256={},
     )
     figure = FigureComposition(
         composition_id="same",
