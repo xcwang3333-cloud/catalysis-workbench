@@ -10,6 +10,9 @@ Architecture checkpoint:
 - architecture PR: #287;
 - architecture merge: `00e1d44d1a42df2a7889e21b6d116d26513020ba`;
 - development identity after Block 1: `1.0.0.dev0`;
+- Blocks 1-6: complete on `main`;
+- Block-6 squash merge: `ad73fc4725131310919cddc6b78307fbe5f8c17d`;
+- Block-6 post-merge CI: #736 / run `33156625277`, success;
 - retained stable GitHub Release/tag: `v0.7.0`;
 - routine v0.8/v0.9 tag/GitHub Release: not planned;
 - stable `1.0.0`, v1.0 tag, GitHub Release and PyPI publication: separately gated.
@@ -206,9 +209,11 @@ Delivered:
 
 Application import remains GUI-toolkit-free and headless-testable.
 
-## 13. Block 6 — Optional desktop shell + v1.0 API hardening — current final development block
+## 13. Block 6 — Optional desktop shell + v1.0 API hardening — complete
 
-Tracked by PR #294. Final exact-head promotion evidence is recorded in that PR.
+PR #294; squash merge `ad73fc4725131310919cddc6b78307fbe5f8c17d`.
+
+Final exact-head promotion evidence remains recorded in PR #294. Post-merge CI #736 / run `33156625277` completed successfully on the exact merge/main SHA, with `test`, `package-smoke`, `volumetric3d-smoke`, and `desktop-smoke` all green.
 
 ### Authorized dependency decision
 
@@ -366,7 +371,9 @@ Without separate explicit authorization, do not merge, delete a branch, create/m
 
 ## 19. Documentation state
 
-The earlier central README/MASTER_PLAN/ROADMAP descriptions that said current `main` remained at `0.7.0` or future work was only `0.9.0.dev0` were descriptive drift. Block 6 intentionally synchronizes those central documents to the real v1.0 `1.0.0.dev0` development state.
+The earlier central README/MASTER_PLAN/ROADMAP descriptions that said current `main` remained at `0.7.0` or future work was only `0.9.0.dev0` were descriptive drift. Block 6 synchronized those central documents to the real v1.0 `1.0.0.dev0` development state.
+
+This completion checkpoint records that Blocks 1-6 are now merged and post-merge validated. The next project phase is stable-1.0 maturity review, not an implicit Block 7.
 
 Historical release/scientific details remain retained in version-specific plans/releasing documents and GitHub provenance rather than being duplicated indefinitely in central status files.
 
@@ -385,3 +392,20 @@ Stop implementation and report before proceeding if a proposed change requires a
 - GUI mutation of scientific results outside reviewed APIs;
 - database/server/cloud/background-service architecture; or
 - destructive Git/release operation.
+
+## 21. Development completion checkpoint and next gate
+
+The six-block v1.0 development implementation is complete on `main@ad73fc4725131310919cddc6b78307fbe5f8c17d`, with post-merge CI #736 successful.
+
+This is still a development checkpoint, not a stable release. The next separately scoped phase is the Stable 1.0 maturity gate, which must review at least:
+
+- final supported public API and compatibility surface;
+- the exact `1.0.0.dev0` to `1.0.0` version transition;
+- project license plus Qt/PySide6 third-party distribution obligations;
+- fresh-wheel installation on supported platforms, including the optional `[desktop]` extra;
+- release notes/changelog and package metadata;
+- exact tag target and release-candidate SHA;
+- whether to create a GitHub Release; and
+- whether to publish to PyPI or another package registry.
+
+None of those release actions is authorized by this document checkpoint.

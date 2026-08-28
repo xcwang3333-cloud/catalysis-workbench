@@ -19,13 +19,16 @@ Documentation must be corrected when it drifts; it never overrides merged code, 
 Repository: `xcwang3333-cloud/catalysis-workbench`.
 
 - default/integration branch: `main`;
-- Block-6 branch baseline: `main@81900cdd73db7cb02febbcebf619cbcd25cdf1d0`;
-- development version on that baseline: `1.0.0.dev0`;
+- current exact main: `ad73fc4725131310919cddc6b78307fbe5f8c17d`;
+- development version: `1.0.0.dev0`;
+- v1.0 Blocks 1-6: complete and merged;
+- latest completed block: Block 6 via PR #294 / squash merge `ad73fc4725131310919cddc6b78307fbe5f8c17d`;
+- Block-6 post-merge CI: #736 / run `33156625277`, success;
 - retained stable tag/GitHub Release: `v0.7.0 -> e3062fc12c794f54c7b7613875ec73608a587a59`;
 - routine v0.8/v0.9 tags or GitHub Releases: not planned;
 - stable `1.0.0`, v1.0 tag, GitHub Release, and PyPI publication: not authorized by development work and separately gated.
 
-The v0.8 operando/time-resolved scientific implementation and the v0.9 reproducible-workflow foundation are complete development milestones carried into v1.0. The active architecture is now the v1.0 local-workbench line rather than the obsolete README/master-plan state that described `main` as `0.7.0` or `0.9.0.dev0`.
+The v0.8 operando/time-resolved scientific implementation and the v0.9 reproducible-workflow foundation are complete development milestones carried into v1.0. The six-block v1.0 local-workbench implementation is now complete on `main`; the next project phase is the Stable 1.0 maturity gate, not an implicit Block 7.
 
 ## Historical release summary
 
@@ -33,7 +36,7 @@ The v0.8 operando/time-resolved scientific implementation and the v0.9 reproduci
 - v0.7 is the only currently retained stable GitHub Release/tag.
 - v0.8 is a completed scientific implementation milestone with no standalone release cycle.
 - v0.9 is the completed reproducible-workflow development foundation and has no routine release artifact.
-- v1.0 is the current development line for the local personal catalysis workbench.
+- v1.0 is a completed six-block development implementation at version `1.0.0.dev0`; stable release finalization remains separately gated.
 
 Historical technical details should be read from `V0_X_PLAN.md`, `V0_X_RELEASING.md`, technique documents, and GitHub evidence rather than duplicated indefinitely in this central file.
 
@@ -93,22 +96,46 @@ PR #293 merged as `81900cdd73db7cb02febbcebf619cbcd25cdf1d0`.
 
 Delivered immutable/transaction-safe `ApplicationState` and `ApplicationSession`, explicit workspace selection/refresh, ordered asset and recipe state, reviewed workflow execution with explicit inputs/identities, explicit QA aggregation, FigureSpec state editing, and fail-closed manifest-race handling. No desktop toolkit is imported by the application layer.
 
-### Block 6 — Optional desktop shell and v1.0 API hardening — current
+### Block 6 — Optional desktop shell and v1.0 API hardening — complete
 
-Tracked by PR #294. Final promotion evidence belongs to that PR and its exact final head.
+PR #294 merged as `ad73fc4725131310919cddc6b78307fbe5f8c17d`.
 
-The separately authorized dependency decision is:
+Post-merge CI #736 / run `33156625277` succeeded on the exact merge/main SHA with:
+
+- `test` — success;
+- `package-smoke` — success;
+- `volumetric3d-smoke` — success; and
+- `desktop-smoke` — success.
+
+The separately authorized dependency decision remains:
 
 ```text
 optional extra: desktop
 PySide6-Essentials>=6.11.2,<6.12
 ```
 
-Block 6 adds a lazy Qt Widgets presentation shell, application workspace-action hardening, independent offscreen installed-wheel CI, user-facing desktop documentation, import-laziness checks, and central documentation/API synchronization.
+Block 6 delivered a lazy Qt Widgets presentation shell, application workspace-action hardening, independent offscreen installed-wheel CI, user-facing desktop documentation, import-laziness checks, and central documentation/API synchronization.
 
 The shell provides local workspace creation/opening, project/asset navigation, explicit file import, ordered recipe inspection/editing, run/evidence/QA inspection, FigureSpec presentation controls, and an explicit integration hook to the existing Matplotlib FigureSpec editor.
 
-It must not introduce parser guessing, recursive discovery, automatic QA selection, scientific algorithms, arbitrary callable execution, dynamic operation discovery, DAG scheduling, silent data correction, database/server/cloud scope, or Qt imports in lower layers.
+It does not introduce parser guessing, recursive discovery, automatic QA selection, scientific algorithms, arbitrary callable execution, dynamic operation discovery, DAG scheduling, silent data correction, database/server/cloud scope, or Qt imports in lower layers.
+
+## Next phase — Stable 1.0 maturity gate
+
+Completing Blocks 1-6 does not itself authorize a stable release.
+
+The next scoped project phase is a release-readiness audit that must review at least:
+
+- final supported public API and compatibility surface;
+- the exact `1.0.0.dev0` to `1.0.0` version transition;
+- project license and Qt/PySide6 third-party distribution obligations;
+- fresh-wheel installation for supported platforms, including `[desktop]`;
+- release notes/changelog and package metadata;
+- exact release-candidate SHA and tag target;
+- whether to create a GitHub Release; and
+- whether to publish to PyPI/package registry.
+
+Stable version finalization, tag creation, GitHub Release publication, and registry publication remain separate explicit authorization gates.
 
 ## Scientific and reproducibility invariants
 
