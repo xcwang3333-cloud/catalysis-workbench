@@ -242,7 +242,6 @@ def test_copy_destination_collision_fails_before_source_read_or_mutation(
 
 def test_catalog_location_collision_fails_before_copy_mutation(tmp_path: Path) -> None:
     root = tmp_path / "workspace"
-    source = _source(tmp_path)
     create_workspace(root)
     (root / "data").mkdir()
     (root / "data" / "tracked.bin").write_bytes(b"tracked")

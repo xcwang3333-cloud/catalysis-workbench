@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from catalysis_workbench.workspace import create_workspace, open_workspace
 from catalysis_workbench.workspace import assets as assets_module
+from catalysis_workbench.workspace import create_workspace, open_workspace
 
 
 def test_copy_save_failure_preserves_preexisting_empty_parent(
