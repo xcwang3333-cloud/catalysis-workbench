@@ -7,8 +7,10 @@ import pytest
 from catalysis_workbench.application import (
     ApplicationError,
     ApplicationSession,
+    close_workspace_in_session,
     create_workspace_in_session,
     import_asset_in_session,
+    open_workspace_in_session,
     workspace_snapshot,
 )
 from catalysis_workbench.visualization import FigureSpec
@@ -103,6 +105,40 @@ def test_import_rejects_dirty_presentation_state_before_mutation(tmp_path: Path)
 
     assert workspace_snapshot(session).manifest == before
     assert not (root / "assets" / "raw.dat").exists()
+
+
+def test_open_and_close_reject_dirty_state_without_explicit_discard(
+    tmp_path: Path,
+) -> None:
+    first = tmp_path / "first"
+    second = tmp_path / "second"
+    create_workspace(first)
+    create_workspace(second)
+    save_figure_spec_asset(
+        first,
+        FigureSpec(title="initial"),
+        asset_id="figure",
+        destination="figures/spec.json",
+    )
+    session = ApplicationSession()
+    session.open_workspace(first)
+    session.select_figure_spec("figure")
+    dirty = session.update_figure_spec(title="dirty")
+
+    with pytest.raises(ApplicationError, match="dirty"):
+        open_workspace_in_session(session, second)
+    assert session.state is dirty
+
+    with pytest.raises(ApplicationError, match="dirty"):
+        close_workspace_in_session(session)
+    assert session.state is dirty
+
+    opened = open_workspace_in_session(session, second, discard_edits=True)
+    assert opened.workspace_root == second.resolve()
+    assert opened.figure_spec is None
+
+    closed = close_workspace_in_session(session)
+    assert closed.workspace_root is None
 
 
 def test_snapshot_rejects_external_manifest_drift(tmp_path: Path) -> None:

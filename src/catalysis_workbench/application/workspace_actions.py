@@ -27,20 +27,73 @@ def _open_root(session: ApplicationSession) -> Path:
     return root
 
 
+def _validate_discard_policy(
+    session: ApplicationSession,
+    *,
+    discard_edits: bool,
+    action: str,
+) -> None:
+    if type(discard_edits) is not bool:
+        raise TypeError("discard_edits must be a bool")
+    state = session.state
+    if (state.recipe_dirty or state.figure_spec_dirty) and not discard_edits:
+        raise ApplicationError(
+            f"save or explicitly discard dirty recipe/FigureSpec state before {action}"
+        )
+
+
 def create_workspace_in_session(
     session: ApplicationSession,
     root: str | Path,
+    *,
+    discard_edits: bool = False,
 ) -> ApplicationState:
-    """Create one explicit workspace and open it in the supplied session."""
+    """Create one explicit workspace and open it after an explicit dirty-state policy."""
 
     if not isinstance(session, ApplicationSession):
         raise TypeError("session must be an ApplicationSession")
-    if session.state.recipe_dirty or session.state.figure_spec_dirty:
-        raise ApplicationError(
-            "save or discard dirty recipe/FigureSpec state before creating a workspace"
-        )
+    _validate_discard_policy(
+        session,
+        discard_edits=discard_edits,
+        action="creating a workspace",
+    )
     create_workspace(root)
     return session.open_workspace(root)
+
+
+def open_workspace_in_session(
+    session: ApplicationSession,
+    root: str | Path,
+    *,
+    discard_edits: bool = False,
+) -> ApplicationState:
+    """Open one explicit workspace without silently discarding in-memory edits."""
+
+    if not isinstance(session, ApplicationSession):
+        raise TypeError("session must be an ApplicationSession")
+    _validate_discard_policy(
+        session,
+        discard_edits=discard_edits,
+        action="opening another workspace",
+    )
+    return session.open_workspace(root)
+
+
+def close_workspace_in_session(
+    session: ApplicationSession,
+    *,
+    discard_edits: bool = False,
+) -> ApplicationState:
+    """Close the current workspace without silently discarding in-memory edits."""
+
+    if not isinstance(session, ApplicationSession):
+        raise TypeError("session must be an ApplicationSession")
+    _validate_discard_policy(
+        session,
+        discard_edits=discard_edits,
+        action="closing the workspace",
+    )
+    return session.close_workspace()
 
 
 def import_asset_in_session(

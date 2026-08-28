@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 import sys
 import tempfile
 from pathlib import Path
@@ -10,11 +11,7 @@ import catalysis_workbench
 from catalysis_workbench.application import ApplicationSession
 from catalysis_workbench.core import Series
 from catalysis_workbench.visualization import FigureSpec
-from catalysis_workbench.workflow import (
-    RecipeStep,
-    WorkflowRecipe,
-    check_digest,
-)
+from catalysis_workbench.workflow import RecipeStep, WorkflowRecipe, check_digest
 from catalysis_workbench.workspace import create_workspace
 from catalysis_workbench.workspace.assets import import_asset
 from catalysis_workbench.workspace.composition import (
@@ -32,12 +29,13 @@ EXPECTED_VERSION = "1.0.0.dev0"
 assert catalysis_workbench.__version__ == EXPECTED_VERSION
 assert not any(name == "PySide6" or name.startswith("PySide6.") for name in sys.modules)
 
-import catalysis_workbench.desktop as desktop
-
+desktop = importlib.import_module("catalysis_workbench.desktop")
 assert not any(name == "PySide6" or name.startswith("PySide6.") for name in sys.modules)
 assert desktop.desktop_available() is True
 
-from catalysis_workbench.desktop.app import create_desktop
+create_desktop = importlib.import_module(
+    "catalysis_workbench.desktop.app"
+).create_desktop
 
 recipe = WorkflowRecipe(
     schema_version=1,
@@ -98,6 +96,16 @@ with tempfile.TemporaryDirectory() as directory:
     assert window.asset_tree.topLevelItemCount() == 3
     assert window.evidence_tree.topLevelItemCount() == 1
 
+    extra = base / "extra.dat"
+    extra.write_bytes(b"extra")
+    window.import_asset_path(
+        extra,
+        asset_id="extra",
+        asset_type="source_file",
+        policy="reference",
+    )
+    assert window.asset_tree.topLevelItemCount() == 4
+
     window.session.select_recipe("recipe")
     window.refresh_views()
     assert window.recipe_list.count() == 1
@@ -137,15 +145,12 @@ with tempfile.TemporaryDirectory() as directory:
     window.set_figure_editor_data(source)
     assert window._figure_editor_button.isEnabled()
 
-    extra = base / "extra.dat"
-    extra.write_bytes(b"extra")
-    window.import_asset_path(
-        extra,
-        asset_id="extra",
-        asset_type="source_file",
-        policy="reference",
+    window.session.save_figure_spec(
+        asset_id="figure-edited",
+        destination="figures/edited.json",
     )
-    assert window.asset_tree.topLevelItemCount() == 4
+    window.refresh_views()
+    assert window.asset_tree.topLevelItemCount() == 5
 
     new_root = base / "new-workspace"
     window.create_workspace_path(new_root)
@@ -153,7 +158,10 @@ with tempfile.TemporaryDirectory() as directory:
     assert window.session.state.workspace_root == new_root.resolve()
 
     window.open_workspace_path(root)
-    assert window.asset_tree.topLevelItemCount() == 4
+    assert window.asset_tree.topLevelItemCount() == 5
+
+    window.close_workspace_path()
+    assert window.session.state.workspace_root is None
 
     window.close()
     application.processEvents()

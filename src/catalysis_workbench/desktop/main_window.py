@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -27,9 +27,9 @@ from PySide6.QtWidgets import (
     QPushButton,
     QSpinBox,
     QSplitter,
-    QTabWidget,
     QTableWidget,
     QTableWidgetItem,
+    QTabWidget,
     QTreeWidget,
     QTreeWidgetItem,
     QVBoxLayout,
@@ -40,8 +40,10 @@ from catalysis_workbench.application import (
     ApplicationError,
     ApplicationSession,
     MoveRecipeStepCommand,
+    close_workspace_in_session,
     create_workspace_in_session,
     import_asset_in_session,
+    open_workspace_in_session,
     workspace_snapshot,
 )
 from catalysis_workbench.core import Dataset, Series
@@ -240,7 +242,9 @@ class CatalysisWorkbenchMainWindow(QMainWindow):
 
         layout.addWidget(QLabel("Last QA report"))
         self.qa_table = QTableWidget(0, 4)
-        self.qa_table.setHorizontalHeaderLabels(("Check", "Status", "Code", "Finding SHA-256"))
+        self.qa_table.setHorizontalHeaderLabels(
+            ("Check", "Status", "Code", "Finding SHA-256")
+        )
         self.qa_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         layout.addWidget(self.qa_table, 1)
         self.tabs.addTab(page, "Evidence / QA")
@@ -262,27 +266,28 @@ class CatalysisWorkbenchMainWindow(QMainWindow):
         self.figure_xscale.addItems(("linear", "log", "symlog", "logit"))
         self.figure_yscale = QComboBox()
         self.figure_yscale.addItems(("linear", "log", "symlog", "logit"))
-
         self.figure_width = QDoubleSpinBox()
         self.figure_width.setRange(0.1, 100.0)
         self.figure_width.setDecimals(4)
         self.figure_height = QDoubleSpinBox()
         self.figure_height.setRange(0.1, 100.0)
         self.figure_height.setDecimals(4)
-
         self.figure_dpi = QSpinBox()
         self.figure_dpi.setRange(1, 10000)
         self.figure_transparent = QCheckBox()
 
-        form.addRow("Title", self.figure_title)
-        form.addRow("X label", self.figure_xlabel)
-        form.addRow("Y label", self.figure_ylabel)
-        form.addRow("X scale", self.figure_xscale)
-        form.addRow("Y scale", self.figure_yscale)
-        form.addRow("Figure width (in)", self.figure_width)
-        form.addRow("Figure height (in)", self.figure_height)
-        form.addRow("Export DPI", self.figure_dpi)
-        form.addRow("Transparent export", self.figure_transparent)
+        for label, widget in (
+            ("Title", self.figure_title),
+            ("X label", self.figure_xlabel),
+            ("Y label", self.figure_ylabel),
+            ("X scale", self.figure_xscale),
+            ("Y scale", self.figure_yscale),
+            ("Figure width (in)", self.figure_width),
+            ("Figure height (in)", self.figure_height),
+            ("Export DPI", self.figure_dpi),
+            ("Transparent export", self.figure_transparent),
+        ):
+            form.addRow(label, widget)
         layout.addLayout(form)
 
         controls = QHBoxLayout()
@@ -301,7 +306,7 @@ class CatalysisWorkbenchMainWindow(QMainWindow):
         controls.addWidget(sync_button)
         layout.addLayout(controls)
 
-        self._figure_controls = (
+        self._figure_controls: Sequence[QWidget] = (
             self.figure_title,
             self.figure_xlabel,
             self.figure_ylabel,
@@ -322,7 +327,7 @@ class CatalysisWorkbenchMainWindow(QMainWindow):
         QMessageBox.critical(self, title, str(exc))
         self.statusBar().showMessage(str(exc), 8000)
 
-    def _run_ui_action(self, title: str, action) -> None:
+    def _run_ui_action(self, title: str, action: Callable[[], None]) -> None:
         try:
             action()
         except (
@@ -338,16 +343,43 @@ class CatalysisWorkbenchMainWindow(QMainWindow):
         ) as exc:
             self._show_error(title, exc)
 
-    def create_workspace_path(self, root: str | Path) -> None:
+    def create_workspace_path(
+        self,
+        root: str | Path,
+        *,
+        discard_edits: bool = False,
+    ) -> None:
         """Create and select an explicit workspace without opening a chooser."""
 
-        create_workspace_in_session(self.session, root)
+        create_workspace_in_session(
+            self.session,
+            root,
+            discard_edits=discard_edits,
+        )
         self.refresh_views()
 
-    def open_workspace_path(self, root: str | Path) -> None:
-        """Open an explicit workspace without opening a chooser."""
+    def open_workspace_path(
+        self,
+        root: str | Path,
+        *,
+        discard_edits: bool = False,
+    ) -> None:
+        """Open an explicit workspace without silently discarding presentation edits."""
 
-        self.session.open_workspace(root)
+        open_workspace_in_session(
+            self.session,
+            root,
+            discard_edits=discard_edits,
+        )
+        self.refresh_views()
+
+    def close_workspace_path(self, *, discard_edits: bool = False) -> None:
+        """Close the workspace without silently discarding presentation edits."""
+
+        close_workspace_in_session(
+            self.session,
+            discard_edits=discard_edits,
+        )
         self.refresh_views()
 
     def import_asset_path(
@@ -409,12 +441,18 @@ class CatalysisWorkbenchMainWindow(QMainWindow):
         if not accepted or not name.strip():
             return
         target = Path(path) / name.strip()
-        self._run_ui_action("Create workspace failed", lambda: self.create_workspace_path(target))
+        self._run_ui_action(
+            "Create workspace failed",
+            lambda: self.create_workspace_path(target),
+        )
 
     def _choose_open_workspace(self) -> None:
         path = QFileDialog.getExistingDirectory(self, "Open workspace")
         if path:
-            self._run_ui_action("Open workspace failed", lambda: self.open_workspace_path(path))
+            self._run_ui_action(
+                "Open workspace failed",
+                lambda: self.open_workspace_path(path),
+            )
 
     def _choose_import_asset(self) -> None:
         if self.session.state.workspace_root is None:
@@ -439,16 +477,14 @@ class CatalysisWorkbenchMainWindow(QMainWindow):
         )
 
     def _refresh_workspace_action(self) -> None:
-        self._run_ui_action(
-            "Refresh workspace failed",
-            lambda: (self.session.refresh_workspace(), self.refresh_views()),
-        )
+        def action() -> None:
+            self.session.refresh_workspace()
+            self.refresh_views()
+
+        self._run_ui_action("Refresh workspace failed", action)
 
     def _close_workspace_action(self) -> None:
-        self._run_ui_action(
-            "Close workspace failed",
-            lambda: (self.session.close_workspace(), self.refresh_views()),
-        )
+        self._run_ui_action("Close workspace failed", self.close_workspace_path)
 
     def refresh_views(self) -> None:
         """Refresh all presentation widgets from current application/workspace state."""
@@ -484,7 +520,7 @@ class CatalysisWorkbenchMainWindow(QMainWindow):
         self._populate_figure()
         self.statusBar().showMessage(f"Application revision {self.session.state.revision}")
 
-    def _populate_assets(self, assets) -> None:
+    def _populate_assets(self, assets: Sequence[Any]) -> None:
         selected = set(self.session.state.selected_asset_ids)
         self.asset_tree.blockSignals(True)
         try:
@@ -515,24 +551,29 @@ class CatalysisWorkbenchMainWindow(QMainWindow):
             str(item.data(0, Qt.ItemDataRole.UserRole))
             for item in self.asset_tree.selectedItems()
         )
-        self._run_ui_action(
-            "Asset selection failed",
-            lambda: (self.session.select_assets(asset_ids), self.refresh_views()),
-        )
+
+        def action() -> None:
+            self.session.select_assets(asset_ids)
+            self.refresh_views()
+
+        self._run_ui_action("Asset selection failed", action)
 
     def _activate_asset(self, item: QTreeWidgetItem) -> None:
         asset_id = str(item.data(0, Qt.ItemDataRole.UserRole))
         asset_type = str(item.data(1, Qt.ItemDataRole.UserRole))
+
+        def select_recipe() -> None:
+            self.session.select_recipe(asset_id)
+            self.refresh_views()
+
+        def select_figure() -> None:
+            self.session.select_figure_spec(asset_id)
+            self.refresh_views()
+
         if asset_type == "workflow_recipe":
-            self._run_ui_action(
-                "Recipe selection failed",
-                lambda: (self.session.select_recipe(asset_id), self.refresh_views()),
-            )
+            self._run_ui_action("Recipe selection failed", select_recipe)
         elif asset_type == "figure_spec":
-            self._run_ui_action(
-                "FigureSpec selection failed",
-                lambda: (self.session.select_figure_spec(asset_id), self.refresh_views()),
-            )
+            self._run_ui_action("FigureSpec selection failed", select_figure)
 
     def _populate_recipe(self) -> None:
         state = self.session.state
@@ -572,8 +613,7 @@ class CatalysisWorkbenchMainWindow(QMainWindow):
         self._run_ui_action("Recipe edit failed", action)
 
     def _save_recipe_action(self) -> None:
-        state = self.session.state
-        if state.recipe is None:
+        if self.session.state.recipe is None:
             return
         asset_id, accepted = QInputDialog.getText(
             self,
@@ -591,18 +631,17 @@ class CatalysisWorkbenchMainWindow(QMainWindow):
         )
         if not accepted or not destination.strip():
             return
-        self._run_ui_action(
-            "Save recipe failed",
-            lambda: (
-                self.session.save_recipe(
-                    asset_id=asset_id.strip(),
-                    destination=destination.strip(),
-                ),
-                self.refresh_views(),
-            ),
-        )
 
-    def _populate_evidence(self, records) -> None:
+        def action() -> None:
+            self.session.save_recipe(
+                asset_id=asset_id.strip(),
+                destination=destination.strip(),
+            )
+            self.refresh_views()
+
+        self._run_ui_action("Save recipe failed", action)
+
+    def _populate_evidence(self, records: Sequence[Any]) -> None:
         self.evidence_tree.clear()
         for record in records:
             item = QTreeWidgetItem(
@@ -618,7 +657,11 @@ class CatalysisWorkbenchMainWindow(QMainWindow):
         for column in range(self.evidence_tree.columnCount()):
             self.evidence_tree.resizeColumnToContents(column)
 
-    def _set_table_rows(self, table: QTableWidget, rows: list[tuple[str, ...]]) -> None:
+    def _set_table_rows(
+        self,
+        table: QTableWidget,
+        rows: Sequence[Sequence[str]],
+    ) -> None:
         table.setRowCount(len(rows))
         for row, values in enumerate(rows):
             for column, value in enumerate(values):
@@ -628,23 +671,23 @@ class CatalysisWorkbenchMainWindow(QMainWindow):
     def _populate_run(self) -> None:
         run = self.session.state.last_workflow_run
         if run is None:
-            self._set_table_rows(self.run_table, [])
+            self._set_table_rows(self.run_table, ())
             return
-        rows = [
+        rows = (
             ("record_sha256", run.record_sha256),
             ("recipe_sha256", run.recipe_sha256),
             ("content_sha256", run.content_sha256),
             ("steps", ", ".join(step.step_id for step in run.steps)),
             ("outputs", ", ".join(run.output_identities)),
-        ]
+        )
         self._set_table_rows(self.run_table, rows)
 
     def _populate_qa(self) -> None:
         report = self.session.state.last_qa_report
         if report is None:
-            self._set_table_rows(self.qa_table, [])
+            self._set_table_rows(self.qa_table, ())
             return
-        rows = [
+        rows = tuple(
             (
                 finding.check_id,
                 finding.status.value,
@@ -652,7 +695,7 @@ class CatalysisWorkbenchMainWindow(QMainWindow):
                 finding.finding_sha256,
             )
             for finding in report.findings
-        ]
+        )
         self._set_table_rows(self.qa_table, rows)
 
     def _populate_figure(self) -> None:
@@ -668,12 +711,11 @@ class CatalysisWorkbenchMainWindow(QMainWindow):
 
         suffix = " (dirty)" if state.figure_spec_dirty else ""
         self.figure_label.setText(f"{state.selected_figure_spec_asset_id}{suffix}")
-        controls = (
+        for widget, value in (
             (self.figure_title, spec.title or ""),
             (self.figure_xlabel, spec.xlabel or ""),
             (self.figure_ylabel, spec.ylabel or ""),
-        )
-        for widget, value in controls:
+        ):
             widget.blockSignals(True)
             widget.setText(value)
             widget.blockSignals(False)
@@ -746,16 +788,15 @@ class CatalysisWorkbenchMainWindow(QMainWindow):
         )
         if not accepted or not destination.strip():
             return
-        self._run_ui_action(
-            "Save FigureSpec failed",
-            lambda: (
-                self.session.save_figure_spec(
-                    asset_id=asset_id.strip(),
-                    destination=destination.strip(),
-                ),
-                self.refresh_views(),
-            ),
-        )
+
+        def action() -> None:
+            self.session.save_figure_spec(
+                asset_id=asset_id.strip(),
+                destination=destination.strip(),
+            )
+            self.refresh_views()
+
+        self._run_ui_action("Save FigureSpec failed", action)
 
     def _sync_figure_editor_buttons(self) -> None:
         selected = self.session.state.figure_spec is not None
