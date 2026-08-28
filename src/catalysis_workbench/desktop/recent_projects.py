@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import os
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from PySide6.QtCore import QSettings
@@ -26,7 +26,11 @@ class RecentProjectsStore:
     _MAX_STORED = 10
 
     def __init__(self, settings: QSettings | None = None) -> None:
-        self._settings = settings if settings is not None else QSettings("CatalysisWorkbench", "CatalysisWorkbench")
+        self._settings = (
+            settings
+            if settings is not None
+            else QSettings("CatalysisWorkbench", "CatalysisWorkbench")
+        )
 
     @staticmethod
     def _normalized(path: str | Path) -> str:
@@ -76,7 +80,7 @@ class RecentProjectsStore:
         existing = [
             entry for entry in self.entries() if self._dedupe_key(entry.path) != key
         ]
-        timestamp = datetime.now(timezone.utc).isoformat()
+        timestamp = datetime.now(UTC).isoformat()
         self._write([RecentProjectEntry(normalized, timestamp), *existing])
 
     def remove(self, path: str | Path) -> None:

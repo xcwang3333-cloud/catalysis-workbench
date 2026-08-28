@@ -169,9 +169,13 @@ def save_analysis_project(
     root_path = Path(root)
     before = _snapshot_once(root_path)
     if before.workspace_manifest_sha256 != expected_workspace_manifest_sha256:
-        raise AnalysisProjectError("workspace changed outside the analysis session; reopen explicitly")
+        raise AnalysisProjectError(
+            "workspace changed outside the analysis session; reopen explicitly"
+        )
     if before.project_file_sha256 != expected_project_file_sha256:
-        raise AnalysisProjectError("project.json changed outside the analysis session; reopen explicitly")
+        raise AnalysisProjectError(
+            "project.json changed outside the analysis session; reopen explicitly"
+        )
 
     project_path = _project_path(root_path)
     payload = _project_payload(document)
@@ -182,7 +186,9 @@ def save_analysis_project(
     if observed.project_file_sha256 != expected_project_sha or observed.document != document:
         raise AnalysisProjectError("project.json changed concurrently while it was being saved")
     if observed.workspace_manifest_sha256 != expected_workspace_manifest_sha256:
-        raise AnalysisProjectError("workspace changed concurrently while project.json was being saved")
+        raise AnalysisProjectError(
+            "workspace changed concurrently while project.json was being saved"
+        )
     return observed
 
 

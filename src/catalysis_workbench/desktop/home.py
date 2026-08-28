@@ -45,7 +45,9 @@ class HomePage(QWidget):
         root = QVBoxLayout(self)
         title = QLabel("CatalysisWorkbench")
         title.setObjectName("homeTitle")
-        subtitle = QLabel("Choose an analysis task to start. A project is created only when you save.")
+        subtitle = QLabel(
+            "Choose an analysis task to start. A project is created only when you save."
+        )
         subtitle.setWordWrap(True)
         root.addWidget(title)
         root.addWidget(subtitle)
