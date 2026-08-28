@@ -4,18 +4,19 @@ from __future__ import annotations
 
 import sys
 import tempfile
+from importlib.metadata import version as distribution_version
 from pathlib import Path
 
+import catalysis_workbench
 from catalysis_workbench.application import AnalysisSession, analysis_task_catalog
 from catalysis_workbench.workspace import open_workspace
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_TREE = (ROOT / "src").resolve()
+EXPECTED_VERSION = "1.1.0.dev0"
 
 
 def _assert_installed_import() -> None:
-    import catalysis_workbench
-
     package_file = Path(catalysis_workbench.__file__).resolve()
     try:
         package_file.relative_to(SOURCE_TREE)
@@ -26,6 +27,8 @@ def _assert_installed_import() -> None:
 
 def main() -> None:
     _assert_installed_import()
+    assert catalysis_workbench.__version__ == EXPECTED_VERSION
+    assert distribution_version("catalysis-workbench") == EXPECTED_VERSION
     assert "PySide6" not in sys.modules
     assert "matplotlib.pyplot" not in sys.modules
     assert tuple(task.task_id for task in analysis_task_catalog()) == (
