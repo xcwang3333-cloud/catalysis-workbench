@@ -42,11 +42,17 @@ def main() -> None:
         assert state.project_root is None
         assert window.stack.currentWidget() is window.analysis_page
 
+        window.analysis_page.title_edit.setText("Buffered desktop v1.1 LSV")
+        assert window._commit_title_editor() is True
+        assert window.session.state.document is not None
+        assert window.session.state.document.title == "Buffered desktop v1.1 LSV"
+        assert window.session.state.is_dirty
+
         window.rename_analysis("Desktop v1.1 LSV")
         assert window.session.state.is_dirty
         window.session.undo()
         window.refresh_views()
-        assert not window.session.state.is_dirty
+        assert window.session.state.is_dirty
         window.session.redo()
         window.refresh_views()
         assert window.session.state.is_dirty

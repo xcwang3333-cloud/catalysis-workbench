@@ -96,6 +96,23 @@ class CatalysisWorkbenchWindow(QMainWindow):
     def _display_error(self, exc: BaseException) -> None:
         QMessageBox.critical(self, "CatalysisWorkbench", str(exc))
 
+    def _commit_title_editor(self) -> bool:
+        """Flush buffered title text before any save/navigation/close decision."""
+
+        state = self.session.state
+        if state.document is None:
+            return True
+        title = self.analysis_page.title_edit.text()
+        if title == state.document.title:
+            return True
+        try:
+            self.rename_analysis(title)
+        except (ValueError, RuntimeError) as exc:
+            self._display_error(exc)
+            self.refresh_views()
+            return False
+        return True
+
     def _recent_displays(self) -> tuple[RecentProjectDisplay, ...]:
         result: list[RecentProjectDisplay] = []
         for entry in self.recent_store.entries():
@@ -201,6 +218,8 @@ class CatalysisWorkbenchWindow(QMainWindow):
         return bool(name) and name not in {".", ".."} and "/" not in name and "\\" not in name
 
     def _save_interactive(self) -> bool:
+        if not self._commit_title_editor():
+            return False
         state = self.session.state
         if state.document is None:
             return False
@@ -244,6 +263,8 @@ class CatalysisWorkbenchWindow(QMainWindow):
         return "cancel"
 
     def _prepare_transition(self) -> bool:
+        if not self._commit_title_editor():
+            return False
         decision = self._dirty_decision()
         if decision == "cancel":
             return False
@@ -284,6 +305,9 @@ class CatalysisWorkbenchWindow(QMainWindow):
         self.refresh_views()
 
     def closeEvent(self, event: QCloseEvent) -> None:  # noqa: N802 - Qt override
+        if not self._commit_title_editor():
+            event.ignore()
+            return
         if not self.session.state.is_dirty:
             event.accept()
             return

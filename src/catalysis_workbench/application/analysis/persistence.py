@@ -25,6 +25,7 @@ from .document import (
 
 _PROJECT_FILENAME = "project.json"
 _PROJECT_FIELDS = frozenset({"schema_version", "document"})
+_EMPTY_WORKSPACE_PAYLOAD = canonical_json_bytes({"schema_version": 1, "assets": []}) + b"\n"
 
 
 class AnalysisProjectError(ValueError):
@@ -192,16 +193,27 @@ def save_analysis_project(
     return observed
 
 
-def _rollback_new_workspace(root: Path) -> None:
+def _rollback_new_workspace(root: Path, *, expected_workspace_payload: bytes) -> None:
     """Remove only the exact untouched workspace created by this failed first save."""
 
     try:
         entries = tuple(root.iterdir())
     except (FileNotFoundError, NotADirectoryError):
         return
-    if len(entries) != 1 or entries[0].name != "workspace.json" or entries[0].is_symlink():
+    workspace_path = root / "workspace.json"
+    if (
+        len(entries) != 1
+        or entries[0] != workspace_path
+        or workspace_path.is_symlink()
+        or not workspace_path.is_file()
+    ):
         return
-    entries[0].unlink(missing_ok=True)
+    try:
+        if workspace_path.read_bytes() != expected_workspace_payload:
+            return
+    except OSError:
+        return
+    workspace_path.unlink(missing_ok=True)
     try:
         root.rmdir()
     except OSError:
@@ -240,7 +252,10 @@ def create_analysis_project(
                     project_path.unlink()
             except OSError:
                 pass
-        _rollback_new_workspace(root_path)
+        _rollback_new_workspace(
+            root_path,
+            expected_workspace_payload=_EMPTY_WORKSPACE_PAYLOAD,
+        )
         raise
 
 

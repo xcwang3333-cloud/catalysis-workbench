@@ -156,6 +156,29 @@ def test_failed_first_save_rolls_back_only_its_exact_new_workspace(
     assert not root.exists()
 
 
+def test_failed_first_save_preserves_external_workspace_mutation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from catalysis_workbench.application.analysis import persistence
+
+    root = tmp_path / "project"
+    external_payload = b'{"assets":[],"schema_version":1}\nexternal-change\n'
+
+    def mutate_then_fail(observed_root: str | Path):
+        (Path(observed_root) / "workspace.json").write_bytes(external_payload)
+        raise AnalysisProjectError("injected concurrent mutation")
+
+    monkeypatch.setattr(persistence, "open_analysis_project", mutate_then_fail)
+
+    with pytest.raises(AnalysisProjectError, match="injected concurrent mutation"):
+        persistence.create_analysis_project(_document(), root)
+
+    assert root.is_dir()
+    assert (root / "workspace.json").read_bytes() == external_payload
+    assert not (root / "project.json").exists()
+
+
 def test_project_json_symlink_is_rejected(tmp_path: Path) -> None:
     root = tmp_path / "legacy"
     create_workspace(root)
