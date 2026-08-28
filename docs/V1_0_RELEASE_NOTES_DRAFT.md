@@ -1,6 +1,6 @@
 # CatalysisWorkbench v1.0 Release Notes — Draft
 
-These notes describe the current `1.0.0.dev0` release candidate scope. They are preparatory material only. Stable `1.0.0`, a `v1.0.0` tag, GitHub Release, and package-registry publication remain separately gated.
+These notes describe the current `1.0.0` final-version candidate scope. They remain preparatory material only: the candidate version does not itself create a `v1.0.0` tag, GitHub Release, or package-registry publication.
 
 ## Overview
 
@@ -65,7 +65,7 @@ Qt remains optional and lazy-loaded. Base package imports do not require or load
 
 ## Reliability and release hardening
 
-The Stable 1.0 Gate-A process adds:
+Stable 1.0 release hardening includes:
 
 - a unified installed-wheel public-API audit for the frozen v1.0 surface;
 - retained historical scientific installed-wheel regression audits;
@@ -74,7 +74,8 @@ The Stable 1.0 Gate-A process adds:
 - isolated `[desktop]` installation/import validation on the same matrix;
 - wheel + sdist metadata validation and sdist-to-wheel rebuild checks;
 - release-oriented package metadata and explicit release procedure documentation;
-- BSD 3-Clause project licensing with standardized SPDX and packaged license-file metadata.
+- BSD 3-Clause project licensing with standardized SPDX and packaged license-file metadata;
+- exact final-version synchronization of distribution/runtime identity and release-gate expectations.
 
 ## Intentional non-goals
 
@@ -91,4 +92,4 @@ v1.0 does not introduce:
 
 ## Release status
 
-This document remains a draft while Stable 1.0 maturity gates are open. The project license is BSD-3-Clause. The final `1.0.0` version candidate, exact tag target, GitHub Release publication, and PyPI/package-registry publication each remain subject to their defined review and authorization gates.
+This document remains a draft during Gate B review. The project license is BSD-3-Clause and the final-version candidate identity is `1.0.0`. A `v1.0.0` tag, GitHub Release publication, and PyPI/package-registry publication remain separate later authorization gates.
