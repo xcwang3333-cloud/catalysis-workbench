@@ -6,7 +6,8 @@ import os
 import subprocess
 import sys
 from importlib import import_module
-from importlib.metadata import metadata, version as distribution_version
+from importlib.metadata import metadata
+from importlib.metadata import version as distribution_version
 from pathlib import Path
 
 import catalysis_workbench
@@ -95,7 +96,10 @@ def _assert_numerical_imports_are_presentation_lazy() -> None:
         or name.startswith("vtk.")
         or name.startswith("vtkmodules.")
     ]
-    assert not forbidden, f"numerical/application imports loaded presentation backends: {forbidden!r}"
+    assert not forbidden, (
+        "numerical/application imports loaded presentation backends: "
+        f"{forbidden!r}"
+    )
 
 
 def _assert_public_exports() -> None:

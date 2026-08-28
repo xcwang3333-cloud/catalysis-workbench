@@ -6,7 +6,8 @@ import argparse
 import os
 import sys
 from importlib import import_module
-from importlib.metadata import metadata, version as distribution_version
+from importlib.metadata import metadata
+from importlib.metadata import version as distribution_version
 from pathlib import Path
 
 import catalysis_workbench
