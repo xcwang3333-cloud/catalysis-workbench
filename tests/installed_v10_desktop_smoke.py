@@ -36,6 +36,7 @@ assert desktop.desktop_available() is True
 create_desktop = importlib.import_module(
     "catalysis_workbench.desktop.app"
 ).create_desktop
+QCloseEvent = importlib.import_module("PySide6.QtGui").QCloseEvent
 
 recipe = WorkflowRecipe(
     schema_version=1,
@@ -93,6 +94,7 @@ with tempfile.TemporaryDirectory() as directory:
     window = handle.window
     application = handle.application
 
+    assert type(window).__module__ == "catalysis_workbench.desktop.window"
     assert window.asset_tree.topLevelItemCount() == 3
     assert window.evidence_tree.topLevelItemCount() == 1
 
@@ -141,6 +143,18 @@ with tempfile.TemporaryDirectory() as directory:
     assert edited.title == "Desktop edited"
     assert edited.layout.figure_width_in == 4.25
     assert edited.export.dpi == 450
+    assert window.session.state.figure_spec_dirty is True
+
+    window._confirm_discard_edits = lambda: False
+    rejected_close = QCloseEvent()
+    window.closeEvent(rejected_close)
+    assert rejected_close.isAccepted() is False
+    assert window.session.state.figure_spec_dirty is True
+
+    window._confirm_discard_edits = lambda: True
+    accepted_close = QCloseEvent()
+    window.closeEvent(accepted_close)
+    assert accepted_close.isAccepted() is True
 
     window.set_figure_editor_data(source)
     assert window._figure_editor_button.isEnabled()

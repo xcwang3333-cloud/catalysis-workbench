@@ -41,7 +41,7 @@ def launch_desktop(*args: Any, **kwargs: Any):
 def __getattr__(name: str):
     if name == "CatalysisWorkbenchMainWindow":
         try:
-            from .main_window import CatalysisWorkbenchMainWindow
+            from .window import CatalysisWorkbenchMainWindow
         except ModuleNotFoundError as exc:
             if exc.name == "PySide6" or (exc.name or "").startswith("PySide6."):
                 raise _dependency_error(exc) from exc

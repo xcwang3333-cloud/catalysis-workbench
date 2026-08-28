@@ -10,7 +10,7 @@ from PySide6.QtWidgets import QApplication
 
 from catalysis_workbench.application import ApplicationSession
 
-from .main_window import CatalysisWorkbenchMainWindow
+from .window import CatalysisWorkbenchMainWindow
 
 
 @dataclass(frozen=True, slots=True)
