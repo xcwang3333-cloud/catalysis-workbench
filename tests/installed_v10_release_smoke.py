@@ -1,4 +1,4 @@
-"""Unified Gate-A audit for the frozen v1.0 installed wheel."""
+"""Unified Stable-1.0 audit for the frozen v1.0 installed wheel."""
 
 from __future__ import annotations
 
@@ -133,7 +133,7 @@ def _assert_base_package_metadata() -> None:
 
     classifiers = set(project.get_all("Classifier") or ())
     for classifier in (
-        "Development Status :: 4 - Beta",
+        "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Science/Research",
         "Topic :: Scientific/Engineering :: Chemistry",
         "Programming Language :: Python :: 3.11",
@@ -180,7 +180,7 @@ def main() -> None:
     _assert_base_package_metadata()
     _assert_optional_backends_are_lazy()
     _run_reviewed_installed_smokes()
-    print("installed v1.0 Gate-A release audit: ok")
+    print("installed Stable v1.0 release audit: ok")
 
 
 if __name__ == "__main__":
