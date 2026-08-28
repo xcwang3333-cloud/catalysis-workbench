@@ -7,7 +7,7 @@ CatalysisWorkbench is developed through staged scientific and product-maturity m
 - `v0.7.0` is the only currently retained stable GitHub Release/tag.
 - v0.1-v0.6 remain valid historical milestones; their old tag/Release artifacts were intentionally removed while implementation, Issue/PR, CI and documentation provenance remains retained.
 - v0.8 and v0.9 are completed development milestones with no routine standalone tag/GitHub Release.
-- the active v1.0 development identity is `1.0.0.dev0`.
+- the completed six-block v1.0 development implementation remains identified as `1.0.0.dev0`.
 - stable `1.0.0`, a v1.0 tag, GitHub Release and PyPI/package-registry publication are separate future decisions.
 
 ## v0.1-v0.4 — Core experimental analysis — historical complete
@@ -66,35 +66,35 @@ Literal recipe order remains authoritative. The v0.9 foundation is not a DAG eng
 
 No routine `v0.9` tag/GitHub Release is planned.
 
-## v1.0 — Personal local catalysis workbench — current development line
+## v1.0 — Personal local catalysis workbench — development implementation complete
 
 Architecture authority: [`V1_0_PLAN.md`](V1_0_PLAN.md).
 
-The six-block v1.0 plan is:
+The six-block v1.0 implementation is complete on `main@ad73fc4725131310919cddc6b78307fbe5f8c17d`. Block-6 post-merge CI #736 / run `33156625277` succeeded on that exact main SHA.
 
 1. **Workspace foundation — complete.** Strict local manifest persistence, deterministic identity and workspace-owned path confinement.
 2. **Explicit asset import/catalog — complete.** Caller-selected sources, stable asset identity, explicit copy/reference policy and content digests.
 3. **Persistent evidence ledger — complete.** File-backed associations among existing reviewed recipe/run/batch/QA/content identities.
 4. **Workspace recipe/figure composition — complete.** Reproducible recipe/FigureSpec/preset/artifact associations with content/evidence digest pinning and literal ordered recipe edits.
 5. **GUI-neutral application/session controller — complete.** Transaction-safe local session state, explicit workflow/QA orchestration and FigureSpec editing without GUI-toolkit coupling.
-6. **Optional desktop shell + v1.0 API hardening — current/final development block.** Optional PySide6-Essentials Qt Widgets shell, explicit workspace/file interactions, recipe/evidence/QA/figure presentation, import laziness, installed-wheel desktop CI, compatibility review and documentation synchronization.
+6. **Optional desktop shell + v1.0 API hardening — complete.** Optional PySide6-Essentials Qt Widgets shell, explicit workspace/file interactions, recipe/evidence/QA/figure presentation, import laziness, installed-wheel desktop CI, compatibility review and documentation synchronization.
 
 The v1.0 desktop is presentation over reviewed application/workflow/scientific contracts; it is not a new scientific execution engine.
 
-## Stable 1.0 maturity gate — future and separately authorized
+## Stable 1.0 maturity gate — next phase and separately authorized
 
-Completing the six development blocks does not itself create a stable release. A later stable-1.0 decision must separately review at least:
+Completing the six development blocks does not itself create a stable release. The next project phase is a separately scoped Stable 1.0 maturity review covering at least:
 
 - final public API compatibility and documented surface;
 - exact development-to-final version transition;
-- optional desktop dependency/license/distribution state;
+- project license and optional desktop dependency/license/distribution state;
 - fresh-wheel and optional-extra installation on supported platforms;
 - release notes and retained release policy;
-- exact tag target;
+- exact release-candidate SHA and tag target;
 - GitHub Release publication; and
 - whether PyPI/package-registry publication is desired.
 
-No stable version, tag, Release or registry publication may happen as a side effect of a feature PR.
+No stable version, tag, Release or registry publication may happen as a side effect of a documentation or feature PR.
 
 ## Explicitly out of scope for current v1.0
 
