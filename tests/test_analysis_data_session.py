@@ -183,7 +183,7 @@ def test_schema1_project_open_migrates_in_memory_without_rewriting_disk(tmp_path
 
     assert project_path.read_bytes() == payload
     assert snapshot.project_file_sha256 == hashlib.sha256(payload).hexdigest()
-    assert snapshot.document.schema_version == 3
+    assert snapshot.document.schema_version == 4
     assert snapshot.document.data_series == ()
     session = AnalysisSession()
     state = session.open_project(root)
@@ -191,4 +191,4 @@ def test_schema1_project_open_migrates_in_memory_without_rewriting_disk(tmp_path
     saved = session.save_project()
     assert saved.is_dirty is False
     assert open_workspace(root).manifest_sha256 == workspace_sha
-    assert b'"schema_version":3' in project_path.read_bytes()
+    assert b'"schema_version":4' in project_path.read_bytes()
