@@ -106,6 +106,7 @@ def main() -> None:
         preview.close()
         editor.close()
         dialog.close()
+        window.go_home(discard_changes=True)
         window.close()
         application.processEvents()
 
