@@ -38,7 +38,9 @@ def _mapped(path: Path, *, name: str) -> DataSeriesSpec:
     )
 
 
-def _saved_figure_session(tmp_path: Path) -> tuple[AnalysisSession, DataSeriesSpec, DataSeriesSpec]:
+def _saved_figure_session(
+    tmp_path: Path,
+) -> tuple[AnalysisSession, DataSeriesSpec, DataSeriesSpec]:
     first_path = tmp_path / "first.csv"
     second_path = tmp_path / "second.csv"
     first_path.write_text("x,y\n0,1\n1,\n2,3\n", encoding="utf-8")
@@ -103,7 +105,10 @@ def test_package_exports_visible_full_science_and_updates_only_workspace_baselin
 
     manifest = json.loads((target / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["package_sha256"] == result.package_sha256
-    assert manifest["figure_draft_sha256"] == session.figure_draft("processed").figure_sha256
+    assert (
+        manifest["figure_draft_sha256"]
+        == session.figure_draft("processed").figure_sha256
+    )
     assert manifest["trace_order"] == [first.data_id]
     assert set(manifest["trace_identities"]) == {first.data_id}
     assert second.data_id not in json.dumps(manifest, sort_keys=True)
@@ -132,7 +137,9 @@ def test_package_exports_visible_full_science_and_updates_only_workspace_baselin
 
     ledger = open_evidence_ledger(before.project_root)
     assert any(record.kind == "workflow_run" for record in ledger.records)
-    package_records = [record for record in ledger.records if record.kind == "artifact"]
+    package_records = [
+        record for record in ledger.records if record.kind == "artifact"
+    ]
     assert len(package_records) == 1
     assert package_records[0].evidence_sha256 == result.manifest_sha256
     composition = open_workspace_composition(before.project_root)
@@ -190,6 +197,81 @@ def test_final_publish_failure_rolls_back_package_provenance_and_session(
     assert session.state == before_state
     assert not target.exists()
     assert _project_tree(before_state.project_root) == before_tree
+
+
+def test_post_rename_failure_removes_only_the_exact_published_package(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    session, _first, _second = _saved_figure_session(tmp_path)
+    before_state = session.state
+    assert before_state.project_root is not None
+    before_tree = _project_tree(before_state.project_root)
+    target = tmp_path / "post-rename-failure"
+
+    import catalysis_workbench.application.analysis.export_publish as publisher
+
+    publish = publisher._publish_stage
+
+    def move_then_fail(stage: Path, destination: Path) -> None:
+        publish(stage, destination)
+        raise OSError("injected post-rename failure")
+
+    monkeypatch.setattr(publisher, "_publish_stage", move_then_fail)
+    with pytest.raises(AnalysisSessionError, match="injected post-rename failure"):
+        export_session_figure_package(
+            session,
+            "processed",
+            target,
+            options=FigurePackageOptions(
+                figure_formats=("svg",),
+                source_data_formats=("txt",),
+            ),
+        )
+
+    assert session.state == before_state
+    assert not target.exists()
+    assert _project_tree(before_state.project_root) == before_tree
+
+
+def test_post_rename_external_mutation_is_preserved_for_inspection(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    session, _first, _second = _saved_figure_session(tmp_path)
+    before_state = session.state
+    assert before_state.project_root is not None
+    before_tree = _project_tree(before_state.project_root)
+    target = tmp_path / "mutated-package"
+
+    import catalysis_workbench.application.analysis.export_publish as publisher
+
+    publish = publisher._publish_stage
+
+    def move_mutate_then_fail(stage: Path, destination: Path) -> None:
+        publish(stage, destination)
+        (destination / "intruder.txt").write_text("external", encoding="utf-8")
+        raise OSError("injected mutation after rename")
+
+    monkeypatch.setattr(publisher, "_publish_stage", move_mutate_then_fail)
+    with pytest.raises(
+        AnalysisSessionError,
+        match="destination changed",
+    ):
+        export_session_figure_package(
+            session,
+            "processed",
+            target,
+            options=FigurePackageOptions(
+                figure_formats=("svg",),
+                source_data_formats=("txt",),
+            ),
+        )
+
+    assert session.state == before_state
+    assert target.is_dir()
+    assert (target / "intruder.txt").read_text(encoding="utf-8") == "external"
+    assert _project_tree(before_state.project_root) != before_tree
 
 
 def test_export_rejects_unsaved_dirty_stale_and_existing_target(tmp_path: Path) -> None:
