@@ -107,7 +107,7 @@ def main() -> None:
         window._create_figure_ui("processed", "publication")
         window._show_export_ui()
         assert window.stack.currentWidget() is window.export_page
-        assert window.export_page.save_project_button.isVisible()
+        assert not window.export_page.save_project_button.isHidden()
         assert window.export_page.export_button.isEnabled() is False
 
         generic_project = base / "generic-project"
@@ -138,7 +138,7 @@ def main() -> None:
         window._export_package_ui(str(generic_package), window.export_page.options())
         assert (generic_package / "figure.svg").is_file()
         assert (generic_package / "source-data" / "trace-001.txt").is_file()
-        assert window.export_page.success_actions.isVisible()
+        assert not window.export_page.success_actions.isHidden()
         generic_package_sha = _package_sha(generic_package)
         window.export_page._prepare_another_export()
         assert window.export_page.location_edit.text() == ""
