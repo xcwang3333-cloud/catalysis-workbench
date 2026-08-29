@@ -190,6 +190,17 @@ def _manifest_file_identities(
     return identities
 
 
+def _expected_package_directories(identities: dict[str, str]) -> set[str]:
+    directories: set[str] = set()
+    for relative in identities:
+        logical = PurePosixPath(relative)
+        for parent in logical.parents:
+            if parent == PurePosixPath("."):
+                break
+            directories.add(parent.as_posix())
+    return directories
+
+
 def _remove_exact_published_target(target: Path, manifest_sha256: str) -> bool:
     """Remove only a byte-exact package tree produced by this operation."""
 
@@ -198,18 +209,23 @@ def _remove_exact_published_target(target: Path, manifest_sha256: str) -> bool:
     identities = _manifest_file_identities(target, manifest_sha256)
     if identities is None:
         return False
+    expected_directories = _expected_package_directories(identities)
     try:
-        observed: set[str] = set()
+        observed_files: set[str] = set()
+        observed_directories: set[str] = set()
         for path in target.rglob("*"):
             if path.is_symlink():
                 return False
+            relative = path.relative_to(target).as_posix()
             if path.is_dir():
+                observed_directories.add(relative)
                 continue
             if not path.is_file():
                 return False
-            relative = path.relative_to(target).as_posix()
-            observed.add(relative)
-        if observed != set(identities):
+            observed_files.add(relative)
+        if observed_files != set(identities):
+            return False
+        if observed_directories != expected_directories:
             return False
         for relative, digest in identities.items():
             path = target / Path(*PurePosixPath(relative).parts)
