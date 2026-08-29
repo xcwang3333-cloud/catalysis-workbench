@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from dataclasses import replace
-
 import numpy as np
 import pytest
 
@@ -9,7 +7,10 @@ from catalysis_workbench.application import (
     AnalysisRange,
     AnalysisSession,
     DataSeriesSpec,
+    FEPartialCurrentAnalysisSpec,
+    GenericXYAnalysisSpec,
     LSVAnalysisSpec,
+    PartialCurrentPair,
     TabularMappingSpec,
     source_spec_from_file,
 )
@@ -73,6 +74,10 @@ def test_figure_draft_is_presentation_only_and_survives_rename_reorder(tmp_path)
     renamed = session.figure_draft("processed")
     assert renamed.figure_spec.series_styles[first.data_id].label == "A"
     assert renamed.figure_sha256 == figure_sha
+    renamed_result = session.evaluate_analysis()
+    assert renamed_result.status == "success"
+    assert renamed_result.result is not None
+    assert renamed_result.result.workflow_run.content_sha256 == scientific_sha
 
     session.move_data_series(second.data_id, 0)
     assert session.figure_is_stale("processed") is False
@@ -80,10 +85,6 @@ def test_figure_draft_is_presentation_only_and_survives_rename_reorder(tmp_path)
         first.data_id,
         second.data_id,
     )
-    reevaluated = session.evaluate_analysis()
-    assert reevaluated.status == "success"
-    assert reevaluated.result is not None
-    assert reevaluated.result.workflow_run.content_sha256 == scientific_sha
 
 
 def test_scientific_processing_change_marks_figure_stale_until_explicit_refresh(tmp_path) -> None:
@@ -108,6 +109,40 @@ def test_scientific_processing_change_marks_figure_stale_until_explicit_refresh(
     assert refreshed.source_view_sha256 != original.source_view_sha256
     assert refreshed.figure_spec == original.figure_spec
     assert session.figure_is_stale("processed") is False
+
+
+def test_fe_view_identity_tracks_range_but_not_unrelated_current_processing(tmp_path) -> None:
+    current_path = tmp_path / "current.csv"
+    current_path.write_text("x,y\n0,-1\n1,-2\n2,-3\n", encoding="utf-8")
+    fe_path = tmp_path / "fe.csv"
+    fe_path.write_text("x,y\n0,20\n1,30\n2,40\n", encoding="utf-8")
+    current = _mapped(
+        current_path,
+        name="total",
+        task_role="current_density",
+        unit="mA/cm^2",
+    )
+    fe = _mapped(fe_path, name="CO", task_role="faradaic_efficiency", unit="%")
+    session = AnalysisSession()
+    session.new_analysis("fe_partial_current")
+    session.add_data_series_batch(((current, current_path), (fe, fe_path)))
+    session.replace_analysis_spec(
+        FEPartialCurrentAnalysisSpec(
+            pairs=(PartialCurrentPair(current.data_id, fe.data_id),)
+        )
+    )
+    session.create_figure("fe")
+    original = session.figure_draft("fe")
+
+    session.replace_analysis_spec(
+        FEPartialCurrentAnalysisSpec(
+            pairs=(PartialCurrentPair(current.data_id, fe.data_id),),
+            analysis_range=AnalysisRange(x_min=1.0, x_max=2.0),
+        )
+    )
+    assert session.figure_is_stale("fe") is True
+    session.refresh_figure("fe")
+    assert session.figure_draft("fe").source_view_sha256 != original.source_view_sha256
 
 
 def test_display_range_changes_document_but_not_scientific_run_or_line_data(tmp_path) -> None:
@@ -199,7 +234,12 @@ def test_figure_edits_are_undoable_without_reprocessing(tmp_path) -> None:
     session.undo()
     assert session.figure_draft("processed").figure_sha256 == created.figure_sha256
     session.redo()
-    assert session.figure_draft("processed").figure_spec.series_styles[first.data_id].color == "#123456"
+    assert (
+        session.figure_draft("processed")
+        .figure_spec.series_styles[first.data_id]
+        .color
+        == "#123456"
+    )
     again = session.evaluate_analysis()
     assert again.result is not None
     assert again.result.workflow_run.content_sha256 == run_sha
