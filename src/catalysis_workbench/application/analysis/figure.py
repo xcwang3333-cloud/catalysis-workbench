@@ -9,7 +9,9 @@ from typing import Any
 
 from catalysis_workbench._canonical_json import CanonicalJSONError, canonical_json_sha256
 from catalysis_workbench.core import Dataset, Series
-from catalysis_workbench.visualization import FigureSpec, SeriesStyle, get_preset, render_curves
+from catalysis_workbench.visualization.curves import render_curves
+from catalysis_workbench.visualization.presets import get_preset
+from catalysis_workbench.visualization.specs import FigureSpec, SeriesStyle
 
 
 class AnalysisFigureError(ValueError):
@@ -100,12 +102,15 @@ class FigureSourceView:
             self.series_identities, Sequence
         ):
             raise TypeError("series_identities must be an ordered sequence")
+        identities_raw = tuple(self.series_identities)
+        if len(identities_raw) != len(trace_ids):
+            raise AnalysisFigureError("figure source trace identity lengths do not match")
         identities = tuple(
             _sha256(item, label=f"series identity for {trace_id!r}")
-            for trace_id, item in zip(trace_ids, self.series_identities, strict=True)
+            for trace_id, item in zip(trace_ids, identities_raw, strict=True)
         )
         series = tuple(self.series)
-        if len(series) != len(trace_ids) or len(identities) != len(trace_ids):
+        if len(series) != len(trace_ids):
             raise AnalysisFigureError("figure source trace identity lengths do not match")
         if not all(isinstance(item, Series) for item in series):
             raise TypeError("figure source series must contain Series instances")
