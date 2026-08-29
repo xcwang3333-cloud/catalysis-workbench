@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import hashlib
 import os
+import shutil
 import tempfile
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -11,21 +14,29 @@ from typing import Any
 from catalysis_workbench._canonical_json import (
     CanonicalJSONError,
     canonical_json_bytes,
-    canonical_json_sha256,
     loads_strict_json,
 )
 from catalysis_workbench.workspace import create_workspace, open_workspace
+from catalysis_workbench.workspace.assets import (
+    CopyAssetRequest,
+    import_copy_assets_batch,
+    verify_copy_asset,
+)
+from catalysis_workbench.workspace.manifest import WorkspaceError
 
+from .data import DataSeriesSpec
 from .document import (
     AnalysisDocument,
     AnalysisDocumentError,
     _document_from_dict,
     _document_to_plain_dict,
 )
+from .materialization import verify_source_bytes
 
 _PROJECT_FILENAME = "project.json"
 _PROJECT_FIELDS = frozenset({"schema_version", "document"})
 _EMPTY_WORKSPACE_PAYLOAD = canonical_json_bytes({"schema_version": 1, "assets": []}) + b"\n"
+_RAW_ASSET_TYPE = "analysis_raw_tabular"
 
 
 class AnalysisProjectError(ValueError):
@@ -53,15 +64,15 @@ def _project_to_plain_dict(document: AnalysisDocument) -> dict[str, Any]:
     }
 
 
-def _project_sha256(document: AnalysisDocument) -> str:
-    return canonical_json_sha256(_project_to_plain_dict(document))
-
-
 def _project_payload(document: AnalysisDocument) -> bytes:
     try:
         return canonical_json_bytes(_project_to_plain_dict(document)) + b"\n"
     except CanonicalJSONError as exc:
         raise AnalysisProjectError("analysis project cannot be serialized") from exc
+
+
+def _sha256_bytes(payload: bytes) -> str:
+    return hashlib.sha256(payload).hexdigest()
 
 
 def _project_path(root: Path) -> Path:
@@ -71,17 +82,9 @@ def _project_path(root: Path) -> Path:
     return project_path
 
 
-def _read_project_document(root: Path) -> AnalysisDocument:
-    project_path = _project_path(root)
-    if not project_path.exists():
-        raise LegacyWorkspaceError(
-            "this directory is a legacy CatalysisWorkbench workspace and does not "
-            "contain a v1.1 project document"
-        )
-    if not project_path.is_file():
-        raise AnalysisProjectError("project.json must be a regular file")
+def _decode_project_payload(payload: bytes) -> AnalysisDocument:
     try:
-        text = project_path.read_text(encoding="utf-8")
+        text = payload.decode("utf-8")
     except UnicodeError as exc:
         raise AnalysisProjectError("project.json is not valid UTF-8") from exc
     try:
@@ -107,15 +110,110 @@ def _read_project_document(root: Path) -> AnalysisDocument:
         raise AnalysisProjectError(str(exc)) from exc
 
 
+def _read_project_document(root: Path) -> tuple[AnalysisDocument, str]:
+    project_path = _project_path(root)
+    if not project_path.exists():
+        raise LegacyWorkspaceError(
+            "this directory is a legacy CatalysisWorkbench workspace and does not "
+            "contain a v1.1 project document"
+        )
+    if not project_path.is_file():
+        raise AnalysisProjectError("project.json must be a regular file")
+    payload = project_path.read_bytes()
+    return _decode_project_payload(payload), _sha256_bytes(payload)
+
+
 def _snapshot_once(root: Path) -> AnalysisProjectSnapshot:
     manifest = open_workspace(root)
-    document = _read_project_document(root)
+    document, project_file_sha256 = _read_project_document(root)
     return AnalysisProjectSnapshot(
         root=root.resolve(),
         document=document,
         workspace_manifest_sha256=manifest.manifest_sha256,
-        project_file_sha256=_project_sha256(document),
+        project_file_sha256=project_file_sha256,
     )
+
+
+def _raw_sources(document: AnalysisDocument) -> tuple[DataSeriesSpec, ...]:
+    representatives: dict[str, DataSeriesSpec] = {}
+    for item in document.data_series:
+        existing = representatives.get(item.source.content_sha256)
+        if existing is None:
+            representatives[item.source.content_sha256] = item
+            continue
+        if existing.source != item.source:
+            raise AnalysisProjectError(
+                "one raw content digest is associated with inconsistent source metadata"
+            )
+    return tuple(representatives.values())
+
+
+def _source_location(
+    source_sha256: str,
+    source_locations: Mapping[str, str | Path] | None,
+) -> Path:
+    if source_locations is None or source_sha256 not in source_locations:
+        raise AnalysisProjectError(
+            f"raw source {source_sha256} is not available; re-add the source file"
+        )
+    return Path(source_locations[source_sha256])
+
+
+def _ensure_raw_assets(
+    document: AnalysisDocument,
+    root: Path,
+    *,
+    source_locations: Mapping[str, str | Path] | None,
+    expected_manifest_sha256: str,
+) -> str:
+    manifest = open_workspace(root)
+    if manifest.manifest_sha256 != expected_manifest_sha256:
+        raise AnalysisProjectError("workspace changed outside the analysis session; reopen explicitly")
+    by_id = {asset.asset_id: asset for asset in manifest.assets}
+    requests: list[CopyAssetRequest] = []
+    for representative in _raw_sources(document):
+        source = representative.source
+        asset_id = source.workspace_asset_id
+        existing = by_id.get(asset_id)
+        if existing is not None:
+            if (
+                existing.asset_type != _RAW_ASSET_TYPE
+                or existing.policy != "copy"
+                or existing.path != source.workspace_destination
+                or existing.content_sha256 != source.content_sha256
+            ):
+                raise AnalysisProjectError(
+                    f"workspace raw asset {asset_id!r} conflicts with analysis source identity"
+                )
+            try:
+                verify_copy_asset(root, asset_id, expected_type=_RAW_ASSET_TYPE)
+            except (WorkspaceError, OSError) as exc:
+                raise AnalysisProjectError(str(exc)) from exc
+            continue
+        location = _source_location(source.content_sha256, source_locations)
+        try:
+            verify_source_bytes(representative, location)
+        except (ValueError, OSError) as exc:
+            raise AnalysisProjectError(str(exc)) from exc
+        requests.append(
+            CopyAssetRequest(
+                source=location,
+                asset_id=asset_id,
+                asset_type=_RAW_ASSET_TYPE,
+                destination=source.workspace_destination,
+            )
+        )
+    if not requests:
+        return manifest.manifest_sha256
+    try:
+        updated = import_copy_assets_batch(
+            root,
+            tuple(requests),
+            expected_manifest_sha256=manifest.manifest_sha256,
+        )
+    except (WorkspaceError, OSError) as exc:
+        raise AnalysisProjectError(str(exc)) from exc
+    return updated.manifest_sha256
 
 
 def open_analysis_project(root: str | Path) -> AnalysisProjectSnapshot:
@@ -162,8 +260,9 @@ def save_analysis_project(
     *,
     expected_project_file_sha256: str,
     expected_workspace_manifest_sha256: str,
+    source_locations: Mapping[str, str | Path] | None = None,
 ) -> AnalysisProjectSnapshot:
-    """Replace project.json only when exact on-disk project/workspace identities match."""
+    """Persist document and missing raw copies only from exact observed identities."""
 
     if not isinstance(document, AnalysisDocument):
         raise TypeError("document must be an AnalysisDocument")
@@ -178,15 +277,29 @@ def save_analysis_project(
             "project.json changed outside the analysis session; reopen explicitly"
         )
 
+    workspace_sha = _ensure_raw_assets(
+        document,
+        root_path,
+        source_locations=source_locations,
+        expected_manifest_sha256=before.workspace_manifest_sha256,
+    )
+    _, observed_project_sha = _read_project_document(root_path)
+    if observed_project_sha != expected_project_file_sha256:
+        raise AnalysisProjectError(
+            "project.json changed outside the analysis session while raw data were saved"
+        )
+    if open_workspace(root_path).manifest_sha256 != workspace_sha:
+        raise AnalysisProjectError("workspace changed concurrently while raw data were saved")
+
     project_path = _project_path(root_path)
     payload = _project_payload(document)
     _replace_project_atomically(project_path, payload)
 
     observed = _snapshot_once(root_path)
-    expected_project_sha = _project_sha256(document)
+    expected_project_sha = _sha256_bytes(payload)
     if observed.project_file_sha256 != expected_project_sha or observed.document != document:
         raise AnalysisProjectError("project.json changed concurrently while it was being saved")
-    if observed.workspace_manifest_sha256 != expected_workspace_manifest_sha256:
+    if observed.workspace_manifest_sha256 != workspace_sha:
         raise AnalysisProjectError(
             "workspace changed concurrently while project.json was being saved"
         )
@@ -220,17 +333,11 @@ def _rollback_new_workspace(root: Path, *, expected_workspace_payload: bytes) ->
         pass
 
 
-def create_analysis_project(
+def _create_empty_project_compat(
     document: AnalysisDocument,
-    root: str | Path,
+    root_path: Path,
 ) -> AnalysisProjectSnapshot:
-    """Create a new workspace/project pair at a path that must not already exist."""
-
-    if not isinstance(document, AnalysisDocument):
-        raise TypeError("document must be an AnalysisDocument")
-    root_path = Path(root)
-    if root_path.exists() or root_path.is_symlink():
-        raise FileExistsError(root_path)
+    """Preserve Block-1 rollback semantics for projects without mapped data."""
 
     create_workspace(root_path)
     project_path = root_path / _PROJECT_FILENAME
@@ -257,6 +364,81 @@ def create_analysis_project(
             expected_workspace_payload=_EMPTY_WORKSPACE_PAYLOAD,
         )
         raise
+
+
+def _create_staged_project(
+    document: AnalysisDocument,
+    root_path: Path,
+    *,
+    source_locations: Mapping[str, str | Path] | None,
+) -> AnalysisProjectSnapshot:
+    parent = root_path.parent
+    if not parent.exists():
+        raise FileNotFoundError(parent)
+    if not parent.is_dir():
+        raise NotADirectoryError(parent)
+
+    staging = Path(
+        tempfile.mkdtemp(prefix=f".{root_path.name}-staging-", dir=parent)
+    )
+    try:
+        workspace = create_workspace(staging / "workspace-root")
+        # Move the freshly created workspace contents up one level so the staging
+        # directory itself is the eventual project root without ever exposing the
+        # final destination prematurely.
+        workspace_dir = staging / "workspace-root"
+        (workspace_dir / "workspace.json").replace(staging / "workspace.json")
+        workspace_dir.rmdir()
+        workspace = open_workspace(staging)
+        workspace_sha = _ensure_raw_assets(
+            document,
+            staging,
+            source_locations=source_locations,
+            expected_manifest_sha256=workspace.manifest_sha256,
+        )
+        payload = _project_payload(document)
+        project_path = staging / _PROJECT_FILENAME
+        with project_path.open("xb") as stream:
+            stream.write(payload)
+            stream.flush()
+            os.fsync(stream.fileno())
+        staged_snapshot = open_analysis_project(staging)
+        if staged_snapshot.workspace_manifest_sha256 != workspace_sha:
+            raise AnalysisProjectError("staged workspace identity changed during first save")
+        for representative in _raw_sources(document):
+            verify_copy_asset(
+                staging,
+                representative.source.workspace_asset_id,
+                expected_type=_RAW_ASSET_TYPE,
+            )
+        os.replace(staging, root_path)
+        return open_analysis_project(root_path)
+    except BaseException:
+        if staging.exists() and not staging.is_symlink():
+            shutil.rmtree(staging, ignore_errors=True)
+        raise
+
+
+def create_analysis_project(
+    document: AnalysisDocument,
+    root: str | Path,
+    *,
+    source_locations: Mapping[str, str | Path] | None = None,
+) -> AnalysisProjectSnapshot:
+    """Create a new project; mapped data are staged and verified before publication."""
+
+    if not isinstance(document, AnalysisDocument):
+        raise TypeError("document must be an AnalysisDocument")
+    root_path = Path(root)
+    if root_path.exists() or root_path.is_symlink():
+        raise FileExistsError(root_path)
+    if not document.data_series:
+        return _create_empty_project_compat(document, root_path)
+    return _create_staged_project(
+        document,
+        root_path,
+        source_locations=source_locations,
+    )
 
 
 __all__ = [

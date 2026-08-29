@@ -126,11 +126,16 @@ def save_workspace(
     root: str | Path,
     *,
     overwrite: bool = False,
+    expected_manifest_sha256: str | None = None,
 ) -> None:
-    """Persist a validated workspace manifest at the explicit workspace root."""
+    """Persist a validated manifest, optionally refusing stale overwrite callers."""
 
     if type(overwrite) is not bool:
         raise TypeError("overwrite must be a bool")
+    if expected_manifest_sha256 is not None and (
+        type(expected_manifest_sha256) is not str or len(expected_manifest_sha256) != 64
+    ):
+        raise WorkspaceError("expected_manifest_sha256 must be a 64-character SHA-256")
     payload = _payload(manifest)
     root_path = _root_path(root, must_exist=True)
     _validate_owned_paths(manifest, root_path)
@@ -138,6 +143,10 @@ def save_workspace(
     manifest_path = root_path / _MANIFEST_FILENAME
     if manifest_path.is_symlink():
         raise WorkspaceError("workspace manifest file must not be a symbolic link")
+    if expected_manifest_sha256 is not None:
+        observed = open_workspace(root_path)
+        if observed.manifest_sha256 != expected_manifest_sha256:
+            raise WorkspaceError("workspace changed outside the writer; reopen explicitly")
     if overwrite:
         _replace_manifest_atomically(manifest_path, payload)
         return

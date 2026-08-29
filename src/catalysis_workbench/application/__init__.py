@@ -1,8 +1,10 @@
 """GUI-neutral CatalysisWorkbench application/session API."""
 
 from .analysis import (
+    AnalysisDataError,
     AnalysisDocument,
     AnalysisDocumentError,
+    AnalysisMaterializationError,
     AnalysisProjectError,
     AnalysisProjectSnapshot,
     AnalysisSession,
@@ -10,12 +12,19 @@ from .analysis import (
     AnalysisSessionState,
     AnalysisTaskDescriptor,
     AnalysisTaskError,
+    DataSeriesSpec,
     LegacyWorkspaceError,
+    MaterializedInput,
+    SourceSpec,
+    TabularMappingSpec,
     analysis_task_catalog,
     create_analysis_project,
     get_analysis_task_descriptor,
+    materialize_data_series,
     open_analysis_project,
     save_analysis_project,
+    source_spec_from_file,
+    verify_source_bytes,
 )
 from .commands import (
     InsertRecipeStepCommand,
@@ -36,8 +45,10 @@ from .workspace_actions import (
 )
 
 __all__ = [
+    "AnalysisDataError",
     "AnalysisDocument",
     "AnalysisDocumentError",
+    "AnalysisMaterializationError",
     "AnalysisProjectError",
     "AnalysisProjectSnapshot",
     "AnalysisSession",
@@ -48,12 +59,16 @@ __all__ = [
     "ApplicationError",
     "ApplicationSession",
     "ApplicationState",
+    "DataSeriesSpec",
     "InsertRecipeStepCommand",
     "LegacyWorkspaceError",
+    "MaterializedInput",
     "MoveRecipeStepCommand",
     "RecipeEditCommand",
     "RemoveRecipeStepCommand",
     "ReplaceRecipeStepCommand",
+    "SourceSpec",
+    "TabularMappingSpec",
     "WorkspaceSnapshot",
     "analysis_task_catalog",
     "apply_recipe_edit",
@@ -62,8 +77,11 @@ __all__ = [
     "create_workspace_in_session",
     "get_analysis_task_descriptor",
     "import_asset_in_session",
+    "materialize_data_series",
     "open_analysis_project",
     "open_workspace_in_session",
     "save_analysis_project",
+    "source_spec_from_file",
+    "verify_source_bytes",
     "workspace_snapshot",
 ]
