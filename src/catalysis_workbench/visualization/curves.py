@@ -3,16 +3,18 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 import numpy as np
-from matplotlib.axes import Axes
-from matplotlib.figure import Figure
 
 from catalysis_workbench.core import Axis, Dataset, Series
 
-from ._rendering import figure_axes_context, finalize_axes
 from .presets import get_preset
 from .specs import FigureSpec, SeriesStyle, VisualizationError
+
+if TYPE_CHECKING:
+    from matplotlib.axes import Axes
+    from matplotlib.figure import Figure
 
 _COMPATIBILITY_METADATA_KEYS = ("reference", "normalization")
 
@@ -174,6 +176,8 @@ def render_curves(
     from Matplotlib defaults inside a local rc context so unrelated user rcParams do not
     alter the result and are restored after the figure is constructed.
     """
+    from ._rendering import figure_axes_context, finalize_axes
+
     resolved_spec = get_preset(preset) if spec is None else spec
     if not isinstance(resolved_spec, FigureSpec):
         raise TypeError("spec must be a FigureSpec")
