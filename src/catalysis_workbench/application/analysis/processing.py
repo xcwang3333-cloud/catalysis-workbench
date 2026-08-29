@@ -448,8 +448,12 @@ def remap_analysis_data_id(analysis: AnalysisSpec, old_id: str, new_id: str) -> 
             overrides[new_key] = overrides.pop(old_key)
         pairs = tuple(
             PartialCurrentPair(
-                current_data_id=(new_key if pair.current_data_id == old_key else pair.current_data_id),
-                fe_data_id=(new_key if pair.fe_data_id == old_key else pair.fe_data_id),
+                current_data_id=(
+                    new_key if pair.current_data_id == old_key else pair.current_data_id
+                ),
+                fe_data_id=(
+                    new_key if pair.fe_data_id == old_key else pair.fe_data_id
+                ),
             )
             for pair in analysis.pairs
         )
