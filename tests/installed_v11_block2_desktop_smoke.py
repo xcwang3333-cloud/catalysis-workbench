@@ -17,11 +17,11 @@ def main() -> None:
         first = base / "Pb1.csv"
         second = base / "Pb2.csv"
         first.write_text(
-            "Potential (V),Current (mA)\n-0.8,-2.0\n-0.7,-1.2\n-0.6,-0.5\n",
+            "Potential [V],Current [mA]\n-0.8,-2.0\n-0.7,-1.2\n-0.6,-0.5\n",
             encoding="utf-8",
         )
         second.write_text(
-            "Potential (V),Current (mA)\n-0.8,-3.0\n-0.7,-1.8\n-0.6,-0.7\n",
+            "Potential [V],Current [mA]\n-0.8,-3.0\n-0.7,-1.8\n-0.6,-0.7\n",
             encoding="utf-8",
         )
 
