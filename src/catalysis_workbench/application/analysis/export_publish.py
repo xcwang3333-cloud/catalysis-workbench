@@ -167,6 +167,12 @@ def _remove_exact_published_target(target: Path, manifest_sha256: str) -> bool:
     return not target.exists()
 
 
+def _publish_stage(stage: Path, target: Path) -> None:
+    """Publish the complete staged directory as the transaction's final mutation."""
+
+    os.replace(stage, target)
+
+
 def export_figure_package(
     document: AnalysisDocument,
     result: AnalysisResult,
@@ -252,8 +258,8 @@ def export_figure_package(
         rollback.note_committed()
 
         # All workspace checks happen before the final external rename. After a
-        # successful os.replace there is deliberately no operation left that can
-        # invalidate an otherwise complete publication transaction.
+        # successful publication there is deliberately no operation left that can
+        # invalidate an otherwise complete transaction.
         reopened = open_analysis_project(root)
         if reopened.workspace_manifest_sha256 != workspace_sha:
             raise FigurePackageExportError(
@@ -264,7 +270,7 @@ def export_figure_package(
                 "project.json changed before Figure Package publication"
             )
 
-        os.replace(stage, target)
+        _publish_stage(stage, target)
         published = True
         return FigurePackageResult(
             package_path=target.resolve(),
