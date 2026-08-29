@@ -47,9 +47,20 @@ def __getattr__(name: str):
                 raise _dependency_error(exc) from exc
             raise
         return CatalysisWorkbenchMainWindow
+    if name == "CatalysisWorkbenchWindow":
+        try:
+            from .workbench_window import CatalysisWorkbenchWindow
+        except ModuleNotFoundError as exc:
+            if exc.name == "PySide6" or (exc.name or "").startswith("PySide6."):
+                raise _dependency_error(exc) from exc
+            raise
+        return CatalysisWorkbenchWindow
     raise AttributeError(name)
 
 
+# Preserve the frozen v1.0 top-level desktop export contract.  The v1.1
+# workbench window is deliberately available as an explicit attribute/module
+# without widening this tuple until a separately reviewed public-API release.
 __all__ = [
     "CatalysisWorkbenchMainWindow",
     "DesktopDependencyError",

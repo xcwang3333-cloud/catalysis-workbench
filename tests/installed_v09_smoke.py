@@ -14,7 +14,7 @@ import catalysis_workbench
 import catalysis_workbench.workflow as workflow
 from catalysis_workbench.core import Axis, Dataset, Series
 
-EXPECTED_VERSION = "1.0.0"
+EXPECTED_VERSION = "1.1.0.dev0"
 EXPECTED_WORKFLOW_ALL = {
     "BatchItem",
     "BatchItemRecord",
@@ -317,8 +317,9 @@ def main() -> None:
     else:
         raise AssertionError("cyclic recipe parameters were accepted")
 
+    invalid_identifier = chr(0xD800)
     try:
-        _step("\ud800", "example.invalid.v1", "invalid_result")
+        _step(invalid_identifier, "example.invalid.v1", "invalid_result")
     except workflow.WorkflowRecipeError:
         pass
     else:

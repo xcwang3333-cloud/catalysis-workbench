@@ -1,0 +1,324 @@
+"""Task-first v1.1 desktop window and analysis-document lifecycle."""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+from PySide6.QtGui import QAction, QCloseEvent, QKeySequence
+from PySide6.QtWidgets import (
+    QFileDialog,
+    QInputDialog,
+    QMainWindow,
+    QMessageBox,
+    QStackedWidget,
+)
+
+from catalysis_workbench.application import (
+    AnalysisSession,
+    AnalysisSessionError,
+    get_analysis_task_descriptor,
+    open_analysis_project,
+)
+
+from .analysis_shell import AnalysisShellPage
+from .home import HomePage, RecentProjectDisplay
+from .recent_projects import RecentProjectsStore
+
+
+class CatalysisWorkbenchWindow(QMainWindow):
+    """v1.1 Home + Analysis shell while the v1.0 desktop remains available separately."""
+
+    def __init__(
+        self,
+        *,
+        session: AnalysisSession | None = None,
+        recent_store: RecentProjectsStore | None = None,
+    ) -> None:
+        super().__init__()
+        if session is not None and not isinstance(session, AnalysisSession):
+            raise TypeError("session must be an AnalysisSession or None")
+        self.session = session or AnalysisSession()
+        self.recent_store = recent_store or RecentProjectsStore()
+        self.home_page = HomePage()
+        self.analysis_page = AnalysisShellPage()
+        self.stack = QStackedWidget()
+        self.stack.addWidget(self.home_page)
+        self.stack.addWidget(self.analysis_page)
+        self.setCentralWidget(self.stack)
+        self.setWindowTitle("CatalysisWorkbench")
+        self.resize(1100, 720)
+        self._connect_signals()
+        self._build_menu()
+        self.refresh_views()
+        self.show_home()
+
+    def _connect_signals(self) -> None:
+        self.home_page.task_selected.connect(self._start_analysis_ui)
+        self.home_page.open_project_requested.connect(self._open_project_interactive)
+        self.home_page.recent_project_requested.connect(self._open_project_ui)
+        self.home_page.recent_remove_requested.connect(self._remove_recent)
+        self.analysis_page.home_requested.connect(self._request_home)
+        self.analysis_page.title_changed.connect(self._rename_analysis_ui)
+        self.analysis_page.save_requested.connect(self._save_interactive)
+        self.analysis_page.undo_requested.connect(self._undo_ui)
+        self.analysis_page.redo_requested.connect(self._redo_ui)
+
+    def _build_menu(self) -> None:
+        file_menu = self.menuBar().addMenu("File")
+        open_action = QAction("Open Project…", self)
+        open_action.triggered.connect(self._open_project_interactive)
+        file_menu.addAction(open_action)
+        save_action = QAction("Save Project", self)
+        save_action.setShortcut(QKeySequence.StandardKey.Save)
+        save_action.triggered.connect(self._save_interactive)
+        file_menu.addAction(save_action)
+        home_action = QAction("Home", self)
+        home_action.triggered.connect(self._request_home)
+        file_menu.addAction(home_action)
+        file_menu.addSeparator()
+        exit_action = QAction("Exit", self)
+        exit_action.triggered.connect(self.close)
+        file_menu.addAction(exit_action)
+
+        edit_menu = self.menuBar().addMenu("Edit")
+        undo_action = QAction("Undo", self)
+        undo_action.setShortcut(QKeySequence.StandardKey.Undo)
+        undo_action.triggered.connect(self._undo_ui)
+        edit_menu.addAction(undo_action)
+        redo_action = QAction("Redo", self)
+        redo_action.setShortcut(QKeySequence.StandardKey.Redo)
+        redo_action.triggered.connect(self._redo_ui)
+        edit_menu.addAction(redo_action)
+        self._save_action = save_action
+        self._undo_action = undo_action
+        self._redo_action = redo_action
+
+    def _display_error(self, exc: BaseException) -> None:
+        QMessageBox.critical(self, "CatalysisWorkbench", str(exc))
+
+    def _commit_title_editor(self) -> bool:
+        """Flush buffered title text before any save/navigation/close decision."""
+
+        state = self.session.state
+        if state.document is None:
+            return True
+        title = self.analysis_page.title_edit.text()
+        if title == state.document.title:
+            return True
+        try:
+            self.rename_analysis(title)
+        except (ValueError, RuntimeError) as exc:
+            self._display_error(exc)
+            self.refresh_views()
+            return False
+        return True
+
+    def _recent_displays(self) -> tuple[RecentProjectDisplay, ...]:
+        result: list[RecentProjectDisplay] = []
+        for entry in self.recent_store.entries():
+            try:
+                snapshot = open_analysis_project(entry.path)
+                task = get_analysis_task_descriptor(snapshot.document.task_id)
+            except (OSError, ValueError):
+                result.append(
+                    RecentProjectDisplay(
+                        path=entry.path,
+                        title="Unavailable",
+                        task_name="",
+                        available=False,
+                    )
+                )
+                continue
+            result.append(
+                RecentProjectDisplay(
+                    path=entry.path,
+                    title=snapshot.document.title,
+                    task_name=task.display_name,
+                    available=True,
+                )
+            )
+        return tuple(result)
+
+    def refresh_views(self) -> None:
+        state = self.session.state
+        self.analysis_page.apply_state(state)
+        self.home_page.set_recent_projects(self._recent_displays())
+        self._save_action.setEnabled(state.document is not None)
+        self._undo_action.setEnabled(state.can_undo)
+        self._redo_action.setEnabled(state.can_redo)
+        if state.document is None:
+            self.setWindowTitle("CatalysisWorkbench")
+        else:
+            marker = " *" if state.is_dirty else ""
+            self.setWindowTitle(f"{state.document.title}{marker} — CatalysisWorkbench")
+
+    def show_home(self) -> None:
+        self.refresh_views()
+        self.stack.setCurrentWidget(self.home_page)
+
+    def show_analysis(self) -> None:
+        self.refresh_views()
+        self.stack.setCurrentWidget(self.analysis_page)
+
+    def start_analysis(self, task_id: str) -> None:
+        self.session.new_analysis(task_id)
+        self.show_analysis()
+
+    def rename_analysis(self, title: str) -> None:
+        self.session.rename_analysis(title)
+        self.refresh_views()
+
+    def save_project_path(self, root: str | Path | None = None) -> None:
+        state = self.session.state
+        if state.document is None:
+            raise AnalysisSessionError("no analysis document is open")
+        if root is None:
+            self.session.save_project()
+        elif state.project_root is None or Path(root).resolve(strict=False) != state.project_root:
+            self.session.save_project_as(root)
+        else:
+            self.session.save_project()
+        if self.session.state.project_root is not None:
+            self.recent_store.add(self.session.state.project_root)
+        self.refresh_views()
+
+    def open_project_path(self, root: str | Path) -> None:
+        self.session.open_project(root)
+        if self.session.state.project_root is not None:
+            self.recent_store.add(self.session.state.project_root)
+        self.show_analysis()
+
+    def go_home(self, *, discard_changes: bool = False) -> None:
+        self.session.close_analysis(discard_changes=discard_changes)
+        self.show_home()
+
+    def _start_analysis_ui(self, task_id: str) -> None:
+        try:
+            self.start_analysis(task_id)
+        except (OSError, ValueError, RuntimeError) as exc:
+            self._display_error(exc)
+
+    def _rename_analysis_ui(self, title: str) -> None:
+        try:
+            self.rename_analysis(title)
+        except (ValueError, RuntimeError) as exc:
+            self._display_error(exc)
+            self.refresh_views()
+
+    def _undo_ui(self) -> None:
+        self.session.undo()
+        self.refresh_views()
+
+    def _redo_ui(self) -> None:
+        self.session.redo()
+        self.refresh_views()
+
+    @staticmethod
+    def _valid_directory_name(name: str) -> bool:
+        return bool(name) and name not in {".", ".."} and "/" not in name and "\\" not in name
+
+    def _save_interactive(self) -> bool:
+        if not self._commit_title_editor():
+            return False
+        state = self.session.state
+        if state.document is None:
+            return False
+        try:
+            if state.project_root is not None:
+                self.save_project_path()
+                return True
+            parent = QFileDialog.getExistingDirectory(self, "Choose Project Parent Directory")
+            if not parent:
+                return False
+            name, accepted = QInputDialog.getText(self, "Save Project", "Project directory name:")
+            if not accepted:
+                return False
+            name = name.strip()
+            if not self._valid_directory_name(name):
+                raise ValueError("project directory name must be one path component")
+            self.save_project_path(Path(parent) / name)
+            return True
+        except (OSError, ValueError, RuntimeError) as exc:
+            self._display_error(exc)
+            return False
+
+    def _dirty_decision(self) -> str:
+        if not self.session.state.is_dirty:
+            return "continue"
+        box = QMessageBox(self)
+        box.setWindowTitle("Save changes?")
+        box.setText("Save changes to the current analysis?")
+        save_button = box.addButton(QMessageBox.StandardButton.Save)
+        discard_button = box.addButton(QMessageBox.StandardButton.Discard)
+        cancel_button = box.addButton(QMessageBox.StandardButton.Cancel)
+        box.setDefaultButton(save_button)
+        box.exec()
+        clicked = box.clickedButton()
+        if clicked is save_button:
+            return "save"
+        if clicked is discard_button:
+            return "discard"
+        if clicked is cancel_button:
+            return "cancel"
+        return "cancel"
+
+    def _prepare_transition(self) -> bool:
+        if not self._commit_title_editor():
+            return False
+        decision = self._dirty_decision()
+        if decision == "cancel":
+            return False
+        if decision == "save":
+            return self._save_interactive()
+        if decision == "discard":
+            self.session.close_analysis(discard_changes=True)
+        return True
+
+    def _request_home(self) -> None:
+        if not self._prepare_transition():
+            return
+        if self.session.state.document is not None:
+            self.session.close_analysis()
+        self.show_home()
+
+    def _open_project_ui(self, root: str) -> None:
+        if not self._prepare_transition():
+            return
+        try:
+            self.open_project_path(root)
+        except (OSError, ValueError, RuntimeError) as exc:
+            self._display_error(exc)
+
+    def _open_project_interactive(self) -> None:
+        if not self._prepare_transition():
+            return
+        root = QFileDialog.getExistingDirectory(self, "Open CatalysisWorkbench Project")
+        if not root:
+            return
+        try:
+            self.open_project_path(root)
+        except (OSError, ValueError, RuntimeError) as exc:
+            self._display_error(exc)
+
+    def _remove_recent(self, root: str) -> None:
+        self.recent_store.remove(root)
+        self.refresh_views()
+
+    def closeEvent(self, event: QCloseEvent) -> None:  # noqa: N802 - Qt override
+        if not self._commit_title_editor():
+            event.ignore()
+            return
+        if not self.session.state.is_dirty:
+            event.accept()
+            return
+        decision = self._dirty_decision()
+        if decision == "cancel":
+            event.ignore()
+            return
+        if decision == "save" and not self._save_interactive():
+            event.ignore()
+            return
+        event.accept()
+
+
+__all__ = ["CatalysisWorkbenchWindow"]

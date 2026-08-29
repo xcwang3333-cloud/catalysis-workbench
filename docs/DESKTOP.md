@@ -1,30 +1,28 @@
-# CatalysisWorkbench desktop shell
+# CatalysisWorkbench desktop shells
 
-The v1.0 development line adds an optional local desktop presentation layer on top of the reviewed application, workspace, workflow, visualization, and scientific APIs.
+CatalysisWorkbench provides an optional local Qt presentation layer over the reviewed application, workspace, workflow, visualization, and scientific APIs. The base package remains usable without Qt.
 
 ## Installation
-
-The base package remains Qt-free:
 
 ```bash
 python -m pip install .
 ```
 
-Install the desktop extra only when a Qt Widgets shell is required:
+Install the desktop extra when the Qt Widgets shell is required:
 
 ```bash
 python -m pip install ".[desktop]"
 ```
 
-The approved Block-6 extra is:
+The approved optional dependency is:
 
 ```text
 PySide6-Essentials>=6.11.2,<6.12
 ```
 
-It is optional rather than a normal runtime dependency. The first shell requires Qt Core/Gui/Widgets only and deliberately does not depend on the larger PySide6 Addons wheel.
+The desktop package is lazy: importing `catalysis_workbench.desktop` does not import PySide6. Toolkit modules are loaded only when a desktop class or launcher is requested. If the optional extra is absent, explicit desktop access fails with `DesktopDependencyError` rather than breaking base-package imports.
 
-## Launch
+## Default launch in v1.1 development
 
 From an environment containing the desktop extra:
 
@@ -32,7 +30,37 @@ From an environment containing the desktop extra:
 python -m catalysis_workbench.desktop
 ```
 
-The `catalysis_workbench.desktop` package itself is lazy. Importing it does not import PySide6. Toolkit modules are loaded only when a desktop class or launcher is requested. If the optional extra is absent, desktop access fails with a targeted `DesktopDependencyError` rather than breaking base-package imports.
+The no-argument launcher now opens the task-first v1.1 Home shell. Home offers:
+
+- LSV / Polarization;
+- FE & Partial Current;
+- Generic XY Plot;
+- Open Project; and
+- Recent Projects.
+
+Choosing a task creates a clean in-memory untitled analysis. It does **not** ask for a directory. The first Save Project operation creates the project directory and writes `workspace.json` plus `project.json`.
+
+The Block-1 Analysis shell is deliberately an empty-state scaffold. Real data import/mapping, scientific analysis controls, and Figure Workbench integration are later v1.1 blocks.
+
+## v1.0 compatibility shell
+
+The reviewed v1.0 desktop remains available for explicit integrations through `catalysis_workbench.desktop.app.create_desktop(...)` and `ApplicationSession`. It retains workspace/asset, recipe, workflow, evidence/QA, and FigureSpec behavior.
+
+Block 1 does not replace or migrate existing v1.0 workspaces. A v1.0 workspace that lacks `project.json` is reported as a legacy workspace when passed to the v1.1 Open Project path; the application does not guess which scientific task it represents.
+
+The frozen v1.0 top-level `catalysis_workbench.desktop.__all__` contract is retained as a compatibility gate even though the new v1.1 window exists through its explicit module/API path.
+
+## Analysis-document lifecycle
+
+The v1.1 `AnalysisDocument` and `AnalysisSession` live in the GUI-neutral application layer.
+
+An untouched untitled analysis is **unsaved but clean**. It can return Home without a discard prompt. Once the user edits the title (and, in later blocks, data/analysis state), the document becomes dirty and Home/Open/Exit transitions require Save, Discard, or Cancel.
+
+Undo and redo restore semantic document identities. Saving establishes a new baseline but does not erase undo history.
+
+A saved project keeps application control state in `project.json`. `project.json` is reserved workspace metadata, not an ordinary workspace asset. Project saves verify exact workspace/project identities and fail closed when files changed outside the current analysis session.
+
+Recent Projects is presentation-only `QSettings` history. It stores paths and last-opened UI timestamps but is not part of scientific provenance or project SHA identity. Missing entries stay visible as unavailable until the user removes them.
 
 ## Architecture boundary
 
@@ -50,47 +78,31 @@ scientific layers
    desktop
 ```
 
-The desktop layer is presentation and interaction only. It does not own scientific algorithms, parsing rules, QA policy, workflow scheduling, provenance reconstruction, or workspace persistence semantics.
+The desktop layer is presentation and interaction only. It does not own scientific algorithms, parser guessing, QA policy, workflow scheduling, provenance reconstruction, or workspace persistence rules.
 
-The shell routes mutations through `catalysis_workbench.application` and reviewed lower-layer APIs. It does not directly replace their contracts.
+`application.analysis` remains headless and must not import PySide6, PyQt, or Matplotlib pyplot.
 
-## Workspace actions
+## Legacy workspace, recipe, evidence, and figure behavior
 
-The first shell supports explicit local workspace creation/opening, asset navigation, and explicit file import.
+The v1.0 compatibility shell still supports explicit local workspace creation/opening and explicit file import. Import remains intentionally non-magical: callers supply source, stable asset ID, asset type, `copy` versus `reference`, and copy destination when applicable.
 
-Import remains intentionally non-magical. The user supplies the source file, stable asset ID, asset type, `copy` versus `reference` policy, and copy destination when applicable. The desktop does not guess a scientific parser or technique from an extension and does not recursively crawl directories.
+Recipe editing preserves literal `WorkflowRecipe` step order. Workflow execution still requires explicit in-memory inputs and explicit input identities; the desktop does not infer workflow inputs from catalog assets.
 
-Workspace/session transitions are fail-closed around unsaved recipe or `FigureSpec` state. Opening, closing, creating, or importing cannot silently discard dirty application edits. A caller must save or explicitly choose a discard path.
+The compatibility shell can inspect reviewed run, evidence-ledger, and QA state without fabricating provenance. Existing FigureSpec presentation editing remains presentation-only and does not mutate scientific results.
 
-## Recipe and workflow behavior
+## CI and packaging validation
 
-Recipe editing preserves literal `WorkflowRecipe` step order. Moving a recipe step is not DAG scheduling and does not trigger dependency inference or topological sorting.
+The regular CI remains Qt-free for base application tests and separately installs the desktop extra for offscreen Qt validation. The v1.1 Block-1 gates include:
 
-Workflow execution still requires explicit in-memory inputs and explicit input identities. The desktop does not infer runtime inputs from catalog assets and does not dynamically import or discover operations from serialized state.
+- deterministic AnalysisDocument and task-catalog tests;
+- dirty/unsaved and Undo/Redo session tests;
+- strict project persistence, concurrency, symlink, rollback, and reserved-metadata tests;
+- a fresh-wheel v1.1 application smoke;
+- the existing frozen v1.0 desktop smoke; and
+- a fresh-wheel v1.1 Home/Analysis desktop smoke.
 
-## Evidence and QA
-
-The shell can inspect already reviewed run, evidence-ledger, and QA state. It does not fabricate provenance and does not auto-select QA checks. QA execution remains an explicit application/workflow operation over caller-supplied reviewed findings.
-
-## Figure presentation
-
-The shell edits reviewed immutable `FigureSpec` presentation state through the application layer. Export-oriented controls change presentation only and do not mutate scientific results.
-
-The existing Matplotlib `FigureSpec` editor remains the detailed interactive presentation editor. The Qt shell provides an explicit integration hook and requires explicit `Series` or `Dataset` data for that editor; it does not infer scientific data from file names or workspace metadata.
-
-## Headless and packaging validation
-
-Block 6 keeps the existing base CI jobs Qt-free and adds a separate `desktop-smoke` job. The desktop job:
-
-- builds the exact project wheel;
-- installs `catalysis-workbench[desktop]` in a fresh environment;
-- runs `pip check`;
-- sets `QT_QPA_PLATFORM=offscreen`;
-- creates and destroys the Qt application/window without entering a persistent event loop; and
-- exercises representative workspace, asset, recipe, evidence/QA, and figure-presentation bindings.
-
-The ordinary fresh-wheel smoke separately verifies that the desktop package can be imported without loading PySide6 and that base application/workspace APIs remain usable without the desktop extra.
+The development candidate is `1.1.0.dev0`. The existing Stable 1.0 Readiness workflow remains active as a frozen v1.0 API/desktop compatibility audit while its candidate-version and artifact checks follow the currently built v1.1 development wheel.
 
 ## Release boundary
 
-The current development identity remains `1.0.0.dev0`. Adding the optional desktop extra does not authorize a stable `1.0.0`, Git tag, GitHub Release, or PyPI publication. Those remain separate release decisions.
+v1.1 Block 1 does not authorize a Git tag, GitHub Release, or PyPI publication. Those remain separate release decisions.
