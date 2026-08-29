@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 
 import pytest
@@ -59,6 +60,43 @@ def test_batch_copy_stale_expected_manifest_fails_before_file_mutation(tmp_path:
         )
 
     assert not (root / "data/second.dat").exists()
+
+
+def test_expected_digest_rejects_source_mutation_during_copy(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from catalysis_workbench.workspace import assets
+
+    root = tmp_path / "workspace"
+    before = create_workspace(root)
+    source = _file(tmp_path, "source.dat", b"before")
+    expected = hashlib.sha256(b"before").hexdigest()
+    original = assets._copy_selected_file
+
+    def mutate_then_copy(source_path: Path, destination: Path, workspace_root: Path):
+        source_path.write_bytes(b"after")
+        return original(source_path, destination, workspace_root)
+
+    monkeypatch.setattr(assets, "_copy_selected_file", mutate_then_copy)
+
+    with pytest.raises(WorkspaceError, match="changed while it was being copied"):
+        import_copy_assets_batch(
+            root,
+            (
+                CopyAssetRequest(
+                    source,
+                    "raw",
+                    "analysis_raw_tabular",
+                    "data/raw.dat",
+                    expected_content_sha256=expected,
+                ),
+            ),
+            expected_manifest_sha256=before.manifest_sha256,
+        )
+
+    assert open_workspace(root) == before
+    assert not (root / "data").exists()
 
 
 def test_verify_copy_asset_detects_external_raw_mutation(tmp_path: Path) -> None:
