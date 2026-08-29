@@ -1,4 +1,4 @@
-"""v1.1 Analysis Workbench shell with explicit data intake and raw preview."""
+"""v1.1 Analysis Workbench with data intake, live analysis, and processing controls."""
 
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtGui import QDragEnterEvent, QDropEvent
 from PySide6.QtWidgets import (
     QAbstractItemView,
+    QComboBox,
     QGroupBox,
     QHBoxLayout,
     QLabel,
@@ -24,10 +25,13 @@ from PySide6.QtWidgets import (
 )
 
 from catalysis_workbench.application import (
+    AnalysisResult,
     AnalysisSessionState,
     MaterializedInput,
     get_analysis_task_descriptor,
 )
+
+from .processing_controls import ProcessingPanel
 
 
 class AnalysisShellPage(QWidget):
@@ -45,6 +49,7 @@ class AnalysisShellPage(QWidget):
     remove_series_requested = Signal(str)
     series_renamed = Signal(str, str)
     series_moved = Signal(str, int)
+    analysis_spec_changed = Signal(object)
 
     _SUPPORTED_SUFFIXES = {".csv", ".txt", ".tsv", ".dat", ".xlsx", ".xlsm"}
 
@@ -52,8 +57,24 @@ class AnalysisShellPage(QWidget):
         super().__init__(parent)
         self._rebuilding_series = False
         self._series_by_id = {}
+        self._task_id: str | None = None
+        self._raw_inputs: tuple[MaterializedInput, ...] = ()
+        self._analysis_result: AnalysisResult | None = None
+        self._analysis_status = "incomplete"
+        self._analysis_message: str | None = None
+        self._analysis_stale = False
         self.setAcceptDrops(True)
         self._build_ui()
+
+    @property
+    def has_unapplied_processing_draft(self) -> bool:
+        return self.processing_panel.has_unapplied_draft
+
+    def discard_processing_draft(self) -> None:
+        self.processing_panel.discard_draft()
+
+    def mark_processing_commit_error(self, message: str) -> None:
+        self.processing_panel.mark_commit_error(message)
 
     def _build_ui(self) -> None:
         root = QVBoxLayout(self)
@@ -96,12 +117,8 @@ class AnalysisShellPage(QWidget):
         data_layout.addWidget(helper)
 
         self.series_list = QListWidget()
-        self.series_list.setSelectionMode(
-            QAbstractItemView.SelectionMode.SingleSelection
-        )
-        self.series_list.setDragDropMode(
-            QAbstractItemView.DragDropMode.InternalMove
-        )
+        self.series_list.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.series_list.setDragDropMode(QAbstractItemView.DragDropMode.InternalMove)
         self.series_list.setDefaultDropAction(Qt.DropAction.MoveAction)
         self.series_list.itemSelectionChanged.connect(self._update_selection)
         self.series_list.itemChanged.connect(self._series_item_changed)
@@ -127,8 +144,14 @@ class AnalysisShellPage(QWidget):
 
         preview_box = QGroupBox("LIVE ANALYSIS PREVIEW")
         preview_layout = QVBoxLayout(preview_box)
+        view_row = QHBoxLayout()
+        view_row.addWidget(QLabel("View"))
+        self.view_combo = QComboBox()
+        self.view_combo.currentIndexChanged.connect(self._render_current_view)
+        view_row.addWidget(self.view_combo, 1)
+        preview_layout.addLayout(view_row)
         self.preview_note = QLabel(
-            "Mapped raw values are shown here. Scientific processing is not applied in this block."
+            "Add mapped data to begin live scientific analysis."
         )
         self.preview_note.setWordWrap(True)
         preview_layout.addWidget(self.preview_note)
@@ -140,16 +163,14 @@ class AnalysisShellPage(QWidget):
 
         processing_box = QGroupBox("PROCESSING")
         processing_layout = QVBoxLayout(processing_box)
-        processing_text = QLabel(
-            "Data mapping is ready. Scientific processing controls are introduced "
-            "in the next v1.1 block so import never silently changes measured values."
+        self.processing_panel = ProcessingPanel()
+        self.processing_panel.analysis_spec_changed.connect(
+            self.analysis_spec_changed.emit
         )
-        processing_text.setWordWrap(True)
-        processing_layout.addWidget(processing_text)
-        processing_layout.addStretch(1)
+        processing_layout.addWidget(self.processing_panel)
         splitter.addWidget(processing_box)
 
-        splitter.setSizes([280, 720, 330])
+        splitter.setSizes([280, 720, 360])
         splitter.setStretchFactor(0, 0)
         splitter.setStretchFactor(1, 1)
         splitter.setStretchFactor(2, 0)
@@ -158,7 +179,7 @@ class AnalysisShellPage(QWidget):
         self.continue_button = QPushButton("Continue to Figure")
         self.continue_button.setEnabled(False)
         self.continue_button.setToolTip(
-            "Figure Workbench remains disabled until scientific processing is valid."
+            "Figure Workbench remains disabled until v1.1 Block 4."
         )
         root.addWidget(self.continue_button)
         self._update_selection()
@@ -207,11 +228,7 @@ class AnalysisShellPage(QWidget):
         del source_parent, destination_parent
         if self._rebuilding_series or source_start != source_end:
             return
-        new_index = (
-            destination_row - 1
-            if destination_row > source_start
-            else destination_row
-        )
+        new_index = destination_row - 1 if destination_row > source_start else destination_row
         QTimer.singleShot(0, lambda: self._emit_moved_row(new_index))
 
     def _emit_moved_row(self, new_index: int) -> None:
@@ -228,6 +245,7 @@ class AnalysisShellPage(QWidget):
         self.edit_mapping_button.setEnabled(enabled)
         self.preview_data_button.setEnabled(enabled)
         self.remove_series_button.setEnabled(enabled)
+        self.processing_panel.set_selected_data_id(data_id)
         if data_id is None:
             self.mapping_summary.setText("No data selected.")
             return
@@ -252,50 +270,131 @@ class AnalysisShellPage(QWidget):
             return f"{label} ({axis.unit})"
         return label
 
-    def set_materialized_inputs(
-        self,
-        inputs: Sequence[MaterializedInput],
-        *,
-        warning: str | None = None,
-    ) -> None:
+    def _raw_series(self) -> tuple[object, ...]:
+        return tuple(item.value for item in self._raw_inputs)
+
+    def _series_for_view(self, view_id: str) -> tuple[object, ...]:
+        if view_id == "raw":
+            return self._raw_series()
+        if self._analysis_result is None:
+            return ()
+        for view in self._analysis_result.views:
+            if view.view_id == view_id:
+                return tuple(view.series)
+        return ()
+
+    def _rebuild_view_choices(self) -> None:
+        previous = self.view_combo.currentData()
+        self.view_combo.blockSignals(True)
+        self.view_combo.clear()
+        if self._task_id == "fe_partial_current" and self._analysis_result is not None:
+            for view in self._analysis_result.views:
+                self.view_combo.addItem(view.label, view.view_id)
+        else:
+            self.view_combo.addItem("Raw", "raw")
+            if self._analysis_result is not None:
+                for view in self._analysis_result.views:
+                    self.view_combo.addItem(view.label, view.view_id)
+        index = self.view_combo.findData(previous)
+        if index < 0 and self.view_combo.count() > 0:
+            index = 0
+        self.view_combo.setCurrentIndex(index)
+        self.view_combo.blockSignals(False)
+        self._render_current_view()
+
+    def _render_current_view(self, *_args: object) -> None:
         self.axes.clear()
-        if warning is not None:
-            self.preview_note.setText(f"Preview unavailable: {warning}")
-            self.canvas.draw_idle()
-            return
-        if not inputs:
-            self.preview_note.setText(
-                "Add one or more files, confirm X/Y mapping, and the mapped raw "
-                "preview appears here."
-            )
+        view_id = self.view_combo.currentData()
+        values = self._series_for_view(view_id if isinstance(view_id, str) else "raw")
+        if not values:
             self.axes.set_xlabel("x")
             self.axes.set_ylabel("y")
             self.canvas.draw_idle()
+            self._update_preview_note()
             return
-
-        self.preview_note.setText(
-            "Mapped raw values · display sampling only for large series; scientific "
-            "data are unchanged."
-        )
-        for materialized in inputs:
-            series = materialized.value
+        for series in values:
             stride = max(1, (series.n_points + 4999) // 5000)
             self.axes.plot(
                 series.x[::stride],
                 series.y[::stride],
                 label=series.label or series.key,
             )
-        first = inputs[0].value
+        first = values[0]
         self.axes.set_xlabel(self._axis_label(first.x_axis))
         self.axes.set_ylabel(self._axis_label(first.y_axis))
-        if len(inputs) > 1:
+        if len(values) > 1:
             self.axes.legend()
         self.canvas.draw_idle()
+        self._update_preview_note()
+
+    def _update_preview_note(self) -> None:
+        if self._analysis_stale:
+            text = "Previous valid result — current settings are not applied"
+            if self._analysis_message:
+                text += f": {self._analysis_message}"
+            self.preview_note.setText(text)
+            return
+        if self._analysis_status == "success":
+            view_id = self.view_combo.currentData()
+            if view_id == "raw":
+                self.preview_note.setText(
+                    "Mapped raw values · display sampling only for large series; scientific data are unchanged."
+                )
+            elif self._task_id == "fe_partial_current":
+                self.preview_note.setText(
+                    "Live scientific result · FE and partial current use separate views and no interpolation."
+                )
+            else:
+                self.preview_note.setText(
+                    "Live scientific result · committed processing settings are current."
+                )
+            return
+        if self._analysis_status == "error":
+            self.preview_note.setText(
+                f"Analysis error: {self._analysis_message or 'live analysis failed'}"
+            )
+        else:
+            self.preview_note.setText(
+                f"Needs input: {self._analysis_message or 'analysis is incomplete'}"
+            )
+
+    def set_materialized_inputs(
+        self,
+        inputs: Sequence[MaterializedInput],
+        *,
+        warning: str | None = None,
+    ) -> None:
+        if warning is not None:
+            self._raw_inputs = ()
+            if self._analysis_result is None:
+                self._analysis_status = "error"
+                self._analysis_message = warning
+            self._rebuild_view_choices()
+            return
+        self._raw_inputs = tuple(inputs)
+        self._rebuild_view_choices()
+
+    def set_live_analysis(
+        self,
+        result: AnalysisResult | None,
+        *,
+        status: str,
+        message: str | None = None,
+        stale: bool = False,
+    ) -> None:
+        self._analysis_result = result
+        self._analysis_status = status
+        self._analysis_message = message
+        self._analysis_stale = stale
+        self.processing_panel.set_evaluation_status(status, message, stale=stale)
+        self._rebuild_view_choices()
 
     def apply_state(self, state: AnalysisSessionState) -> None:
         document = state.document
+        self.processing_panel.apply_state(state)
         selected_id = self._selected_data_id()
         if document is None:
+            self._task_id = None
             self.task_label.setText("No task")
             self.title_edit.clear()
             self.status_label.setText("No analysis")
@@ -305,8 +404,12 @@ class AnalysisShellPage(QWidget):
             self.add_files_button.setEnabled(False)
             self._series_by_id = {}
             self._rebuild_series(())
+            self._raw_inputs = ()
+            self._analysis_result = None
+            self._rebuild_view_choices()
             return
 
+        self._task_id = document.task_id
         task = get_analysis_task_descriptor(document.task_id)
         self.task_label.setText(task.display_name)
         if self.title_edit.text() != document.title:
