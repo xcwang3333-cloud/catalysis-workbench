@@ -570,6 +570,10 @@ class ImportDataDialog(QDialog):
         if self._current_index < 0 or not self.confirm_current_mapping():
             return 0
         source = self._drafts[self._current_index]
+        if source.preview is None:
+            return 0
+        source_x = source.preview.columns[source.x_index]
+        source_y = source.preview.columns[source.y_index]
         applied = 0
         for index, draft in enumerate(self._drafts):
             if index == self._current_index or draft.preview is None:
@@ -577,6 +581,15 @@ class ImportDataDialog(QDialog):
             if (
                 source.x_index >= len(draft.preview.columns)
                 or source.y_index >= len(draft.preview.columns)
+            ):
+                continue
+            target_x = draft.preview.columns[source.x_index]
+            target_y = draft.preview.columns[source.y_index]
+            if (
+                target_x.name != source_x.name
+                or target_x.inferred_unit != source_x.inferred_unit
+                or target_y.name != source_y.name
+                or target_y.inferred_unit != source_y.inferred_unit
             ):
                 continue
             draft.x_index = source.x_index
