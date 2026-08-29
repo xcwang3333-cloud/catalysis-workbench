@@ -69,8 +69,8 @@ def main() -> None:
         window.start_analysis("lsv")
         window.add_data_items([(lsv, lsv_path)])
         panel = window.analysis_page.processing_panel
-        assert panel.potential_box.isVisible()
-        assert not panel.pair_box.isVisible()
+        assert not panel.potential_box.isHidden()
+        assert panel.pair_box.isHidden()
         assert window.analysis_page.continue_button.isEnabled() is False
 
         processing = application.LSVAnalysisSpec(
@@ -86,7 +86,9 @@ def main() -> None:
         assert window._last_valid_result is not None
         assert window.analysis_page.view_combo.findData("raw") >= 0
         assert window.analysis_page.view_combo.findData("processed") >= 0
-        committed_sha = window.session.state.document.document_sha256
+        document = window.session.state.document
+        assert document is not None
+        committed_sha = document.document_sha256
         last_run_sha = window._last_valid_result.workflow_run.content_sha256
 
         direct_index = panel.rhe_mode_combo.findData("direct")
@@ -94,7 +96,9 @@ def main() -> None:
         panel.rhe_offset_edit.setText("")
         panel._apply_draft_now()
         assert panel.has_unapplied_draft is True
-        assert window.session.state.document.document_sha256 == committed_sha
+        current_document = window.session.state.document
+        assert current_document is not None
+        assert current_document.document_sha256 == committed_sha
         assert window._last_valid_result.workflow_run.content_sha256 == last_run_sha
         assert "Previous valid result" in window.analysis_page.preview_note.text()
         panel.discard_draft()
@@ -128,7 +132,7 @@ def main() -> None:
         window.start_analysis("fe_partial_current")
         window.add_data_items([(current, current_path), (fe, fe_path)])
         fe_panel = window.analysis_page.processing_panel
-        assert fe_panel.pair_box.isVisible()
+        assert not fe_panel.pair_box.isHidden()
         window._replace_analysis_spec_ui(
             application.FEPartialCurrentAnalysisSpec(
                 pairs=(application.PartialCurrentPair(current.data_id, fe.data_id),)
