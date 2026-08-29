@@ -71,7 +71,7 @@ def main() -> None:
         panel = window.analysis_page.processing_panel
         assert not panel.potential_box.isHidden()
         assert panel.pair_box.isHidden()
-        assert window.analysis_page.continue_button.isEnabled() is False
+        assert window.analysis_page.continue_button.text() == "Continue to Figure"
 
         processing = application.LSVAnalysisSpec(
             common=application.LSVProcessingSpec(

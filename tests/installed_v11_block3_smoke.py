@@ -102,12 +102,13 @@ def main() -> None:
         project = base / "lsv-project"
         session.save_project_as(project)
         payload = json.loads((project / "project.json").read_text(encoding="utf-8"))
-        assert payload["document"]["schema_version"] == 3
+        assert payload["document"]["schema_version"] == 4
         assert "analysis" in payload["document"]
+        assert payload["document"]["figures"] == []
         reopened = AnalysisSession()
         reopened.open_project(project)
         assert reopened.state.document is not None
-        assert reopened.state.document.schema_version == 3
+        assert reopened.state.document.schema_version == 4
         assert reopened.evaluate_analysis().status == "success"
 
         current_path = base / "current.csv"

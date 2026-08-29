@@ -18,6 +18,13 @@ from .data import (
     _data_series_from_dict,
     _data_series_to_plain_dict,
 )
+from .figure import (
+    AnalysisFigureError,
+    FigureDraft,
+    _figure_draft_from_dict,
+    _figure_draft_to_plain_dict,
+    allowed_figure_view_ids,
+)
 from .processing import (
     AnalysisProcessingError,
     AnalysisSpec,
@@ -78,13 +85,29 @@ def _validate_analysis_references(
             )
 
 
+def _validate_figures(task_id: str, figures: Sequence[FigureDraft]) -> tuple[FigureDraft, ...]:
+    values = tuple(figures)
+    if not all(isinstance(item, FigureDraft) for item in values):
+        raise TypeError("analysis figures must contain FigureDraft instances")
+    allowed = set(allowed_figure_view_ids(task_id))
+    view_ids = tuple(item.view_id for item in values)
+    unknown = sorted(set(view_ids) - allowed)
+    if unknown:
+        raise AnalysisDocumentError(
+            f"figure drafts use views unavailable for task {task_id!r}: {unknown!r}"
+        )
+    if len(view_ids) != len(set(view_ids)):
+        raise AnalysisDocumentError("analysis figures must contain at most one draft per view")
+    return values
+
+
 @dataclass(frozen=True, slots=True)
 class AnalysisDocument:
-    """Deterministic v1.1 document containing mapped inputs and scientific settings.
+    """Deterministic v1.1 document containing science and publication presentation state.
 
-    Persisted schema versions 1 and 2 remain readable. They are normalized in memory
-    to schema 3 without writing the project during open. Schema 3 adds task-specific
-    scientific processing state; computed arrays remain runtime-only.
+    Persisted schema versions 1-3 remain readable and normalize in memory to schema 4
+    without writing during open. Schema 4 adds Figure Workbench drafts; computed arrays
+    remain runtime-only and FigureDraft presentation state never changes scientific data.
     """
 
     schema_version: int
@@ -92,18 +115,19 @@ class AnalysisDocument:
     title: str
     data_series: Sequence[DataSeriesSpec] = ()
     analysis: AnalysisSpec | None = None
+    figures: Sequence[FigureDraft] = ()
     document_sha256: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if type(self.schema_version) is not int or self.schema_version not in {1, 2, 3}:
+        if type(self.schema_version) is not int or self.schema_version not in {1, 2, 3, 4}:
             raise AnalysisDocumentError(
-                "analysis schema_version must be the integer 1, 2, or 3"
+                "analysis schema_version must be the integer 1, 2, 3, or 4"
             )
         try:
             task = get_analysis_task_descriptor(self.task_id)
         except ValueError as exc:
             raise AnalysisDocumentError(str(exc)) from exc
-        object.__setattr__(self, "schema_version", 3)
+        object.__setattr__(self, "schema_version", 4)
         object.__setattr__(self, "task_id", task.task_id)
         object.__setattr__(self, "title", _title(self.title))
 
@@ -116,7 +140,9 @@ class AnalysisDocument:
             raise TypeError("analysis data_series must contain DataSeriesSpec instances")
         data_ids = tuple(item.data_id for item in data_series)
         if len(data_ids) != len(set(data_ids)):
-            raise AnalysisDocumentError("analysis data_series contains duplicate scientific inputs")
+            raise AnalysisDocumentError(
+                "analysis data_series contains duplicate scientific inputs"
+            )
         object.__setattr__(self, "data_series", data_series)
 
         analysis = self.analysis
@@ -128,6 +154,14 @@ class AnalysisDocument:
             raise AnalysisDocumentError(str(exc)) from exc
         _validate_analysis_references(analysis, data_ids)
         object.__setattr__(self, "analysis", analysis)
+
+        if isinstance(self.figures, (str, bytes)) or not isinstance(self.figures, Sequence):
+            raise AnalysisDocumentError("analysis figures must be an ordered sequence")
+        try:
+            figures = _validate_figures(task.task_id, self.figures)
+        except AnalysisFigureError as exc:
+            raise AnalysisDocumentError(str(exc)) from exc
+        object.__setattr__(self, "figures", figures)
 
         try:
             digest = canonical_json_sha256(_document_to_plain_dict(self))
@@ -141,6 +175,9 @@ _DOCUMENT_V2_FIELDS = frozenset({"schema_version", "task_id", "title", "data_ser
 _DOCUMENT_V3_FIELDS = frozenset(
     {"schema_version", "task_id", "title", "data_series", "analysis"}
 )
+_DOCUMENT_V4_FIELDS = frozenset(
+    {"schema_version", "task_id", "title", "data_series", "analysis", "figures"}
+)
 
 
 def _document_to_plain_dict(document: AnalysisDocument) -> dict[str, Any]:
@@ -148,11 +185,14 @@ def _document_to_plain_dict(document: AnalysisDocument) -> dict[str, Any]:
         raise TypeError("document must be an AnalysisDocument")
     assert document.analysis is not None
     return {
-        "schema_version": 3,
+        "schema_version": 4,
         "task_id": document.task_id,
         "title": document.title,
-        "data_series": [_data_series_to_plain_dict(item) for item in document.data_series],
+        "data_series": [
+            _data_series_to_plain_dict(item) for item in document.data_series
+        ],
         "analysis": analysis_spec_to_plain_dict(document.task_id, document.analysis),
+        "figures": [_figure_draft_to_plain_dict(item) for item in document.figures],
     }
 
 
@@ -175,48 +215,75 @@ def _data_series_from_value(raw_series: object) -> tuple[DataSeriesSpec, ...]:
         raise AnalysisDocumentError(str(exc)) from exc
 
 
+def _figures_from_value(raw_figures: object) -> tuple[FigureDraft, ...]:
+    if not isinstance(raw_figures, list):
+        raise AnalysisDocumentError("serialized analysis figures must be an array")
+    try:
+        return tuple(_figure_draft_from_dict(item) for item in raw_figures)
+    except AnalysisFigureError as exc:
+        raise AnalysisDocumentError(str(exc)) from exc
+
+
 def _document_from_dict(value: object) -> AnalysisDocument:
-    """Parse persisted schema 1/2/3 and return normalized in-memory schema 3."""
+    """Parse persisted schema 1-4 and return normalized in-memory schema 4."""
 
     if not isinstance(value, dict):
         raise AnalysisDocumentError("serialized analysis document must be an object")
     if not all(type(key) is str for key in value):
         raise AnalysisDocumentError("analysis document field names must be strings")
     schema_version = value.get("schema_version")
-    if type(schema_version) is not int or schema_version not in {1, 2, 3}:
+    if type(schema_version) is not int or schema_version not in {1, 2, 3, 4}:
         raise AnalysisDocumentError(
-            "analysis schema_version must be the integer 1, 2, or 3"
+            "analysis schema_version must be the integer 1, 2, 3, or 4"
         )
 
     if schema_version == 1:
         _validate_fields(value, _DOCUMENT_V1_FIELDS)
         return AnalysisDocument(
-            schema_version=3,
+            schema_version=4,
             task_id=value["task_id"],
             title=value["title"],
             data_series=(),
+            figures=(),
         )
 
     if schema_version == 2:
         _validate_fields(value, _DOCUMENT_V2_FIELDS)
         return AnalysisDocument(
-            schema_version=3,
+            schema_version=4,
             task_id=value["task_id"],
             title=value["title"],
             data_series=_data_series_from_value(value["data_series"]),
+            figures=(),
         )
 
-    _validate_fields(value, _DOCUMENT_V3_FIELDS)
+    if schema_version == 3:
+        _validate_fields(value, _DOCUMENT_V3_FIELDS)
+        try:
+            analysis = analysis_spec_from_dict(value["task_id"], value["analysis"])
+        except (AnalysisProcessingError, TypeError, ValueError) as exc:
+            raise AnalysisDocumentError(str(exc)) from exc
+        return AnalysisDocument(
+            schema_version=4,
+            task_id=value["task_id"],
+            title=value["title"],
+            data_series=_data_series_from_value(value["data_series"]),
+            analysis=analysis,
+            figures=(),
+        )
+
+    _validate_fields(value, _DOCUMENT_V4_FIELDS)
     try:
         analysis = analysis_spec_from_dict(value["task_id"], value["analysis"])
     except (AnalysisProcessingError, TypeError, ValueError) as exc:
         raise AnalysisDocumentError(str(exc)) from exc
     return AnalysisDocument(
-        schema_version=3,
+        schema_version=4,
         task_id=value["task_id"],
         title=value["title"],
         data_series=_data_series_from_value(value["data_series"]),
         analysis=analysis,
+        figures=_figures_from_value(value["figures"]),
     )
 
 

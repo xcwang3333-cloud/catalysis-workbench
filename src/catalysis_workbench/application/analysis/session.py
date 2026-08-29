@@ -6,12 +6,23 @@ from collections.abc import Sequence
 from dataclasses import dataclass, replace
 from pathlib import Path
 
+from catalysis_workbench.visualization.specs import FigureSpec
 from catalysis_workbench.workspace.assets import verify_copy_asset
 from catalysis_workbench.workspace.manifest import WorkspaceError
 
 from .data import DataSeriesSpec, TabularMappingSpec
 from .document import AnalysisDocument
-from .evaluator import AnalysisEvaluation, AnalysisEvaluator
+from .evaluator import AnalysisEvaluation, AnalysisEvaluator, AnalysisResult
+from .figure import (
+    AnalysisFigureError,
+    FigureDraft,
+    create_figure_draft,
+    figure_draft_is_stale,
+    move_figure_trace,
+    refresh_figure_draft,
+    render_figure_draft,
+    replace_figure_spec,
+)
 from .materialization import (
     AnalysisMaterializationError,
     MaterializedInput,
@@ -36,7 +47,7 @@ class AnalysisSessionError(RuntimeError):
 
 @dataclass(frozen=True, slots=True)
 class AnalysisSessionState:
-    """Immutable revisioned state for one Home/Analysis desktop document."""
+    """Immutable revisioned state for one Home/Analysis/Figure desktop document."""
 
     document: AnalysisDocument | None = None
     project_root: Path | None = None
@@ -99,7 +110,11 @@ class AnalysisSession:
             del self._undo[0]
         self._redo.clear()
         self._state = self._with_history_flags(
-            replace(self._state, document=candidate, revision=self._state.revision + 1)
+            replace(
+                self._state,
+                document=candidate,
+                revision=self._state.revision + 1,
+            )
         )
         return self._state
 
@@ -109,17 +124,19 @@ class AnalysisSession:
         title: str | None = None,
         data_series: Sequence[DataSeriesSpec] | None = None,
         analysis: AnalysisSpec | object = _UNSET,
+        figures: Sequence[FigureDraft] | None = None,
     ) -> AnalysisDocument:
         current = self._state.document
         if current is None:
             raise AnalysisSessionError("no analysis document is open")
         candidate_analysis = current.analysis if analysis is _UNSET else analysis
         return AnalysisDocument(
-            schema_version=3,
+            schema_version=4,
             task_id=current.task_id,
             title=current.title if title is None else title,
             data_series=current.data_series if data_series is None else data_series,
             analysis=candidate_analysis,  # type: ignore[arg-type]
+            figures=current.figures if figures is None else figures,
         )
 
     def _series_index(self, data_id: str) -> int:
@@ -131,16 +148,54 @@ class AnalysisSession:
                 return index
         raise AnalysisSessionError(f"unknown analysis data_id: {data_id!r}")
 
+    def _figure_index(self, view_id: str) -> int:
+        current = self._state.document
+        if current is None:
+            raise AnalysisSessionError("no analysis document is open")
+        for index, item in enumerate(current.figures):
+            if item.view_id == view_id:
+                return index
+        raise AnalysisSessionError(f"no Figure Workbench draft for view {view_id!r}")
+
+    def _successful_analysis_result(self) -> AnalysisResult:
+        evaluation = self.evaluate_analysis()
+        if evaluation.status != "success" or evaluation.result is None:
+            raise AnalysisSessionError(
+                evaluation.message
+                or "analysis must be successful before editing a figure"
+            )
+        return evaluation.result
+
+    def _current_figure_context(
+        self,
+        view_id: str,
+    ) -> tuple[AnalysisDocument, FigureDraft, AnalysisResult]:
+        current = self._state.document
+        if current is None:
+            raise AnalysisSessionError("no analysis document is open")
+        draft = current.figures[self._figure_index(view_id)]
+        result = self._successful_analysis_result()
+        try:
+            stale = figure_draft_is_stale(draft, current, result)
+        except (AnalysisFigureError, TypeError, ValueError) as exc:
+            raise AnalysisSessionError(str(exc)) from exc
+        if stale:
+            raise AnalysisSessionError(
+                "analysis results changed; refresh this figure before editing"
+            )
+        return current, draft, result
+
     def new_analysis(self, task_id: str) -> AnalysisSessionState:
         """Start one clean untitled in-memory analysis without creating a directory."""
 
         self._refuse_dirty_replacement()
         task = get_analysis_task_descriptor(task_id)
         document = AnalysisDocument(
-            schema_version=3,
+            schema_version=4,
             task_id=task.task_id,
             title=task.default_title,
             data_series=(),
+            figures=(),
         )
         self._reset_history()
         self._source_locations.clear()
@@ -215,7 +270,9 @@ class AnalysisSession:
             new_ids.add(spec.data_id)
             specs.append(spec)
 
-        candidate = self._document_with(data_series=(*current.data_series, *specs))
+        candidate = self._document_with(
+            data_series=(*current.data_series, *specs)
+        )
         state = self._replace_document(candidate)
         self._source_locations.update(staged_locations)
         return state
@@ -227,7 +284,10 @@ class AnalysisSession:
     ) -> AnalysisSessionState:
         return self.add_data_series_batch(((spec, source_path),))
 
-    def analysis_dependency_impact(self, data_id: str) -> AnalysisDependencyImpact:
+    def analysis_dependency_impact(
+        self,
+        data_id: str,
+    ) -> AnalysisDependencyImpact:
         """Return processing references that a data removal would remove atomically."""
 
         current = self._state.document
@@ -241,13 +301,20 @@ class AnalysisSession:
         if current is None or current.analysis is None:
             raise AnalysisSessionError("no analysis document is open")
         index = self._series_index(data_id)
-        updated = (*current.data_series[:index], *current.data_series[index + 1 :])
+        updated = (
+            *current.data_series[:index],
+            *current.data_series[index + 1 :],
+        )
         analysis = remove_analysis_data_id(current.analysis, data_id)
         return self._replace_document(
             self._document_with(data_series=updated, analysis=analysis)
         )
 
-    def rename_data_series(self, data_id: str, display_name: str) -> AnalysisSessionState:
+    def rename_data_series(
+        self,
+        data_id: str,
+        display_name: str,
+    ) -> AnalysisSessionState:
         current = self._state.document
         if current is None:
             raise AnalysisSessionError("no analysis document is open")
@@ -300,11 +367,19 @@ class AnalysisSession:
             self._document_with(data_series=updated, analysis=analysis)
         )
 
-    def move_data_series(self, data_id: str, new_index: int) -> AnalysisSessionState:
+    def move_data_series(
+        self,
+        data_id: str,
+        new_index: int,
+    ) -> AnalysisSessionState:
         current = self._state.document
         if current is None:
             raise AnalysisSessionError("no analysis document is open")
-        if type(new_index) is not int or new_index < 0 or new_index >= len(current.data_series):
+        if (
+            type(new_index) is not int
+            or new_index < 0
+            or new_index >= len(current.data_series)
+        ):
             raise AnalysisSessionError("new data-series index is out of range")
         old_index = self._series_index(data_id)
         if old_index == new_index:
@@ -347,7 +422,7 @@ class AnalysisSession:
             raise AnalysisSessionError(str(exc)) from exc
 
     def materialize_data(self, data_id: str) -> MaterializedInput:
-        """Materialize from transient unsaved bytes or a verified workspace-owned copy."""
+        """Materialize from transient unsaved bytes or a verified owned copy."""
 
         current = self._state.document
         if current is None:
@@ -360,15 +435,133 @@ class AnalysisSession:
             raise AnalysisSessionError(str(exc)) from exc
 
     def evaluate_analysis(self) -> AnalysisEvaluation:
-        """Evaluate the current committed scientific document without mutating session state."""
+        """Evaluate the current scientific document without mutating session state."""
 
         current = self._state.document
         if current is None:
             raise AnalysisSessionError("no analysis document is open")
         return AnalysisEvaluator().evaluate(current, self.materialize_data)
 
+    def figure_draft(self, view_id: str) -> FigureDraft:
+        """Return persisted presentation state for one result view."""
+
+        current = self._state.document
+        if current is None:
+            raise AnalysisSessionError("no analysis document is open")
+        return current.figures[self._figure_index(view_id)]
+
+    def create_figure(
+        self,
+        view_id: str,
+        *,
+        preset: str = "publication",
+    ) -> AnalysisSessionState:
+        """Freeze one current successful analysis result into a FigureDraft."""
+
+        current = self._state.document
+        if current is None:
+            raise AnalysisSessionError("no analysis document is open")
+        if any(item.view_id == view_id for item in current.figures):
+            raise AnalysisSessionError(f"figure view already exists: {view_id!r}")
+        result = self._successful_analysis_result()
+        try:
+            draft = create_figure_draft(
+                current,
+                result,
+                view_id,
+                preset=preset,
+            )
+        except (AnalysisFigureError, TypeError, ValueError) as exc:
+            raise AnalysisSessionError(str(exc)) from exc
+        return self._replace_document(
+            self._document_with(figures=(*current.figures, draft))
+        )
+
+    def replace_figure_spec(
+        self,
+        view_id: str,
+        spec: FigureSpec,
+    ) -> AnalysisSessionState:
+        """Edit presentation state only when its scientific source is current."""
+
+        current, draft, _result = self._current_figure_context(view_id)
+        try:
+            replacement = replace_figure_spec(draft, spec)
+        except (AnalysisFigureError, TypeError, ValueError) as exc:
+            raise AnalysisSessionError(str(exc)) from exc
+        figures = list(current.figures)
+        figures[self._figure_index(view_id)] = replacement
+        return self._replace_document(self._document_with(figures=figures))
+
+    def move_figure_trace(
+        self,
+        view_id: str,
+        trace_id: str,
+        new_index: int,
+    ) -> AnalysisSessionState:
+        """Reorder publication traces only while the FigureDraft is current."""
+
+        current, draft, _result = self._current_figure_context(view_id)
+        try:
+            replacement = move_figure_trace(draft, trace_id, new_index)
+        except (AnalysisFigureError, TypeError, ValueError) as exc:
+            raise AnalysisSessionError(str(exc)) from exc
+        if replacement == draft:
+            return self._state
+        figures = list(current.figures)
+        figures[self._figure_index(view_id)] = replacement
+        return self._replace_document(self._document_with(figures=figures))
+
+    def figure_is_stale(self, view_id: str) -> bool:
+        """Return whether a persisted FigureDraft no longer matches current science."""
+
+        current = self._state.document
+        if current is None:
+            raise AnalysisSessionError("no analysis document is open")
+        draft = current.figures[self._figure_index(view_id)]
+        result = self._successful_analysis_result()
+        try:
+            return figure_draft_is_stale(draft, current, result)
+        except (AnalysisFigureError, TypeError, ValueError) as exc:
+            raise AnalysisSessionError(str(exc)) from exc
+
+    def refresh_figure(self, view_id: str) -> AnalysisSessionState:
+        """Explicitly rebind a FigureDraft to current exact scientific identities."""
+
+        current = self._state.document
+        if current is None:
+            raise AnalysisSessionError("no analysis document is open")
+        index = self._figure_index(view_id)
+        result = self._successful_analysis_result()
+        try:
+            replacement = refresh_figure_draft(
+                current.figures[index],
+                current,
+                result,
+            )
+        except (AnalysisFigureError, TypeError, ValueError) as exc:
+            raise AnalysisSessionError(str(exc)) from exc
+        if replacement == current.figures[index]:
+            return self._state
+        figures = list(current.figures)
+        figures[index] = replacement
+        return self._replace_document(self._document_with(figures=figures))
+
+    def render_figure(self, view_id: str):
+        """Render a current FigureDraft without mutating scientific state."""
+
+        current = self._state.document
+        if current is None:
+            raise AnalysisSessionError("no analysis document is open")
+        draft = current.figures[self._figure_index(view_id)]
+        result = self._successful_analysis_result()
+        try:
+            return render_figure_draft(current, result, draft)
+        except (AnalysisFigureError, TypeError, ValueError) as exc:
+            raise AnalysisSessionError(str(exc)) from exc
+
     def undo(self) -> AnalysisSessionState:
-        """Restore the previous semantic document without affecting file-system history."""
+        """Restore the previous semantic document without file-system history."""
 
         current = self._state.document
         if current is None or not self._undo:
@@ -376,7 +569,11 @@ class AnalysisSession:
         previous = self._undo.pop()
         self._redo.append(current)
         self._state = self._with_history_flags(
-            replace(self._state, document=previous, revision=self._state.revision + 1)
+            replace(
+                self._state,
+                document=previous,
+                revision=self._state.revision + 1,
+            )
         )
         return self._state
 
@@ -389,7 +586,11 @@ class AnalysisSession:
         following = self._redo.pop()
         self._undo.append(current)
         self._state = self._with_history_flags(
-            replace(self._state, document=following, revision=self._state.revision + 1)
+            replace(
+                self._state,
+                document=following,
+                revision=self._state.revision + 1,
+            )
         )
         return self._state
 
@@ -411,15 +612,22 @@ class AnalysisSession:
         return self._state
 
     def save_project(self) -> AnalysisSessionState:
-        """Persist the current document and any missing raw copies to the existing root."""
+        """Persist document/raw copies to the existing project root."""
 
         state = self._state
         if state.document is None:
             raise AnalysisSessionError("no analysis document is open")
         if state.project_root is None:
-            raise AnalysisSessionError("analysis has not been saved; use save_project_as")
-        if state.workspace_manifest_sha256 is None or state.project_file_sha256 is None:
-            raise AnalysisSessionError("saved analysis session is missing exact project identities")
+            raise AnalysisSessionError(
+                "analysis has not been saved; use save_project_as"
+            )
+        if (
+            state.workspace_manifest_sha256 is None
+            or state.project_file_sha256 is None
+        ):
+            raise AnalysisSessionError(
+                "saved analysis session is missing exact project identities"
+            )
         snapshot = save_analysis_project(
             state.document,
             state.project_root,
@@ -441,7 +649,7 @@ class AnalysisSession:
         return self._state
 
     def save_project_as(self, root: str | Path) -> AnalysisSessionState:
-        """Create a new project root and bind the current in-memory document to it."""
+        """Create a new project root and bind the current document to it."""
 
         state = self._state
         if state.document is None:
@@ -464,13 +672,19 @@ class AnalysisSession:
         )
         return self._state
 
-    def close_analysis(self, *, discard_changes: bool = False) -> AnalysisSessionState:
+    def close_analysis(
+        self,
+        *,
+        discard_changes: bool = False,
+    ) -> AnalysisSessionState:
         """Close the document, refusing dirty loss unless discard is explicit."""
 
         if type(discard_changes) is not bool:
             raise TypeError("discard_changes must be a bool")
         if self._state.is_dirty and not discard_changes:
-            raise AnalysisSessionError("save or explicitly discard analysis changes first")
+            raise AnalysisSessionError(
+                "save or explicitly discard analysis changes first"
+            )
         revision = self._state.revision + 1
         self._reset_history()
         self._source_locations.clear()
