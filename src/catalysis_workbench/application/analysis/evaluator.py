@@ -78,7 +78,7 @@ class AnalysisResult:
 
 @dataclass(frozen=True, slots=True)
 class AnalysisEvaluation:
-    """Explicit live-evaluation state; errors never masquerade as successful current output."""
+    """Explicit live-evaluation state; errors never masquerade as current output."""
 
     status: AnalysisEvaluationStatus
     result: AnalysisResult | None = None
@@ -91,12 +91,14 @@ class AnalysisEvaluation:
             raise ValueError("successful evaluation requires a result")
         if self.status != "success" and self.result is not None:
             raise ValueError("non-success evaluation must not contain a result")
-        if self.message is not None and (type(self.message) is not str or not self.message):
+        if self.message is not None and (
+            type(self.message) is not str or not self.message
+        ):
             raise ValueError("evaluation message must be a non-empty string or None")
 
 
 class AnalysisEvaluator:
-    """Compile, materialize, and execute one analysis without importing any GUI toolkit."""
+    """Compile, materialize, and execute one analysis without importing a GUI toolkit."""
 
     def evaluate(
         self,
@@ -112,7 +114,10 @@ class AnalysisEvaluator:
                 status="incomplete",
                 message="Add and map at least one data series to run the analysis.",
             )
-        if isinstance(document.analysis, FEPartialCurrentAnalysisSpec) and not document.analysis.pairs:
+        if (
+            isinstance(document.analysis, FEPartialCurrentAnalysisSpec)
+            and not document.analysis.pairs
+        ):
             return AnalysisEvaluation(
                 status="incomplete",
                 message="Add at least one explicit current ↔ FE pair.",
@@ -145,7 +150,8 @@ class AnalysisEvaluator:
                 raise TypeError("materialize callback must return MaterializedInput")
             if item.data_id != data_id:
                 raise ValueError(
-                    f"materialized data identity mismatch: expected {data_id!r}, got {item.data_id!r}"
+                    "materialized data identity mismatch: "
+                    f"expected {data_id!r}, got {item.data_id!r}"
                 )
             by_data_id[data_id] = item
         return MappingProxyType(by_data_id)
@@ -161,7 +167,9 @@ def _validate_lsv_input(series: Series) -> None:
         return
     if y_name == "current_density":
         if not is_current_density_unit(series.y_axis.unit):
-            raise ValueError("current-density input requires a supported current-density unit")
+            raise ValueError(
+                "current-density input requires a supported current-density unit"
+            )
         return
     raise ValueError("LSV/current processing requires y_role='current' or 'current_density'")
 
@@ -195,7 +203,10 @@ def _lsv_config(parameters: Mapping[str, Any], series: Series) -> LSVProcessingC
     )
 
 
-def _private_parameters(operation_id: str, parameters: Mapping[str, Any]) -> dict[str, Any]:
+def _private_parameters(
+    operation_id: str,
+    parameters: Mapping[str, Any],
+) -> dict[str, Any]:
     descriptor = get_analysis_operation_descriptor(operation_id)
     provided = set(parameters)
     allowed = set(descriptor.parameter_names)
@@ -203,7 +214,8 @@ def _private_parameters(operation_id: str, parameters: Mapping[str, Any]) -> dic
     unknown = sorted(provided - allowed)
     if missing or unknown:
         raise ValueError(
-            f"invalid parameters for {operation_id!r}; missing={missing!r}, unknown={unknown!r}"
+            f"invalid parameters for {operation_id!r}; "
+            f"missing={missing!r}, unknown={unknown!r}"
         )
     if operation_id == "catalysis.analysis.identity.v1":
         return {}
@@ -251,7 +263,9 @@ def _execute_operation(
         current = inputs.get("current")
         fe = inputs.get("fe")
         if not isinstance(current, Series) or not isinstance(fe, Series):
-            raise TypeError("partial-current analysis requires Series inputs 'current' and 'fe'")
+            raise TypeError(
+                "partial-current analysis requires Series inputs 'current' and 'fe'"
+            )
         return {
             "series": partial_current_density_series(
                 current,
@@ -292,7 +306,9 @@ def _execute_compiled(
         if set(step.inputs) != set(descriptor.input_ports) or set(step.outputs) != set(
             descriptor.output_ports
         ):
-            raise ValueError(f"step {step.step_id!r} does not match its operation port contract")
+            raise ValueError(
+                f"step {step.step_id!r} does not match its operation port contract"
+            )
         effective = _private_parameters(step.operation_id, step.parameters)
         port_inputs = {
             port: bindings[binding_name]
@@ -318,7 +334,9 @@ def _execute_compiled(
         for port in descriptor.output_ports:
             value = outputs[port]
             if not isinstance(value, Series):
-                raise TypeError(f"{step.operation_id!r} output {port!r} is not a Series")
+                raise TypeError(
+                    f"{step.operation_id!r} output {port!r} is not a Series"
+                )
             binding_name = step.outputs[port]
             bindings[binding_name] = value
             binding_identities[binding_name] = output_identities[port]
