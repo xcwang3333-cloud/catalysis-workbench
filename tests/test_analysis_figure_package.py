@@ -250,7 +250,7 @@ def test_post_rename_external_mutation_is_preserved_for_inspection(
 
     def move_mutate_then_fail(stage: Path, destination: Path) -> None:
         publish(stage, destination)
-        (destination / "intruder.txt").write_text("external", encoding="utf-8")
+        (destination / "external-empty-directory").mkdir()
         raise OSError("injected mutation after rename")
 
     monkeypatch.setattr(publisher, "_publish_stage", move_mutate_then_fail)
@@ -270,7 +270,7 @@ def test_post_rename_external_mutation_is_preserved_for_inspection(
 
     assert session.state == before_state
     assert target.is_dir()
-    assert (target / "intruder.txt").read_text(encoding="utf-8") == "external"
+    assert (target / "external-empty-directory").is_dir()
     assert _project_tree(before_state.project_root) != before_tree
 
 
