@@ -338,11 +338,13 @@ class AnalysisShellPage(QWidget):
             view_id = self.view_combo.currentData()
             if view_id == "raw":
                 self.preview_note.setText(
-                    "Mapped raw values · display sampling only for large series; scientific data are unchanged."
+                    "Mapped raw values · display sampling only for large series; "
+                    "scientific data are unchanged."
                 )
             elif self._task_id == "fe_partial_current":
                 self.preview_note.setText(
-                    "Live scientific result · FE and partial current use separate views and no interpolation."
+                    "Live scientific result · FE and partial current use separate "
+                    "views and no interpolation."
                 )
             else:
                 self.preview_note.setText(
