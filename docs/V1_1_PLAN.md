@@ -4,7 +4,7 @@
 
 v1.1 moves the optional desktop from a workspace-first administration shell toward a task-first scientific workbench while preserving the reviewed v1.0 scientific, workflow, provenance, and workspace contracts.
 
-Block 1 established the deterministic analysis-document lifecycle and Home/Analysis presentation shell. Block 2 adds explicit real-data intake, mapping, raw-source ownership, and mapped-raw preview. Scientific processing, workflow execution from the task-first surface, Figure Workbench, and publication export remain later blocks.
+Block 1 established the deterministic analysis-document lifecycle and Home/Analysis presentation shell. Block 2 added explicit real-data intake, mapping, raw-source ownership, and mapped-raw preview. Block 3 adds task-specific scientific processing, deterministic workflow-backed live evaluation, and ordinary-user Processing controls. Figure Workbench and publication export remain later blocks.
 
 ## Block 1 — AnalysisDocument + Home shell
 
@@ -255,3 +255,99 @@ The Block-2 gates include:
 ## Block 2 non-scope
 
 Block 2 does not add electrochemical transformation controls, workflow execution changes, Figure Workbench, publication-package export, automatic scientific/domain inference, recursive import, `.xls`, normal-user external-reference mode, hidden interpolation/resampling, new scientific dependencies, Git tags, GitHub Releases, or PyPI publication.
+
+## Block 3 — Live Scientific Analysis
+
+### User flow
+
+```text
+mapped data
+    -> task-specific PROCESSING controls
+    -> validate committed settings
+    -> compile deterministic internal workflow
+    -> execute live scientific analysis
+    -> inspect raw / processed or FE / partial-current views
+    -> revise settings with Undo/Redo support
+    -> Save Project
+```
+
+Block 3 turns the PROCESSING pane into the scientific-analysis surface. It does not expose recipe editing, operation IDs, workflow bindings, hashes, or provenance records to ordinary users.
+
+### AnalysisDocument schema 3
+
+Block 3 advances the normalized in-memory and newly saved document to schema 3. Schema 1 and schema 2 projects remain readable and are normalized in memory to schema 3 without rewriting the project during open. The first explicit save after opening an older project persists the schema-3 representation.
+
+Schema 3 adds deterministic task-specific `analysis` state. Computed arrays, GUI draft text, selected preview tabs, timestamps, file paths, and software-version evidence remain outside document identity.
+
+Document construction validates all processing references against the current `data_series` identities. Unknown override targets or FE/current pair members fail closed.
+
+### LSV / polarization processing
+
+The LSV task supports one common processing configuration plus optional full per-series overrides. The persisted controls are:
+
+- no RHE conversion, direct RHE offset, or SHE-reference + pH conversion;
+- temperature for the SHE/pH conversion path;
+- resistance and iR-correction fraction;
+- optional geometric electrode area and current-density normalization;
+- explicit current-density output unit; and
+- a scientific analysis-range crop.
+
+The analysis range is scientific processing state. It is separate from the later Figure Workbench display range.
+
+### FE and partial current
+
+The FE & Partial Current task uses explicit current-series ↔ FE-series pairs. Pairing is never inferred from series names or ordering.
+
+Each current input may use the same current-processing configuration model as LSV before partial-current calculation. FE and current inputs must already share compatible x coordinates; Block 3 does not interpolate, resample, nearest-match, or silently align mismatched grids.
+
+Partial current uses the reviewed signed current-density convention. FE and partial-current results are exposed as separate live-preview views so dissimilar y quantities are not placed on one implicit axis.
+
+### Generic XY
+
+Generic XY processing is deliberately narrow in Block 3: it supports scientific analysis-range cropping only. Smoothing, baseline correction, fitting, normalization, and other generic transforms remain out of scope.
+
+### Deterministic compiler and evaluator
+
+Task-first state compiles into an internal deterministic `WorkflowRecipe`. Block 3 private operation descriptors are resolved by the analysis layer and do not widen or mutate the frozen public workflow registry.
+
+The GUI-neutral `AnalysisEvaluator` materializes the mapped inputs, executes the compiled operations, and returns an explicit success / incomplete / error evaluation. Successful evaluation carries a deterministic `WorkflowRun` with input identities, step records, output identities, recipe identity, content identity, and current package-version environment evidence.
+
+Display-only series renames do not alter scientific input identities or the resulting workflow content identity. Mapping changes that produce a new `data_id` atomically rewrite processing overrides and explicit pair references. Removing a referenced input atomically removes its dependent override/pair state and remains undoable as one document revision.
+
+### Desktop commit and last-valid semantics
+
+Processing fields are draft UI state until they form a valid processing object and the candidate analysis evaluates without a scientific execution error. Valid candidates are committed as semantic `AnalysisDocument` revisions; invalid text or invalid scientific settings leave the committed document unchanged.
+
+When the user is editing an invalid draft after a previously successful run, the center pane may continue to display the previous valid result only when it is explicitly marked stale with `Previous valid result — current settings are not applied`. The stale result is never presented as current evidence and is not written into the document.
+
+Navigation, save, mapping edits, data removal, and close do not silently discard an invalid uncommitted processing draft. The desktop requires an explicit discard/cancel decision before the transition.
+
+The DATA pane remains the source/mapping surface; the center pane becomes the live scientific result surface; PROCESSING owns task-specific scientific settings. `Continue to Figure` remains disabled until Block 4.
+
+### Headless and compatibility boundaries
+
+`application.analysis` remains Qt-free and does not import PySide6, PyQt, or Matplotlib pyplot. The v1.0 public workflow registry and frozen desktop top-level export contract remain unchanged.
+
+Block 3 also retains the Block-2 raw-preview compatibility entry point used by the cumulative installed desktop smoke while routing the current workbench through live evaluation.
+
+### Validation gates
+
+Block 3 adds coverage for:
+
+- schema 1/2 read compatibility and schema-3 persistence;
+- strict processing serialization and cross-reference validation;
+- common and per-series LSV processing;
+- RHE conversion, iR correction, geometric-area normalization, and analysis-range behavior through the existing scientific kernels;
+- explicit FE/current pairing and signed partial current without interpolation;
+- deterministic task-state compilation and `WorkflowRun` identities;
+- display-name changes preserving scientific run identity;
+- atomic mapping-remap and removal cascades with Undo/Redo;
+- live evaluator incomplete/error/success states;
+- invalid processing drafts preserving the committed document and previous valid preview with stale labeling;
+- fresh-wheel Block-3 application and offscreen Desktop smoke coverage;
+- full regular CI; and
+- complete Stable 1.0 Readiness compatibility coverage.
+
+## Block 3 non-scope
+
+Block 3 does not implement Figure Workbench, figure display-range editing, publication-package export, smoothing, interpolation/resampling, fitting, baseline correction, automatic FE/current pairing, recipe-editor exposure, new third-party scientific dependencies, Git tags, GitHub Releases, or PyPI publication.
