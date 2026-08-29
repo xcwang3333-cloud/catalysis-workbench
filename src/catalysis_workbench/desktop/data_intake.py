@@ -13,7 +13,6 @@ from PySide6.QtWidgets import (
     QDialogButtonBox,
     QFormLayout,
     QGroupBox,
-    QHBoxLayout,
     QLabel,
     QLineEdit,
     QListWidget,
@@ -55,6 +54,7 @@ class _ImportDraft:
     skip_rows: int
     encoding: str | None
     confirmed: bool = False
+    parser_dirty: bool = False
 
     def mapping(self) -> TabularMappingSpec:
         if self.preview is None:
@@ -139,8 +139,16 @@ def _initial_draft(
         if existing is None:
             x_index = 0
             y_index = 1 if len(preview.columns) > 1 else -1
-            x_unit = (preview.columns[0].inferred_unit or "") if preview.columns else ""
-            y_unit = preview.columns[y_index].inferred_unit or "" if y_index >= 0 else ""
+            x_unit = (
+                preview.columns[0].inferred_unit or ""
+                if preview.columns
+                else ""
+            )
+            y_unit = (
+                preview.columns[y_index].inferred_unit or ""
+                if y_index >= 0
+                else ""
+            )
             display_name = source_path.stem
             x_reference = ""
         else:
@@ -322,8 +330,16 @@ class ImportDataDialog(QDialog):
             return
         draft = self._drafts[self._current_index]
         draft.display_name = self.series_name.text().strip()
-        draft.x_index = self.x_column.currentData() if self.x_column.currentIndex() >= 0 else -1
-        draft.y_index = self.y_column.currentData() if self.y_column.currentIndex() >= 0 else -1
+        draft.x_index = (
+            self.x_column.currentData()
+            if self.x_column.currentIndex() >= 0
+            else -1
+        )
+        draft.y_index = (
+            self.y_column.currentData()
+            if self.y_column.currentIndex() >= 0
+            else -1
+        )
         draft.x_role = self.x_role.text().strip()
         draft.y_role = self.y_role.text().strip()
         draft.x_unit = self.x_unit.text().strip()
@@ -332,7 +348,10 @@ class ImportDataDialog(QDialog):
         if draft.source.source_format == "delimited_text":
             text = self.delimiter_edit.text()
             draft.delimiter = text if text else None
-        if draft.source.source_format == "excel" and self.sheet_combo.currentIndex() >= 0:
+        if (
+            draft.source.source_format == "excel"
+            and self.sheet_combo.currentIndex() >= 0
+        ):
             draft.sheet = self.sheet_combo.currentText()
         self._refresh_status(self._current_index)
 
@@ -356,7 +375,9 @@ class ImportDataDialog(QDialog):
                         self.sheet_combo.setCurrentIndex(position)
             self.sheet_combo.setEnabled(draft.source.source_format == "excel")
             self.delimiter_edit.setText(draft.delimiter or "")
-            self.delimiter_edit.setEnabled(draft.source.source_format == "delimited_text")
+            self.delimiter_edit.setEnabled(
+                draft.source.source_format == "delimited_text"
+            )
             self.x_column.clear()
             self.y_column.clear()
             if draft.preview is not None:
@@ -397,7 +418,8 @@ class ImportDataDialog(QDialog):
         self.preview_table.setColumnCount(len(preview.columns))
         self.preview_table.setHorizontalHeaderLabels(
             [
-                column.name + (f" [{column.inferred_unit}]" if column.inferred_unit else "")
+                column.name
+                + (f" [{column.inferred_unit}]" if column.inferred_unit else "")
                 for column in preview.columns
             ]
         )
@@ -424,14 +446,20 @@ class ImportDataDialog(QDialog):
     def _parser_edited(self, *args: object) -> None:
         if self._loading or self._current_index < 0:
             return
-        self._drafts[self._current_index].confirmed = False
+        draft = self._drafts[self._current_index]
+        draft.confirmed = False
+        draft.parser_dirty = True
         self._capture_current()
-        self.mapping_status.setText("Parser changed. Reload the preview before confirming.")
+        self.mapping_status.setText(
+            "Parser changed. Reload the preview before confirming."
+        )
 
     def _sheet_changed(self, *args: object) -> None:
         if self._loading or self._current_index < 0:
             return
-        self._drafts[self._current_index].confirmed = False
+        draft = self._drafts[self._current_index]
+        draft.confirmed = False
+        draft.parser_dirty = True
         self._capture_current()
         self.reload_current_preview()
 
@@ -443,8 +471,16 @@ class ImportDataDialog(QDialog):
         try:
             preview = inspect_tabular(
                 draft.path,
-                sheet=draft.sheet if draft.source.source_format == "excel" else None,
-                delimiter=draft.delimiter if draft.source.source_format == "delimited_text" else None,
+                sheet=(
+                    draft.sheet
+                    if draft.source.source_format == "excel"
+                    else None
+                ),
+                delimiter=(
+                    draft.delimiter
+                    if draft.source.source_format == "delimited_text"
+                    else None
+                ),
                 header=draft.header,
                 skip_rows=draft.skip_rows,
                 encoding=draft.encoding,
@@ -454,6 +490,7 @@ class ImportDataDialog(QDialog):
             draft.preview = None
             draft.preview_error = str(exc)
             draft.confirmed = False
+            draft.parser_dirty = False
         else:
             draft.preview = preview
             draft.preview_error = None
@@ -465,9 +502,12 @@ class ImportDataDialog(QDialog):
             if draft.y_index < 0 or draft.y_index >= len(preview.columns):
                 draft.y_index = 1 if len(preview.columns) > 1 else -1
             draft.confirmed = False
+            draft.parser_dirty = False
         self._load_controls(draft)
 
     def _draft_error(self, draft: _ImportDraft) -> str | None:
+        if draft.parser_dirty:
+            return "parser settings changed; reload preview before confirming"
         if draft.preview is None:
             return draft.preview_error or "preview unavailable"
         try:
@@ -506,7 +546,10 @@ class ImportDataDialog(QDialog):
     def _update_ok_button(self) -> None:
         button = self.buttons.button(QDialogButtonBox.StandardButton.Ok)
         button.setEnabled(
-            all(draft.confirmed and self._draft_error(draft) is None for draft in self._drafts)
+            all(
+                draft.confirmed and self._draft_error(draft) is None
+                for draft in self._drafts
+            )
         )
 
     def confirm_current_mapping(self) -> bool:
@@ -531,7 +574,10 @@ class ImportDataDialog(QDialog):
         for index, draft in enumerate(self._drafts):
             if index == self._current_index or draft.preview is None:
                 continue
-            if source.x_index >= len(draft.preview.columns) or source.y_index >= len(draft.preview.columns):
+            if (
+                source.x_index >= len(draft.preview.columns)
+                or source.y_index >= len(draft.preview.columns)
+            ):
                 continue
             draft.x_index = source.x_index
             draft.y_index = source.y_index
@@ -553,10 +599,15 @@ class ImportDataDialog(QDialog):
         seen: set[str] = set()
         for draft in self._drafts:
             if not draft.confirmed:
-                raise ValueError(f"mapping is not confirmed for {draft.path.name!r}")
+                raise ValueError(
+                    f"mapping is not confirmed for {draft.path.name!r}"
+                )
             spec = draft.series_spec()
             if spec.data_id in seen:
-                raise ValueError(f"the selected files produce duplicate scientific input {spec.data_id}")
+                raise ValueError(
+                    "the selected files produce duplicate scientific input "
+                    f"{spec.data_id}"
+                )
             seen.add(spec.data_id)
             result.append((spec, draft.path))
         return tuple(result)
@@ -584,7 +635,12 @@ class SeriesPreviewDialog(QDialog):
         self.setWindowTitle(value.label or "Data preview")
         self.resize(720, 560)
         root = QVBoxLayout(self)
-        root.addWidget(QLabel(f"{value.n_points} points · input {materialized.input_sha256[:12]}…"))
+        root.addWidget(
+            QLabel(
+                f"{value.n_points} points · input "
+                f"{materialized.input_sha256[:12]}…"
+            )
+        )
         table = QTableWidget()
         table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         table.setColumnCount(2)
@@ -603,7 +659,11 @@ class SeriesPreviewDialog(QDialog):
         table.resizeColumnsToContents()
         root.addWidget(table, 1)
         if value.n_points > count:
-            root.addWidget(QLabel(f"Showing first {count} rows; scientific data are not truncated."))
+            root.addWidget(
+                QLabel(
+                    f"Showing first {count} rows; scientific data are not truncated."
+                )
+            )
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
         buttons.rejected.connect(self.reject)
         root.addWidget(buttons)
