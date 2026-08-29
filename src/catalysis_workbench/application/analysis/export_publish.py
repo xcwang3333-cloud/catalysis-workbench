@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import json
 import os
 import shutil
 import tempfile
 from dataclasses import dataclass, field
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 from catalysis_workbench.workspace import open_workspace
 from catalysis_workbench.workspace.manifest import WorkspaceAsset, WorkspaceError
@@ -150,17 +151,70 @@ class _PublicationRollback:
                     parent = parent.parent
 
 
+def _manifest_file_identities(
+    target: Path,
+    manifest_sha256: str,
+) -> dict[str, str] | None:
+    """Return exact expected file identities only for a trusted package manifest."""
+
+    manifest_path = target / "manifest.json"
+    if manifest_path.is_symlink() or not manifest_path.is_file():
+        return None
+    try:
+        if _sha256_file(manifest_path) != manifest_sha256:
+            return None
+        payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return None
+    if not isinstance(payload, dict) or not isinstance(payload.get("files"), list):
+        return None
+
+    identities: dict[str, str] = {"manifest.json": manifest_sha256}
+    for entry in payload["files"]:
+        if not isinstance(entry, dict):
+            return None
+        relative = entry.get("path")
+        digest = entry.get("sha256")
+        if type(relative) is not str or type(digest) is not str:
+            return None
+        logical = PurePosixPath(relative)
+        if (
+            not relative
+            or logical.is_absolute()
+            or ".." in logical.parts
+            or relative == "manifest.json"
+            or relative in identities
+        ):
+            return None
+        identities[relative] = digest
+    return identities
+
+
 def _remove_exact_published_target(target: Path, manifest_sha256: str) -> bool:
-    """Remove only the exact package produced by this operation."""
+    """Remove only a byte-exact package tree produced by this operation."""
 
     if target.is_symlink() or not target.is_dir():
         return not target.exists()
-    manifest = target / "manifest.json"
-    if manifest.is_symlink() or not manifest.is_file():
+    identities = _manifest_file_identities(target, manifest_sha256)
+    if identities is None:
         return False
     try:
-        if _sha256_file(manifest) != manifest_sha256:
+        observed: set[str] = set()
+        for path in target.rglob("*"):
+            if path.is_symlink():
+                return False
+            if path.is_dir():
+                continue
+            if not path.is_file():
+                return False
+            relative = path.relative_to(target).as_posix()
+            observed.add(relative)
+        if observed != set(identities):
             return False
+        for relative, digest in identities.items():
+            path = target / Path(*PurePosixPath(relative).parts)
+            if not path.is_file() or _sha256_file(path) != digest:
+                return False
         shutil.rmtree(target)
     except OSError:
         return False
