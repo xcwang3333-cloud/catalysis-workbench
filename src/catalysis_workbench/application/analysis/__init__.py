@@ -20,8 +20,8 @@ from .export_package import (
     FigurePackageExportError,
     FigurePackageOptions,
     FigurePackageResult,
-    export_figure_package,
 )
+from .export_publish import export_figure_package
 from .export_session import export_session_figure_package
 from .figure import (
     AnalysisFigureError,
