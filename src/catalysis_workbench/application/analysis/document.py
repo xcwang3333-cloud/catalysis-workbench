@@ -195,7 +195,6 @@ def _document_from_dict(value: object) -> AnalysisDocument:
             task_id=value["task_id"],
             title=value["title"],
             data_series=(),
-            analysis=default_analysis_spec(value["task_id"]),
         )
 
     if schema_version == 2:
@@ -205,7 +204,6 @@ def _document_from_dict(value: object) -> AnalysisDocument:
             task_id=value["task_id"],
             title=value["title"],
             data_series=_data_series_from_value(value["data_series"]),
-            analysis=default_analysis_spec(value["task_id"]),
         )
 
     _validate_fields(value, _DOCUMENT_V3_FIELDS)
