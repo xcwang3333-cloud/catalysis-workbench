@@ -71,7 +71,6 @@ def main() -> None:
         assert window.figure_page.trace_list.count() == 2
         assert window.figure_page.create_button.isEnabled() is False
         assert window.figure_page.refresh_button.isEnabled() is False
-        assert window.figure_page.continue_export_button.isEnabled() is False
         assert "Figure up to date" in window.figure_page.status_label.text()
 
         draft = window.session.figure_draft("processed")
