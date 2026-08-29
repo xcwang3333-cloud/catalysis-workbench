@@ -104,6 +104,7 @@ def main() -> None:
 
         window.show_analysis()
         assert window.stack.currentWidget() is window.analysis_page
+        window.go_home(discard_changes=True)
         window.close()
         qt_app.processEvents()
 
