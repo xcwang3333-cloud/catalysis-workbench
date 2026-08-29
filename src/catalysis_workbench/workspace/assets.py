@@ -29,6 +29,7 @@ class CopyAssetRequest:
     asset_id: str
     asset_type: str
     destination: str
+    expected_content_sha256: str | None = None
 
 
 def _selected_source(source: str | Path) -> Path:
@@ -51,6 +52,20 @@ def _sha256_file(path: Path) -> str:
                 break
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _expected_sha256(value: str | None) -> str | None:
+    if value is None:
+        return None
+    if type(value) is not str or len(value) != 64 or value != value.lower():
+        raise WorkspaceError("expected_content_sha256 must be a lowercase SHA-256 or None")
+    try:
+        int(value, 16)
+    except ValueError as exc:
+        raise WorkspaceError(
+            "expected_content_sha256 must be a lowercase SHA-256 or None"
+        ) from exc
+    return value
 
 
 def _preflight_asset_key(manifest: WorkspaceManifest, asset_id: str) -> None:
@@ -187,8 +202,10 @@ def import_copy_assets_batch(
     """Copy several files and publish exactly one manifest revision, or roll back.
 
     All destinations and catalog collisions are preflighted before bytes are copied.
-    The manifest observed before copying is checked again immediately before commit so
-    an external catalog mutation causes a fail-closed rollback.
+    Optional expected content digests are checked against the bytes read during the
+    copy itself, before any manifest revision is published. The manifest observed
+    before copying is checked again immediately before commit so an external catalog
+    mutation causes a fail-closed rollback.
     """
 
     if isinstance(requests, (str, bytes)) or not isinstance(requests, Sequence):
@@ -207,13 +224,14 @@ def import_copy_assets_batch(
     if not items:
         return manifest
 
-    checked: list[tuple[Path, str, str, str, Path]] = []
+    checked: list[tuple[Path, str, str, str, Path, str | None]] = []
     requested_ids: set[str] = set()
     requested_locations: set[str] = set()
     for item in items:
         asset_id = _identifier(item.asset_id, label="asset_id")
         asset_type = _identifier(item.asset_type, label="asset_type")
         destination = _workspace_owned_path(item.destination)
+        expected_digest = _expected_sha256(item.expected_content_sha256)
         if asset_id in requested_ids:
             raise WorkspaceError(f"workspace asset_id collision: {asset_id!r}")
         if destination in requested_locations:
@@ -228,16 +246,29 @@ def import_copy_assets_batch(
             raise WorkspaceError(
                 f"workspace copy destination already exists: {destination!r}"
             )
-        checked.append((source, asset_id, asset_type, destination, destination_path))
+        checked.append(
+            (source, asset_id, asset_type, destination, destination_path, expected_digest)
+        )
 
     copied: list[tuple[Path, tuple[Path, ...]]] = []
     new_assets: list[WorkspaceAsset] = []
     try:
-        for source, asset_id, asset_type, destination, destination_path in checked:
+        for (
+            source,
+            asset_id,
+            asset_type,
+            destination,
+            destination_path,
+            expected_digest,
+        ) in checked:
             digest, created_directories = _copy_selected_file(
                 source, destination_path, root_path
             )
             copied.append((destination_path, created_directories))
+            if expected_digest is not None and digest != expected_digest:
+                raise WorkspaceError(
+                    f"asset source {source.name!r} changed while it was being copied"
+                )
             new_assets.append(
                 WorkspaceAsset(
                     asset_id=asset_id,
