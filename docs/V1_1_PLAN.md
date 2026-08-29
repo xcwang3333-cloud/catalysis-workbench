@@ -189,7 +189,7 @@ Import status is per file:
 - `⚠` structurally usable but still requiring explicit confirmation; or
 - `✕` invalid or not currently previewable/mappable.
 
-`Apply this mapping to compatible files` copies X/Y column positions and their scientific semantic fields only when those positions exist in the target preview. It does not copy parser state and does not interpolate, resample, or otherwise reshape target data.
+`Apply this mapping to compatible files` copies X/Y column positions and their scientific semantic fields only when the target has those positions and the selected X/Y column names plus conservatively inferred units exactly match the source preview. Same-position columns with different headers or inferred units are not auto-confirmed. The batch action does not copy parser state and does not interpolate, resample, or otherwise reshape target data.
 
 ### Materialization boundary
 
@@ -207,7 +207,7 @@ The first Save As operation is staged in a sibling temporary directory. All requ
 
 After save, materialization and Edit Mapping resolve the workspace-owned copy instead of depending on the original external path. Deleting or moving the original external source therefore does not invalidate a correctly saved project.
 
-Workspace raw bytes are digest pinned. A changed external source before save, a changed workspace copy after save, a missing copy, manifest mismatch, or concurrent control-file mutation fails closed instead of being silently accepted as old evidence.
+Workspace raw bytes are digest pinned. The expected raw digest is carried into the batch-copy request and compared with the digest calculated while bytes are copied, so a source that changes after pre-save verification but during copying is rolled back before manifest commit. A changed workspace copy after save, a missing copy, manifest mismatch, or concurrent control-file mutation also fails closed instead of being silently accepted as old evidence.
 
 Batch raw-copy registration uses an expected workspace-manifest identity and rollback rules that remove only exact artifacts created by the failed operation. Unknown external content is never deleted.
 
@@ -245,10 +245,10 @@ The Block-2 gates include:
 - materialization identity tests;
 - batch session add/edit/remove/reorder/undo coverage;
 - external-source mutation and missing-source fail-closed coverage;
-- workspace-copy digest/tamper coverage;
+- workspace-copy digest/tamper coverage, including copy-time expected-digest mismatch rollback;
 - first-save staging and rollback coverage;
 - installed-wheel Block-2 raw-source persistence smoke;
-- fresh-wheel offscreen desktop import/mapping/live-preview/edit-mapping smoke;
+- fresh-wheel offscreen desktop import/mapping/live-preview/edit-mapping smoke, including negative batch-compatibility coverage;
 - full regular CI; and
 - the complete Stable 1.0 Readiness compatibility matrix.
 
