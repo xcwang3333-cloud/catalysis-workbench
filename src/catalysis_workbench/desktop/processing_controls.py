@@ -4,13 +4,12 @@ from __future__ import annotations
 
 from dataclasses import replace
 
-from PySide6.QtCore import Qt, QTimer, Signal
+from PySide6.QtCore import QTimer, Signal
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QFormLayout,
     QGroupBox,
-    QHBoxLayout,
     QLabel,
     QLineEdit,
     QListWidget,
@@ -32,18 +31,19 @@ from catalysis_workbench.application import (
 
 
 class ProcessingPanel(QWidget):
-    """Edit committed scientific settings while keeping invalid drafts out of the document."""
+    """Edit scientific settings while invalid drafts stay outside the document."""
 
     analysis_spec_changed = Signal(object)
+    draft_state_changed = Signal(bool, str)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._loading = False
-        self._task_id: str | None = None
         self._selected_data_id: str | None = None
         self._analysis = None
         self._data_series: tuple[DataSeriesSpec, ...] = ()
         self._has_unapplied_draft = False
+        self._draft_message = ""
         self._timer = QTimer(self)
         self._timer.setSingleShot(True)
         self._timer.setInterval(200)
@@ -54,13 +54,18 @@ class ProcessingPanel(QWidget):
     def has_unapplied_draft(self) -> bool:
         return self._has_unapplied_draft
 
+    @property
+    def draft_message(self) -> str:
+        return self._draft_message
+
     def _build_ui(self) -> None:
         root = QVBoxLayout(self)
-        self.helper_label = QLabel(
-            "Scientific settings are committed only after validation. Invalid text keeps the previous valid result."
+        helper = QLabel(
+            "Scientific settings are committed only after validation. "
+            "Invalid fields keep the previous valid result."
         )
-        self.helper_label.setWordWrap(True)
-        root.addWidget(self.helper_label)
+        helper.setWordWrap(True)
+        root.addWidget(helper)
 
         self.override_box = QGroupBox("Apply to")
         override_layout = QVBoxLayout(self.override_box)
@@ -68,7 +73,6 @@ class ProcessingPanel(QWidget):
         self.override_check.toggled.connect(self._override_toggled)
         override_layout.addWidget(self.override_check)
         self.override_target_label = QLabel("Common settings")
-        self.override_target_label.setWordWrap(True)
         override_layout.addWidget(self.override_target_label)
         root.addWidget(self.override_box)
 
@@ -145,29 +149,33 @@ class ProcessingPanel(QWidget):
         root.addWidget(self.processing_status)
         root.addStretch(1)
 
-        controls = (
-            self.rhe_mode_combo,
+        for editor in (
             self.rhe_offset_edit,
             self.reference_she_edit,
             self.ph_edit,
             self.temperature_edit,
             self.resistance_edit,
             self.fraction_edit,
-            self.normalize_check,
             self.area_edit,
-            self.current_density_unit_combo,
             self.range_min_edit,
             self.range_max_edit,
-        )
-        for control in controls:
-            if isinstance(control, QLineEdit):
-                control.textEdited.connect(self._schedule_apply)
-            elif isinstance(control, QCheckBox):
-                control.toggled.connect(self._schedule_apply)
-            else:
-                control.currentIndexChanged.connect(self._schedule_apply)
+        ):
+            editor.textEdited.connect(self._schedule_apply)
+        self.rhe_mode_combo.currentIndexChanged.connect(self._schedule_apply)
         self.rhe_mode_combo.currentIndexChanged.connect(self._update_rhe_visibility)
+        self.normalize_check.toggled.connect(self._schedule_apply)
+        self.current_density_unit_combo.currentIndexChanged.connect(self._schedule_apply)
         self._update_rhe_visibility()
+
+    def _set_draft_state(self, invalid: bool, message: str = "") -> None:
+        changed = (
+            invalid != self._has_unapplied_draft
+            or message != self._draft_message
+        )
+        self._has_unapplied_draft = invalid
+        self._draft_message = message
+        if changed:
+            self.draft_state_changed.emit(invalid, message)
 
     def _schedule_apply(self, *_args: object) -> None:
         if self._loading or self._analysis is None:
@@ -231,8 +239,12 @@ class ProcessingPanel(QWidget):
 
     def _read_range(self) -> AnalysisRange:
         return AnalysisRange(
-            x_min=self._optional_float(self.range_min_edit.text(), label="analysis range start"),
-            x_max=self._optional_float(self.range_max_edit.text(), label="analysis range end"),
+            x_min=self._optional_float(
+                self.range_min_edit.text(), label="analysis range start"
+            ),
+            x_max=self._optional_float(
+                self.range_max_edit.text(), label="analysis range end"
+            ),
         )
 
     def _selected_supports_current_override(self) -> bool:
@@ -291,23 +303,24 @@ class ProcessingPanel(QWidget):
         try:
             candidate = self._build_analysis_spec()
         except (TypeError, ValueError) as exc:
-            self._has_unapplied_draft = True
-            self.processing_status.setText(f"Not applied: {exc}")
+            message = str(exc)
+            self._set_draft_state(True, message)
+            self.processing_status.setText(f"Not applied: {message}")
             return
-        self._has_unapplied_draft = False
+        self._set_draft_state(False)
         if candidate == self._analysis:
             self.processing_status.setText("Settings valid")
             return
         self.analysis_spec_changed.emit(candidate)
 
     def mark_commit_error(self, message: str) -> None:
-        self._has_unapplied_draft = True
+        self._set_draft_state(True, message)
         self.processing_status.setText(f"Not applied: {message}")
 
     def discard_draft(self) -> None:
         self._timer.stop()
-        self._has_unapplied_draft = False
-        self._load_controls(force=True)
+        self._set_draft_state(False)
+        self._load_controls()
 
     def _override_toggled(self, checked: bool) -> None:
         if self._loading:
@@ -334,12 +347,14 @@ class ProcessingPanel(QWidget):
             return self._analysis.current_common
         return LSVProcessingSpec()
 
-    def _set_text(self, widget: QLineEdit, value: float | None) -> None:
+    @staticmethod
+    def _set_text(widget: QLineEdit, value: float | None) -> None:
         widget.setText("" if value is None else f"{value:g}")
 
     def _load_processing_fields_for_target(self) -> None:
         if not isinstance(self._analysis, (LSVAnalysisSpec, FEPartialCurrentAnalysisSpec)):
             return
+        previous_loading = self._loading
         self._loading = True
         try:
             config = self._current_processing_for_target()
@@ -362,7 +377,7 @@ class ProcessingPanel(QWidget):
             self.current_density_unit_combo.setCurrentIndex(max(0, unit_index))
             self._update_rhe_visibility()
         finally:
-            self._loading = False
+            self._loading = previous_loading
 
     def _load_range(self) -> None:
         if self._analysis is None:
@@ -396,7 +411,9 @@ class ProcessingPanel(QWidget):
         for pair in self._analysis.pairs:
             current = by_id.get(pair.current_data_id)
             fe = by_id.get(pair.fe_data_id)
-            current_name = current.display_name if current is not None else pair.current_data_id
+            current_name = (
+                current.display_name if current is not None else pair.current_data_id
+            )
             fe_name = fe.display_name if fe is not None else pair.fe_data_id
             self.pair_list.addItem(f"{current_name} ↔ {fe_name}")
         self.add_pair_button.setEnabled(
@@ -438,30 +455,28 @@ class ProcessingPanel(QWidget):
             return
         self._selected_data_id = data_id
         self._timer.stop()
-        self._has_unapplied_draft = False
-        self._load_controls(force=True)
+        self._set_draft_state(False)
+        self._load_controls()
 
     def apply_state(self, state: AnalysisSessionState) -> None:
         document = state.document
         if document is None:
-            self._task_id = None
             self._analysis = None
             self._data_series = ()
-            self._has_unapplied_draft = False
+            self._set_draft_state(False)
             self.setEnabled(False)
             self.processing_status.setText("No analysis")
             return
-        previous_task = self._task_id
-        self._task_id = document.task_id
+        previous_analysis = self._analysis
         self._analysis = document.analysis
         self._data_series = tuple(document.data_series)
         self.setEnabled(True)
-        self._refresh_pair_controls()
-        if not self._has_unapplied_draft or previous_task != self._task_id:
-            self._load_controls(force=True)
+        if not self._has_unapplied_draft or previous_analysis != self._analysis:
+            self._load_controls()
+        else:
+            self._refresh_pair_controls()
 
-    def _load_controls(self, *, force: bool = False) -> None:
-        del force
+    def _load_controls(self) -> None:
         if self._analysis is None:
             return
         self._loading = True
@@ -489,10 +504,11 @@ class ProcessingPanel(QWidget):
             enabled = self._selected_supports_current_override()
             self.override_check.setEnabled(enabled)
             self.override_check.setChecked(enabled and override_present)
-            if enabled and self.override_check.isChecked():
-                self.override_target_label.setText("Selected-series override")
-            else:
-                self.override_target_label.setText("Common settings")
+            self.override_target_label.setText(
+                "Selected-series override"
+                if enabled and override_present
+                else "Common settings"
+            )
             self._load_processing_fields_for_target()
             self._load_range()
             self._refresh_pair_controls()
@@ -517,7 +533,9 @@ class ProcessingPanel(QWidget):
         if status == "success":
             self.processing_status.setText("Ready · live analysis is current")
         elif status == "incomplete":
-            self.processing_status.setText(f"Needs input: {message or 'analysis is incomplete'}")
+            self.processing_status.setText(
+                f"Needs input: {message or 'analysis is incomplete'}"
+            )
         else:
             self.processing_status.setText(f"Error: {message or 'analysis failed'}")
 
