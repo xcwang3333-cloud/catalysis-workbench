@@ -8,7 +8,6 @@ from catalysis_workbench.application import (
     AnalysisSession,
     DataSeriesSpec,
     FEPartialCurrentAnalysisSpec,
-    GenericXYAnalysisSpec,
     LSVAnalysisSpec,
     PartialCurrentPair,
     TabularMappingSpec,
