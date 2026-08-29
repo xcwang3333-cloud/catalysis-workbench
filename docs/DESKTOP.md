@@ -84,7 +84,7 @@ Parser state remains explicit. Excel sheets are selected visibly. Delimited-text
 
 Unit inference is deliberately conservative: only a trailing square-bracket form such as `Potential [V]` or `Current density / [mA cm^-2]` is treated as an inferred unit. Parentheses are not interpreted as units because scientific headers often use parentheses for semantic content. Inferred values remain editable and must still pass the explicit mapping gate.
 
-Each file is shown as valid/confirmed, requiring confirmation, or invalid. `Apply this mapping to compatible files` copies the selected X/Y positions and scientific semantics only when the target preview has compatible column positions; it does not rewrite each file's parser state or silently interpolate data.
+Each file is shown as valid/confirmed, requiring confirmation, or invalid. `Apply this mapping to compatible files` copies the selected X/Y positions and scientific semantics only when the target has those positions **and** the selected X/Y column names plus conservatively inferred units exactly match the source preview. Files with the same column positions but different headers or inferred units remain unconfirmed and require explicit review. The batch action does not rewrite each file's parser state or silently interpolate data.
 
 ### Data list and preview
 
@@ -106,7 +106,7 @@ Before the first save, the analysis session keeps verified transient locations f
 
 After a successful save, materialization and Edit Mapping use the verified workspace-owned copy rather than depending on the original external path. Moving or deleting the original external file therefore does not break a correctly saved project.
 
-Raw-file mutation and workspace-copy tampering fail closed. The application re-verifies the expected source digest before materialization or mapping edits and does not silently reinterpret changed bytes as the previously recorded scientific input.
+Raw-file mutation and workspace-copy tampering fail closed. The application re-verifies the expected source digest before materialization or mapping edits and pins that expected digest into the batch copy itself, so a source that changes between pre-save verification and copying is rolled back before the workspace manifest is committed.
 
 Workspace batch-copy operations use expected-manifest checks. Project/document writes retain the existing exact-identity concurrency rules, and failed first-save staging is rolled back without deleting unknown external content.
 
@@ -172,7 +172,7 @@ The regular CI remains Qt-free for base application tests and separately install
 - fresh-wheel v1.1 application data-intake smoke coverage;
 - the existing frozen v1.0 desktop smoke;
 - the v1.1 Home/Analysis desktop smoke; and
-- a fresh-wheel offscreen Block-2 desktop intake/mapping/raw-copy smoke.
+- a fresh-wheel offscreen Block-2 desktop intake/mapping/raw-copy smoke, including a negative compatibility check for same-position columns with different semantics.
 
 The development candidate is `1.1.0.dev0`. The existing Stable 1.0 Readiness workflow remains active as a frozen v1.0 API/desktop compatibility audit while its candidate-version and artifact checks follow the currently built v1.1 development wheel.
 
