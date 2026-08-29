@@ -59,7 +59,7 @@ def export_session_figure_package(
             destination=destination,
             options=options,
         )
-    except FigurePackageExportError as exc:
+    except (FigurePackageExportError, OSError) as exc:
         raise AnalysisSessionError(str(exc)) from exc
 
     if session.state != before:
