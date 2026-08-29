@@ -79,7 +79,10 @@ class CatalysisWorkbenchWindow(_FigureWorkbenchWindow):
         if "legacy" in lowered and "workspace" in lowered:
             return (
                 "This project uses the legacy v1.0 workspace format.",
-                "Open it through the explicit v1.0 compatibility path or create a v1.1 analysis project.",
+                (
+                    "Open it through the explicit v1.0 compatibility path "
+                    "or create a v1.1 analysis project."
+                ),
                 details,
             )
         if "font" in lowered and "unavailable" in lowered:
