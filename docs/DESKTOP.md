@@ -40,7 +40,16 @@ The no-argument launcher opens the task-first v1.1 Home shell. Home offers:
 
 Choosing a task creates a clean in-memory untitled analysis. It does **not** ask for a directory. The first Save Project operation creates the project directory and writes `workspace.json` plus `project.json`.
 
-The current v1.1 Analysis Workbench combines Block-2 explicit scientific-data intake with Block-3 live scientific processing. Figure Workbench integration remains Block 4.
+The current v1.1 workbench now covers the reviewed ordinary-user path through Block 5:
+
+```text
+Home
+  -> Analysis Workbench
+  -> Figure Workbench
+  -> Export Figure Package
+```
+
+Data intake and mapping are explicit, scientific processing is task-specific, figure editing is presentation-only, and export produces publication figure files together with source data while provenance remains an internal workspace concern.
 
 ## Analysis Workbench
 
@@ -52,7 +61,7 @@ DATA  |  LIVE ANALYSIS PREVIEW  |  PROCESSING
 
 The center preview remains the largest region. The DATA pane owns source and mapping state, the center pane displays mapped raw or current scientific results, and PROCESSING owns task-specific scientific parameters.
 
-`Continue to Figure` remains disabled until Block 4.
+`Continue to Figure` becomes available only when the committed analysis evaluates successfully. It does not bypass invalid draft processing state.
 
 ## v1.1 Block 2 data intake and mapping
 
@@ -67,7 +76,7 @@ The center preview remains the largest region. The DATA pane owns source and map
 - `.xlsx`; and
 - `.xlsm`.
 
-Multiple files can be selected in one intake operation. Recursive directory import, legacy `.xls`, and normal-user external-reference mode are intentionally outside v1.1 Blocks 2–3.
+Multiple files can be selected in one intake operation. Recursive directory import, legacy `.xls`, and normal-user external-reference mode are intentionally outside v1.1.
 
 Each selected file is hashed before it enters the analysis document. File-system locations are used only to locate bytes; absolute paths do not participate in raw, mapping, or scientific-input identity.
 
@@ -129,7 +138,7 @@ The LSV task exposes a common processing configuration and optional per-series o
 - explicit output current-density unit; and
 - scientific analysis-range limits.
 
-Analysis range is scientific processing state and is intentionally distinct from the Figure Workbench display range planned for Block 4.
+Analysis range is scientific processing state and is intentionally distinct from the Figure Workbench display range.
 
 ### FE & Partial Current
 
@@ -165,6 +174,46 @@ The stale result is not presented as current evidence and is never persisted as 
 
 Save, Home, Open Project, mapping edits, data removal, and application close do not silently discard an invalid uncommitted processing draft. The desktop requires an explicit discard/cancel decision before the transition.
 
+## v1.1 Block 4 Figure Workbench
+
+Block 4 advances `AnalysisDocument` to schema 4 and stores immutable `FigureDraft` presentation state bound to exact scientific trace identities. A FigureDraft is created explicitly from a successful analysis result and becomes stale when its underlying scientific result changes.
+
+The Figure Workbench is a three-column publication editor:
+
+```text
+CONTENT  |  PUBLICATION PREVIEW  |  PROPERTIES
+```
+
+Normal controls cover result selection, trace visibility/order/labels, publication preset, physical figure size, axis labels/scales, display ranges, legend, typography, line and marker styling. These edits affect presentation only. They do not modify processing parameters or scientific arrays.
+
+Display range is deliberately distinct from analysis range. Setting Figure Workbench `xlim` or `ylim` changes the rendered view but does not crop the scientific series. When analysis results change, the figure is explicitly marked stale and styling is disabled until `Refresh from Analysis` rebinds the FigureDraft to the new exact scientific identities.
+
+## v1.1 Block 5 Figure Package export
+
+`Continue to Export` opens an explicit Figure Package page for a current FigureDraft. The page shows ordinary-user preflight state rather than workspace asset IDs, hashes, evidence records, or composition internals.
+
+The reviewed export formats are:
+
+- figure files: SVG, PDF, PNG;
+- source data: XLSX, TXT.
+
+At least one figure format and one source-data format must be selected. The destination must be a new directory whose parent already exists.
+
+Export preflight requires:
+
+- the analysis project is saved and clean;
+- the selected FigureDraft is current rather than stale;
+- its configured font family is available on the system; and
+- at least one trace remains visible.
+
+The source-data package contains the **full scientific arrays** for visible traces. Figure display limits never crop exported source data. TXT and XLSX outputs preserve explicit missing-value information; each exported trace is also bound to its exact scientific identity in the package manifest.
+
+A package semantic SHA is derived from path-independent scientific/presentation state and selected formats. File-system destination, timestamps, and absolute paths are excluded from that semantic identity. The package manifest separately records exact SHA-256 and size for every generated file, so binary container differences remain verifiable without contaminating scientific identity.
+
+Publication is fail-closed. The application writes and verifies a sibling staging directory, commits verified workspace-owned FigureSpec/package assets and evidence/composition provenance, then publishes the complete external directory. If final directory publication fails, the external package is not left authoritative and the workspace provenance transaction is rolled back to its exact pre-export state when that rollback remains safe.
+
+A successful export is not an `AnalysisDocument` edit. It therefore preserves document SHA, revision, Undo/Redo stacks, and clean/dirty state while advancing only the session's expected workspace-manifest baseline to include the new provenance records.
+
 ## v1.0 compatibility shell
 
 The reviewed v1.0 desktop remains available for explicit integrations through `catalysis_workbench.desktop.app.create_desktop(...)` and `ApplicationSession`. It retains workspace/asset, recipe, workflow, evidence/QA, and FigureSpec behavior.
@@ -179,9 +228,9 @@ The cumulative Block-2 desktop preview compatibility entry point remains availab
 
 The v1.1 `AnalysisDocument` and `AnalysisSession` live in the GUI-neutral application layer.
 
-An untouched untitled analysis is **unsaved but clean**. It can return Home without a discard prompt. Once the user edits title, mapping, data ordering, or committed processing state, the document becomes dirty and Home/Open/Exit transitions require Save, Discard, or Cancel.
+An untouched untitled analysis is **unsaved but clean**. It can return Home without a discard prompt. Once the user edits title, mapping, data ordering, committed processing state, or FigureDraft presentation state, the document becomes dirty and Home/Open/Exit transitions require Save, Discard, or Cancel.
 
-Undo and redo restore semantic document identities. Saving establishes a new baseline but does not erase undo history.
+Undo and redo restore semantic document identities. Saving establishes a new baseline but does not erase undo history. Export is intentionally excluded from semantic Undo/Redo because it is a verified file-system/provenance side effect rather than a document revision.
 
 A saved project keeps application control state in `project.json`. `project.json` is reserved workspace metadata, not an ordinary workspace asset. Project saves verify exact workspace/project identities and fail closed when files changed outside the current analysis session.
 
@@ -203,9 +252,9 @@ scientific layers
    desktop
 ```
 
-The desktop layer is presentation and interaction only. It does not own scientific algorithms, domain inference, QA policy, workflow scheduling, provenance reconstruction, or workspace persistence rules. Bounded parser inspection is delegated to the GUI-neutral I/O layer; scientific column meaning, units, and processing parameters remain explicit application state.
+The desktop layer is presentation and interaction only. It does not own scientific algorithms, domain inference, QA policy, workflow scheduling, provenance reconstruction, or workspace persistence rules. Bounded parser inspection is delegated to the GUI-neutral I/O layer; scientific column meaning, units, processing parameters, figure state, and export transactions remain explicit application state.
 
-`application.analysis` remains headless and must not import PySide6, PyQt, or Matplotlib pyplot.
+`application.analysis` remains headless and must not import PySide6 or PyQt. Matplotlib rendering is invoked lazily by figure/export operations rather than imported as desktop state.
 
 ## Legacy workspace, recipe, evidence, and figure behavior
 
@@ -217,28 +266,22 @@ The compatibility shell can inspect reviewed run, evidence-ledger, and QA state 
 
 ## CI and packaging validation
 
-The regular CI remains Qt-free for base application tests and separately installs the desktop extra for offscreen Qt validation. The cumulative v1.1 Block-1/Block-2/Block-3 gates include:
+Regular application tests remain Qt-free and the desktop extra is installed separately for offscreen Qt validation. The cumulative v1.1 Blocks 1–5 gates include:
 
-- deterministic AnalysisDocument and task-catalog tests;
-- schema-1/schema-2 read compatibility and schema-3 persistence checks;
-- path-independent source/mapping/input identity tests;
-- bounded tabular-preview and deterministic materialization tests;
-- dirty/unsaved and Undo/Redo session tests;
-- raw-copy persistence, source-mutation, tamper, rollback, and manifest-concurrency tests;
-- strict processing serialization and data-reference validation;
-- LSV/RHE/iR/area-normalization and analysis-range execution coverage;
-- explicit FE/current pairing and signed partial-current coverage without interpolation;
-- deterministic internal compilation and `WorkflowRun` identity checks;
-- mapping-remap/removal cascade tests;
-- live evaluator success/incomplete/error coverage;
+- deterministic AnalysisDocument/task-catalog and schema migration tests;
+- path-independent source/mapping/input identity and bounded preview tests;
+- raw-copy persistence, mutation, tamper, rollback, and manifest-concurrency tests;
+- task-specific scientific processing, explicit FE/current pairing, workflow execution, and identity tests;
 - invalid-draft and previous-valid-result desktop behavior;
-- fresh-wheel v1.1 application smoke coverage;
-- the existing frozen v1.0 desktop smoke;
-- v1.1 Home/Analysis and Block-2 intake/mapping desktop smokes; and
-- fresh-wheel offscreen Block-3 live-processing desktop smoke.
+- FigureDraft exact binding, stale/refresh, display-range, and presentation-only tests;
+- Figure Package semantic identity, full-source-data, missing-value, workspace provenance, and publication-rollback tests;
+- cumulative fresh-wheel headless v1.1 Block 1–5 smokes;
+- cumulative fresh-wheel offscreen v1.1 Block 1–5 desktop smokes;
+- the existing frozen v1.0 installed-wheel and desktop compatibility smokes; and
+- the complete Stable 1.0 Readiness compatibility matrix.
 
 The development candidate is `1.1.0.dev0`. The existing Stable 1.0 Readiness workflow remains active as a frozen v1.0 API/desktop compatibility audit while its candidate-version and artifact checks follow the currently built v1.1 development wheel.
 
 ## Release boundary
 
-v1.1 Block 3 does not authorize a Git tag, GitHub Release, or PyPI publication. Those remain separate release decisions.
+v1.1 Block 5 does not authorize a Git tag, GitHub Release, or PyPI publication. Those remain separate release decisions.
