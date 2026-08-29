@@ -1,4 +1,4 @@
-"""Qt Figure Package Export page for v1.1 Block 5."""
+"""Qt Figure Package Export page for the v1.1 task-first workbench."""
 
 from __future__ import annotations
 
@@ -25,11 +25,15 @@ class FigurePackageExportPage(QWidget):
 
     back_requested = Signal()
     browse_requested = Signal()
+    save_requested = Signal()
     export_requested = Signal(str, object)
+    open_folder_requested = Signal(str)
+    export_another_requested = Signal()
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._preflight_ready = False
+        self._last_package_path: str | None = None
         self._build_ui()
         self._update_export_enabled()
 
@@ -87,13 +91,18 @@ class FigurePackageExportPage(QWidget):
 
         preflight = QGroupBox("Preflight")
         preflight_layout = QVBoxLayout(preflight)
+        project_row = QHBoxLayout()
         self.project_check = QLabel("○ Project saved")
+        project_row.addWidget(self.project_check, 1)
+        self.save_project_button = QPushButton("Save Project")
+        self.save_project_button.clicked.connect(self.save_requested.emit)
+        project_row.addWidget(self.save_project_button)
+        preflight_layout.addLayout(project_row)
         self.figure_check = QLabel("○ Figure current")
         self.font_check = QLabel("○ Font available")
         self.trace_check = QLabel("○ Visible traces")
         self.destination_check = QLabel("○ Destination available")
         for label in (
-            self.project_check,
             self.figure_check,
             self.font_check,
             self.trace_check,
@@ -105,6 +114,19 @@ class FigurePackageExportPage(QWidget):
         self.message_label = QLabel("")
         self.message_label.setWordWrap(True)
         root.addWidget(self.message_label)
+
+        self.success_actions = QWidget()
+        success_layout = QHBoxLayout(self.success_actions)
+        success_layout.setContentsMargins(0, 0, 0, 0)
+        self.open_folder_button = QPushButton("Open Folder")
+        self.open_folder_button.clicked.connect(self._emit_open_folder)
+        success_layout.addWidget(self.open_folder_button)
+        self.export_another_button = QPushButton("Export Another")
+        self.export_another_button.clicked.connect(self._prepare_another_export)
+        success_layout.addWidget(self.export_another_button)
+        success_layout.addStretch(1)
+        self.success_actions.setVisible(False)
+        root.addWidget(self.success_actions)
         root.addStretch(1)
 
         self.export_button = QPushButton("Export Package")
@@ -148,6 +170,7 @@ class FigurePackageExportPage(QWidget):
         self.project_check.setText(
             "✓ Project saved and clean" if project_saved else "✕ Save the project before export"
         )
+        self.save_project_button.setVisible(not project_saved)
         self.figure_check.setText(
             "✓ Figure current" if figure_current else "✕ Refresh the Figure from Analysis"
         )
@@ -168,11 +191,15 @@ class FigurePackageExportPage(QWidget):
         self._update_export_enabled()
 
     def show_success(self, package_path: str | Path) -> None:
+        self._last_package_path = str(package_path)
         self.message_label.setText(f"Package exported successfully:\n{package_path}")
+        self.success_actions.setVisible(True)
         self._update_export_enabled()
 
     def show_error(self, message: str) -> None:
         self.message_label.setText(message)
+        self._last_package_path = None
+        self.success_actions.setVisible(False)
 
     def _destination_available(self) -> bool:
         text = self.location_edit.text().strip()
@@ -205,6 +232,18 @@ class FigurePackageExportPage(QWidget):
             self.show_error(str(exc))
             return
         self.export_requested.emit(self.location_edit.text().strip(), options)
+
+    def _emit_open_folder(self) -> None:
+        if self._last_package_path is not None:
+            self.open_folder_requested.emit(self._last_package_path)
+
+    def _prepare_another_export(self) -> None:
+        self.location_edit.clear()
+        self.message_label.clear()
+        self._last_package_path = None
+        self.success_actions.setVisible(False)
+        self.export_another_requested.emit()
+        self._update_export_enabled()
 
 
 __all__ = ["FigurePackageExportPage"]
