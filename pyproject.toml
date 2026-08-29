@@ -43,6 +43,9 @@ Repository = "https://github.com/xcwang3333-cloud/catalysis-workbench"
 Issues = "https://github.com/xcwang3333-cloud/catalysis-workbench/issues"
 Changelog = "https://github.com/xcwang3333-cloud/catalysis-workbench/blob/main/CHANGELOG.md"
 
+[project.scripts]
+catalysis-workbench = "catalysis_workbench.desktop.cli:main"
+
 [project.optional-dependencies]
 structure = [
   "pymatgen-core>=2026.7.16",
