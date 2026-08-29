@@ -16,10 +16,12 @@ from PySide6.QtWidgets import (
 
 from catalysis_workbench.application import (
     AnalysisDocument,
+    AnalysisEvaluation,
     AnalysisEvaluator,
     AnalysisResult,
     AnalysisSession,
     AnalysisSessionError,
+    AnalysisSpec,
     DataSeriesSpec,
     get_analysis_task_descriptor,
     open_analysis_project,
@@ -79,7 +81,9 @@ class CatalysisWorkbenchWindow(QMainWindow):
         self.analysis_page.remove_series_requested.connect(self._remove_series_ui)
         self.analysis_page.series_renamed.connect(self._rename_series_ui)
         self.analysis_page.series_moved.connect(self._move_series_ui)
-        self.analysis_page.analysis_spec_changed.connect(self._replace_analysis_spec_ui)
+        self.analysis_page.analysis_spec_changed.connect(
+            self._replace_analysis_spec_ui
+        )
         self.analysis_page.processing_panel.draft_state_changed.connect(
             self._processing_draft_state_changed
         )
@@ -186,7 +190,9 @@ class CatalysisWorkbenchWindow(QMainWindow):
             self.setWindowTitle("CatalysisWorkbench")
         else:
             marker = " *" if state.is_dirty else ""
-            self.setWindowTitle(f"{state.document.title}{marker} — CatalysisWorkbench")
+            self.setWindowTitle(
+                f"{state.document.title}{marker} — CatalysisWorkbench"
+            )
 
     def _materialize_all_inputs(self) -> None:
         state = self.session.state
@@ -203,7 +209,12 @@ class CatalysisWorkbenchWindow(QMainWindow):
             return
         self.analysis_page.set_materialized_inputs(inputs)
 
-    def _apply_evaluation(self, status: str, result: AnalysisResult | None, message: str | None) -> None:
+    def _apply_evaluation(
+        self,
+        status: str,
+        result: AnalysisResult | None,
+        message: str | None,
+    ) -> None:
         state = self.session.state
         task_id = state.document.task_id if state.document is not None else None
         if status == "success" and result is not None:
@@ -225,7 +236,10 @@ class CatalysisWorkbenchWindow(QMainWindow):
                 stale=False,
             )
             return
-        if self._last_valid_result is not None and self._last_valid_task_id == task_id:
+        if (
+            self._last_valid_result is not None
+            and self._last_valid_task_id == task_id
+        ):
             self.analysis_page.set_live_analysis(
                 self._last_valid_result,
                 status="error",
@@ -258,7 +272,16 @@ class CatalysisWorkbenchWindow(QMainWindow):
             evaluation.message,
         )
 
-    def _processing_draft_state_changed(self, invalid: bool, message: str) -> None:
+    def _refresh_data_preview(self) -> None:
+        """Compatibility alias retained for the v1.1 Block-2 Desktop contract."""
+
+        self._refresh_live_analysis()
+
+    def _processing_draft_state_changed(
+        self,
+        invalid: bool,
+        message: str,
+    ) -> None:
         if self._suppress_processing_draft_signal:
             return
         if invalid:
@@ -321,7 +344,10 @@ class CatalysisWorkbenchWindow(QMainWindow):
             raise AnalysisSessionError("no analysis document is open")
         if root is None:
             self.session.save_project()
-        elif state.project_root is None or Path(root).resolve(strict=False) != state.project_root:
+        elif (
+            state.project_root is None
+            or Path(root).resolve(strict=False) != state.project_root
+        ):
             self.session.save_project_as(root)
         else:
             self.session.save_project()
@@ -341,7 +367,7 @@ class CatalysisWorkbenchWindow(QMainWindow):
         self._clear_last_valid()
         self.show_home()
 
-    def _candidate_evaluation(self, analysis: object):
+    def _candidate_evaluation(self, analysis: AnalysisSpec) -> AnalysisEvaluation:
         state = self.session.state
         if state.document is None:
             raise AnalysisSessionError("no analysis document is open")
@@ -355,7 +381,7 @@ class CatalysisWorkbenchWindow(QMainWindow):
         )
         return AnalysisEvaluator().evaluate(candidate, self.session.materialize_data)
 
-    def _replace_analysis_spec_ui(self, analysis: object) -> None:
+    def _replace_analysis_spec_ui(self, analysis: AnalysisSpec) -> None:
         try:
             evaluation = self._candidate_evaluation(analysis)
             if evaluation.status == "error":
@@ -363,7 +389,7 @@ class CatalysisWorkbenchWindow(QMainWindow):
                     evaluation.message or "scientific processing failed"
                 )
                 return
-            self.session.replace_analysis_spec(analysis)  # type: ignore[arg-type]
+            self.session.replace_analysis_spec(analysis)
         except (OSError, TypeError, ValueError, RuntimeError) as exc:
             self.analysis_page.mark_processing_commit_error(str(exc))
             return
@@ -415,7 +441,10 @@ class CatalysisWorkbenchWindow(QMainWindow):
         return True
 
     def _add_files_interactive(self) -> None:
-        if self.session.state.document is None or not self._prepare_processing_draft():
+        if (
+            self.session.state.document is None
+            or not self._prepare_processing_draft()
+        ):
             return
         paths, _ = QFileDialog.getOpenFileNames(
             self,
@@ -426,7 +455,12 @@ class CatalysisWorkbenchWindow(QMainWindow):
         if paths:
             self._add_files_ui(tuple(paths), draft_prepared=True)
 
-    def _add_files_ui(self, paths: object, *, draft_prepared: bool = False) -> None:
+    def _add_files_ui(
+        self,
+        paths: object,
+        *,
+        draft_prepared: bool = False,
+    ) -> None:
         state = self.session.state
         if state.document is None:
             return
@@ -502,11 +536,13 @@ class CatalysisWorkbenchWindow(QMainWindow):
         impact_lines: list[str] = []
         if impact.partial_current_pair_count:
             impact_lines.append(
-                f"• remove {impact.partial_current_pair_count} explicit partial-current pair(s)"
+                "• remove "
+                f"{impact.partial_current_pair_count} explicit partial-current pair(s)"
             )
         if impact.override_count:
             impact_lines.append(
-                f"• remove {impact.override_count} selected-series processing override(s)"
+                "• remove "
+                f"{impact.override_count} selected-series processing override(s)"
             )
         impact_text = ""
         if impact_lines:
@@ -558,7 +594,10 @@ class CatalysisWorkbenchWindow(QMainWindow):
         )
 
     def _save_interactive(self) -> bool:
-        if not self._prepare_processing_draft() or not self._commit_title_editor():
+        if (
+            not self._prepare_processing_draft()
+            or not self._commit_title_editor()
+        ):
             return False
         state = self.session.state
         if state.document is None:
@@ -607,7 +646,10 @@ class CatalysisWorkbenchWindow(QMainWindow):
         return "cancel"
 
     def _prepare_transition(self) -> bool:
-        if not self._prepare_processing_draft() or not self._commit_title_editor():
+        if (
+            not self._prepare_processing_draft()
+            or not self._commit_title_editor()
+        ):
             return False
         decision = self._dirty_decision()
         if decision == "cancel":
@@ -638,7 +680,10 @@ class CatalysisWorkbenchWindow(QMainWindow):
     def _open_project_interactive(self) -> None:
         if not self._prepare_transition():
             return
-        root = QFileDialog.getExistingDirectory(self, "Open CatalysisWorkbench Project")
+        root = QFileDialog.getExistingDirectory(
+            self,
+            "Open CatalysisWorkbench Project",
+        )
         if not root:
             return
         try:
@@ -651,7 +696,10 @@ class CatalysisWorkbenchWindow(QMainWindow):
         self.refresh_views()
 
     def closeEvent(self, event: QCloseEvent) -> None:  # noqa: N802 - Qt override
-        if not self._prepare_processing_draft() or not self._commit_title_editor():
+        if (
+            not self._prepare_processing_draft()
+            or not self._commit_title_editor()
+        ):
             event.ignore()
             return
         if not self.session.state.is_dirty:
