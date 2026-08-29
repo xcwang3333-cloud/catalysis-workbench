@@ -21,6 +21,8 @@ from .data import (
 from .processing import (
     AnalysisProcessingError,
     AnalysisSpec,
+    FEPartialCurrentAnalysisSpec,
+    LSVAnalysisSpec,
     analysis_spec_from_dict,
     analysis_spec_to_plain_dict,
     default_analysis_spec,
@@ -43,6 +45,37 @@ def _title(value: object) -> str:
     except CanonicalJSONError as exc:
         raise AnalysisDocumentError("analysis title must be valid UTF-8") from exc
     return value
+
+
+def _validate_analysis_references(
+    analysis: AnalysisSpec,
+    data_ids: tuple[str, ...],
+) -> None:
+    available = set(data_ids)
+    if isinstance(analysis, LSVAnalysisSpec):
+        unknown = sorted(set(analysis.overrides) - available)
+        if unknown:
+            raise AnalysisDocumentError(
+                f"LSV processing overrides reference unknown data_id values: {unknown!r}"
+            )
+        return
+    if isinstance(analysis, FEPartialCurrentAnalysisSpec):
+        unknown_overrides = sorted(set(analysis.current_overrides) - available)
+        if unknown_overrides:
+            raise AnalysisDocumentError(
+                "current-processing overrides reference unknown data_id values: "
+                f"{unknown_overrides!r}"
+            )
+        referenced = {
+            data_id
+            for pair in analysis.pairs
+            for data_id in (pair.current_data_id, pair.fe_data_id)
+        }
+        unknown_pairs = sorted(referenced - available)
+        if unknown_pairs:
+            raise AnalysisDocumentError(
+                f"partial-current pairs reference unknown data_id values: {unknown_pairs!r}"
+            )
 
 
 @dataclass(frozen=True, slots=True)
@@ -93,6 +126,7 @@ class AnalysisDocument:
             analysis = validate_analysis_spec(task.task_id, analysis)
         except (AnalysisProcessingError, TypeError, ValueError) as exc:
             raise AnalysisDocumentError(str(exc)) from exc
+        _validate_analysis_references(analysis, data_ids)
         object.__setattr__(self, "analysis", analysis)
 
         try:
