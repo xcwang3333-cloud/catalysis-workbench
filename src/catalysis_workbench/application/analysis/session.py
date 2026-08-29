@@ -265,8 +265,13 @@ class AnalysisSession:
         updated.insert(new_index, item)
         return self._replace_document(self._document_with(data_series=updated))
 
-    def materialize_data(self, data_id: str) -> MaterializedInput:
-        """Materialize from transient unsaved bytes or a verified workspace-owned copy."""
+    def data_source_path(self, data_id: str) -> Path:
+        """Return the verified raw path behind one mapped input.
+
+        Unsaved analyses resolve the transient original source. Saved analyses
+        resolve the workspace-owned copy. Exact bytes are reverified before the
+        path is returned so desktop mapping editors fail closed on mutation.
+        """
 
         current = self._state.document
         if current is None:
@@ -287,6 +292,19 @@ class AnalysisSession:
                 )
             except (WorkspaceError, OSError) as exc:
                 raise AnalysisSessionError(str(exc)) from exc
+        try:
+            return verify_source_bytes(spec, path)
+        except (AnalysisMaterializationError, OSError, ValueError) as exc:
+            raise AnalysisSessionError(str(exc)) from exc
+
+    def materialize_data(self, data_id: str) -> MaterializedInput:
+        """Materialize from transient unsaved bytes or a verified workspace-owned copy."""
+
+        current = self._state.document
+        if current is None:
+            raise AnalysisSessionError("no analysis document is open")
+        spec = current.data_series[self._series_index(data_id)]
+        path = self.data_source_path(data_id)
         try:
             return materialize_data_series(spec, path)
         except (AnalysisMaterializationError, OSError) as exc:

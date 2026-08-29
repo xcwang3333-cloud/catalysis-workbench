@@ -6,6 +6,7 @@ from pathlib import Path
 
 from PySide6.QtGui import QAction, QCloseEvent, QKeySequence
 from PySide6.QtWidgets import (
+    QDialog,
     QFileDialog,
     QInputDialog,
     QMainWindow,
@@ -16,17 +17,19 @@ from PySide6.QtWidgets import (
 from catalysis_workbench.application import (
     AnalysisSession,
     AnalysisSessionError,
+    DataSeriesSpec,
     get_analysis_task_descriptor,
     open_analysis_project,
 )
 
 from .analysis_shell import AnalysisShellPage
+from .data_intake import ImportDataDialog, SeriesPreviewDialog
 from .home import HomePage, RecentProjectDisplay
 from .recent_projects import RecentProjectsStore
 
 
 class CatalysisWorkbenchWindow(QMainWindow):
-    """v1.1 Home + Analysis shell while the v1.0 desktop remains available separately."""
+    """Task-first Home and Analysis workbench for the v1.1 desktop."""
 
     def __init__(
         self,
@@ -46,7 +49,8 @@ class CatalysisWorkbenchWindow(QMainWindow):
         self.stack.addWidget(self.analysis_page)
         self.setCentralWidget(self.stack)
         self.setWindowTitle("CatalysisWorkbench")
-        self.resize(1100, 720)
+        self.setMinimumSize(1200, 760)
+        self.resize(1440, 900)
         self._connect_signals()
         self._build_menu()
         self.refresh_views()
@@ -62,6 +66,13 @@ class CatalysisWorkbenchWindow(QMainWindow):
         self.analysis_page.save_requested.connect(self._save_interactive)
         self.analysis_page.undo_requested.connect(self._undo_ui)
         self.analysis_page.redo_requested.connect(self._redo_ui)
+        self.analysis_page.add_files_requested.connect(self._add_files_interactive)
+        self.analysis_page.files_dropped.connect(self._add_files_ui)
+        self.analysis_page.edit_mapping_requested.connect(self._edit_mapping_ui)
+        self.analysis_page.preview_data_requested.connect(self._preview_data_ui)
+        self.analysis_page.remove_series_requested.connect(self._remove_series_ui)
+        self.analysis_page.series_renamed.connect(self._rename_series_ui)
+        self.analysis_page.series_moved.connect(self._move_series_ui)
 
     def _build_menu(self) -> None:
         file_menu = self.menuBar().addMenu("File")
@@ -72,6 +83,10 @@ class CatalysisWorkbenchWindow(QMainWindow):
         save_action.setShortcut(QKeySequence.StandardKey.Save)
         save_action.triggered.connect(self._save_interactive)
         file_menu.addAction(save_action)
+        add_data_action = QAction("Add Data Files…", self)
+        add_data_action.setShortcut(QKeySequence("Ctrl+Shift+O"))
+        add_data_action.triggered.connect(self._add_files_interactive)
+        file_menu.addAction(add_data_action)
         home_action = QAction("Home", self)
         home_action.triggered.connect(self._request_home)
         file_menu.addAction(home_action)
@@ -90,6 +105,7 @@ class CatalysisWorkbenchWindow(QMainWindow):
         redo_action.triggered.connect(self._redo_ui)
         edit_menu.addAction(redo_action)
         self._save_action = save_action
+        self._add_data_action = add_data_action
         self._undo_action = undo_action
         self._redo_action = redo_action
 
@@ -143,7 +159,9 @@ class CatalysisWorkbenchWindow(QMainWindow):
         state = self.session.state
         self.analysis_page.apply_state(state)
         self.home_page.set_recent_projects(self._recent_displays())
-        self._save_action.setEnabled(state.document is not None)
+        enabled = state.document is not None
+        self._save_action.setEnabled(enabled)
+        self._add_data_action.setEnabled(enabled)
         self._undo_action.setEnabled(state.can_undo)
         self._redo_action.setEnabled(state.can_redo)
         if state.document is None:
@@ -152,12 +170,28 @@ class CatalysisWorkbenchWindow(QMainWindow):
             marker = " *" if state.is_dirty else ""
             self.setWindowTitle(f"{state.document.title}{marker} — CatalysisWorkbench")
 
+    def _refresh_data_preview(self) -> None:
+        state = self.session.state
+        if state.document is None or not state.document.data_series:
+            self.analysis_page.set_materialized_inputs(())
+            return
+        try:
+            inputs = tuple(
+                self.session.materialize_data(spec.data_id)
+                for spec in state.document.data_series
+            )
+        except (OSError, ValueError, RuntimeError) as exc:
+            self.analysis_page.set_materialized_inputs((), warning=str(exc))
+            return
+        self.analysis_page.set_materialized_inputs(inputs)
+
     def show_home(self) -> None:
         self.refresh_views()
         self.stack.setCurrentWidget(self.home_page)
 
     def show_analysis(self) -> None:
         self.refresh_views()
+        self._refresh_data_preview()
         self.stack.setCurrentWidget(self.analysis_page)
 
     def start_analysis(self, task_id: str) -> None:
@@ -167,6 +201,20 @@ class CatalysisWorkbenchWindow(QMainWindow):
     def rename_analysis(self, title: str) -> None:
         self.session.rename_analysis(title)
         self.refresh_views()
+
+    def add_data_items(
+        self,
+        items: tuple[tuple[DataSeriesSpec, Path], ...]
+        | list[tuple[DataSeriesSpec, Path]],
+    ) -> None:
+        self.session.add_data_series_batch(items)
+        self.refresh_views()
+        self._refresh_data_preview()
+
+    def remove_data_series(self, data_id: str) -> None:
+        self.session.remove_data_series(data_id)
+        self.refresh_views()
+        self._refresh_data_preview()
 
     def save_project_path(self, root: str | Path | None = None) -> None:
         state = self.session.state
@@ -208,14 +256,131 @@ class CatalysisWorkbenchWindow(QMainWindow):
     def _undo_ui(self) -> None:
         self.session.undo()
         self.refresh_views()
+        self._refresh_data_preview()
 
     def _redo_ui(self) -> None:
         self.session.redo()
         self.refresh_views()
+        self._refresh_data_preview()
+
+    def _add_files_interactive(self) -> None:
+        if self.session.state.document is None:
+            return
+        paths, _ = QFileDialog.getOpenFileNames(
+            self,
+            "Add Data Files",
+            "",
+            "Tabular data (*.csv *.txt *.tsv *.dat *.xlsx *.xlsm)",
+        )
+        if paths:
+            self._add_files_ui(tuple(paths))
+
+    def _add_files_ui(self, paths: object) -> None:
+        state = self.session.state
+        if state.document is None:
+            return
+        if not isinstance(paths, (tuple, list)) or not paths:
+            return
+        try:
+            dialog = ImportDataDialog(
+                tuple(str(path) for path in paths),
+                task_id=state.document.task_id,
+                parent=self,
+            )
+        except (OSError, ValueError, RuntimeError) as exc:
+            self._display_error(exc)
+            return
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        try:
+            self.add_data_items(list(dialog.mapped_items()))
+        except (OSError, ValueError, RuntimeError) as exc:
+            self._display_error(exc)
+
+    def _data_spec(self, data_id: str) -> DataSeriesSpec:
+        document = self.session.state.document
+        if document is None:
+            raise AnalysisSessionError("no analysis document is open")
+        for spec in document.data_series:
+            if spec.data_id == data_id:
+                return spec
+        raise AnalysisSessionError(f"unknown analysis data_id: {data_id!r}")
+
+    def _edit_mapping_ui(self, data_id: str) -> None:
+        state = self.session.state
+        if state.document is None:
+            return
+        try:
+            spec = self._data_spec(data_id)
+            path = self.session.data_source_path(data_id)
+            dialog = ImportDataDialog(
+                (path,),
+                task_id=state.document.task_id,
+                existing_spec=spec,
+                parent=self,
+            )
+        except (OSError, ValueError, RuntimeError) as exc:
+            self._display_error(exc)
+            return
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        try:
+            self.session.replace_data_mapping(data_id, dialog.edited_mapping())
+            self.refresh_views()
+            self._refresh_data_preview()
+        except (OSError, ValueError, RuntimeError) as exc:
+            self._display_error(exc)
+
+    def _preview_data_ui(self, data_id: str) -> None:
+        try:
+            materialized = self.session.materialize_data(data_id)
+        except (OSError, ValueError, RuntimeError) as exc:
+            self._display_error(exc)
+            return
+        dialog = SeriesPreviewDialog(materialized, parent=self)
+        dialog.exec()
+
+    def _remove_series_ui(self, data_id: str) -> None:
+        spec = self._data_spec(data_id)
+        answer = QMessageBox.question(
+            self,
+            "Remove data?",
+            f"Remove {spec.display_name!r} from this analysis?\n"
+            "The original raw file is not modified.",
+        )
+        if answer != QMessageBox.StandardButton.Yes:
+            return
+        try:
+            self.remove_data_series(data_id)
+        except (OSError, ValueError, RuntimeError) as exc:
+            self._display_error(exc)
+
+    def _rename_series_ui(self, data_id: str, name: str) -> None:
+        try:
+            self.session.rename_data_series(data_id, name)
+            self.refresh_views()
+            self._refresh_data_preview()
+        except (OSError, ValueError, RuntimeError) as exc:
+            self._display_error(exc)
+            self.refresh_views()
+
+    def _move_series_ui(self, data_id: str, new_index: int) -> None:
+        try:
+            self.session.move_data_series(data_id, new_index)
+            self.refresh_views()
+            self._refresh_data_preview()
+        except (OSError, ValueError, RuntimeError) as exc:
+            self._display_error(exc)
+            self.refresh_views()
 
     @staticmethod
     def _valid_directory_name(name: str) -> bool:
-        return bool(name) and name not in {".", ".."} and "/" not in name and "\\" not in name
+        return (
+            bool(name)
+            and name not in {".", ".."}
+            and "/" not in name
+            and "\\" not in name
+        )
 
     def _save_interactive(self) -> bool:
         if not self._commit_title_editor():
@@ -227,10 +392,14 @@ class CatalysisWorkbenchWindow(QMainWindow):
             if state.project_root is not None:
                 self.save_project_path()
                 return True
-            parent = QFileDialog.getExistingDirectory(self, "Choose Project Parent Directory")
+            parent = QFileDialog.getExistingDirectory(
+                self, "Choose Project Parent Directory"
+            )
             if not parent:
                 return False
-            name, accepted = QInputDialog.getText(self, "Save Project", "Project directory name:")
+            name, accepted = QInputDialog.getText(
+                self, "Save Project", "Project directory name:"
+            )
             if not accepted:
                 return False
             name = name.strip()
