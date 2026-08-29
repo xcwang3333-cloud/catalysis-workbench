@@ -77,6 +77,7 @@ jobs:
           .venv-smoke/bin/python tests/installed_v10_block5_smoke.py
           .venv-smoke/bin/python tests/installed_v10_block6_smoke.py
           .venv-smoke/bin/python tests/installed_v11_block1_smoke.py
+          .venv-smoke/bin/python tests/installed_v11_block2_smoke.py
 
       - name: Audit installed structure/electronic/bonding/ELFCAR/band/PROCAR/LOCPOT adapters
         run: |
@@ -175,3 +176,4 @@ jobs:
         run: |
           .venv-desktop/bin/python tests/installed_v10_desktop_smoke.py
           .venv-desktop/bin/python tests/installed_v11_block1_desktop_smoke.py
+          .venv-desktop/bin/python tests/installed_v11_block2_desktop_smoke.py

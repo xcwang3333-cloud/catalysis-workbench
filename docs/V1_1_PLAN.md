@@ -4,7 +4,7 @@
 
 v1.1 moves the optional desktop from a workspace-first administration shell toward a task-first scientific workbench while preserving the reviewed v1.0 scientific, workflow, provenance, and workspace contracts.
 
-The first implementation block is intentionally narrow: it establishes a deterministic analysis-document lifecycle and a Home/Analysis presentation shell. Real data import, scientific processing, workflow execution, and publication-figure work remain later blocks.
+Block 1 established the deterministic analysis-document lifecycle and Home/Analysis presentation shell. Block 2 adds explicit real-data intake, mapping, raw-source ownership, and mapped-raw preview. Scientific processing, workflow execution from the task-first surface, Figure Workbench, and publication export remain later blocks.
 
 ## Block 1 — AnalysisDocument + Home shell
 
@@ -37,7 +37,7 @@ There is no extension-based task inference or dynamic plugin discovery in this b
 
 ### AnalysisDocument
 
-`AnalysisDocument` is immutable and deterministic. Its serialized scientific/application state is only:
+`AnalysisDocument` is immutable and deterministic. Its Block-1 serialized scientific/application state is only:
 
 ```json
 {
@@ -61,7 +61,7 @@ project-root/
 
 `workspace.json` remains the asset catalog. `project.json` is application/document control state and is reserved workspace metadata rather than a `WorkspaceAsset`.
 
-The project envelope is:
+The Block-1 project envelope is:
 
 ```json
 {
@@ -127,3 +127,131 @@ Block 1 bootstraps the v1.1 development line at `1.1.0.dev0`. Distribution/runti
 ## Block 1 non-scope
 
 Block 1 does not add real CSV/TXT/XLSX data mapping, LSV or FE computation changes, automatic workspace-to-workflow binding, Figure Workbench implementation, publication-package export, new third-party dependencies, Git tags, GitHub Releases, or PyPI publication.
+
+## Block 2 — Data Intake & Mapping
+
+### User flow
+
+```text
+Home
+    -> choose task
+    -> Analysis Workbench
+    -> Add files / drop files
+    -> bounded preview
+    -> explicit X/Y + meaning + unit/reference mapping
+    -> confirm each file
+    -> mapped raw live preview
+    -> rename / reorder / edit mapping / preview data
+    -> Save Project
+    -> reopen and materialize from workspace-owned raw bytes
+```
+
+Block 2 does not require a project directory before data intake. Source bytes can be mapped while the analysis remains an unsaved in-memory document; the first Save Project operation takes ownership of those exact bytes through verified workspace copies.
+
+### Supported file boundary
+
+The normal desktop accepts exactly the reviewed Block-2 tabular formats:
+
+- `.csv`;
+- `.txt`;
+- `.tsv`;
+- `.dat`;
+- `.xlsx`; and
+- `.xlsm`.
+
+Recursive import, legacy `.xls`, directory watching, arbitrary binary formats, and normal-user external-reference mode are outside Block 2.
+
+### Deterministic data model
+
+Block 2 advances `AnalysisDocument` to schema 2. A schema-2 document may contain an ordered tuple of `DataSeriesSpec` records. Existing schema-1 analysis documents remain readable through an explicit compatibility migration; opening a schema-1 project does not mutate the project file merely because it was read.
+
+Each mapped input separates three concepts:
+
+- `SourceSpec`: immutable source-format and exact-content identity;
+- `TabularMappingSpec`: parser state plus explicit X/Y scientific mapping; and
+- `DataSeriesSpec`: one named mapped series that combines source and mapping state.
+
+Raw, mapping, and scientific-input identities are deterministic and path independent. File-system paths are transient locators only and are not scientific identity. The same exact bytes and mapping therefore retain the same scientific-input identity after a project or source file moves.
+
+The desktop does not expose workspace asset IDs, recipe IDs, SHA fields, or copy/reference policy as normal-user data-entry fields.
+
+### Preview and parser contract
+
+`io.tabular_preview` provides a bounded GUI-neutral preview. The preview is intentionally not a spreadsheet editor and does not change raw values.
+
+For delimited text, syntax-level delimiter detection may be used to establish the explicit parser state. For Excel, sheet selection remains visible. Changing delimiter or sheet parser state invalidates confirmation until the preview has been reloaded with that parser state.
+
+Unit inference is deliberately conservative. Only trailing square-bracket syntax such as `Potential [V]` or `Current density / [mA cm^-2]` is inferred automatically. Parentheses are not treated as units because they may carry scientific semantic meaning. Scientific X/Y meaning, unit, and optional reference remain explicit mapping fields.
+
+Import status is per file:
+
+- `✓` confirmed and valid;
+- `⚠` structurally usable but still requiring explicit confirmation; or
+- `✕` invalid or not currently previewable/mappable.
+
+`Apply this mapping to compatible files` copies X/Y column positions and their scientific semantic fields only when the target has those positions and the selected X/Y column names plus conservatively inferred units exactly match the source preview. Same-position columns with different headers or inferred units are not auto-confirmed. The batch action does not copy parser state and does not interpolate, resample, or otherwise reshape target data.
+
+### Materialization boundary
+
+A confirmed `DataSeriesSpec` materializes deterministically into a path-free core `Series`. Materialization performs parsing, exact selected-column extraction, numeric validation, and explicit axis metadata construction only.
+
+Block 2 does **not** perform RHE conversion, iR correction, geometric-area normalization, FE arithmetic, partial-current calculation, smoothing, interpolation, filtering, fitting, baseline correction, or plot-range cropping. Those belong to scientific processing or presentation blocks.
+
+The Analysis Workbench center pane can sample a large materialized series for responsive drawing, but display sampling is presentation-only and never modifies the scientific `Series`, its SHA identity, or the stored raw bytes.
+
+### Workspace ownership and first-save transaction
+
+Before first save, `AnalysisSession` retains verified transient locations for source bytes. Each add operation re-verifies the source digest before accepting the mapping.
+
+The first Save As operation is staged in a sibling temporary directory. All required workspace-owned raw copies, `workspace.json`, and `project.json` are written and verified before the final project root becomes authoritative. A failed stage does not expose a half-created project as a successful save.
+
+After save, materialization and Edit Mapping resolve the workspace-owned copy instead of depending on the original external path. Deleting or moving the original external source therefore does not invalidate a correctly saved project.
+
+Workspace raw bytes are digest pinned. The expected raw digest is carried into the batch-copy request and compared with the digest calculated while bytes are copied, so a source that changes after pre-save verification but during copying is rolled back before manifest commit. A changed workspace copy after save, a missing copy, manifest mismatch, or concurrent control-file mutation also fails closed instead of being silently accepted as old evidence.
+
+Batch raw-copy registration uses an expected workspace-manifest identity and rollback rules that remove only exact artifacts created by the failed operation. Unknown external content is never deleted.
+
+### Analysis-session semantics
+
+Adding multiple files is one semantic document revision, so the batch can be undone as one operation. Rename, mapping replacement, remove, and reorder are also explicit semantic revisions.
+
+Series order in schema 2 is literal application state and is retained across save/reopen. Block 2 does not create hidden sorting rules.
+
+Saved edits remain subject to the existing dirty-state contract: Home, Open Project, and Exit require Save, Discard, or Cancel when the analysis differs from its baseline.
+
+### Desktop surface
+
+The Block-2 Analysis Workbench uses the reviewed three-column layout:
+
+```text
+DATA (left) | LIVE ANALYSIS PREVIEW (center, largest) | PROCESSING (right)
+```
+
+The DATA pane supports multi-file selection, file drop, mapped-series selection, inline display-name editing, drag reorder, Edit mapping, Preview data, and explicit removal.
+
+The center pane plots mapped raw data and labels axes from the explicit mapping. It does not claim that scientific processing has occurred.
+
+The PROCESSING pane remains a boundary placeholder in Block 2. `Continue to Figure` remains disabled until a later block defines and validates scientific processing state.
+
+### Compatibility and validation gates
+
+Block 2 must preserve the frozen v1.0 public surface while adding the v1.1 functionality through its explicit modules and application types. In particular, `workspace.__all__`, `workspace.assets.__all__`, and the frozen desktop compatibility exports are not widened merely to expose new internal transaction helpers.
+
+The Block-2 gates include:
+
+- deterministic source/mapping/input identity tests;
+- schema-1 read compatibility and schema-2 persistence tests;
+- bounded preview tests;
+- materialization identity tests;
+- batch session add/edit/remove/reorder/undo coverage;
+- external-source mutation and missing-source fail-closed coverage;
+- workspace-copy digest/tamper coverage, including copy-time expected-digest mismatch rollback;
+- first-save staging and rollback coverage;
+- installed-wheel Block-2 raw-source persistence smoke;
+- fresh-wheel offscreen desktop import/mapping/live-preview/edit-mapping smoke, including negative batch-compatibility coverage;
+- full regular CI; and
+- the complete Stable 1.0 Readiness compatibility matrix.
+
+## Block 2 non-scope
+
+Block 2 does not add electrochemical transformation controls, workflow execution changes, Figure Workbench, publication-package export, automatic scientific/domain inference, recursive import, `.xls`, normal-user external-reference mode, hidden interpolation/resampling, new scientific dependencies, Git tags, GitHub Releases, or PyPI publication.

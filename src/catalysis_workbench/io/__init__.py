@@ -19,13 +19,23 @@ from .structure import (
     read_xyz_structure,
 )
 from .tabular import TabularReadError, read_csv, read_excel, read_tabular, read_txt
+from .tabular_preview import (
+    TabularColumnPreview,
+    TabularPreview,
+    TabularPreviewError,
+    inspect_tabular,
+)
 
 __all__ = [
     "BaderIOError",
     "ElectronicStructureIOError",
     "LobsterIOError",
     "StructureIOError",
+    "TabularColumnPreview",
+    "TabularPreview",
+    "TabularPreviewError",
     "TabularReadError",
+    "inspect_tabular",
     "read_bader_acf",
     "read_chgcar_density",
     "read_cif_structure",
