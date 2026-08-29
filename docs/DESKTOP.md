@@ -2,45 +2,66 @@
 
 CatalysisWorkbench provides an optional local Qt presentation layer over the reviewed application, workspace, workflow, visualization, and scientific APIs. The base package remains usable without Qt.
 
+## Stable and development lines
+
+- stable baseline: `v1.0.0` at `22b944992bfd3791f91cc951f89eb22e8bf47325`;
+- current development identity: `1.1.0.dev0`;
+- current desktop phase: v1.1 Block 6 — Dogfooding Hardening & Desktop Cleanup;
+- PyPI/package-registry publication: not performed.
+
+The stable v1.0 compatibility shell remains available while v1.1 develops a task-first ordinary-user workbench.
+
 ## Installation
+
+Base package:
 
 ```bash
 python -m pip install .
 ```
 
-Install the desktop extra when the Qt Widgets shell is required:
+Desktop extra:
 
 ```bash
 python -m pip install ".[desktop]"
 ```
 
-The approved optional dependency is:
+Approved optional GUI dependency:
 
 ```text
 PySide6-Essentials>=6.11.2,<6.12
 ```
 
-The desktop package is lazy: importing `catalysis_workbench.desktop` does not import PySide6. Toolkit modules are loaded only when a desktop class or launcher is requested. If the optional extra is absent, explicit desktop access fails with `DesktopDependencyError` rather than breaking base-package imports.
+Qt is not a base runtime dependency. Importing `catalysis_workbench.desktop` remains lazy and does not import PySide6 until an actual graphical path is requested.
 
-## Default launch in v1.1 development
+## Ordinary-user command line
 
-From an environment containing the desktop extra:
+After installing the desktop extra:
 
 ```bash
-python -m catalysis_workbench.desktop
+catalysis-workbench
 ```
 
-The no-argument launcher opens the task-first v1.1 Home shell. Home offers:
+opens the task-first v1.1 Home shell.
 
-- LSV / Polarization;
-- FE & Partial Current;
-- Generic XY Plot;
-- Open Project; and
-- Recent Projects.
+A saved v1.1 analysis project can be opened explicitly with:
 
-Choosing a task creates a clean in-memory untitled analysis. It does **not** ask for a directory. The first Save Project operation creates the project directory and writes `workspace.json` plus `project.json`.
+```bash
+catalysis-workbench --project /path/to/project
+```
 
-The current v1.1 workbench now covers the reviewed ordinary-user path through Block 5:
+The installed version can be inspected without loading Qt:
+
+```bash
+catalysis-workbench --version
+```
+
+`python -m catalysis_workbench.desktop` uses the same task-first command-line path.
+
+If graphical launch is requested without the optional desktop dependencies, the CLI prints an actionable `[desktop]` installation instruction instead of exposing a raw PySide6 import traceback.
+
+The existing Python `launch_desktop(root)` compatibility behavior is not reinterpreted by the console command. Explicit legacy v1.0 integration paths remain frozen.
+
+## v1.1 ordinary-user workflow
 
 ```text
 Home
@@ -49,25 +70,33 @@ Home
   -> Export Figure Package
 ```
 
-Data intake and mapping are explicit, scientific processing is task-specific, figure editing is presentation-only, and export produces publication figure files together with source data while provenance remains an internal workspace concern.
+### Home
 
-## Analysis Workbench
+Home offers three reviewed tasks:
 
-The normal Analysis Workbench is a three-column view:
+- LSV / Polarization;
+- FE & Partial Current; and
+- Generic XY Plot.
+
+It also exposes Open Project and Recent Projects.
+
+Choosing a task creates a clean in-memory analysis. A project directory is created only by an explicit Save Project action.
+
+Recent Projects is presentation-only `QSettings` history. Paths and timestamps never participate in scientific identities. Block 6 caches resolved recent-project display state while the stored `(path, last_opened)` fingerprint is unchanged, so unrelated processing/Figure refreshes do not repeatedly reopen historical projects from disk.
+
+### Analysis Workbench
+
+The reviewed layout is:
 
 ```text
 DATA  |  LIVE ANALYSIS PREVIEW  |  PROCESSING
 ```
 
-The center preview remains the largest region. The DATA pane owns source and mapping state, the center pane displays mapped raw or current scientific results, and PROCESSING owns task-specific scientific parameters.
+The center preview remains the largest region.
 
-`Continue to Figure` becomes available only when the committed analysis evaluates successfully. It does not bypass invalid draft processing state.
+#### Data intake and mapping
 
-## v1.1 Block 2 data intake and mapping
-
-### Add files
-
-`+ Add files` and drag-and-drop accept the reviewed tabular formats:
+Normal-user tabular formats are:
 
 - `.csv`;
 - `.txt`;
@@ -76,169 +105,120 @@ The center preview remains the largest region. The DATA pane owns source and map
 - `.xlsx`; and
 - `.xlsm`.
 
-Multiple files can be selected in one intake operation. Recursive directory import, legacy `.xls`, and normal-user external-reference mode are intentionally outside v1.1.
-
-Each selected file is hashed before it enters the analysis document. File-system locations are used only to locate bytes; absolute paths do not participate in raw, mapping, or scientific-input identity.
-
-### Preview and explicit mapping
-
-The Import Data dialog separates file selection, a bounded read-only preview, and explicit mapping. The user confirms:
+The import dialog separates bounded read-only preview from explicit scientific mapping. The user confirms:
 
 - X column;
-- X scientific meaning;
+- X meaning;
 - X unit;
-- optional X reference such as `RHE`;
+- optional X reference;
 - Y column;
-- Y scientific meaning;
+- Y meaning;
 - Y unit; and
 - series display name.
 
-Parser state remains explicit. Excel sheets are selected visibly. Delimited-text input records the resolved delimiter. If the delimiter or sheet parser state is changed, the preview must be reloaded before the mapping can be confirmed.
+Parser state remains visible. Delimited text retains its resolved delimiter; Excel retains the selected sheet. Changing parser state invalidates confirmation until preview reload.
 
-Unit inference is deliberately conservative: only a trailing square-bracket form such as `Potential [V]` or `Current density / [mA cm^-2]` is treated as an inferred unit. Parentheses are not interpreted as units because scientific headers often use parentheses for semantic content. Inferred values remain editable and must still pass the explicit mapping gate.
+Unit inference remains deliberately conservative: only trailing square-bracket forms such as `Potential [V]` are inferred. Parentheses are not treated as units.
 
-Each file is shown as valid/confirmed, requiring confirmation, or invalid. `Apply this mapping to compatible files` copies the selected X/Y positions and scientific semantics only when the target has those positions **and** the selected X/Y column names plus conservatively inferred units exactly match the source preview. Files with the same column positions but different headers or inferred units remain unconfirmed and require explicit review. The batch action does not rewrite each file's parser state or silently interpolate data.
+`Apply this mapping to compatible files` requires matching selected column positions, names, and conservatively inferred units. It does not silently reinterpret differently labeled files.
 
-### Data list and mapped raw preview
+Before first save, the session retains verified source locations. First save stages verified workspace-owned raw copies and project control state before publication. After save, materialization uses the workspace-owned raw bytes. Missing, changed, or tampered bytes fail closed.
 
-Mapped series appear in the DATA list. The user can:
+#### Live scientific processing
 
-- rename a series;
-- reorder series by drag-and-drop;
-- edit a mapping;
-- inspect a read-only data preview; and
-- remove a series from the analysis.
+Processing state is explicit task-specific application state, not arbitrary recipe editing.
 
-The central Matplotlib preview may sample large series for display responsiveness, but display sampling never changes the materialized scientific `Series`, its input identity, workflow identity, or the saved raw bytes.
-
-### Saved raw ownership and fail-closed behavior
-
-Before the first save, the analysis session keeps verified transient locations for the selected source bytes. The first Save Project operation stages the project and workspace-owned raw copies before the final project directory becomes authoritative.
-
-After a successful save, materialization and Edit Mapping use the verified workspace-owned copy rather than depending on the original external path. Moving or deleting the original external file therefore does not break a correctly saved project.
-
-Raw-file mutation and workspace-copy tampering fail closed. The application re-verifies the expected source digest before materialization or mapping edits and pins that expected digest into the batch copy itself, so a source that changes between pre-save verification and copying is rolled back before the workspace manifest is committed.
-
-Workspace batch-copy operations use expected-manifest checks. Project/document writes retain the existing exact-identity concurrency rules, and failed first-save staging is rolled back without deleting unknown external content.
-
-## v1.1 Block 3 live scientific analysis
-
-Block 3 advances `AnalysisDocument` to schema 3 and persists deterministic task-specific processing state. Schema 1 and 2 projects remain readable and are normalized in memory to schema 3 without rewriting their project file during open. An explicit subsequent save writes the schema-3 form.
-
-Computed arrays are runtime-only. GUI draft text, selected preview tab, file-system paths, timestamps, and display sampling are not part of document identity.
-
-### LSV / Polarization
-
-The LSV task exposes a common processing configuration and optional per-series overrides. The normal-user controls include:
+LSV / Polarization supports reviewed controls for:
 
 - no RHE conversion, direct RHE offset, or reference-vs-SHE + pH conversion;
-- temperature for the SHE/pH conversion path;
+- temperature for the SHE/pH route;
 - solution resistance and iR-correction fraction;
-- optional electrode area and current-density normalization;
+- optional geometric area/current-density normalization;
 - explicit output current-density unit; and
-- scientific analysis-range limits.
+- scientific analysis range.
 
-Analysis range is scientific processing state and is intentionally distinct from the Figure Workbench display range.
+FE & Partial Current requires explicit current-series ↔ FE-series pairs. The desktop does not infer pairs from filenames, display names, or order. FE/current x coordinates must already be compatible; no interpolation/resampling/nearest-match alignment is introduced.
 
-### FE & Partial Current
+Generic XY intentionally supports only the reviewed mapped-data path plus scientific analysis-range cropping. The v1.1 desktop does not add generic smoothing, fitting, baseline correction, or normalization.
 
-The FE & Partial Current task requires explicit current-series ↔ FE-series pairing. Pairs are not inferred from filenames, display names, list order, or matching point counts.
+Processing fields remain draft UI state until they form a valid scientific configuration and candidate evaluation succeeds. Invalid drafts do not mutate the committed `AnalysisDocument`. A previous valid result may remain visible only with an explicit stale label indicating that current settings are not applied.
 
-Current inputs can use the same current-processing model as LSV before partial-current calculation. FE and current inputs must already use compatible x coordinates. Block 3 does not interpolate, resample, nearest-match, or otherwise fabricate alignment.
+### Figure Workbench
 
-Partial current uses the reviewed signed current-density convention. The live preview exposes FE and partial current as separate views rather than placing unlike y quantities on one implicit axis.
-
-### Generic XY
-
-Generic XY intentionally supports analysis-range cropping only in Block 3. Smoothing, fitting, baseline correction, normalization, interpolation, and other generic transformations remain out of scope.
-
-### Live evaluation and workflow identity
-
-Task-first processing state compiles into an internal deterministic `WorkflowRecipe`. The analysis layer resolves its private Block-3 operation descriptors without mutating the frozen public workflow registry.
-
-`AnalysisEvaluator` materializes mapped inputs, executes the compiled analysis, and returns explicit `success`, `incomplete`, or `error` state. A successful result carries a deterministic `WorkflowRun` and scientific output identities.
-
-Display-name edits do not change scientific run identity. Mapping edits that change `data_id` atomically rewrite any processing override and explicit FE/current pair references. Removing a referenced data series atomically removes its dependent processing references and remains one undoable document revision.
-
-### Processing drafts and previous-valid results
-
-Processing controls are draft UI state until the fields form a valid processing object and the candidate evaluates without a scientific execution error. Only then is the processing state committed to `AnalysisDocument`.
-
-Invalid numeric text or invalid scientific settings do not mutate the committed document. If a previous valid run exists, the center pane may continue displaying it only with the explicit stale label:
-
-```text
-Previous valid result — current settings are not applied
-```
-
-The stale result is not presented as current evidence and is never persisted as document state.
-
-Save, Home, Open Project, mapping edits, data removal, and application close do not silently discard an invalid uncommitted processing draft. The desktop requires an explicit discard/cancel decision before the transition.
-
-## v1.1 Block 4 Figure Workbench
-
-Block 4 advances `AnalysisDocument` to schema 4 and stores immutable `FigureDraft` presentation state bound to exact scientific trace identities. A FigureDraft is created explicitly from a successful analysis result and becomes stale when its underlying scientific result changes.
-
-The Figure Workbench is a three-column publication editor:
+The reviewed layout is:
 
 ```text
 CONTENT  |  PUBLICATION PREVIEW  |  PROPERTIES
 ```
 
-Normal controls cover result selection, trace visibility/order/labels, publication preset, physical figure size, axis labels/scales, display ranges, legend, typography, line and marker styling. These edits affect presentation only. They do not modify processing parameters or scientific arrays.
+`FigureDraft` is presentation state bound to exact scientific trace identities. Figure edits can control:
 
-Display range is deliberately distinct from analysis range. Setting Figure Workbench `xlim` or `ylim` changes the rendered view but does not crop the scientific series. When analysis results change, the figure is explicitly marked stale and styling is disabled until `Refresh from Analysis` rebinds the FigureDraft to the new exact scientific identities.
+- selected result view;
+- trace visibility/order/labels;
+- publication preset;
+- physical figure size;
+- axis labels and scales;
+- display ranges;
+- legend;
+- typography; and
+- line/marker styling.
 
-## v1.1 Block 5 Figure Package export
+Presentation edits never rewrite scientific processing or arrays.
 
-`Continue to Export` opens an explicit Figure Package page for a current FigureDraft. The page shows ordinary-user preflight state rather than workspace asset IDs, hashes, evidence records, or composition internals.
+Figure display range is distinct from scientific analysis range. If scientific results change, the FigureDraft becomes stale. Styling/export remains blocked until the user explicitly refreshes the Figure from Analysis.
 
-The reviewed export formats are:
+### Figure Package Export
 
-- figure files: SVG, PDF, PNG;
+The reviewed package formats are:
+
+- figure: SVG, PDF, PNG;
 - source data: XLSX, TXT.
 
-At least one figure format and one source-data format must be selected. The destination must be a new directory whose parent already exists.
+At least one figure format and one source-data format are required. The destination must be a new directory with an existing real parent directory.
 
-Export preflight requires:
+Preflight requires:
 
-- the analysis project is saved and clean;
-- the selected FigureDraft is current rather than stale;
-- its configured font family is available on the system; and
-- at least one trace remains visible.
+- saved and clean project state;
+- current rather than stale FigureDraft;
+- available configured font family; and
+- at least one visible trace.
 
-The source-data package contains the **full scientific arrays** for visible traces. Figure display limits never crop exported source data. TXT and XLSX outputs preserve explicit missing-value information; each exported trace is also bound to its exact scientific identity in the package manifest.
+Block 6 adds an explicit `Save Project` button when export preflight reports an unsaved/dirty project. This remains an explicit save; first save still asks the user for the project location. There is no hidden autosave.
 
-A package semantic SHA is derived from path-independent scientific/presentation state and selected formats. File-system destination, timestamps, and absolute paths are excluded from that semantic identity. The package manifest separately records exact SHA-256 and size for every generated file, so binary container differences remain verifiable without contaminating scientific identity.
+After success, the Export page exposes:
 
-Publication is fail-closed. The application writes and verifies a sibling staging directory, commits verified workspace-owned FigureSpec/package assets and evidence/composition provenance, then publishes the complete external directory. If final directory publication fails, the external package is not left authoritative and the workspace provenance transaction is rolled back to its exact pre-export state when that rollback remains safe.
+- `Open Folder` — asks the operating system to open/reveal the package directory; and
+- `Export Another` — clears the destination/success presentation state while retaining selected formats.
 
-A successful export is not an `AnalysisDocument` edit. It therefore preserves document SHA, revision, Undo/Redo stacks, and clean/dirty state while advancing only the session's expected workspace-manifest baseline to include the new provenance records.
+The application does not automatically overwrite, merge, or suffix existing packages.
+
+Source-data output contains the **full scientific arrays** for visible traces. Figure display limits never crop source data. TXT/XLSX preserve missing-value information. The package manifest records a path-independent semantic package identity plus exact per-file SHA-256/size verification.
+
+Package generation and publication are staged and fail closed. Unknown concurrent target/workspace content is never silently deleted during rollback.
+
+A successful export advances workspace provenance but is not an `AnalysisDocument` semantic revision; document SHA, revision, Undo/Redo, and clean/dirty state are preserved.
+
+## Block 6 hardening behavior
+
+The Block-6 contract is in [`V1_1_BLOCK6.md`](V1_1_BLOCK6.md).
+
+The final fresh-wheel desktop gate covers Generic XY, LSV, and FE/Partial Current from real file-backed inputs through Figure Package generation and saved-project reopen verification.
+
+Block 6 also hardens errors at the desktop presentation boundary. User dialogs provide a short actionable summary and retain the exact original exception text under technical details. This does not repair or reinterpret failed scientific/application state.
+
+High-value guidance exists for externally changed project/workspace state, legacy v1.0 workspaces presented to the v1.1 path, and unavailable figure fonts. Unknown errors retain their exact underlying message.
 
 ## v1.0 compatibility shell
 
-The reviewed v1.0 desktop remains available for explicit integrations through `catalysis_workbench.desktop.app.create_desktop(...)` and `ApplicationSession`. It retains workspace/asset, recipe, workflow, evidence/QA, and FigureSpec behavior.
+The reviewed v1.0 desktop remains available for explicit integrations through `catalysis_workbench.desktop.app.create_desktop(...)` and `ApplicationSession`.
 
-The v1.1 task-first shell does not replace or migrate existing v1.0 workspaces. A v1.0 workspace that lacks `project.json` is reported as a legacy workspace when passed to the v1.1 Open Project path; the application does not guess which scientific task it represents.
+The v1.1 task-first shell does not automatically migrate legacy v1.0 workspaces. A legacy workspace without `project.json` fails closed when passed to the v1.1 Open Project path.
 
-The frozen v1.0 top-level `catalysis_workbench.desktop.__all__` contract remains a compatibility gate even though the v1.1 window exists through its explicit module/API path.
-
-The cumulative Block-2 desktop preview compatibility entry point remains available for installed-wheel regression coverage while the current workbench routes normal preview refresh through live evaluation.
-
-## Analysis-document lifecycle
-
-The v1.1 `AnalysisDocument` and `AnalysisSession` live in the GUI-neutral application layer.
-
-An untouched untitled analysis is **unsaved but clean**. It can return Home without a discard prompt. Once the user edits title, mapping, data ordering, committed processing state, or FigureDraft presentation state, the document becomes dirty and Home/Open/Exit transitions require Save, Discard, or Cancel.
-
-Undo and redo restore semantic document identities. Saving establishes a new baseline but does not erase undo history. Export is intentionally excluded from semantic Undo/Redo because it is a verified file-system/provenance side effect rather than a document revision.
-
-A saved project keeps application control state in `project.json`. `project.json` is reserved workspace metadata, not an ordinary workspace asset. Project saves verify exact workspace/project identities and fail closed when files changed outside the current analysis session.
-
-Recent Projects is presentation-only `QSettings` history. It stores paths and last-opened UI timestamps but is not part of scientific provenance or project SHA identity. Missing entries stay visible as unavailable until the user removes them.
+The frozen v1.0 top-level `catalysis_workbench.desktop.__all__` contract remains unchanged during v1.1 development even though explicit v1.1 modules/classes exist.
 
 ## Architecture boundary
 
-The dependency direction is one-way:
+Dependency direction remains:
 
 ```text
 scientific layers
@@ -252,36 +232,29 @@ scientific layers
    desktop
 ```
 
-The desktop layer is presentation and interaction only. It does not own scientific algorithms, domain inference, QA policy, workflow scheduling, provenance reconstruction, or workspace persistence rules. Bounded parser inspection is delegated to the GUI-neutral I/O layer; scientific column meaning, units, processing parameters, figure state, and export transactions remain explicit application state.
+The desktop owns presentation and interaction only. It does not own scientific algorithms, scientific inference, QA policy, workflow scheduling, provenance reconstruction, or workspace persistence rules.
 
-`application.analysis` remains headless and must not import PySide6 or PyQt. Matplotlib rendering is invoked lazily by figure/export operations rather than imported as desktop state.
+`application.analysis` remains GUI-neutral and must not import PySide6/PyQt. Matplotlib rendering is invoked only by reviewed visualization/application paths.
 
-## Legacy workspace, recipe, evidence, and figure behavior
+## CI and installed-wheel validation
 
-The v1.0 compatibility shell still supports explicit local workspace creation/opening and explicit file import. Import remains intentionally non-magical: callers supply source, stable asset ID, asset type, `copy` versus `reference`, and copy destination when applicable.
+Regular scientific/application tests remain Qt-free. The desktop extra is installed separately for offscreen validation.
 
-Recipe editing preserves literal `WorkflowRecipe` step order. Workflow execution still requires explicit in-memory inputs and explicit input identities; the compatibility desktop does not infer workflow inputs from catalog assets.
+The cumulative v1.1 gates include:
 
-The compatibility shell can inspect reviewed run, evidence-ledger, and QA state without fabricating provenance. Existing FigureSpec presentation editing remains presentation-only and does not mutate scientific results.
-
-## CI and packaging validation
-
-Regular application tests remain Qt-free and the desktop extra is installed separately for offscreen Qt validation. The cumulative v1.1 Blocks 1–5 gates include:
-
-- deterministic AnalysisDocument/task-catalog and schema migration tests;
-- path-independent source/mapping/input identity and bounded preview tests;
-- raw-copy persistence, mutation, tamper, rollback, and manifest-concurrency tests;
-- task-specific scientific processing, explicit FE/current pairing, workflow execution, and identity tests;
-- invalid-draft and previous-valid-result desktop behavior;
+- deterministic AnalysisDocument/task-catalog/schema compatibility tests;
+- data intake, mapping, raw-copy, mutation/tamper/rollback tests;
+- LSV/FE/Generic XY scientific-processing and identity tests;
+- invalid processing-draft and previous-valid-result behavior;
 - FigureDraft exact binding, stale/refresh, display-range, and presentation-only tests;
-- Figure Package semantic identity, full-source-data, missing-value, workspace provenance, and publication-rollback tests;
-- cumulative fresh-wheel headless v1.1 Block 1–5 smokes;
-- cumulative fresh-wheel offscreen v1.1 Block 1–5 desktop smokes;
-- the existing frozen v1.0 installed-wheel and desktop compatibility smokes; and
-- the complete Stable 1.0 Readiness compatibility matrix.
+- Figure Package identity/full-source-data/provenance/rollback tests;
+- fresh-wheel Qt-free `catalysis-workbench --version` validation;
+- complete offscreen Generic XY/LSV/FE desktop dogfood journeys;
+- frozen v1.0 installed-wheel and desktop compatibility smokes; and
+- complete Stable 1.0 Readiness platform coverage.
 
-The development candidate is `1.1.0.dev0`. The existing Stable 1.0 Readiness workflow remains active as a frozen v1.0 API/desktop compatibility audit while its candidate-version and artifact checks follow the currently built v1.1 development wheel.
+The development candidate remains `1.1.0.dev0`.
 
 ## Release boundary
 
-v1.1 Block 5 does not authorize a Git tag, GitHub Release, or PyPI publication. Those remain separate release decisions.
+Block 6 does not authorize final `1.1.0`, a v1.1 tag, GitHub Release, installer publication, or PyPI/package-registry publication. Those remain separate decisions after dogfooding review.
