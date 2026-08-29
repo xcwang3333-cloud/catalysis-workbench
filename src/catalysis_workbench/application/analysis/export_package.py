@@ -1,4 +1,4 @@
-"""Atomic publication Figure Package export for v1.1 analyses."""
+"""Figure Package models, staged writers, and workspace provenance helpers."""
 
 from __future__ import annotations
 
@@ -6,14 +6,16 @@ import hashlib
 import json
 import math
 import os
-import shutil
 import tempfile
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from catalysis_workbench._canonical_json import canonical_json_bytes, canonical_json_sha256
+from catalysis_workbench._canonical_json import (
+    canonical_json_bytes,
+    canonical_json_sha256,
+)
 from catalysis_workbench.workspace import open_workspace
 from catalysis_workbench.workspace.assets import (
     CopyAssetRequest,
@@ -37,14 +39,7 @@ from catalysis_workbench.workspace.manifest import WorkspaceError
 
 from .document import AnalysisDocument
 from .evaluator import AnalysisResult
-from .figure import (
-    FigureDraft,
-    FigureSourceView,
-    figure_draft_is_stale,
-    figure_source_view,
-    render_figure_draft,
-)
-from .persistence import AnalysisProjectError, open_analysis_project
+from .figure import FigureDraft, FigureSourceView, render_figure_draft
 
 _FIGURE_FORMAT_ORDER = ("svg", "pdf", "png")
 _SOURCE_FORMAT_ORDER = ("xlsx", "txt")
@@ -108,11 +103,15 @@ class _TrackedMetadata:
     @classmethod
     def capture(cls, path: Path) -> _TrackedMetadata:
         if path.is_symlink():
-            raise FigurePackageExportError(f"metadata path must not be a symlink: {path.name}")
+            raise FigurePackageExportError(
+                f"metadata path must not be a symlink: {path.name}"
+            )
         if not path.exists():
             return cls(path=path, original=None)
         if not path.is_file():
-            raise FigurePackageExportError(f"metadata path must be a regular file: {path.name}")
+            raise FigurePackageExportError(
+                f"metadata path must be a regular file: {path.name}"
+            )
         return cls(path=path, original=path.read_bytes())
 
     def note(self) -> None:
@@ -129,7 +128,10 @@ class _TrackedMetadata:
             return False
         if self.path.exists():
             if not self.path.is_file() or self.path.read_bytes() != self.expected:
-                return self.original is not None and self.path.read_bytes() == self.original
+                return (
+                    self.original is not None
+                    and self.path.read_bytes() == self.original
+                )
         elif self.expected is not None:
             return self.original is None
         if self.original is None:
@@ -139,10 +141,17 @@ class _TrackedMetadata:
         return True
 
 
-def _formats(values: Sequence[str], *, allowed: Sequence[str], label: str) -> tuple[str, ...]:
+def _formats(
+    values: Sequence[str],
+    *,
+    allowed: Sequence[str],
+    label: str,
+) -> tuple[str, ...]:
     if isinstance(values, (str, bytes)) or not isinstance(values, Sequence):
         raise TypeError(f"{label} must be an ordered sequence")
-    normalized = tuple(str(item).strip().lower().lstrip(".") for item in values)
+    normalized = tuple(
+        str(item).strip().lower().lstrip(".") for item in values
+    )
     if len(set(normalized)) != len(normalized):
         raise FigurePackageExportError(f"{label} values must be unique")
     unknown = sorted(set(normalized) - set(allowed))
@@ -163,7 +172,11 @@ def _replace_bytes_atomically(path: Path, payload: bytes) -> None:
     descriptor: int | None = None
     temporary: Path | None = None
     try:
-        descriptor, name = tempfile.mkstemp(prefix=f".{path.name}-", suffix=".tmp", dir=path.parent)
+        descriptor, name = tempfile.mkstemp(
+            prefix=f".{path.name}-",
+            suffix=".tmp",
+            dir=path.parent,
+        )
         temporary = Path(name)
         with os.fdopen(descriptor, "wb") as stream:
             descriptor = None
@@ -179,7 +192,10 @@ def _replace_bytes_atomically(path: Path, payload: bytes) -> None:
             temporary.unlink(missing_ok=True)
 
 
-def _visible_source(source: FigureSourceView, draft: FigureDraft) -> tuple[tuple[str, str, Any], ...]:
+def _visible_source(
+    source: FigureSourceView,
+    draft: FigureDraft,
+) -> tuple[tuple[str, str, Any], ...]:
     by_id = dict(zip(source.trace_ids, source.series, strict=True))
     visible: list[tuple[str, str, Any]] = []
     for trace_id in draft.trace_order:
@@ -194,7 +210,9 @@ def _visible_source(source: FigureSourceView, draft: FigureDraft) -> tuple[tuple
         )
         visible.append((trace_id, label, item))
     if not visible:
-        raise FigurePackageExportError("at least one figure trace must remain visible")
+        raise FigurePackageExportError(
+            "at least one figure trace must remain visible"
+        )
     return tuple(visible)
 
 
@@ -220,13 +238,21 @@ def _trace_index_entry(
         "x_name": series.x_axis.name,
         "x_label": series.x_axis.label,
         "x_unit": series.x_axis.unit,
-        "x_reference": _plain_metadata(series.x_axis.metadata.get("reference")),
-        "x_normalization": _plain_metadata(series.x_axis.metadata.get("normalization")),
+        "x_reference": _plain_metadata(
+            series.x_axis.metadata.get("reference")
+        ),
+        "x_normalization": _plain_metadata(
+            series.x_axis.metadata.get("normalization")
+        ),
         "y_name": series.y_axis.name,
         "y_label": series.y_axis.label,
         "y_unit": series.y_axis.unit,
-        "y_reference": _plain_metadata(series.y_axis.metadata.get("reference")),
-        "y_normalization": _plain_metadata(series.y_axis.metadata.get("normalization")),
+        "y_reference": _plain_metadata(
+            series.y_axis.metadata.get("reference")
+        ),
+        "y_normalization": _plain_metadata(
+            series.y_axis.metadata.get("normalization")
+        ),
     }
 
 
@@ -247,9 +273,21 @@ def _write_txt_source_data(
     written: list[Path] = []
     for index, (trace_id, label, series) in enumerate(visible, start=1):
         path = directory / f"trace-{index:03d}.txt"
-        metadata = _trace_index_entry(index, trace_id, label, identities[trace_id], series)
+        metadata = _trace_index_entry(
+            index,
+            trace_id,
+            label,
+            identities[trace_id],
+            series,
+        )
+        metadata_text = json.dumps(
+            metadata,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
         lines = [
-            "# metadata\t" + json.dumps(metadata, ensure_ascii=False, sort_keys=True, separators=(",", ":")),
+            "# metadata\t" + metadata_text,
             "x\ty\tx_missing\ty_missing",
         ]
         for x_value, y_value in zip(series.x, series.y, strict=True):
@@ -265,7 +303,11 @@ def _write_txt_source_data(
                     )
                 )
             )
-        path.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
+        path.write_text(
+            "\n".join(lines) + "\n",
+            encoding="utf-8",
+            newline="\n",
+        )
         written.append(path)
     return tuple(written)
 
@@ -284,10 +326,24 @@ def _write_xlsx_source_data(
     workbook.properties.modified = datetime(1980, 1, 1)
     index_sheet = workbook.active
     index_sheet.title = "Index"
-    headers = tuple(_trace_index_entry(1, "x", "x", "0" * 64, visible[0][2]).keys())
+    headers = tuple(
+        _trace_index_entry(
+            1,
+            "x",
+            "x",
+            "0" * 64,
+            visible[0][2],
+        ).keys()
+    )
     index_sheet.append(headers)
     for index, (trace_id, label, series) in enumerate(visible, start=1):
-        entry = _trace_index_entry(index, trace_id, label, identities[trace_id], series)
+        entry = _trace_index_entry(
+            index,
+            trace_id,
+            label,
+            identities[trace_id],
+            series,
+        )
         index_sheet.append(tuple(entry[key] for key in headers))
         sheet = workbook.create_sheet(f"Trace {index:03d}")
         sheet.append(("x", "y", "x_missing", "y_missing"))
@@ -307,7 +363,13 @@ def _write_xlsx_source_data(
     workbook.save(path)
 
 
-def _file_entry(root: Path, path: Path, *, role: str, format_name: str) -> dict[str, object]:
+def _file_entry(
+    root: Path,
+    path: Path,
+    *,
+    role: str,
+    format_name: str,
+) -> dict[str, object]:
     relative = path.relative_to(root).as_posix()
     return {
         "path": relative,
@@ -318,7 +380,10 @@ def _file_entry(root: Path, path: Path, *, role: str, format_name: str) -> dict[
     }
 
 
-def _workflow_provenance(view_id: str, result: AnalysisResult) -> dict[str, str] | None:
+def _workflow_provenance(
+    view_id: str,
+    result: AnalysisResult,
+) -> dict[str, str] | None:
     if view_id == "fe":
         return None
     run = result.workflow_run
@@ -346,7 +411,10 @@ def _semantic_manifest(
         "figure_draft_sha256": draft.figure_sha256,
         "source_view_sha256": source.source_view_sha256,
         "trace_order": trace_ids,
-        "trace_identities": {trace_id: source.trace_identities[trace_id] for trace_id in trace_ids},
+        "trace_identities": {
+            trace_id: source.trace_identities[trace_id]
+            for trace_id in trace_ids
+        },
         "figure_spec_sha256": figure_spec_sha256(draft.figure_spec),
         "figure_formats": list(options.figure_formats),
         "source_data_formats": list(options.source_data_formats),
@@ -365,10 +433,13 @@ def _write_package_stage(
     visible = _visible_source(source, draft)
     from matplotlib import font_manager
 
-    available_fonts = {entry.name for entry in font_manager.fontManager.ttflist}
+    available_fonts = {
+        entry.name for entry in font_manager.fontManager.ttflist
+    }
     if draft.figure_spec.style.font_family not in available_fonts:
         raise FigurePackageExportError(
-            f"font {draft.figure_spec.style.font_family!r} is unavailable on this system"
+            f"font {draft.figure_spec.style.font_family!r} "
+            "is unavailable on this system"
         )
 
     figure, _axes = render_figure_draft(document, result, draft)
@@ -378,8 +449,20 @@ def _write_package_stage(
 
         for format_name in options.figure_formats:
             path = stage / f"figure.{format_name}"
-            export_figure(figure, path, spec=draft.figure_spec, format=format_name)
-            files.append(_file_entry(stage, path, role="figure", format_name=format_name))
+            export_figure(
+                figure,
+                path,
+                spec=draft.figure_spec,
+                format=format_name,
+            )
+            files.append(
+                _file_entry(
+                    stage,
+                    path,
+                    role="figure",
+                    format_name=format_name,
+                )
+            )
     finally:
         from matplotlib import pyplot as plt
 
@@ -388,12 +471,37 @@ def _write_package_stage(
     if "xlsx" in options.source_data_formats:
         path = stage / "source-data.xlsx"
         _write_xlsx_source_data(path, visible, source.trace_identities)
-        files.append(_file_entry(stage, path, role="source_data", format_name="xlsx"))
+        files.append(
+            _file_entry(
+                stage,
+                path,
+                role="source_data",
+                format_name="xlsx",
+            )
+        )
     if "txt" in options.source_data_formats:
-        for path in _write_txt_source_data(stage, visible, source.trace_identities):
-            files.append(_file_entry(stage, path, role="source_data", format_name="txt"))
+        for path in _write_txt_source_data(
+            stage,
+            visible,
+            source.trace_identities,
+        ):
+            files.append(
+                _file_entry(
+                    stage,
+                    path,
+                    role="source_data",
+                    format_name="txt",
+                )
+            )
 
-    semantic = _semantic_manifest(document, result, draft, source, visible, options)
+    semantic = _semantic_manifest(
+        document,
+        result,
+        draft,
+        source,
+        visible,
+        options,
+    )
     package_sha256 = canonical_json_sha256(semantic)
     manifest = {
         "schema_version": 1,
@@ -407,21 +515,36 @@ def _write_package_stage(
     return manifest, package_sha256, manifest_sha256
 
 
-def _validate_stage(stage: Path, manifest: Mapping[str, object]) -> dict[str, str]:
+def _validate_stage(
+    stage: Path,
+    manifest: Mapping[str, object],
+) -> dict[str, str]:
     files = manifest.get("files")
     if not isinstance(files, list):
-        raise FigurePackageExportError("package manifest files must be a list")
+        raise FigurePackageExportError(
+            "package manifest files must be a list"
+        )
     identities: dict[str, str] = {}
     for entry in files:
         if not isinstance(entry, Mapping):
-            raise FigurePackageExportError("package manifest file entry must be an object")
+            raise FigurePackageExportError(
+                "package manifest file entry must be an object"
+            )
         relative = entry.get("path")
         expected = entry.get("sha256")
         if type(relative) is not str or type(expected) is not str:
-            raise FigurePackageExportError("package manifest file identity is invalid")
+            raise FigurePackageExportError(
+                "package manifest file identity is invalid"
+            )
         path = stage / relative
-        if path.is_symlink() or not path.is_file() or _sha256_file(path) != expected:
-            raise FigurePackageExportError(f"staged package file failed verification: {relative}")
+        if (
+            path.is_symlink()
+            or not path.is_file()
+            or _sha256_file(path) != expected
+        ):
+            raise FigurePackageExportError(
+                f"staged package file failed verification: {relative}"
+            )
         identities[relative] = expected
     manifest_path = stage / "manifest.json"
     identities["manifest.json"] = _sha256_file(manifest_path)
@@ -429,7 +552,12 @@ def _validate_stage(stage: Path, manifest: Mapping[str, object]) -> dict[str, st
 
 
 def _serialize_figure_spec(path: Path, draft: FigureDraft) -> str:
-    payload = canonical_json_bytes({"schema_version": 1, "spec": draft.figure_spec.to_dict()}) + b"\n"
+    payload = canonical_json_bytes(
+        {
+            "schema_version": 1,
+            "spec": draft.figure_spec.to_dict(),
+        }
+    ) + b"\n"
     path.write_bytes(payload)
     return hashlib.sha256(payload).hexdigest()
 
@@ -448,9 +576,15 @@ def _ensure_provenance_asset(
         or asset.path != request.destination
         or asset.content_sha256 != request.expected_content_sha256
     ):
-        raise FigurePackageExportError(f"workspace provenance asset collision: {request.asset_id!r}")
+        raise FigurePackageExportError(
+            f"workspace provenance asset collision: {request.asset_id!r}"
+        )
     try:
-        verify_copy_asset(root, request.asset_id, expected_type=request.asset_type)
+        verify_copy_asset(
+            root,
+            request.asset_id,
+            expected_type=request.asset_type,
+        )
     except (OSError, WorkspaceError) as exc:
         raise FigurePackageExportError(str(exc)) from exc
     return None
@@ -458,21 +592,37 @@ def _ensure_provenance_asset(
 
 def _append_or_verify_evidence(root: Path, record: EvidenceRecord) -> None:
     ledger = open_evidence_ledger(root)
-    existing = next((item for item in ledger.records if item.record_id == record.record_id), None)
+    existing = next(
+        (
+            item
+            for item in ledger.records
+            if item.record_id == record.record_id
+        ),
+        None,
+    )
     if existing is None:
         append_evidence(root, record)
         return
     if existing != record:
-        raise FigurePackageExportError(f"evidence record collision: {record.record_id!r}")
+        raise FigurePackageExportError(
+            f"evidence record collision: {record.record_id!r}"
+        )
 
 
-def _composition_exists(root: Path, composition_id: str, *, figure_asset_id: str) -> bool:
+def _composition_exists(
+    root: Path,
+    composition_id: str,
+    *,
+    figure_asset_id: str,
+) -> bool:
     composition = open_workspace_composition(root)
     for item in composition.figures:
         if item.composition_id != composition_id:
             continue
         if item.exported_figure_asset_id != figure_asset_id:
-            raise FigurePackageExportError(f"figure composition collision: {composition_id!r}")
+            raise FigurePackageExportError(
+                f"figure composition collision: {composition_id!r}"
+            )
         return True
     return False
 
@@ -490,20 +640,18 @@ def _rollback_provenance(
     if safe:
         for path, digest in reversed(tuple(new_assets)):
             try:
-                if path.is_file() and not path.is_symlink() and _sha256_file(path) == digest:
+                if (
+                    path.is_file()
+                    and not path.is_symlink()
+                    and _sha256_file(path) == digest
+                ):
                     path.unlink()
-                    parent = path.parent
-                    while parent.name in {"package-assets", "figure-specs"} or parent.name.startswith("export-"):
-                        try:
-                            parent.rmdir()
-                        except OSError:
-                            break
-                        parent = parent.parent
             except OSError:
                 safe = False
     if not safe:
         raise FigurePackageExportError(
-            "export failed and workspace changed during rollback; reopen and inspect provenance"
+            "export failed and workspace changed during rollback; "
+            "reopen and inspect provenance"
         )
 
 
@@ -517,26 +665,47 @@ def _commit_workspace_provenance(
     *,
     expected_workspace_manifest_sha256: str,
 ) -> str:
-    workspace_tracker = _TrackedMetadata.capture(project_root / "workspace.json")
-    evidence_tracker = _TrackedMetadata.capture(project_root / "workspace-evidence.json")
-    composition_tracker = _TrackedMetadata.capture(project_root / "workspace-composition.json")
-    tracked = (workspace_tracker, evidence_tracker, composition_tracker)
+    workspace_tracker = _TrackedMetadata.capture(
+        project_root / "workspace.json"
+    )
+    evidence_tracker = _TrackedMetadata.capture(
+        project_root / "workspace-evidence.json"
+    )
+    composition_tracker = _TrackedMetadata.capture(
+        project_root / "workspace-composition.json"
+    )
+    tracked = (
+        workspace_tracker,
+        evidence_tracker,
+        composition_tracker,
+    )
     new_assets: list[tuple[Path, str]] = []
 
     manifest_before = open_workspace(project_root)
-    if manifest_before.manifest_sha256 != expected_workspace_manifest_sha256:
-        raise FigurePackageExportError("workspace changed outside the analysis session; reopen explicitly")
+    if (
+        manifest_before.manifest_sha256
+        != expected_workspace_manifest_sha256
+    ):
+        raise FigurePackageExportError(
+            "workspace changed outside the analysis session; reopen explicitly"
+        )
 
     prefix = manifest_sha256[:24]
-    with tempfile.TemporaryDirectory(prefix="cw-figure-spec-") as directory:
+    with tempfile.TemporaryDirectory(
+        prefix="cw-figure-spec-"
+    ) as directory:
         spec_path = Path(directory) / "figure-spec.json"
         spec_file_sha = _serialize_figure_spec(spec_path, draft)
+        figure_spec_identity = figure_spec_sha256(draft.figure_spec)
         requests: list[CopyAssetRequest] = [
             CopyAssetRequest(
                 source=spec_path,
-                asset_id=f"figure-spec-{figure_spec_sha256(draft.figure_spec)[:24]}",
+                asset_id=f"figure-spec-{figure_spec_identity[:24]}",
                 asset_type=_FIGURE_SPEC_ASSET_TYPE,
-                destination=f"artifacts/figure-specs/{figure_spec_sha256(draft.figure_spec)}.json",
+                destination=(
+                    "artifacts/figure-specs/"
+                    f"{figure_spec_identity}.json"
+                ),
                 expected_content_sha256=spec_file_sha,
             )
         ]
@@ -547,14 +716,24 @@ def _commit_workspace_provenance(
             relative = str(entry["path"])
             digest = str(entry["sha256"])
             role = str(entry["role"])
-            format_name = str(entry["format"])
-            asset_type = _FIGURE_ASSET_TYPE if role == "figure" else _SOURCE_ASSET_TYPE
+            asset_type = (
+                _FIGURE_ASSET_TYPE
+                if role == "figure"
+                else _SOURCE_ASSET_TYPE
+            )
+            relative_identity = hashlib.sha256(
+                relative.encode()
+            ).hexdigest()[:12]
             requests.append(
                 CopyAssetRequest(
                     source=stage / relative,
-                    asset_id=f"export-{prefix}-{hashlib.sha256(relative.encode()).hexdigest()[:12]}",
+                    asset_id=(
+                        f"export-{prefix}-{relative_identity}"
+                    ),
                     asset_type=asset_type,
-                    destination=f"artifacts/exports/{manifest_sha256}/{relative}",
+                    destination=(
+                        f"artifacts/exports/{manifest_sha256}/{relative}"
+                    ),
                     expected_content_sha256=digest,
                 )
             )
@@ -563,23 +742,34 @@ def _commit_workspace_provenance(
                 source=stage / "manifest.json",
                 asset_id=f"export-{prefix}-manifest",
                 asset_type=_MANIFEST_ASSET_TYPE,
-                destination=f"artifacts/exports/{manifest_sha256}/manifest.json",
+                destination=(
+                    f"artifacts/exports/{manifest_sha256}/manifest.json"
+                ),
                 expected_content_sha256=manifest_sha256,
             )
         )
 
-        existing = {asset.asset_id: asset for asset in manifest_before.assets}
+        existing = {
+            asset.asset_id: asset for asset in manifest_before.assets
+        }
         pending = tuple(
             request
             for request in requests
-            if _ensure_provenance_asset(project_root, request, existing) is not None
+            if _ensure_provenance_asset(
+                project_root,
+                request,
+                existing,
+            )
+            is not None
         )
         try:
             if pending:
                 updated = import_copy_assets_batch(
                     project_root,
                     pending,
-                    expected_manifest_sha256=manifest_before.manifest_sha256,
+                    expected_manifest_sha256=(
+                        manifest_before.manifest_sha256
+                    ),
                 )
                 workspace_tracker.note()
                 for request in pending:
@@ -606,31 +796,52 @@ def _commit_workspace_provenance(
             workflow_record_id: str | None = None
             if draft.view_id != "fe":
                 workflow_record_id = f"workflow-{prefix}"
-                workflow_record = record_evidence(workflow_record_id, result.workflow_run)
-                _append_or_verify_evidence(project_root, workflow_record)
+                workflow_record = record_evidence(
+                    workflow_record_id,
+                    result.workflow_run,
+                )
+                _append_or_verify_evidence(
+                    project_root,
+                    workflow_record,
+                )
                 evidence_tracker.note()
 
-            all_asset_ids = tuple(request.asset_id for request in requests)
+            all_asset_ids = tuple(
+                request.asset_id for request in requests
+            )
             package_record_id = f"package-{prefix}"
             package_record = EvidenceRecord(
                 record_id=package_record_id,
                 kind="artifact",
                 evidence_sha256=manifest_sha256,
                 asset_ids=all_asset_ids,
-                related_record_ids=(() if workflow_record_id is None else (workflow_record_id,)),
+                related_record_ids=(
+                    ()
+                    if workflow_record_id is None
+                    else (workflow_record_id,)
+                ),
             )
-            _append_or_verify_evidence(project_root, package_record)
+            _append_or_verify_evidence(
+                project_root,
+                package_record,
+            )
             evidence_tracker.note()
 
             figure_spec_asset_id = requests[0].asset_id
-            figure_requests = [request for request in requests if request.asset_type == _FIGURE_ASSET_TYPE]
+            figure_requests = [
+                request
+                for request in requests
+                if request.asset_type == _FIGURE_ASSET_TYPE
+            ]
             evidence_ids = (
                 (package_record_id,)
                 if workflow_record_id is None
                 else (workflow_record_id, package_record_id)
             )
             for request in figure_requests:
-                format_name = Path(request.destination).suffix.lstrip(".")
+                format_name = Path(
+                    request.destination
+                ).suffix.lstrip(".")
                 composition_id = f"figure-{prefix}-{format_name}"
                 if not _composition_exists(
                     project_root,
@@ -648,123 +859,17 @@ def _commit_workspace_provenance(
 
             observed = open_workspace(project_root)
             if observed.manifest_sha256 != updated.manifest_sha256:
-                raise FigurePackageExportError("workspace changed during export provenance commit")
+                raise FigurePackageExportError(
+                    "workspace changed during export provenance commit"
+                )
             return observed.manifest_sha256
         except BaseException:
             _rollback_provenance(tracked, new_assets)
             raise
 
 
-def export_figure_package(
-    document: AnalysisDocument,
-    result: AnalysisResult,
-    draft: FigureDraft,
-    *,
-    project_root: str | Path,
-    expected_workspace_manifest_sha256: str,
-    expected_project_file_sha256: str,
-    destination: str | Path,
-    options: FigurePackageOptions | None = None,
-) -> FigurePackageResult:
-    """Publish one exact Figure Package and commit workspace provenance.
-
-    The final external directory is made visible only after every requested file has
-    been generated and verified and workspace provenance has committed. Failures roll
-    back artifacts created by this operation when their exact bytes are still known.
-    """
-
-    if not isinstance(document, AnalysisDocument):
-        raise TypeError("document must be an AnalysisDocument")
-    if not isinstance(result, AnalysisResult):
-        raise TypeError("result must be an AnalysisResult")
-    if not isinstance(draft, FigureDraft):
-        raise TypeError("draft must be a FigureDraft")
-    resolved_options = FigurePackageOptions() if options is None else options
-    if not isinstance(resolved_options, FigurePackageOptions):
-        raise TypeError("options must be a FigurePackageOptions")
-
-    root = Path(project_root)
-    try:
-        snapshot = open_analysis_project(root)
-    except (AnalysisProjectError, OSError, WorkspaceError) as exc:
-        raise FigurePackageExportError(str(exc)) from exc
-    if snapshot.workspace_manifest_sha256 != expected_workspace_manifest_sha256:
-        raise FigurePackageExportError("workspace changed outside the analysis session; reopen explicitly")
-    if snapshot.project_file_sha256 != expected_project_file_sha256:
-        raise FigurePackageExportError("project.json changed outside the analysis session; reopen explicitly")
-    if snapshot.document != document:
-        raise FigurePackageExportError("save the current analysis project before exporting")
-    if result.document_sha256 != document.document_sha256:
-        raise FigurePackageExportError("analysis result does not match the saved document")
-    if figure_draft_is_stale(draft, document, result):
-        raise FigurePackageExportError("analysis results changed; refresh this figure before exporting")
-
-    target = Path(destination)
-    if target.exists() or target.is_symlink():
-        raise FigurePackageExportError("Figure Package destination must not already exist")
-    parent = target.parent
-    if not parent.exists():
-        raise FileNotFoundError(parent)
-    if not parent.is_dir():
-        raise NotADirectoryError(parent)
-
-    stage = Path(tempfile.mkdtemp(prefix=f".{target.name}-export-", dir=parent))
-    provenance_committed = False
-    workspace_sha = expected_workspace_manifest_sha256
-    try:
-        source = figure_source_view(document, result, draft.view_id)
-        manifest, package_sha256, manifest_sha256 = _write_package_stage(
-            stage,
-            document,
-            result,
-            draft,
-            source,
-            resolved_options,
-        )
-        file_identities = _validate_stage(stage, manifest)
-        workspace_sha = _commit_workspace_provenance(
-            root,
-            stage,
-            manifest,
-            manifest_sha256,
-            draft,
-            result,
-            expected_workspace_manifest_sha256=expected_workspace_manifest_sha256,
-        )
-        provenance_committed = workspace_sha != expected_workspace_manifest_sha256
-        os.replace(stage, target)
-        stage = Path()
-        reopened = open_analysis_project(root)
-        if reopened.workspace_manifest_sha256 != workspace_sha:
-            raise FigurePackageExportError("workspace changed after export publication")
-        if reopened.project_file_sha256 != expected_project_file_sha256:
-            raise FigurePackageExportError("project.json changed during export publication")
-        return FigurePackageResult(
-            package_path=target.resolve(),
-            package_sha256=package_sha256,
-            manifest_sha256=manifest_sha256,
-            workspace_manifest_sha256=workspace_sha,
-            file_sha256=file_identities,
-        )
-    except BaseException:
-        if target.exists() and target.is_dir() and not target.is_symlink():
-            # The package is complete at this point. Remove it only when its manifest
-            # still identifies the exact staged export produced by this operation.
-            manifest_path = target / "manifest.json"
-            try:
-                if manifest_path.is_file() and not manifest_path.is_symlink():
-                    shutil.rmtree(target)
-            except OSError:
-                pass
-        raise
-    finally:
-        if stage and stage.exists() and stage.is_dir() and not stage.is_symlink():
-            shutil.rmtree(stage, ignore_errors=True)
-
-
 __all__ = [
     "FigurePackageExportError",
     "FigurePackageOptions",
     "FigurePackageResult",
-    "export_figure_package",
 ]
