@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 STABLE_SHA = "22b944992bfd3791f91cc951f89eb22e8bf47325"
 BLOCK5_MAIN = "eec2f85d117902459178f65c4543b5674de54912"
