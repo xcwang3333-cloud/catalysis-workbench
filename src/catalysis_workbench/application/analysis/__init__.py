@@ -16,6 +16,13 @@ from .evaluator import (
     AnalysisResult,
     AnalysisView,
 )
+from .export_package import (
+    FigurePackageExportError,
+    FigurePackageOptions,
+    FigurePackageResult,
+    export_figure_package,
+)
+from .export_session import export_session_figure_package
 from .figure import (
     AnalysisFigureError,
     FigureDraft,
@@ -94,6 +101,9 @@ __all__ = [
     "DataSeriesSpec",
     "FEPartialCurrentAnalysisSpec",
     "FigureDraft",
+    "FigurePackageExportError",
+    "FigurePackageOptions",
+    "FigurePackageResult",
     "FigureSourceView",
     "GenericXYAnalysisSpec",
     "LSVAnalysisSpec",
@@ -110,6 +120,8 @@ __all__ = [
     "create_figure_draft",
     "default_analysis_spec",
     "dependency_impact",
+    "export_figure_package",
+    "export_session_figure_package",
     "figure_draft_is_stale",
     "figure_source_view",
     "get_analysis_task_descriptor",
