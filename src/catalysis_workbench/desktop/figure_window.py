@@ -67,7 +67,8 @@ class CatalysisWorkbenchWindow(_AnalysisWorkbenchWindow):
         evaluation = self.session.evaluate_analysis()
         if evaluation.status != "success" or evaluation.result is None:
             raise AnalysisSessionError(
-                evaluation.message or "analysis must be successful before opening Figure Workbench"
+                evaluation.message
+                or "analysis must be successful before opening Figure Workbench"
             )
         return evaluation.result
 
@@ -103,7 +104,9 @@ class CatalysisWorkbenchWindow(_AnalysisWorkbenchWindow):
     ) -> str:
         ids = tuple(view_id for view_id, _label in available)
         if not ids:
-            raise AnalysisSessionError("successful analysis has no Figure Workbench result view")
+            raise AnalysisSessionError(
+                "successful analysis has no Figure Workbench result view"
+            )
         if requested in ids:
             return requested  # type: ignore[return-value]
         current_analysis_view = self.analysis_page.view_combo.currentData()
@@ -120,7 +123,10 @@ class CatalysisWorkbenchWindow(_AnalysisWorkbenchWindow):
         try:
             result = self._current_result()
             available = self._available_figure_views(result)
-            active = self._initial_figure_view(available, view_id or self.figure_page.active_view_id)
+            active = self._initial_figure_view(
+                available,
+                view_id or self.figure_page.active_view_id,
+            )
             source = figure_source_view(document, result, active)
             draft = self._draft_for_view(document.figures, active)
             stale = (
