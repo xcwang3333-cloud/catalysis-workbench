@@ -40,9 +40,9 @@ The no-argument launcher opens the task-first v1.1 Home shell. Home offers:
 
 Choosing a task creates a clean in-memory untitled analysis. It does **not** ask for a directory. The first Save Project operation creates the project directory and writes `workspace.json` plus `project.json`.
 
-The Block-2 Analysis Workbench adds explicit scientific-data intake while preserving the task-first flow. Scientific processing controls and Figure Workbench integration remain later v1.1 blocks.
+The current v1.1 Analysis Workbench combines Block-2 explicit scientific-data intake with Block-3 live scientific processing. Figure Workbench integration remains Block 4.
 
-## v1.1 Block 2 data intake and mapping
+## Analysis Workbench
 
 The normal Analysis Workbench is a three-column view:
 
@@ -50,7 +50,11 @@ The normal Analysis Workbench is a three-column view:
 DATA  |  LIVE ANALYSIS PREVIEW  |  PROCESSING
 ```
 
-The center preview remains the largest region. Block 2 displays mapped raw values only; import does not apply RHE conversion, iR correction, current normalization, interpolation, smoothing, fitting, or any other scientific transformation.
+The center preview remains the largest region. The DATA pane owns source and mapping state, the center pane displays mapped raw or current scientific results, and PROCESSING owns task-specific scientific parameters.
+
+`Continue to Figure` remains disabled until Block 4.
+
+## v1.1 Block 2 data intake and mapping
 
 ### Add files
 
@@ -63,7 +67,7 @@ The center preview remains the largest region. Block 2 displays mapped raw value
 - `.xlsx`; and
 - `.xlsm`.
 
-Multiple files can be selected in one intake operation. Recursive directory import, legacy `.xls`, and normal-user external-reference mode are intentionally outside Block 2.
+Multiple files can be selected in one intake operation. Recursive directory import, legacy `.xls`, and normal-user external-reference mode are intentionally outside v1.1 Blocks 2–3.
 
 Each selected file is hashed before it enters the analysis document. File-system locations are used only to locate bytes; absolute paths do not participate in raw, mapping, or scientific-input identity.
 
@@ -86,7 +90,7 @@ Unit inference is deliberately conservative: only a trailing square-bracket form
 
 Each file is shown as valid/confirmed, requiring confirmation, or invalid. `Apply this mapping to compatible files` copies the selected X/Y positions and scientific semantics only when the target has those positions **and** the selected X/Y column names plus conservatively inferred units exactly match the source preview. Files with the same column positions but different headers or inferred units remain unconfirmed and require explicit review. The batch action does not rewrite each file's parser state or silently interpolate data.
 
-### Data list and preview
+### Data list and mapped raw preview
 
 Mapped series appear in the DATA list. The user can:
 
@@ -96,9 +100,7 @@ Mapped series appear in the DATA list. The user can:
 - inspect a read-only data preview; and
 - remove a series from the analysis.
 
-The central Matplotlib preview is presentation-only. Large series may be sampled for display responsiveness, but that display sampling never changes the materialized scientific `Series`, its input identity, or the saved raw bytes.
-
-`Continue to Figure` remains disabled in Block 2 because scientific processing validity is not yet defined by this block.
+The central Matplotlib preview may sample large series for display responsiveness, but display sampling never changes the materialized scientific `Series`, its input identity, workflow identity, or the saved raw bytes.
 
 ### Saved raw ownership and fail-closed behavior
 
@@ -110,19 +112,74 @@ Raw-file mutation and workspace-copy tampering fail closed. The application re-v
 
 Workspace batch-copy operations use expected-manifest checks. Project/document writes retain the existing exact-identity concurrency rules, and failed first-save staging is rolled back without deleting unknown external content.
 
+## v1.1 Block 3 live scientific analysis
+
+Block 3 advances `AnalysisDocument` to schema 3 and persists deterministic task-specific processing state. Schema 1 and 2 projects remain readable and are normalized in memory to schema 3 without rewriting their project file during open. An explicit subsequent save writes the schema-3 form.
+
+Computed arrays are runtime-only. GUI draft text, selected preview tab, file-system paths, timestamps, and display sampling are not part of document identity.
+
+### LSV / Polarization
+
+The LSV task exposes a common processing configuration and optional per-series overrides. The normal-user controls include:
+
+- no RHE conversion, direct RHE offset, or reference-vs-SHE + pH conversion;
+- temperature for the SHE/pH conversion path;
+- solution resistance and iR-correction fraction;
+- optional electrode area and current-density normalization;
+- explicit output current-density unit; and
+- scientific analysis-range limits.
+
+Analysis range is scientific processing state and is intentionally distinct from the Figure Workbench display range planned for Block 4.
+
+### FE & Partial Current
+
+The FE & Partial Current task requires explicit current-series ↔ FE-series pairing. Pairs are not inferred from filenames, display names, list order, or matching point counts.
+
+Current inputs can use the same current-processing model as LSV before partial-current calculation. FE and current inputs must already use compatible x coordinates. Block 3 does not interpolate, resample, nearest-match, or otherwise fabricate alignment.
+
+Partial current uses the reviewed signed current-density convention. The live preview exposes FE and partial current as separate views rather than placing unlike y quantities on one implicit axis.
+
+### Generic XY
+
+Generic XY intentionally supports analysis-range cropping only in Block 3. Smoothing, fitting, baseline correction, normalization, interpolation, and other generic transformations remain out of scope.
+
+### Live evaluation and workflow identity
+
+Task-first processing state compiles into an internal deterministic `WorkflowRecipe`. The analysis layer resolves its private Block-3 operation descriptors without mutating the frozen public workflow registry.
+
+`AnalysisEvaluator` materializes mapped inputs, executes the compiled analysis, and returns explicit `success`, `incomplete`, or `error` state. A successful result carries a deterministic `WorkflowRun` and scientific output identities.
+
+Display-name edits do not change scientific run identity. Mapping edits that change `data_id` atomically rewrite any processing override and explicit FE/current pair references. Removing a referenced data series atomically removes its dependent processing references and remains one undoable document revision.
+
+### Processing drafts and previous-valid results
+
+Processing controls are draft UI state until the fields form a valid processing object and the candidate evaluates without a scientific execution error. Only then is the processing state committed to `AnalysisDocument`.
+
+Invalid numeric text or invalid scientific settings do not mutate the committed document. If a previous valid run exists, the center pane may continue displaying it only with the explicit stale label:
+
+```text
+Previous valid result — current settings are not applied
+```
+
+The stale result is not presented as current evidence and is never persisted as document state.
+
+Save, Home, Open Project, mapping edits, data removal, and application close do not silently discard an invalid uncommitted processing draft. The desktop requires an explicit discard/cancel decision before the transition.
+
 ## v1.0 compatibility shell
 
 The reviewed v1.0 desktop remains available for explicit integrations through `catalysis_workbench.desktop.app.create_desktop(...)` and `ApplicationSession`. It retains workspace/asset, recipe, workflow, evidence/QA, and FigureSpec behavior.
 
-Block 2 does not replace or migrate existing v1.0 workspaces. A v1.0 workspace that lacks `project.json` is reported as a legacy workspace when passed to the v1.1 Open Project path; the application does not guess which scientific task it represents.
+The v1.1 task-first shell does not replace or migrate existing v1.0 workspaces. A v1.0 workspace that lacks `project.json` is reported as a legacy workspace when passed to the v1.1 Open Project path; the application does not guess which scientific task it represents.
 
-The frozen v1.0 top-level `catalysis_workbench.desktop.__all__` contract is retained as a compatibility gate even though the new v1.1 window exists through its explicit module/API path.
+The frozen v1.0 top-level `catalysis_workbench.desktop.__all__` contract remains a compatibility gate even though the v1.1 window exists through its explicit module/API path.
+
+The cumulative Block-2 desktop preview compatibility entry point remains available for installed-wheel regression coverage while the current workbench routes normal preview refresh through live evaluation.
 
 ## Analysis-document lifecycle
 
 The v1.1 `AnalysisDocument` and `AnalysisSession` live in the GUI-neutral application layer.
 
-An untouched untitled analysis is **unsaved but clean**. It can return Home without a discard prompt. Once the user edits the title or mapped data state, the document becomes dirty and Home/Open/Exit transitions require Save, Discard, or Cancel.
+An untouched untitled analysis is **unsaved but clean**. It can return Home without a discard prompt. Once the user edits title, mapping, data ordering, or committed processing state, the document becomes dirty and Home/Open/Exit transitions require Save, Discard, or Cancel.
 
 Undo and redo restore semantic document identities. Saving establishes a new baseline but does not erase undo history.
 
@@ -146,7 +203,7 @@ scientific layers
    desktop
 ```
 
-The desktop layer is presentation and interaction only. It does not own scientific algorithms, domain inference, QA policy, workflow scheduling, provenance reconstruction, or workspace persistence rules. Bounded parser inspection is delegated to the GUI-neutral I/O layer; scientific column meaning and units remain explicit application state.
+The desktop layer is presentation and interaction only. It does not own scientific algorithms, domain inference, QA policy, workflow scheduling, provenance reconstruction, or workspace persistence rules. Bounded parser inspection is delegated to the GUI-neutral I/O layer; scientific column meaning, units, and processing parameters remain explicit application state.
 
 `application.analysis` remains headless and must not import PySide6, PyQt, or Matplotlib pyplot.
 
@@ -160,22 +217,28 @@ The compatibility shell can inspect reviewed run, evidence-ledger, and QA state 
 
 ## CI and packaging validation
 
-The regular CI remains Qt-free for base application tests and separately installs the desktop extra for offscreen Qt validation. The cumulative v1.1 Block-1/Block-2 gates include:
+The regular CI remains Qt-free for base application tests and separately installs the desktop extra for offscreen Qt validation. The cumulative v1.1 Block-1/Block-2/Block-3 gates include:
 
 - deterministic AnalysisDocument and task-catalog tests;
-- schema-1 to schema-2 compatibility and migration checks;
+- schema-1/schema-2 read compatibility and schema-3 persistence checks;
 - path-independent source/mapping/input identity tests;
 - bounded tabular-preview and deterministic materialization tests;
 - dirty/unsaved and Undo/Redo session tests;
 - raw-copy persistence, source-mutation, tamper, rollback, and manifest-concurrency tests;
-- strict project persistence, symlink, reserved-metadata, and first-save staging tests;
-- fresh-wheel v1.1 application data-intake smoke coverage;
+- strict processing serialization and data-reference validation;
+- LSV/RHE/iR/area-normalization and analysis-range execution coverage;
+- explicit FE/current pairing and signed partial-current coverage without interpolation;
+- deterministic internal compilation and `WorkflowRun` identity checks;
+- mapping-remap/removal cascade tests;
+- live evaluator success/incomplete/error coverage;
+- invalid-draft and previous-valid-result desktop behavior;
+- fresh-wheel v1.1 application smoke coverage;
 - the existing frozen v1.0 desktop smoke;
-- the v1.1 Home/Analysis desktop smoke; and
-- a fresh-wheel offscreen Block-2 desktop intake/mapping/raw-copy smoke, including a negative compatibility check for same-position columns with different semantics.
+- v1.1 Home/Analysis and Block-2 intake/mapping desktop smokes; and
+- fresh-wheel offscreen Block-3 live-processing desktop smoke.
 
 The development candidate is `1.1.0.dev0`. The existing Stable 1.0 Readiness workflow remains active as a frozen v1.0 API/desktop compatibility audit while its candidate-version and artifact checks follow the currently built v1.1 development wheel.
 
 ## Release boundary
 
-v1.1 Block 2 does not authorize a Git tag, GitHub Release, or PyPI publication. Those remain separate release decisions.
+v1.1 Block 3 does not authorize a Git tag, GitHub Release, or PyPI publication. Those remain separate release decisions.

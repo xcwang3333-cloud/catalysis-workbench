@@ -15,8 +15,13 @@ from PySide6.QtWidgets import (
 )
 
 from catalysis_workbench.application import (
+    AnalysisDocument,
+    AnalysisEvaluation,
+    AnalysisEvaluator,
+    AnalysisResult,
     AnalysisSession,
     AnalysisSessionError,
+    AnalysisSpec,
     DataSeriesSpec,
     get_analysis_task_descriptor,
     open_analysis_project,
@@ -42,6 +47,9 @@ class CatalysisWorkbenchWindow(QMainWindow):
             raise TypeError("session must be an AnalysisSession or None")
         self.session = session or AnalysisSession()
         self.recent_store = recent_store or RecentProjectsStore()
+        self._last_valid_result: AnalysisResult | None = None
+        self._last_valid_task_id: str | None = None
+        self._suppress_processing_draft_signal = False
         self.home_page = HomePage()
         self.analysis_page = AnalysisShellPage()
         self.stack = QStackedWidget()
@@ -73,6 +81,12 @@ class CatalysisWorkbenchWindow(QMainWindow):
         self.analysis_page.remove_series_requested.connect(self._remove_series_ui)
         self.analysis_page.series_renamed.connect(self._rename_series_ui)
         self.analysis_page.series_moved.connect(self._move_series_ui)
+        self.analysis_page.analysis_spec_changed.connect(
+            self._replace_analysis_spec_ui
+        )
+        self.analysis_page.processing_panel.draft_state_changed.connect(
+            self._processing_draft_state_changed
+        )
 
     def _build_menu(self) -> None:
         file_menu = self.menuBar().addMenu("File")
@@ -111,6 +125,10 @@ class CatalysisWorkbenchWindow(QMainWindow):
 
     def _display_error(self, exc: BaseException) -> None:
         QMessageBox.critical(self, "CatalysisWorkbench", str(exc))
+
+    def _clear_last_valid(self) -> None:
+        self._last_valid_result = None
+        self._last_valid_task_id = None
 
     def _commit_title_editor(self) -> bool:
         """Flush buffered title text before any save/navigation/close decision."""
@@ -157,7 +175,11 @@ class CatalysisWorkbenchWindow(QMainWindow):
 
     def refresh_views(self) -> None:
         state = self.session.state
-        self.analysis_page.apply_state(state)
+        self._suppress_processing_draft_signal = True
+        try:
+            self.analysis_page.apply_state(state)
+        finally:
+            self._suppress_processing_draft_signal = False
         self.home_page.set_recent_projects(self._recent_displays())
         enabled = state.document is not None
         self._save_action.setEnabled(enabled)
@@ -168,9 +190,11 @@ class CatalysisWorkbenchWindow(QMainWindow):
             self.setWindowTitle("CatalysisWorkbench")
         else:
             marker = " *" if state.is_dirty else ""
-            self.setWindowTitle(f"{state.document.title}{marker} — CatalysisWorkbench")
+            self.setWindowTitle(
+                f"{state.document.title}{marker} — CatalysisWorkbench"
+            )
 
-    def _refresh_data_preview(self) -> None:
+    def _materialize_all_inputs(self) -> None:
         state = self.session.state
         if state.document is None or not state.document.data_series:
             self.analysis_page.set_materialized_inputs(())
@@ -185,16 +209,112 @@ class CatalysisWorkbenchWindow(QMainWindow):
             return
         self.analysis_page.set_materialized_inputs(inputs)
 
+    def _apply_evaluation(
+        self,
+        status: str,
+        result: AnalysisResult | None,
+        message: str | None,
+    ) -> None:
+        state = self.session.state
+        task_id = state.document.task_id if state.document is not None else None
+        if status == "success" and result is not None:
+            self._last_valid_result = result
+            self._last_valid_task_id = task_id
+            self.analysis_page.set_live_analysis(
+                result,
+                status="success",
+                message=None,
+                stale=False,
+            )
+            return
+        if status == "incomplete":
+            self._clear_last_valid()
+            self.analysis_page.set_live_analysis(
+                None,
+                status="incomplete",
+                message=message,
+                stale=False,
+            )
+            return
+        if (
+            self._last_valid_result is not None
+            and self._last_valid_task_id == task_id
+        ):
+            self.analysis_page.set_live_analysis(
+                self._last_valid_result,
+                status="error",
+                message=message,
+                stale=True,
+            )
+            return
+        self.analysis_page.set_live_analysis(
+            None,
+            status="error",
+            message=message,
+            stale=False,
+        )
+
+    def _refresh_live_analysis(self) -> None:
+        state = self.session.state
+        self._materialize_all_inputs()
+        if state.document is None:
+            self._clear_last_valid()
+            self.analysis_page.set_live_analysis(
+                None,
+                status="incomplete",
+                message="No analysis is open.",
+            )
+            return
+        evaluation = self.session.evaluate_analysis()
+        self._apply_evaluation(
+            evaluation.status,
+            evaluation.result,
+            evaluation.message,
+        )
+
+    def _refresh_data_preview(self) -> None:
+        """Compatibility alias retained for the v1.1 Block-2 Desktop contract."""
+
+        self._refresh_live_analysis()
+
+    def _processing_draft_state_changed(
+        self,
+        invalid: bool,
+        message: str,
+    ) -> None:
+        if self._suppress_processing_draft_signal:
+            return
+        if invalid:
+            task_id = (
+                self.session.state.document.task_id
+                if self.session.state.document is not None
+                else None
+            )
+            stale_result = (
+                self._last_valid_result
+                if self._last_valid_task_id == task_id
+                else None
+            )
+            self.analysis_page.set_live_analysis(
+                stale_result,
+                status="error",
+                message=message,
+                stale=stale_result is not None,
+            )
+            return
+        self._refresh_live_analysis()
+
     def show_home(self) -> None:
         self.refresh_views()
         self.stack.setCurrentWidget(self.home_page)
 
     def show_analysis(self) -> None:
         self.refresh_views()
-        self._refresh_data_preview()
+        self._refresh_live_analysis()
         self.stack.setCurrentWidget(self.analysis_page)
 
     def start_analysis(self, task_id: str) -> None:
+        self._clear_last_valid()
         self.session.new_analysis(task_id)
         self.show_analysis()
 
@@ -207,14 +327,16 @@ class CatalysisWorkbenchWindow(QMainWindow):
         items: tuple[tuple[DataSeriesSpec, Path], ...]
         | list[tuple[DataSeriesSpec, Path]],
     ) -> None:
+        self._clear_last_valid()
         self.session.add_data_series_batch(items)
         self.refresh_views()
-        self._refresh_data_preview()
+        self._refresh_live_analysis()
 
     def remove_data_series(self, data_id: str) -> None:
+        self._clear_last_valid()
         self.session.remove_data_series(data_id)
         self.refresh_views()
-        self._refresh_data_preview()
+        self._refresh_live_analysis()
 
     def save_project_path(self, root: str | Path | None = None) -> None:
         state = self.session.state
@@ -222,7 +344,10 @@ class CatalysisWorkbenchWindow(QMainWindow):
             raise AnalysisSessionError("no analysis document is open")
         if root is None:
             self.session.save_project()
-        elif state.project_root is None or Path(root).resolve(strict=False) != state.project_root:
+        elif (
+            state.project_root is None
+            or Path(root).resolve(strict=False) != state.project_root
+        ):
             self.session.save_project_as(root)
         else:
             self.session.save_project()
@@ -231,6 +356,7 @@ class CatalysisWorkbenchWindow(QMainWindow):
         self.refresh_views()
 
     def open_project_path(self, root: str | Path) -> None:
+        self._clear_last_valid()
         self.session.open_project(root)
         if self.session.state.project_root is not None:
             self.recent_store.add(self.session.state.project_root)
@@ -238,7 +364,37 @@ class CatalysisWorkbenchWindow(QMainWindow):
 
     def go_home(self, *, discard_changes: bool = False) -> None:
         self.session.close_analysis(discard_changes=discard_changes)
+        self._clear_last_valid()
         self.show_home()
+
+    def _candidate_evaluation(self, analysis: AnalysisSpec) -> AnalysisEvaluation:
+        state = self.session.state
+        if state.document is None:
+            raise AnalysisSessionError("no analysis document is open")
+        document = state.document
+        candidate = AnalysisDocument(
+            schema_version=3,
+            task_id=document.task_id,
+            title=document.title,
+            data_series=document.data_series,
+            analysis=analysis,
+        )
+        return AnalysisEvaluator().evaluate(candidate, self.session.materialize_data)
+
+    def _replace_analysis_spec_ui(self, analysis: AnalysisSpec) -> None:
+        try:
+            evaluation = self._candidate_evaluation(analysis)
+            if evaluation.status == "error":
+                self.analysis_page.mark_processing_commit_error(
+                    evaluation.message or "scientific processing failed"
+                )
+                return
+            self.session.replace_analysis_spec(analysis)
+        except (OSError, TypeError, ValueError, RuntimeError) as exc:
+            self.analysis_page.mark_processing_commit_error(str(exc))
+            return
+        self.refresh_views()
+        self._refresh_live_analysis()
 
     def _start_analysis_ui(self, task_id: str) -> None:
         try:
@@ -254,17 +410,41 @@ class CatalysisWorkbenchWindow(QMainWindow):
             self.refresh_views()
 
     def _undo_ui(self) -> None:
+        self._clear_last_valid()
         self.session.undo()
         self.refresh_views()
-        self._refresh_data_preview()
+        self._refresh_live_analysis()
 
     def _redo_ui(self) -> None:
+        self._clear_last_valid()
         self.session.redo()
         self.refresh_views()
-        self._refresh_data_preview()
+        self._refresh_live_analysis()
+
+    def _prepare_processing_draft(self) -> bool:
+        if not self.analysis_page.has_unapplied_processing_draft:
+            return True
+        box = QMessageBox(self)
+        box.setWindowTitle("Discard unapplied settings?")
+        box.setText(
+            "Current processing fields are invalid and have not been applied. "
+            "Discard these unapplied values?"
+        )
+        discard_button = box.addButton(QMessageBox.StandardButton.Discard)
+        cancel_button = box.addButton(QMessageBox.StandardButton.Cancel)
+        box.setDefaultButton(cancel_button)
+        box.exec()
+        if box.clickedButton() is not discard_button:
+            return False
+        self.analysis_page.discard_processing_draft()
+        self._refresh_live_analysis()
+        return True
 
     def _add_files_interactive(self) -> None:
-        if self.session.state.document is None:
+        if (
+            self.session.state.document is None
+            or not self._prepare_processing_draft()
+        ):
             return
         paths, _ = QFileDialog.getOpenFileNames(
             self,
@@ -273,11 +453,18 @@ class CatalysisWorkbenchWindow(QMainWindow):
             "Tabular data (*.csv *.txt *.tsv *.dat *.xlsx *.xlsm)",
         )
         if paths:
-            self._add_files_ui(tuple(paths))
+            self._add_files_ui(tuple(paths), draft_prepared=True)
 
-    def _add_files_ui(self, paths: object) -> None:
+    def _add_files_ui(
+        self,
+        paths: object,
+        *,
+        draft_prepared: bool = False,
+    ) -> None:
         state = self.session.state
         if state.document is None:
+            return
+        if not draft_prepared and not self._prepare_processing_draft():
             return
         if not isinstance(paths, (tuple, list)) or not paths:
             return
@@ -308,7 +495,7 @@ class CatalysisWorkbenchWindow(QMainWindow):
 
     def _edit_mapping_ui(self, data_id: str) -> None:
         state = self.session.state
-        if state.document is None:
+        if state.document is None or not self._prepare_processing_draft():
             return
         try:
             spec = self._data_spec(data_id)
@@ -325,9 +512,10 @@ class CatalysisWorkbenchWindow(QMainWindow):
         if dialog.exec() != QDialog.DialogCode.Accepted:
             return
         try:
+            self._clear_last_valid()
             self.session.replace_data_mapping(data_id, dialog.edited_mapping())
             self.refresh_views()
-            self._refresh_data_preview()
+            self._refresh_live_analysis()
         except (OSError, ValueError, RuntimeError) as exc:
             self._display_error(exc)
 
@@ -341,12 +529,29 @@ class CatalysisWorkbenchWindow(QMainWindow):
         dialog.exec()
 
     def _remove_series_ui(self, data_id: str) -> None:
+        if not self._prepare_processing_draft():
+            return
         spec = self._data_spec(data_id)
+        impact = self.session.analysis_dependency_impact(data_id)
+        impact_lines: list[str] = []
+        if impact.partial_current_pair_count:
+            impact_lines.append(
+                "• remove "
+                f"{impact.partial_current_pair_count} explicit partial-current pair(s)"
+            )
+        if impact.override_count:
+            impact_lines.append(
+                "• remove "
+                f"{impact.override_count} selected-series processing override(s)"
+            )
+        impact_text = ""
+        if impact_lines:
+            impact_text = "\n\nThis also will:\n" + "\n".join(impact_lines)
         answer = QMessageBox.question(
             self,
             "Remove data?",
-            f"Remove {spec.display_name!r} from this analysis?\n"
-            "The original raw file is not modified.",
+            f"Remove {spec.display_name!r} from this analysis?"
+            f"{impact_text}\n\nThe original raw file is not modified.",
         )
         if answer != QMessageBox.StandardButton.Yes:
             return
@@ -356,19 +561,25 @@ class CatalysisWorkbenchWindow(QMainWindow):
             self._display_error(exc)
 
     def _rename_series_ui(self, data_id: str, name: str) -> None:
+        if not self._prepare_processing_draft():
+            self.refresh_views()
+            return
         try:
             self.session.rename_data_series(data_id, name)
             self.refresh_views()
-            self._refresh_data_preview()
+            self._refresh_live_analysis()
         except (OSError, ValueError, RuntimeError) as exc:
             self._display_error(exc)
             self.refresh_views()
 
     def _move_series_ui(self, data_id: str, new_index: int) -> None:
+        if not self._prepare_processing_draft():
+            self.refresh_views()
+            return
         try:
             self.session.move_data_series(data_id, new_index)
             self.refresh_views()
-            self._refresh_data_preview()
+            self._refresh_live_analysis()
         except (OSError, ValueError, RuntimeError) as exc:
             self._display_error(exc)
             self.refresh_views()
@@ -383,7 +594,10 @@ class CatalysisWorkbenchWindow(QMainWindow):
         )
 
     def _save_interactive(self) -> bool:
-        if not self._commit_title_editor():
+        if (
+            not self._prepare_processing_draft()
+            or not self._commit_title_editor()
+        ):
             return False
         state = self.session.state
         if state.document is None:
@@ -432,7 +646,10 @@ class CatalysisWorkbenchWindow(QMainWindow):
         return "cancel"
 
     def _prepare_transition(self) -> bool:
-        if not self._commit_title_editor():
+        if (
+            not self._prepare_processing_draft()
+            or not self._commit_title_editor()
+        ):
             return False
         decision = self._dirty_decision()
         if decision == "cancel":
@@ -441,6 +658,7 @@ class CatalysisWorkbenchWindow(QMainWindow):
             return self._save_interactive()
         if decision == "discard":
             self.session.close_analysis(discard_changes=True)
+            self._clear_last_valid()
         return True
 
     def _request_home(self) -> None:
@@ -448,6 +666,7 @@ class CatalysisWorkbenchWindow(QMainWindow):
             return
         if self.session.state.document is not None:
             self.session.close_analysis()
+            self._clear_last_valid()
         self.show_home()
 
     def _open_project_ui(self, root: str) -> None:
@@ -461,7 +680,10 @@ class CatalysisWorkbenchWindow(QMainWindow):
     def _open_project_interactive(self) -> None:
         if not self._prepare_transition():
             return
-        root = QFileDialog.getExistingDirectory(self, "Open CatalysisWorkbench Project")
+        root = QFileDialog.getExistingDirectory(
+            self,
+            "Open CatalysisWorkbench Project",
+        )
         if not root:
             return
         try:
@@ -474,7 +696,10 @@ class CatalysisWorkbenchWindow(QMainWindow):
         self.refresh_views()
 
     def closeEvent(self, event: QCloseEvent) -> None:  # noqa: N802 - Qt override
-        if not self._commit_title_editor():
+        if (
+            not self._prepare_processing_draft()
+            or not self._commit_title_editor()
+        ):
             event.ignore()
             return
         if not self.session.state.is_dirty:

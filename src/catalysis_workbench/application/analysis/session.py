@@ -11,6 +11,7 @@ from catalysis_workbench.workspace.manifest import WorkspaceError
 
 from .data import DataSeriesSpec, TabularMappingSpec
 from .document import AnalysisDocument
+from .evaluator import AnalysisEvaluation, AnalysisEvaluator
 from .materialization import (
     AnalysisMaterializationError,
     MaterializedInput,
@@ -18,6 +19,14 @@ from .materialization import (
     verify_source_bytes,
 )
 from .persistence import create_analysis_project, open_analysis_project, save_analysis_project
+from .processing import (
+    AnalysisDependencyImpact,
+    AnalysisSpec,
+    dependency_impact,
+    remap_analysis_data_id,
+    remove_analysis_data_id,
+    validate_analysis_spec,
+)
 from .tasks import get_analysis_task_descriptor
 
 
@@ -47,6 +56,9 @@ class AnalysisSessionState:
         if self.document is None:
             return False
         return self.document.document_sha256 != self.baseline_document_sha256
+
+
+_UNSET = object()
 
 
 class AnalysisSession:
@@ -96,15 +108,18 @@ class AnalysisSession:
         *,
         title: str | None = None,
         data_series: Sequence[DataSeriesSpec] | None = None,
+        analysis: AnalysisSpec | object = _UNSET,
     ) -> AnalysisDocument:
         current = self._state.document
         if current is None:
             raise AnalysisSessionError("no analysis document is open")
+        candidate_analysis = current.analysis if analysis is _UNSET else analysis
         return AnalysisDocument(
-            schema_version=2,
+            schema_version=3,
             task_id=current.task_id,
             title=current.title if title is None else title,
             data_series=current.data_series if data_series is None else data_series,
+            analysis=candidate_analysis,  # type: ignore[arg-type]
         )
 
     def _series_index(self, data_id: str) -> int:
@@ -122,7 +137,7 @@ class AnalysisSession:
         self._refuse_dirty_replacement()
         task = get_analysis_task_descriptor(task_id)
         document = AnalysisDocument(
-            schema_version=2,
+            schema_version=3,
             task_id=task.task_id,
             title=task.default_title,
             data_series=(),
@@ -140,6 +155,18 @@ class AnalysisSession:
         """Replace only the title and record one undoable semantic document revision."""
 
         return self._replace_document(self._document_with(title=title))
+
+    def replace_analysis_spec(self, analysis: AnalysisSpec) -> AnalysisSessionState:
+        """Commit one already-valid task-specific processing state as one undo revision."""
+
+        current = self._state.document
+        if current is None:
+            raise AnalysisSessionError("no analysis document is open")
+        try:
+            checked = validate_analysis_spec(current.task_id, analysis)
+        except (TypeError, ValueError) as exc:
+            raise AnalysisSessionError(str(exc)) from exc
+        return self._replace_document(self._document_with(analysis=checked))
 
     def add_data_series_batch(
         self,
@@ -200,13 +227,25 @@ class AnalysisSession:
     ) -> AnalysisSessionState:
         return self.add_data_series_batch(((spec, source_path),))
 
+    def analysis_dependency_impact(self, data_id: str) -> AnalysisDependencyImpact:
+        """Return processing references that a data removal would remove atomically."""
+
+        current = self._state.document
+        if current is None or current.analysis is None:
+            raise AnalysisSessionError("no analysis document is open")
+        self._series_index(data_id)
+        return dependency_impact(current.analysis, data_id)
+
     def remove_data_series(self, data_id: str) -> AnalysisSessionState:
         current = self._state.document
-        if current is None:
+        if current is None or current.analysis is None:
             raise AnalysisSessionError("no analysis document is open")
         index = self._series_index(data_id)
         updated = (*current.data_series[:index], *current.data_series[index + 1 :])
-        return self._replace_document(self._document_with(data_series=updated))
+        analysis = remove_analysis_data_id(current.analysis, data_id)
+        return self._replace_document(
+            self._document_with(data_series=updated, analysis=analysis)
+        )
 
     def rename_data_series(self, data_id: str, display_name: str) -> AnalysisSessionState:
         current = self._state.document
@@ -231,7 +270,7 @@ class AnalysisSession:
         if not isinstance(mapping, TabularMappingSpec):
             raise TypeError("mapping must be a TabularMappingSpec")
         current = self._state.document
-        if current is None:
+        if current is None or current.analysis is None:
             raise AnalysisSessionError("no analysis document is open")
         index = self._series_index(data_id)
         previous = current.data_series[index]
@@ -249,7 +288,17 @@ class AnalysisSession:
             )
         updated = list(current.data_series)
         updated[index] = replacement
-        return self._replace_document(self._document_with(data_series=updated))
+        try:
+            analysis = remap_analysis_data_id(
+                current.analysis,
+                data_id,
+                replacement.data_id,
+            )
+        except (TypeError, ValueError) as exc:
+            raise AnalysisSessionError(str(exc)) from exc
+        return self._replace_document(
+            self._document_with(data_series=updated, analysis=analysis)
+        )
 
     def move_data_series(self, data_id: str, new_index: int) -> AnalysisSessionState:
         current = self._state.document
@@ -309,6 +358,14 @@ class AnalysisSession:
             return materialize_data_series(spec, path)
         except (AnalysisMaterializationError, OSError) as exc:
             raise AnalysisSessionError(str(exc)) from exc
+
+    def evaluate_analysis(self) -> AnalysisEvaluation:
+        """Evaluate the current committed scientific document without mutating session state."""
+
+        current = self._state.document
+        if current is None:
+            raise AnalysisSessionError("no analysis document is open")
+        return AnalysisEvaluator().evaluate(current, self.materialize_data)
 
     def undo(self) -> AnalysisSessionState:
         """Restore the previous semantic document without affecting file-system history."""
