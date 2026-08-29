@@ -16,12 +16,17 @@ def main() -> None:
         base = Path(directory)
         first = base / "Pb1.csv"
         second = base / "Pb2.csv"
+        incompatible = base / "different.csv"
         first.write_text(
             "Potential [V],Current [mA]\n-0.8,-2.0\n-0.7,-1.2\n-0.6,-0.5\n",
             encoding="utf-8",
         )
         second.write_text(
             "Potential [V],Current [mA]\n-0.8,-3.0\n-0.7,-1.8\n-0.6,-0.7\n",
+            encoding="utf-8",
+        )
+        incompatible.write_text(
+            "Time [s],Signal [A]\n0,1.0\n1,2.0\n2,3.0\n",
             encoding="utf-8",
         )
 
@@ -44,6 +49,16 @@ def main() -> None:
         assert window.minimumWidth() >= 1200
         assert window.analysis_page.add_files_button.isEnabled()
         assert window.analysis_page.series_list.count() == 0
+
+        incompatible_dialog = data_intake.ImportDataDialog(
+            (first, incompatible),
+            task_id="lsv",
+            parent=window,
+        )
+        assert incompatible_dialog.confirm_current_mapping() is True
+        assert incompatible_dialog.apply_current_mapping_to_compatible() == 0
+        assert incompatible_dialog.file_list.item(1).text().startswith("⚠")
+        incompatible_dialog.close()
 
         dialog = data_intake.ImportDataDialog(
             (first, second),
