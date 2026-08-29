@@ -203,6 +203,7 @@ def _ensure_raw_assets(
                 asset_id=asset_id,
                 asset_type=_RAW_ASSET_TYPE,
                 destination=source.workspace_destination,
+                expected_content_sha256=source.content_sha256,
             )
         )
     if not requests:
