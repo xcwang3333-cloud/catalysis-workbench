@@ -46,11 +46,17 @@ def test_analysis_document_is_immutable_deterministic_and_normalizes_legacy_sche
     first = AnalysisDocument(schema_version=1, task_id="lsv", title="Pb₃-N/C LSV")
     second = AnalysisDocument(schema_version=2, task_id="lsv", title="Pb₃-N/C LSV")
     third = AnalysisDocument(schema_version=3, task_id="lsv", title="Pb₃-N/C LSV")
+    fourth = AnalysisDocument(schema_version=4, task_id="lsv", title="Pb₃-N/C LSV")
     changed = AnalysisDocument(schema_version=1, task_id="lsv", title="Pb₂-N/C LSV")
 
-    assert first.schema_version == 3
-    assert first == second == third
-    assert first.document_sha256 == second.document_sha256 == third.document_sha256
+    assert first.schema_version == 4
+    assert first == second == third == fourth
+    assert (
+        first.document_sha256
+        == second.document_sha256
+        == third.document_sha256
+        == fourth.document_sha256
+    )
     assert changed.document_sha256 != first.document_sha256
     with pytest.raises(FrozenInstanceError):
         first.title = "mutated"  # type: ignore[misc]
@@ -72,14 +78,14 @@ def test_analysis_document_data_series_and_processing_change_identity(tmp_path) 
         display_name="Pb₃-N/C",
     )
     document = AnalysisDocument(
-        schema_version=3,
+        schema_version=4,
         task_id="lsv",
         title="LSV",
         data_series=(first_series,),
     )
-    empty = AnalysisDocument(schema_version=3, task_id="lsv", title="LSV")
+    empty = AnalysisDocument(schema_version=4, task_id="lsv", title="LSV")
     processed = AnalysisDocument(
-        schema_version=3,
+        schema_version=4,
         task_id="lsv",
         title="LSV",
         data_series=(first_series,),
@@ -91,7 +97,7 @@ def test_analysis_document_data_series_and_processing_change_identity(tmp_path) 
     assert processed.document_sha256 != document.document_sha256
     with pytest.raises(AnalysisDocumentError, match="duplicate scientific inputs"):
         AnalysisDocument(
-            schema_version=3,
+            schema_version=4,
             task_id="lsv",
             title="LSV",
             data_series=(first_series, first_series),
@@ -100,16 +106,16 @@ def test_analysis_document_data_series_and_processing_change_identity(tmp_path) 
 
 def test_analysis_document_rejects_invalid_schema_task_title_and_references() -> None:
     with pytest.raises(AnalysisDocumentError, match="schema_version"):
-        AnalysisDocument(schema_version=4, task_id="lsv", title="LSV")
+        AnalysisDocument(schema_version=5, task_id="lsv", title="LSV")
     with pytest.raises(AnalysisDocumentError, match="unknown analysis task_id"):
-        AnalysisDocument(schema_version=3, task_id="unknown", title="LSV")
+        AnalysisDocument(schema_version=4, task_id="unknown", title="LSV")
     with pytest.raises(AnalysisDocumentError, match="non-empty"):
-        AnalysisDocument(schema_version=3, task_id="lsv", title="")
+        AnalysisDocument(schema_version=4, task_id="lsv", title="")
     with pytest.raises(AnalysisDocumentError, match="surrounding whitespace"):
-        AnalysisDocument(schema_version=3, task_id="lsv", title=" LSV ")
+        AnalysisDocument(schema_version=4, task_id="lsv", title=" LSV ")
     with pytest.raises(AnalysisDocumentError, match="unknown data_id"):
         AnalysisDocument(
-            schema_version=3,
+            schema_version=4,
             task_id="lsv",
             title="LSV",
             analysis=LSVAnalysisSpec(
