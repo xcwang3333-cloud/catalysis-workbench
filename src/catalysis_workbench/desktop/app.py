@@ -10,7 +10,7 @@ from PySide6.QtWidgets import QApplication
 
 from catalysis_workbench.application import AnalysisSession, ApplicationSession
 
-from .figure_window import CatalysisWorkbenchWindow
+from .export_window import CatalysisWorkbenchWindow
 from .recent_projects import RecentProjectsStore
 from .window import CatalysisWorkbenchMainWindow
 
@@ -67,7 +67,7 @@ def create_workbench_desktop(
     argv: Sequence[str] | None = None,
     recent_store: RecentProjectsStore | None = None,
 ) -> WorkbenchDesktopHandle:
-    """Create the v1.1 Home/Analysis/Figure shell without entering the Qt event loop."""
+    """Create the v1.1 Home/Analysis/Figure/Export shell without entering Qt."""
 
     if session is not None and not isinstance(session, AnalysisSession):
         raise TypeError("session must be an AnalysisSession or None")

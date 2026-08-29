@@ -4,7 +4,7 @@
 
 v1.1 moves the optional desktop from a workspace-first administration shell toward a task-first scientific workbench while preserving the reviewed v1.0 scientific, workflow, provenance, and workspace contracts.
 
-Block 1 established the deterministic analysis-document lifecycle and Home/Analysis presentation shell. Block 2 added explicit real-data intake, mapping, raw-source ownership, and mapped-raw preview. Block 3 adds task-specific scientific processing, deterministic workflow-backed live evaluation, and ordinary-user Processing controls. Figure Workbench and publication export remain later blocks.
+Block 1 established the deterministic analysis-document lifecycle and Home/Analysis presentation shell. Block 2 added explicit real-data intake, mapping, raw-source ownership, and mapped-raw preview. Block 3 added task-specific scientific processing, deterministic workflow-backed live evaluation, and ordinary-user Processing controls. Block 4 added a presentation-only Figure Workbench bound to exact scientific result identities. Block 5 adds fail-closed publication Figure Packages containing both rendered figures and full scientific source data.
 
 ## Block 1 — AnalysisDocument + Home shell
 
@@ -351,3 +351,180 @@ Block 3 adds coverage for:
 ## Block 3 non-scope
 
 Block 3 does not implement Figure Workbench, figure display-range editing, publication-package export, smoothing, interpolation/resampling, fitting, baseline correction, automatic FE/current pairing, recipe-editor exposure, new third-party scientific dependencies, Git tags, GitHub Releases, or PyPI publication.
+
+## Block 4 — Figure Workbench
+
+### User flow
+
+```text
+successful current analysis
+    -> Continue to Figure
+    -> choose result view
+    -> Create Figure
+    -> edit trace order / labels / visibility
+    -> edit publication layout and style
+    -> edit display range
+    -> preview from exact bound scientific result
+    -> Save Project
+```
+
+Block 4 is presentation-only. It does not expose Processing controls in the Figure Workbench and does not mutate scientific arrays or workflow execution state.
+
+### AnalysisDocument schema 4 and FigureDraft
+
+Block 4 advances `AnalysisDocument` to schema 4 by adding ordered persisted `FigureDraft` state. Older schema-1/2/3 projects remain readable through explicit in-memory normalization and are not rewritten merely by opening them.
+
+Each `FigureDraft` binds:
+
+- one allowed analysis result `view_id`;
+- exact scientific trace identities;
+- explicit publication trace order; and
+- one immutable `FigureSpec` presentation state.
+
+The FigureDraft SHA is deterministic and excludes paths, timestamps, GUI selection state, and rendered binary bytes.
+
+### Scientific binding and stale semantics
+
+A figure may be created only from a successful current analysis result. The persisted draft records the exact scientific identities behind that view. If later Processing changes produce different scientific identities, the FigureDraft becomes stale.
+
+A stale figure remains inspectable as persisted presentation state but cannot be silently edited/rendered as if it were current. `Refresh from Analysis` explicitly rebinds it to the new science while preserving surviving trace presentation where possible.
+
+Display-only series rename does not change scientific identity and therefore does not itself stale a FigureDraft.
+
+### Figure Workbench surface
+
+The reviewed desktop surface is:
+
+```text
+CONTENT | PUBLICATION PREVIEW | PROPERTIES
+```
+
+Normal-user controls include result view selection, trace visibility/order/labels, preset, physical figure geometry, axis labels/scales, display limits, legend, typography, and line/marker presentation.
+
+The Figure Workbench does not expose recipe IDs, operation IDs, hashes, evidence records, workspace assets, or provenance internals.
+
+### Display range boundary
+
+Figure `xlim` / `ylim` are presentation state only. They must not crop or mutate the scientific series, workflow outputs, or source-data identity. This distinction becomes an explicit Block-5 export gate: exported source data uses the complete scientific trace even if the Figure preview displays only a narrow range.
+
+### Validation gates
+
+Block 4 adds coverage for:
+
+- schema-4 FigureDraft serialization and older-schema read compatibility;
+- exact scientific trace/source-view identity binding;
+- stale detection and explicit refresh semantics;
+- surviving trace presentation retention across refresh;
+- display-range changes preserving scientific data and workflow identity;
+- presentation-only trace reorder/label/visibility edits;
+- fresh-wheel headless Block-4 smoke;
+- offscreen Figure Workbench desktop smoke;
+- full regular CI; and
+- complete Stable 1.0 Readiness compatibility coverage.
+
+## Block 4 non-scope
+
+Block 4 does not publish Figure Packages, write publication source-data files, add scientific processing, add fitting/smoothing/interpolation, expose workflow/recipe editing, create release tags, create GitHub Releases, or publish PyPI artifacts.
+
+## Block 5 — Figure Package Export
+
+### User flow
+
+```text
+current FigureDraft
+    -> Continue to Export
+    -> choose SVG / PDF / PNG
+    -> choose XLSX / TXT source data
+    -> choose new package directory
+    -> preflight saved/current/font/visible-trace state
+    -> Export Package
+    -> verified external package + workspace provenance
+```
+
+Block 5 completes the reviewed ordinary-user path from imported data to publication output. Export remains explicit and does not hide a project save or Figure refresh.
+
+### Export contract
+
+A Figure Package requires at least one figure format and one source-data format. The supported format sets are closed for Block 5:
+
+- figure: `svg`, `pdf`, `png`;
+- source data: `xlsx`, `txt`.
+
+The destination must not already exist and its parent must already be a real directory. Normal-user overwrite/merge behavior is intentionally absent.
+
+### Preflight
+
+Export fails closed unless:
+
+- the analysis project has a saved root;
+- the current document is clean relative to that saved baseline;
+- the expected workspace-manifest and project-file identities are still current;
+- scientific evaluation succeeds;
+- the selected FigureDraft matches current science;
+- the configured figure font family is available; and
+- at least one figure trace is visible.
+
+The Qt Export page presents these conditions as ordinary-language preflight checks. It does not expose provenance SHA fields or asset IDs.
+
+### Full scientific source data
+
+Source-data output is derived from the exact scientific `FigureSourceView`, then filtered only by trace visibility/order. Figure display limits are never applied to the exported arrays.
+
+TXT writes one trace per file with metadata plus explicit `x_missing` / `y_missing` flags. XLSX contains an index sheet plus one sheet per visible trace and preserves missingness explicitly. Neither writer interpolates, resamples, smooths, fits, or otherwise changes scientific values.
+
+### Package semantic identity and exact byte identities
+
+Block 5 separates two identity layers:
+
+1. semantic package identity, derived from canonical path-independent state: task/view, saved analysis-document SHA, FigureDraft SHA, source-view/trace scientific identities, FigureSpec SHA, selected formats, and available workflow provenance;
+2. exact file identities, calculated from the actual generated figure/source-data bytes and recorded with file sizes in `manifest.json`.
+
+Destination paths, timestamps, and absolute file-system locations are excluded from semantic package identity. This allows the same scientific/presentation export request to retain one semantic identity even when binary container metadata or destination differs, while every concrete artifact remains hash-verifiable.
+
+### Workspace provenance
+
+Before external publication becomes authoritative, verified copies of the FigureSpec, generated figure/source-data files, and package manifest are registered as workspace-owned assets through expected-manifest copy semantics.
+
+The export transaction also records workflow/package evidence and figure composition records using the existing v1.0 provenance models. These IDs remain backend details; ordinary users interact with the Figure Package rather than manually assembling evidence records.
+
+Repeated exact exports may reuse already verified identical provenance assets. Asset/evidence/composition identity collisions with different content fail closed.
+
+### Atomic publication and rollback
+
+The package is generated in a sibling staging directory. Every generated file is rehashed against the staged manifest before provenance commit. The project snapshot and expected workspace/project identities are rechecked around the transaction.
+
+The final external directory rename is a distinct publication boundary. If that rename or a later verification fails, Block 5 removes only the exact package produced by the operation and restores tracked workspace metadata/assets to their pre-export bytes when safe. Unknown concurrent external content is never silently deleted or overwritten.
+
+If an exact rollback cannot be proven safe because workspace or target content changed concurrently, the operation fails closed and instructs the caller to reopen/inspect rather than fabricating a clean state.
+
+### AnalysisSession semantics
+
+Export is not a semantic `AnalysisDocument` revision. A successful session export therefore preserves:
+
+- the exact document object and document SHA;
+- revision number;
+- Undo and Redo stacks; and
+- clean/dirty state.
+
+Only the expected workspace-manifest baseline advances to the manifest identity containing the new verified provenance assets. A failed export leaves session state unchanged.
+
+### Validation gates
+
+Block 5 adds coverage for:
+
+- semantic package identity independent of destination;
+- exact file SHA/size manifest verification;
+- full-source-data export despite narrow Figure display limits;
+- visible-trace-only source package semantics;
+- TXT/XLSX missing-value preservation;
+- saved/dirty/stale/existing-target fail-closed behavior;
+- workspace evidence/composition registration;
+- final publication failure restoring exact package/workspace/session state;
+- cumulative fresh-wheel headless Block-5 smoke;
+- cumulative offscreen Figure → Export → Package desktop smoke;
+- full regular CI; and
+- complete Stable 1.0 Readiness compatibility coverage.
+
+## Block 5 non-scope
+
+Block 5 does not add new scientific transforms, change Figure Workbench styling semantics, expose recipe/workflow/provenance administration to ordinary users, add package overwrite/merge, add new third-party dependencies, create a v1.1 tag or GitHub Release, or publish to PyPI.
