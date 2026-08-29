@@ -5,14 +5,11 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from catalysis_workbench._canonical_json import CanonicalJSONError, canonical_json_sha256
 from catalysis_workbench.core import Dataset, Series
 from catalysis_workbench.visualization import FigureSpec, SeriesStyle, get_preset, render_curves
-
-if TYPE_CHECKING:
-    from .evaluator import AnalysisView
 
 
 class AnalysisFigureError(ValueError):
@@ -78,6 +75,52 @@ def source_view_sha256(view_id: str, trace_identities: Mapping[str, str]) -> str
         )
     except CanonicalJSONError as exc:
         raise AnalysisFigureError("figure source identity cannot be canonicalized") from exc
+
+
+@dataclass(frozen=True, slots=True)
+class FigureSourceView:
+    """Runtime-only exact scientific content behind one Figure Workbench result view."""
+
+    view_id: str
+    trace_ids: Sequence[str]
+    series_identities: Sequence[str]
+    series: Sequence[Series]
+    source_view_sha256: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        view_id = _identifier(self.view_id, label="view_id")
+        if isinstance(self.trace_ids, (str, bytes)) or not isinstance(
+            self.trace_ids, Sequence
+        ):
+            raise TypeError("trace_ids must be an ordered sequence")
+        trace_ids = tuple(_identifier(item, label="trace_id") for item in self.trace_ids)
+        if not trace_ids or len(trace_ids) != len(set(trace_ids)):
+            raise AnalysisFigureError("figure source trace IDs must be non-empty and unique")
+        if isinstance(self.series_identities, (str, bytes)) or not isinstance(
+            self.series_identities, Sequence
+        ):
+            raise TypeError("series_identities must be an ordered sequence")
+        identities = tuple(
+            _sha256(item, label=f"series identity for {trace_id!r}")
+            for trace_id, item in zip(trace_ids, self.series_identities, strict=True)
+        )
+        series = tuple(self.series)
+        if len(series) != len(trace_ids) or len(identities) != len(trace_ids):
+            raise AnalysisFigureError("figure source trace identity lengths do not match")
+        if not all(isinstance(item, Series) for item in series):
+            raise TypeError("figure source series must contain Series instances")
+        mapping = dict(zip(trace_ids, identities, strict=True))
+        object.__setattr__(self, "view_id", view_id)
+        object.__setattr__(self, "trace_ids", trace_ids)
+        object.__setattr__(self, "series_identities", identities)
+        object.__setattr__(self, "series", series)
+        object.__setattr__(self, "source_view_sha256", source_view_sha256(view_id, mapping))
+
+    @property
+    def trace_identities(self) -> Mapping[str, str]:
+        return MappingProxyType(
+            dict(zip(self.trace_ids, self.series_identities, strict=True))
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -192,42 +235,118 @@ def _figure_draft_from_dict(value: object) -> FigureDraft:
     )
 
 
-def _view_parts(view: AnalysisView) -> tuple[str, tuple[str, ...], tuple[str, ...], tuple[Series, ...]]:
-    view_id = _identifier(getattr(view, "view_id", None), label="view_id")
-    trace_ids = tuple(getattr(view, "trace_ids", ()))
-    identities = tuple(getattr(view, "series_identities", ()))
-    series = tuple(getattr(view, "series", ()))
-    if not trace_ids or not all(type(item) is str and item for item in trace_ids):
-        raise AnalysisFigureError("analysis view does not expose stable trace IDs")
-    if len(trace_ids) != len(set(trace_ids)):
-        raise AnalysisFigureError("analysis view trace IDs must be unique")
-    if len(trace_ids) != len(identities) or len(trace_ids) != len(series):
-        raise AnalysisFigureError("analysis view trace identity lengths do not match")
-    if not all(isinstance(item, Series) for item in series):
-        raise TypeError("analysis view series must contain Series instances")
-    checked_identities = tuple(
-        _sha256(value, label=f"series identity for {trace_id!r}")
-        for trace_id, value in zip(trace_ids, identities, strict=True)
+def _pair_trace_id(current_data_id: str, fe_data_id: str) -> str:
+    digest = canonical_json_sha256(
+        {
+            "identity_schema_version": 1,
+            "current_data_id": current_data_id,
+            "fe_data_id": fe_data_id,
+        }
     )
-    return view_id, trace_ids, checked_identities, series
+    return f"pair-{digest}"
 
 
-def _view_identity_mapping(view: AnalysisView) -> dict[str, str]:
-    _view_id, trace_ids, identities, _series = _view_parts(view)
-    return dict(zip(trace_ids, identities, strict=True))
+def _output_identity_by_source(document: object, result: object) -> dict[tuple[str, ...], str]:
+    from .compiler import compile_analysis
+
+    compiled = compile_analysis(document)  # type: ignore[arg-type]
+    run = result.workflow_run  # type: ignore[attr-defined]
+    identities: dict[tuple[str, ...], str] = {}
+    for output_name, source in compiled.output_sources.items():
+        try:
+            digest = run.output_identities[output_name]
+        except KeyError as exc:
+            raise AnalysisFigureError(
+                f"analysis result is missing output identity {output_name!r}"
+            ) from exc
+        identities[tuple(source)] = _sha256(
+            digest, label=f"workflow output identity {output_name!r}"
+        )
+    return identities
+
+
+def figure_source_view(document: object, result: object, view_id: str) -> FigureSourceView:
+    """Resolve one current analysis view into logical trace IDs and scientific identities."""
+
+    from .document import AnalysisDocument
+    from .evaluator import AnalysisResult
+    from .processing import FEPartialCurrentAnalysisSpec
+
+    if not isinstance(document, AnalysisDocument):
+        raise TypeError("document must be an AnalysisDocument")
+    if not isinstance(result, AnalysisResult):
+        raise TypeError("result must be an AnalysisResult")
+    checked_view_id = _identifier(view_id, label="view_id")
+    if checked_view_id not in allowed_figure_view_ids(document.task_id):
+        raise AnalysisFigureError(
+            f"view {checked_view_id!r} is not available for task {document.task_id!r}"
+        )
+    view = next((item for item in result.views if item.view_id == checked_view_id), None)
+    if view is None:
+        raise AnalysisFigureError(f"analysis result does not contain view {checked_view_id!r}")
+
+    if checked_view_id == "processed":
+        identity_by_source = _output_identity_by_source(document, result)
+        trace_ids = tuple(item.data_id for item in document.data_series)
+        identities = tuple(identity_by_source[(data_id,)] for data_id in trace_ids)
+        return FigureSourceView(
+            view_id=checked_view_id,
+            trace_ids=trace_ids,
+            series_identities=identities,
+            series=view.series,
+        )
+
+    analysis = document.analysis
+    if not isinstance(analysis, FEPartialCurrentAnalysisSpec):
+        raise AnalysisFigureError("FE figure views require FE & partial-current processing state")
+    if checked_view_id == "fe":
+        fe_ids: list[str] = []
+        for pair in analysis.pairs:
+            if pair.fe_data_id not in fe_ids:
+                fe_ids.append(pair.fe_data_id)
+        by_id = {item.data_id: item for item in document.data_series}
+        identities = tuple(
+            _sha256(by_id[data_id].input_sha256, label=f"input identity {data_id!r}")
+            for data_id in fe_ids
+        )
+        return FigureSourceView(
+            view_id=checked_view_id,
+            trace_ids=tuple(fe_ids),
+            series_identities=identities,
+            series=view.series,
+        )
+
+    identity_by_source = _output_identity_by_source(document, result)
+    trace_ids = tuple(
+        _pair_trace_id(pair.current_data_id, pair.fe_data_id) for pair in analysis.pairs
+    )
+    identities = tuple(
+        identity_by_source[(pair.current_data_id, pair.fe_data_id)]
+        for pair in analysis.pairs
+    )
+    return FigureSourceView(
+        view_id=checked_view_id,
+        trace_ids=trace_ids,
+        series_identities=identities,
+        series=view.series,
+    )
 
 
 def create_figure_draft(
-    view: AnalysisView,
+    document: object,
+    result: object,
+    view_id: str,
     *,
     preset: str = "publication",
 ) -> FigureDraft:
     """Create a presentation draft and freeze initial labels/colors explicitly."""
 
-    view_id, trace_ids, identities, series = _view_parts(view)
+    source = figure_source_view(document, result, view_id)
     spec = get_preset(preset)
     colors = spec.style.color_cycle
-    for index, (trace_id, item) in enumerate(zip(trace_ids, series, strict=True)):
+    for index, (trace_id, item) in enumerate(
+        zip(source.trace_ids, source.series, strict=True)
+    ):
         label = item.label or item.key or trace_id
         spec = spec.with_series_style(
             trace_id,
@@ -239,41 +358,35 @@ def create_figure_draft(
         )
     return FigureDraft(
         schema_version=1,
-        view_id=view_id,
-        trace_identities=dict(zip(trace_ids, identities, strict=True)),
-        trace_order=trace_ids,
+        view_id=source.view_id,
+        trace_identities=source.trace_identities,
+        trace_order=source.trace_ids,
         figure_spec=spec,
     )
 
 
-def figure_draft_is_stale(draft: FigureDraft, view: AnalysisView) -> bool:
+def figure_draft_is_stale(draft: FigureDraft, document: object, result: object) -> bool:
     if not isinstance(draft, FigureDraft):
         raise TypeError("draft must be a FigureDraft")
-    view_id, _trace_ids, _identities, _series = _view_parts(view)
-    if view_id != draft.view_id:
-        return True
-    return source_view_sha256(view_id, _view_identity_mapping(view)) != draft.source_view_sha256
+    source = figure_source_view(document, result, draft.view_id)
+    return source.source_view_sha256 != draft.source_view_sha256
 
 
-def refresh_figure_draft(draft: FigureDraft, view: AnalysisView) -> FigureDraft:
+def refresh_figure_draft(draft: FigureDraft, document: object, result: object) -> FigureDraft:
     """Explicitly rebind a stale draft while preserving surviving trace styling/order."""
 
     if not isinstance(draft, FigureDraft):
         raise TypeError("draft must be a FigureDraft")
-    view_id, trace_ids, identities, series = _view_parts(view)
-    if view_id != draft.view_id:
-        raise AnalysisFigureError(
-            f"cannot refresh figure view {draft.view_id!r} from {view_id!r}"
-        )
-    current = set(trace_ids)
+    source = figure_source_view(document, result, draft.view_id)
+    current = set(source.trace_ids)
     order = [trace_id for trace_id in draft.trace_order if trace_id in current]
-    order.extend(trace_id for trace_id in trace_ids if trace_id not in order)
+    order.extend(trace_id for trace_id in source.trace_ids if trace_id not in order)
 
     spec = draft.figure_spec
     for style_id in tuple(spec.series_styles):
         if style_id not in current:
             spec = spec.without_series_style(style_id)
-    by_id = dict(zip(trace_ids, series, strict=True))
+    by_id = dict(zip(source.trace_ids, source.series, strict=True))
     colors = spec.style.color_cycle
     for index, trace_id in enumerate(order):
         if trace_id in spec.series_styles:
@@ -289,8 +402,8 @@ def refresh_figure_draft(draft: FigureDraft, view: AnalysisView) -> FigureDraft:
         )
     return FigureDraft(
         schema_version=1,
-        view_id=view_id,
-        trace_identities=dict(zip(trace_ids, identities, strict=True)),
+        view_id=source.view_id,
+        trace_identities=source.trace_identities,
         trace_order=order,
         figure_spec=spec,
     )
@@ -344,17 +457,17 @@ def _visible_render_spec(draft: FigureDraft, visible_ids: Sequence[str]) -> Figu
     return FigureSpec.from_dict(plain)
 
 
-def render_figure_draft(view: AnalysisView, draft: FigureDraft):
+def render_figure_draft(document: object, result: object, draft: FigureDraft):
     """Render only visible traces; display limits never crop scientific Series arrays."""
 
     if not isinstance(draft, FigureDraft):
         raise TypeError("draft must be a FigureDraft")
-    view_id, trace_ids, _identities, series = _view_parts(view)
-    if view_id != draft.view_id or figure_draft_is_stale(draft, view):
+    source = figure_source_view(document, result, draft.view_id)
+    if source.source_view_sha256 != draft.source_view_sha256:
         raise AnalysisFigureError(
             "analysis results changed; refresh this figure before previewing"
         )
-    by_id = dict(zip(trace_ids, series, strict=True))
+    by_id = dict(zip(source.trace_ids, source.series, strict=True))
     visible_ids = tuple(
         trace_id
         for trace_id in draft.trace_order
@@ -388,9 +501,11 @@ def render_figure_draft(view: AnalysisView, draft: FigureDraft):
 __all__ = [
     "AnalysisFigureError",
     "FigureDraft",
+    "FigureSourceView",
     "allowed_figure_view_ids",
     "create_figure_draft",
     "figure_draft_is_stale",
+    "figure_source_view",
     "move_figure_trace",
     "refresh_figure_draft",
     "render_figure_draft",
