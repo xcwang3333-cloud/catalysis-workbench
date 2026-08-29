@@ -5,9 +5,9 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 import numpy as np
+from matplotlib import font_manager
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
-from matplotlib import font_manager
 from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
@@ -30,7 +30,11 @@ from PySide6.QtWidgets import (
 )
 
 from catalysis_workbench.application import FigureDraft, FigureSourceView
-from catalysis_workbench.visualization.specs import FigureSpec, SeriesStyle, VisualizationError
+from catalysis_workbench.visualization.specs import (
+    FigureSpec,
+    SeriesStyle,
+    VisualizationError,
+)
 
 
 class FigureWorkbenchPage(QWidget):
@@ -531,10 +535,18 @@ class FigureWorkbenchPage(QWidget):
         if self._draft is None or self._stale or self._syncing:
             return
         if axis == "x":
-            limits = None if self.x_auto.isChecked() else (self.x_min.value(), self.x_max.value())
+            limits = (
+                None
+                if self.x_auto.isChecked()
+                else (self.x_min.value(), self.x_max.value())
+            )
             self._update_spec(xlim=limits)
         else:
-            limits = None if self.y_auto.isChecked() else (self.y_min.value(), self.y_max.value())
+            limits = (
+                None
+                if self.y_auto.isChecked()
+                else (self.y_min.value(), self.y_max.value())
+            )
             self._update_spec(ylim=limits)
 
     def _source_bounds(self, axis: str) -> tuple[float, float]:
@@ -555,7 +567,9 @@ class FigureWorkbenchPage(QWidget):
         self._syncing = True
         try:
             trace_id = self._selected_trace_id()
-            enabled = trace_id is not None and self._draft is not None and not self._stale
+            enabled = (
+                trace_id is not None and self._draft is not None and not self._stale
+            )
             for widget in self._trace_property_widgets:
                 widget.setEnabled(enabled)
             if not enabled or self._draft is None or trace_id is None:
@@ -567,7 +581,9 @@ class FigureWorkbenchPage(QWidget):
                 self.color_button.setText(style.color)
             else:
                 self.color_button.setText("Choose…")
-            self.line_style_combo.setCurrentText(style.line_style or self._draft.figure_spec.style.line_style)
+            self.line_style_combo.setCurrentText(
+                style.line_style or self._draft.figure_spec.style.line_style
+            )
             self.line_width_spin.setValue(
                 self._draft.figure_spec.style.line_width
                 if style.line_width is None
@@ -690,7 +706,9 @@ class FigureWorkbenchPage(QWidget):
         self.redo_button.setEnabled(can_redo)
         self.save_button.setEnabled(True)
         self.create_button.setEnabled(draft is None and source is not None)
-        self.refresh_button.setEnabled(draft is not None and source is not None and stale)
+        self.refresh_button.setEnabled(
+            draft is not None and source is not None and stale
+        )
         self.trace_list.setEnabled(draft is not None and not stale)
         if draft is None:
             self.status_label.setText("No figure draft for this result")
