@@ -157,7 +157,8 @@ class TabularMappingSpec:
         object.__setattr__(self, "x_unit", x_unit)
         object.__setattr__(self, "y_unit", y_unit)
         object.__setattr__(self, "x_reference", x_reference)
-        object.__setattr__(self, "mapping_sha256", canonical_json_sha256(_mapping_to_plain_dict(self)))
+        mapping_sha256 = canonical_json_sha256(_mapping_to_plain_dict(self))
+        object.__setattr__(self, "mapping_sha256", mapping_sha256)
 
 
 @dataclass(frozen=True, slots=True)

@@ -168,7 +168,9 @@ def _ensure_raw_assets(
 ) -> str:
     manifest = open_workspace(root)
     if manifest.manifest_sha256 != expected_manifest_sha256:
-        raise AnalysisProjectError("workspace changed outside the analysis session; reopen explicitly")
+        raise AnalysisProjectError(
+            "workspace changed outside the analysis session; reopen explicitly"
+        )
     by_id = {asset.asset_id: asset for asset in manifest.assets}
     requests: list[CopyAssetRequest] = []
     for representative in _raw_sources(document):
@@ -378,11 +380,9 @@ def _create_staged_project(
     if not parent.is_dir():
         raise NotADirectoryError(parent)
 
-    staging = Path(
-        tempfile.mkdtemp(prefix=f".{root_path.name}-staging-", dir=parent)
-    )
+    staging = Path(tempfile.mkdtemp(prefix=f".{root_path.name}-staging-", dir=parent))
     try:
-        workspace = create_workspace(staging / "workspace-root")
+        create_workspace(staging / "workspace-root")
         # Move the freshly created workspace contents up one level so the staging
         # directory itself is the eventual project root without ever exposing the
         # final destination prematurely.

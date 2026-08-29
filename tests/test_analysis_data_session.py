@@ -172,9 +172,9 @@ def test_schema1_project_open_migrates_in_memory_without_rewriting_disk(tmp_path
     root = tmp_path / "project"
     create_workspace(root)
     payload = (
-        '{"document":{"schema_version":1,"task_id":"lsv","title":"Legacy Block 1"},'
-        '"schema_version":1}\n'
-    ).encode("utf-8")
+        b'{"document":{"schema_version":1,"task_id":"lsv","title":"Legacy Block 1"},'
+        b'"schema_version":1}\n'
+    )
     project_path = root / "project.json"
     project_path.write_bytes(payload)
     workspace_sha = open_workspace(root).manifest_sha256

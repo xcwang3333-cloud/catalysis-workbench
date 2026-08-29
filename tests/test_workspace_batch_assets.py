@@ -4,11 +4,10 @@ from pathlib import Path
 
 import pytest
 
-from catalysis_workbench.workspace import (
+from catalysis_workbench.workspace import create_workspace, open_workspace
+from catalysis_workbench.workspace.assets import (
     CopyAssetRequest,
-    create_workspace,
     import_copy_assets_batch,
-    open_workspace,
     verify_copy_asset,
 )
 from catalysis_workbench.workspace.manifest import WorkspaceError
@@ -79,7 +78,10 @@ def test_verify_copy_asset_detects_external_raw_mutation(tmp_path: Path) -> None
         verify_copy_asset(root, "raw", expected_type="analysis_raw_tabular")
 
 
-def test_batch_copy_failure_rolls_back_all_files(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_batch_copy_failure_rolls_back_all_files(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     from catalysis_workbench.workspace import assets
 
     root = tmp_path / "workspace"
