@@ -4,16 +4,6 @@ All notable changes to CatalysisWorkbench are recorded here.
 
 ## [Unreleased]
 
-### Added
-
-- v1.1 desktop dogfooding hardening adds the `catalysis-workbench` CLI entry point, a Qt-free `--version` path, explicit `--project` launch into a v1.1 project, Export-page Save Project, post-export Open Folder / Export Another actions, actionable desktop errors with optional technical details, and a presentation-only Recent Projects cache.
-- Cumulative fresh-wheel dogfood smoke coverage now exercises Generic XY, LSV / Polarization, and FE & Partial Current through the installed desktop path, with the Block-6 smokes wired into regular CI.
-
-### Changed
-
-- v1.1 Block 6 hardens the ordinary desktop workflow without changing the reviewed scientific semantics or the frozen v1.0 compatibility surface; the development version remains `1.1.0.dev0`.
-- Stable 1.0 Readiness remains an active compatibility gate. Block 6 does not authorize or create a v1.1 tag, GitHub Release, or PyPI/package-registry publication.
-
 ## [0.6.0] - 2026-08-25
 
 The v0.6 release freezes the reviewed electronic-structure and catalysis-thermodynamics scope after Gate A release hardening, Gate B final-version exact-wheel validation, Gate C tag verification, and public GitHub Release publication. Tag `v0.6.0` resolves exactly to reviewed Gate-B release commit `c7793b309f41d174c14534bd6d4acdacc2a57636`, and distribution/runtime version through the tag is `0.6.0`. The GitHub Release `CatalysisWorkbench v0.6.0` is published from that existing tag with reviewed release notes. PyPI/package-registry publication remains deferred.
@@ -39,7 +29,7 @@ The v0.6 release freezes the reviewed electronic-structure and catalysis-thermod
 - Gate B / Issue #188 / PR #189 synchronized `[project].version`, runtime `__version__`, and the exact-wheel expected version to `0.6.0`; final head `4544a464ab54e13408e3db23a68acf565f764328` passed CI #453 / run `32845155122` and reviews `5018619904`, `5018620923` before squash merge/reviewed release commit `c7793b309f41d174c14534bd6d4acdacc2a57636`.
 - Gate C / Issue #192 created and reverse-verified `v0.6.0` exactly on `c7793b309f41d174c14534bd6d4acdacc2a57636`; distribution/runtime version through the tag is `0.6.0`.
 - GitHub Release tracking Issue #193 completed after the public `CatalysisWorkbench v0.6.0` Release was published from the existing tag with populated release notes.
-- `v0.5.0` remains immutable at `9400ac0044ac333d2cae228554c08d955a816a4c`; `v0.4.0` remains immutable at `bb4cb26a500eb1a1ce98fdf42760d33e7d7cd6`.
+- `v0.5.0` remains immutable at `9400ac0044ac333d2cae228554c08d955a816a4c`; `v0.4.0` remains immutable at `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6`.
 - PyPI/package-registry publication remains deferred.
 
 ## [0.5.0] - 2026-08-25
@@ -66,12 +56,12 @@ The v0.5 release freezes the reviewed XAS, structure, and basic DFT-energetics s
 - Gate B / Issue #138 / PR #139 synchronized `[project].version`, runtime `__version__`, and the exact-wheel expected version to `0.5.0`; final head `b95841ed472aff1fa4d05af7335547ee5c3cd611` passed CI #360 / run `32800514038` and reviews `5014348449`, `5014349058` before squash merge `9400ac0044ac333d2cae228554c08d955a816a4c`.
 - Post-Gate-B state synchronization #140/#141 merged before Gate C; Gate C / Issue #142 then created and reverse-verified `v0.5.0` exactly on `9400ac0044ac333d2cae228554c08d955a816a4c`.
 - GitHub Release tracking Issue #144 completed after the public `CatalysisWorkbench v0.5.0` Release was published from the existing tag with populated release notes.
-- `v0.4.0` remains immutable at `bb4cb26a500eb1a1ce98fdf42760d33e7d7cd6`.
+- `v0.4.0` remains immutable at `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6`.
 - PyPI/package-registry publication remains deferred.
 
 ## [0.4.0] - 2026-08-25
 
-The v0.4 release freezes the reviewed advanced experimental-analysis scope after Gate A release hardening and Gate B final-version validation. Tag `v0.4.0` was created on 2026-08-25 and reverse-verified to resolve exactly to release commit `bb4cb26a500eb1a1ce98fdf42760d33e7d7cd6`. The GitHub Release has been published from that existing immutable tag; package-registry/PyPI publication remains deferred.
+The v0.4 release freezes the reviewed advanced experimental-analysis scope after Gate A release hardening and Gate B final-version validation. Tag `v0.4.0` was created on 2026-08-25 and reverse-verified to resolve exactly to release commit `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6`. The GitHub Release has been published from that existing immutable tag; package-registry/PyPI publication remains deferred.
 
 ### Added
 
