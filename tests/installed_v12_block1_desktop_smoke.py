@@ -50,12 +50,12 @@ def main() -> None:
         assert window.app_shell.command_bar.project_title.text() == "Untitled LSV analysis"
         assert window.app_shell.command_bar.task_pill.text() == "LSV / Polarization"
         assert window.app_shell.command_bar.save_button.isEnabled()
-        assert not window.app_shell.command_bar.dirty_pill.isVisible()
+        assert window.app_shell.command_bar.dirty_pill.isHidden()
 
         window.rename_analysis("v1.2 shell smoke")
         assert window.session.state.is_dirty
         assert window.app_shell.command_bar.project_title.text() == "v1.2 shell smoke"
-        assert window.app_shell.command_bar.dirty_pill.isVisible()
+        assert not window.app_shell.command_bar.dirty_pill.isHidden()
         assert window.app_shell.command_bar.undo_button.isEnabled()
 
         window.app_shell.command_bar.undo_button.click()
