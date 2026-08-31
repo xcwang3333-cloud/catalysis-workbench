@@ -528,3 +528,57 @@ Block 5 adds coverage for:
 ## Block 5 non-scope
 
 Block 5 does not add new scientific transforms, change Figure Workbench styling semantics, expose recipe/workflow/provenance administration to ordinary users, add package overwrite/merge, add new third-party dependencies, create a v1.1 tag or GitHub Release, or publish to PyPI.
+
+## Block 6 — Dogfooding Hardening & Desktop Cleanup
+
+### Purpose
+
+Block 6 hardens the completed v1.1 ordinary-user desktop path for installed-wheel dogfooding. It does not add new scientific transforms, change deterministic identities, or expand the reviewed v1.0 compatibility surface.
+
+### Launch and project entry
+
+The installed package exposes the `catalysis-workbench` console entry point. `catalysis-workbench --version` returns the distribution/runtime development version without importing Qt. `catalysis-workbench --project PATH` explicitly opens an existing v1.1 analysis project; no-argument launch remains the task-first Home shell.
+
+CLI argument parsing and version reporting remain separated from Qt startup so headless package/version checks do not require PySide6 initialization.
+
+### Export completion flow
+
+The Export page can explicitly Save Project when export preflight is blocked only because the current v1.1 analysis is unsaved or dirty. Saving remains the existing verified `AnalysisSession` project transaction; export never silently saves as a side effect.
+
+After a successful Figure Package export, the desktop presents explicit Open Folder and Export Another actions. These are post-publication presentation actions and do not change package scientific identity, workspace provenance, document revision state, or export verification semantics.
+
+### Actionable errors and recent projects
+
+Ordinary desktop failures present an actionable summary plus optional technical details instead of exposing raw exception text as the primary message. Technical details remain diagnostic presentation state and are not serialized into scientific/application identity.
+
+Recent Projects uses a desktop presentation cache only. Cache failure or staleness must not change project persistence, scientific SHA identities, or fail-closed open/save semantics.
+
+### Installed-wheel dogfooding
+
+Block 6 extends cumulative fresh-wheel smoke coverage over the installed desktop path for:
+
+- Generic XY;
+- LSV / Polarization; and
+- FE & Partial Current.
+
+The smokes exercise representative task creation/data intake/processing/figure/export or project lifecycle paths from an installed wheel, including offscreen desktop execution where required. They supplement rather than replace focused unit/regression coverage.
+
+Regular CI wires the cumulative Block-6 smoke coverage while Stable 1.0 Readiness remains the compatibility gate for the frozen v1.0 surface.
+
+### Validation gates
+
+Block 6 requires:
+
+- console-entry installation and Qt-free `--version` coverage;
+- explicit `--project` v1.1 launch coverage;
+- Export-page Save Project behavior;
+- successful-export Open Folder / Export Another behavior;
+- actionable desktop error plus technical-details coverage;
+- Recent Projects presentation-cache coverage;
+- cumulative fresh-wheel Generic XY / LSV / FE & Partial Current dogfood smoke;
+- full regular CI on the exact PR head; and
+- complete Stable 1.0 Readiness on the exact PR head.
+
+## Block 6 non-scope
+
+Block 6 does not add new scientific algorithms or transforms, change Figure Package scientific/source-data/provenance semantics, widen the frozen v1.0 public API, add new third-party scientific dependencies, create a v1.1 tag, publish a GitHub Release, merge the PR automatically, or publish to PyPI/package registries.
