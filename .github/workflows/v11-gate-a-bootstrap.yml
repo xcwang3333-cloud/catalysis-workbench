@@ -1,0 +1,890 @@
+name: v1.1 Gate A bootstrap
+
+on:
+  push:
+    branches: [release/v1.1.0-gate-a]
+
+permissions:
+  contents: write
+
+jobs:
+  bootstrap:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out exact branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build Gate A release-hardening tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="c81ee2e1aa8767e1560a14c5f7f4c1209fc4b6f9"
+          test "$(git rev-parse HEAD^)" = "$BASE"
+
+          python - <<'PY'
+          from pathlib import Path
+          from textwrap import dedent
+
+          BASE = "c81ee2e1aa8767e1560a14c5f7f4c1209fc4b6f9"
+
+          def replace_once(path: str, old: str, new: str) -> None:
+              p = Path(path)
+              text = p.read_text(encoding="utf-8")
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{path}: expected one match, found {count}")
+              p.write_text(text.replace(old, new, 1), encoding="utf-8")
+
+          replace_once(
+              "README.md",
+              dedent('''\
+              The active development identity is:
+
+              ```text
+              1.1.0.dev0
+              ```
+
+              v1.1 redesigns the optional desktop around an ordinary-user, task-first workflow. Blocks 1–5 are merged on `main`; Block 6 is the final dogfooding/hardening block. Completing Block 6 does **not** finalize `1.1.0` and does not authorize a v1.1 tag, GitHub Release, or package-registry publication.
+
+              PyPI/package-registry publication remains deferred. Live GitHub state is authoritative if descriptive documentation drifts.
+              '''),
+              dedent(f'''\
+              The active v1.1 release-candidate development identity is:
+
+              ```text
+              1.1.0.dev0
+              ```
+
+              v1.1 Blocks 1–6 are complete and merged on `main`. The exact Block-6 squash merge is `{BASE}`; post-merge CI #851 and Stable 1.0 Readiness #113 both succeeded on that commit.
+
+              Stable 1.1 Gate A now adds release-specific exact-wheel, cross-platform base/desktop, and wheel/sdist validation while deliberately retaining `1.1.0.dev0`. Gate A does **not** finalize `1.1.0`, create `v1.1.0`, publish a GitHub Release, or upload to a package registry.
+
+              PyPI/package-registry publication remains deferred until a separately verified publication gate. Live GitHub state is authoritative if descriptive documentation drifts.
+              '''),
+          )
+
+          replace_once(
+              "docs/MASTER_PLAN.md",
+              dedent('''\
+              ## Current checkpoint — v1.1 development
+
+              Repository: `xcwang3333-cloud/catalysis-workbench`.
+
+              Stable baseline:
+
+              - stable version/tag: `v1.0.0`;
+              - exact stable tag target: `22b944992bfd3791f91cc951f89eb22e8bf47325`;
+              - GitHub Release: `CatalysisWorkbench v1.0.0`, published;
+              - project license: BSD-3-Clause;
+              - PyPI/package-registry publication: not performed.
+
+              Current development:
+
+              - development version: `1.1.0.dev0`;
+              - v1.1 Blocks 1–5: complete and merged;
+              - exact Block-5 post-merge main baseline: `eec2f85d117902459178f65c4543b5674de54912`;
+              - Block-5 post-merge CI #832: success;
+              - Block-5 post-merge Stable 1.0 Readiness #94: success;
+              - current phase: v1.1 Block 6 — Dogfooding Hardening & Desktop Cleanup.
+
+              Block 6 is not a release gate. Final `1.1.0`, a v1.1 tag, a GitHub Release, and PyPI/package-registry publication remain separately authorized future decisions.
+              '''),
+              dedent(f'''\
+              ## Current checkpoint — v1.1 release hardening
+
+              Repository: `xcwang3333-cloud/catalysis-workbench`.
+
+              Stable baseline:
+
+              - stable version/tag: `v1.0.0`;
+              - exact stable tag target: `22b944992bfd3791f91cc951f89eb22e8bf47325`;
+              - GitHub Release: `CatalysisWorkbench v1.0.0`, published;
+              - project license: BSD-3-Clause;
+              - PyPI/package-registry publication: not performed.
+
+              Current v1.1 candidate:
+
+              - candidate development version: `1.1.0.dev0`;
+              - v1.1 Blocks 1–6: complete and merged;
+              - exact Block-6 squash merge / Gate-A baseline: `{BASE}`;
+              - Block-6 post-merge CI #851: success;
+              - Block-6 post-merge Stable 1.0 Readiness #113: success;
+              - current phase: Stable 1.1 Gate A — release hardening at unchanged development version.
+
+              Gate A adds v1.1-specific release audit, platform-install, and artifact validation only. Final `1.1.0`, the `v1.1.0` tag, GitHub Release publication, installers, and package-registry publication remain later gates.
+              '''),
+          )
+          replace_once(
+              "docs/MASTER_PLAN.md",
+              "### Block 6 — Dogfooding Hardening & Desktop Cleanup — current",
+              "### Block 6 — Dogfooding Hardening & Desktop Cleanup — complete",
+          )
+          replace_once(
+              "docs/MASTER_PLAN.md",
+              "Block 6 does **not** add scientific algorithms, new task families, a new `AnalysisDocument` schema, hidden interpolation/resampling, autosave, automatic stale-Figure refresh, package overwrite/merge, new dependencies, servers/cloud state, or release publication.",
+              f"Block 6 does **not** add scientific algorithms, new task families, a new `AnalysisDocument` schema, hidden interpolation/resampling, autosave, automatic stale-Figure refresh, package overwrite/merge, new dependencies, servers/cloud state, or release publication. It was squash-merged as `{BASE}`; post-merge CI #851 and Stable 1.0 Readiness #113 succeeded. Stable 1.1 Gate A is now the active release-hardening phase.",
+          )
+
+          replace_once(
+              "docs/ROADMAP.md",
+              dedent('''\
+              - the active development identity is `1.1.0.dev0`.
+              - PyPI/package-registry publication has not been performed.
+              - final `1.1.0`, a v1.1 tag, a GitHub Release, and any registry publication remain separate future decisions.
+              '''),
+              dedent('''\
+              - the active v1.1 release-candidate development identity is `1.1.0.dev0`.
+              - PyPI/package-registry publication has not been performed.
+              - Stable 1.1 Gate A is in progress; final `1.1.0`, the v1.1 tag, GitHub Release, installers, and any registry publication remain later verified gates.
+              '''),
+          )
+          replace_once(
+              "docs/ROADMAP.md",
+              "## v1.1 — Task-first research workbench — current development",
+              "## v1.1 — Task-first research workbench — release hardening",
+          )
+          replace_once(
+              "docs/ROADMAP.md",
+              "### Block 6 — Dogfooding Hardening & Desktop Cleanup — current",
+              "### Block 6 — Dogfooding Hardening & Desktop Cleanup — complete",
+          )
+          replace_once(
+              "docs/ROADMAP.md",
+              dedent('''\
+              ## After Block 6
+
+              Block 6 completion should be followed by real dogfooding review of the candidate desktop behavior and package outputs. Only after that review may a separately scoped v1.1 release decision consider:
+
+              - whether `1.1.0.dev0` is ready to become final `1.1.0`;
+              - exact release-candidate SHA;
+              - tag creation;
+              - GitHub Release publication;
+              - optional installer/distribution packaging; and
+              - whether PyPI/package-registry publication is desired.
+
+              No release action is implied by Block 6 completion.
+              '''),
+              dedent(f'''\
+              ## Stable 1.1 release hardening
+
+              Block 6 completed the real installed-wheel dogfooding review and was squash-merged as `{BASE}`. Post-merge CI #851 and Stable 1.0 Readiness #113 both succeeded on that exact commit.
+
+              The active release path is now staged:
+
+              1. **Gate A — release hardening:** retain `1.1.0.dev0`, add Stable 1.1 exact-wheel audit, Linux/Windows/macOS base + desktop install checks, wheel/sdist validation, and release documentation;
+              2. **Gate B — final-version candidate:** synchronize distribution/runtime/gate expectations to exact `1.1.0` without feature changes;
+              3. **Gate C — immutable tag:** create and reverse-verify `v1.1.0` only on the reviewed Gate-B release commit;
+              4. **Publication:** publish the GitHub Release from the verified tag; installers and package-registry publication remain separately verified operations.
+
+              Each merge and publication boundary remains fail-closed and exact-head evidence from an older candidate becomes stale after any change.
+              '''),
+          )
+
+          replace_once(
+              "CHANGELOG.md",
+              dedent('''\
+              ### Changed
+
+              - v1.1 Block 6 hardens the ordinary desktop workflow without changing the reviewed scientific semantics or the frozen v1.0 compatibility surface; the development version remains `1.1.0.dev0`.
+              - Stable 1.0 Readiness remains an active compatibility gate. Block 6 does not authorize or create a v1.1 tag, GitHub Release, or PyPI/package-registry publication.
+              '''),
+              dedent('''\
+              ### Changed
+
+              - v1.1 Block 6 hardens the ordinary desktop workflow without changing the reviewed scientific semantics or the frozen v1.0 compatibility surface; the development version remains `1.1.0.dev0`.
+              - Block 6 is merged and post-merge verified. Stable 1.1 Gate A adds a dedicated exact-wheel release audit, Linux/Windows/macOS base + desktop candidate validation, and exact wheel/sdist checks while retaining `1.1.0.dev0`.
+              - Stable 1.0 Readiness remains an active compatibility gate. Gate A does not create a v1.1 tag, GitHub Release, installer, or PyPI/package-registry publication.
+              '''),
+          )
+
+          Path("tests/installed_v11_release_smoke.py").write_text(dedent('''\
+          """Unified Stable-1.1 audit for the reviewed v1.1 installed wheel."""
+
+          from __future__ import annotations
+
+          import io
+          import os
+          import subprocess
+          import sys
+          from contextlib import redirect_stdout
+          from importlib import import_module
+          from importlib.metadata import entry_points, metadata
+          from importlib.metadata import version as distribution_version
+          from pathlib import Path
+
+          import catalysis_workbench
+
+          ROOT = Path(__file__).resolve().parents[1]
+          SOURCE_TREE = (ROOT / "src").resolve()
+          PUBLIC_MODULES = (
+              "catalysis_workbench.core",
+              "catalysis_workbench.io",
+              "catalysis_workbench.processing",
+              "catalysis_workbench.experimental.echem",
+              "catalysis_workbench.experimental.characterization",
+              "catalysis_workbench.experimental.product",
+              "catalysis_workbench.computation",
+              "catalysis_workbench.visualization",
+              "catalysis_workbench.workflow",
+              "catalysis_workbench.workspace",
+              "catalysis_workbench.application",
+          )
+          NUMERICAL_MODULES = (
+              "catalysis_workbench.processing",
+              "catalysis_workbench.experimental.echem",
+              "catalysis_workbench.experimental.characterization",
+              "catalysis_workbench.experimental.product",
+              "catalysis_workbench.computation",
+              "catalysis_workbench.workflow",
+              "catalysis_workbench.workspace",
+              "catalysis_workbench.application",
+          )
+          REVIEWED_V11_SMOKES = (
+              "installed_v11_block1_smoke.py",
+              "installed_v11_block2_smoke.py",
+              "installed_v11_block3_smoke.py",
+              "installed_v11_block4_smoke.py",
+              "installed_v11_block5_smoke.py",
+              "installed_v11_block6_smoke.py",
+          )
+          EXPECTED_PROJECT_URLS = {
+              "Homepage": "https://github.com/xcwang3333-cloud/catalysis-workbench",
+              "Repository": "https://github.com/xcwang3333-cloud/catalysis-workbench",
+              "Issues": "https://github.com/xcwang3333-cloud/catalysis-workbench/issues",
+              "Changelog": "https://github.com/xcwang3333-cloud/catalysis-workbench/blob/main/CHANGELOG.md",
+          }
+
+
+          def _assert_installed_import() -> None:
+              package_file = Path(catalysis_workbench.__file__).resolve()
+              try:
+                  package_file.relative_to(SOURCE_TREE)
+              except ValueError:
+                  return
+              raise AssertionError(f"v1.1 release audit imported repository source tree: {package_file}")
+
+
+          def _expected_version() -> str:
+              expected = os.environ.get("CATALYSIS_WORKBENCH_EXPECTED_VERSION")
+              assert expected, "CATALYSIS_WORKBENCH_EXPECTED_VERSION must be set by the release gate"
+              return expected
+
+
+          def _assert_gate_version(expected: str) -> None:
+              runtime = catalysis_workbench.__version__
+              installed = distribution_version("catalysis-workbench")
+              assert runtime == installed == expected, (runtime, installed, expected)
+
+
+          def _assert_numerical_imports_are_presentation_lazy() -> None:
+              for module_name in NUMERICAL_MODULES:
+                  import_module(module_name)
+              forbidden = [
+                  name
+                  for name in sys.modules
+                  if name == "matplotlib"
+                  or name.startswith("matplotlib.")
+                  or name == "PySide6"
+                  or name.startswith("PySide6.")
+                  or name == "pyvista"
+                  or name.startswith("pyvista.")
+                  or name == "vtk"
+                  or name.startswith("vtk.")
+                  or name.startswith("vtkmodules.")
+              ]
+              assert not forbidden, f"numerical/application imports loaded presentation backends: {forbidden!r}"
+
+
+          def _assert_public_exports() -> None:
+              for module_name in PUBLIC_MODULES:
+                  module = import_module(module_name)
+                  exports = tuple(getattr(module, "__all__", ()))
+                  assert exports, f"documented public module has empty __all__: {module_name}"
+                  assert len(exports) == len(set(exports)), f"duplicate __all__ names: {module_name}"
+                  for name in exports:
+                      assert isinstance(name, str) and name, f"invalid __all__ entry: {module_name}"
+                      getattr(module, name)
+
+              desktop = import_module("catalysis_workbench.desktop")
+              assert tuple(desktop.__all__) == (
+                  "CatalysisWorkbenchMainWindow",
+                  "DesktopDependencyError",
+                  "desktop_available",
+                  "launch_desktop",
+              )
+              assert desktop.desktop_available() is False
+
+
+          def _assert_base_package_metadata() -> None:
+              project = metadata("catalysis-workbench")
+              assert project["Requires-Python"] == ">=3.11"
+              assert project["License-Expression"] == "BSD-3-Clause"
+              assert "LICENSE" in set(project.get_all("License-File") or ())
+              extras = set(project.get_all("Provides-Extra") or ())
+              assert {"desktop", "dev", "structure", "volumetric3d"}.issubset(extras)
+              classifiers = set(project.get_all("Classifier") or ())
+              for classifier in (
+                  "Development Status :: 5 - Production/Stable",
+                  "Intended Audience :: Science/Research",
+                  "Topic :: Scientific/Engineering :: Chemistry",
+                  "Programming Language :: Python :: 3.11",
+                  "Programming Language :: Python :: 3.14",
+                  "Operating System :: OS Independent",
+              ):
+                  assert classifier in classifiers, classifier
+
+              urls: dict[str, str] = {}
+              for item in project.get_all("Project-URL") or ():
+                  label, separator, url = item.partition(", ")
+                  assert separator, item
+                  urls[label] = url
+              assert urls == EXPECTED_PROJECT_URLS, urls
+
+              scripts = {ep.name: ep.value for ep in entry_points(group="console_scripts")}
+              assert scripts.get("catalysis-workbench") == "catalysis_workbench.desktop.cli:main"
+
+
+          def _assert_base_cli_version_is_qt_free(expected: str) -> None:
+              cli = import_module("catalysis_workbench.desktop.cli")
+              before = {name for name in sys.modules if name == "PySide6" or name.startswith("PySide6.")}
+              assert not before
+              stream = io.StringIO()
+              with redirect_stdout(stream):
+                  code = cli.main(("--version",))
+              assert code == 0
+              assert stream.getvalue().strip() == f"CatalysisWorkbench {expected}"
+              after = {name for name in sys.modules if name == "PySide6" or name.startswith("PySide6.")}
+              assert not after
+
+
+          def _run_smoke(filename: str, env: dict[str, str]) -> None:
+              path = ROOT / "tests" / filename
+              assert path.is_file(), f"missing reviewed installed smoke: {path}"
+              subprocess.run([sys.executable, str(path)], check=True, env=env)
+
+
+          def _run_reviewed_smokes() -> None:
+              env = os.environ.copy()
+              _run_smoke("installed_v10_release_smoke.py", env)
+              for filename in REVIEWED_V11_SMOKES:
+                  _run_smoke(filename, env)
+
+
+          def main() -> None:
+              _assert_installed_import()
+              expected = _expected_version()
+              _assert_gate_version(expected)
+              _assert_numerical_imports_are_presentation_lazy()
+              _assert_public_exports()
+              _assert_base_package_metadata()
+              _assert_base_cli_version_is_qt_free(expected)
+              _run_reviewed_smokes()
+              print("installed Stable v1.1 release audit: ok")
+
+
+          if __name__ == "__main__":
+              main()
+          '''), encoding="utf-8")
+
+          Path("tests/installed_v11_platform_smoke.py").write_text(dedent('''\
+          """Cross-platform installed-wheel smoke for Stable 1.1 release candidates."""
+
+          from __future__ import annotations
+
+          import argparse
+          import io
+          import os
+          import sys
+          from contextlib import redirect_stdout
+          from importlib import import_module
+          from importlib.metadata import entry_points, metadata
+          from importlib.metadata import version as distribution_version
+          from pathlib import Path
+
+          import catalysis_workbench
+
+          ROOT = Path(__file__).resolve().parents[1]
+          SOURCE_TREE = (ROOT / "src").resolve()
+
+
+          def _parse_args() -> argparse.Namespace:
+              parser = argparse.ArgumentParser()
+              parser.add_argument("--mode", choices=("base", "desktop"), required=True)
+              return parser.parse_args()
+
+
+          def _assert_installed_import() -> None:
+              package_file = Path(catalysis_workbench.__file__).resolve()
+              try:
+                  package_file.relative_to(SOURCE_TREE)
+              except ValueError:
+                  return
+              raise AssertionError(f"platform smoke imported repository source tree: {package_file}")
+
+
+          def main() -> None:
+              args = _parse_args()
+              expected = os.environ.get("CATALYSIS_WORKBENCH_EXPECTED_VERSION")
+              assert expected, "CATALYSIS_WORKBENCH_EXPECTED_VERSION is required"
+
+              _assert_installed_import()
+              assert catalysis_workbench.__version__ == expected
+              assert distribution_version("catalysis-workbench") == expected
+
+              project = metadata("catalysis-workbench")
+              assert project["Requires-Python"] == ">=3.11"
+              assert "desktop" in set(project.get_all("Provides-Extra") or ())
+              scripts = {ep.name: ep.value for ep in entry_points(group="console_scripts")}
+              assert scripts.get("catalysis-workbench") == "catalysis_workbench.desktop.cli:main"
+
+              for module_name in (
+                  "catalysis_workbench.core",
+                  "catalysis_workbench.workflow",
+                  "catalysis_workbench.workspace",
+                  "catalysis_workbench.application",
+                  "catalysis_workbench.application.analysis",
+              ):
+                  module = import_module(module_name)
+                  exports = tuple(getattr(module, "__all__", ()))
+                  if module_name != "catalysis_workbench.application.analysis":
+                      assert exports, module_name
+                      assert len(exports) == len(set(exports)), module_name
+
+              assert not any(name == "PySide6" or name.startswith("PySide6.") for name in sys.modules)
+              desktop = import_module("catalysis_workbench.desktop")
+              assert tuple(desktop.__all__) == (
+                  "CatalysisWorkbenchMainWindow",
+                  "DesktopDependencyError",
+                  "desktop_available",
+                  "launch_desktop",
+              )
+              assert not any(name == "PySide6" or name.startswith("PySide6.") for name in sys.modules)
+
+              cli = import_module("catalysis_workbench.desktop.cli")
+              stream = io.StringIO()
+              with redirect_stdout(stream):
+                  code = cli.main(("--version",))
+              assert code == 0
+              assert stream.getvalue().strip() == f"CatalysisWorkbench {expected}"
+              assert not any(name == "PySide6" or name.startswith("PySide6.") for name in sys.modules)
+
+              if args.mode == "base":
+                  assert desktop.desktop_available() is False
+              else:
+                  assert desktop.desktop_available() is True
+                  qtcore = import_module("PySide6.QtCore")
+                  assert qtcore.qVersion()
+                  qtwidgets = import_module("PySide6.QtWidgets")
+                  assert hasattr(qtwidgets, "QApplication")
+
+              print(f"installed v1.1 platform smoke ({args.mode}): ok")
+
+
+          if __name__ == "__main__":
+              main()
+          '''), encoding="utf-8")
+
+          Path("tests/run_v11_release_platform.py").write_text(dedent('''\
+          """Create isolated base/desktop environments for Stable 1.1 release-platform tests."""
+
+          from __future__ import annotations
+
+          import argparse
+          import os
+          import shutil
+          import subprocess
+          import tempfile
+          import venv
+          from pathlib import Path
+
+          ROOT = Path(__file__).resolve().parents[1]
+          PLATFORM_SMOKE = ROOT / "tests" / "installed_v11_platform_smoke.py"
+
+
+          def _parse_args() -> argparse.Namespace:
+              parser = argparse.ArgumentParser()
+              parser.add_argument("--wheel-dir", type=Path, required=True)
+              parser.add_argument("--expected-version", required=True)
+              return parser.parse_args()
+
+
+          def _venv_python(root: Path) -> Path:
+              if os.name == "nt":
+                  return root / "Scripts" / "python.exe"
+              return root / "bin" / "python"
+
+
+          def _run(command: list[str], *, env: dict[str, str] | None = None) -> None:
+              subprocess.run(command, check=True, env=env)
+
+
+          def _install_and_smoke(
+              wheel: Path,
+              *,
+              mode: str,
+              expected_version: str,
+              parent: Path,
+          ) -> None:
+              environment = parent / mode
+              venv.EnvBuilder(with_pip=True, clear=True).create(environment)
+              python = _venv_python(environment)
+              _run([str(python), "-m", "pip", "install", "--upgrade", "pip"])
+
+              requirement = str(wheel)
+              if mode == "desktop":
+                  requirement = f"catalysis-workbench[desktop] @ {wheel.resolve().as_uri()}"
+              _run([str(python), "-m", "pip", "install", requirement])
+              _run([str(python), "-m", "pip", "check"])
+
+              env = os.environ.copy()
+              env["CATALYSIS_WORKBENCH_EXPECTED_VERSION"] = expected_version
+              _run([str(python), str(PLATFORM_SMOKE), "--mode", mode], env=env)
+
+
+          def main() -> None:
+              args = _parse_args()
+              wheels = sorted(args.wheel_dir.glob("catalysis_workbench-*.whl"))
+              assert len(wheels) == 1, f"expected exactly one candidate wheel, found: {wheels!r}"
+              wheel = wheels[0].resolve()
+
+              temp_root = Path(tempfile.mkdtemp(prefix="catalysis-workbench-v11-release-"))
+              try:
+                  _install_and_smoke(
+                      wheel,
+                      mode="base",
+                      expected_version=args.expected_version,
+                      parent=temp_root,
+                  )
+                  _install_and_smoke(
+                      wheel,
+                      mode="desktop",
+                      expected_version=args.expected_version,
+                      parent=temp_root,
+                  )
+              finally:
+                  shutil.rmtree(temp_root, ignore_errors=True)
+
+              print("Stable 1.1 cross-platform release candidate environments: ok")
+
+
+          if __name__ == "__main__":
+              main()
+          '''), encoding="utf-8")
+
+          Path(".github/workflows/v11-release-readiness.yml").write_text(dedent('''\
+          name: Stable 1.1 Readiness
+
+          on:
+            pull_request:
+            push:
+              branches: [main]
+            workflow_dispatch:
+
+          jobs:
+            release-audit:
+              runs-on: ubuntu-latest
+              env:
+                CATALYSIS_WORKBENCH_EXPECTED_VERSION: "1.1.0.dev0"
+              steps:
+                - name: Check out repository
+                  uses: actions/checkout@v4
+
+                - name: Set up Python
+                  uses: actions/setup-python@v5
+                  with:
+                    python-version: "3.11"
+                    cache: pip
+
+                - name: Build candidate wheel
+                  run: |
+                    python -m pip install --upgrade pip
+                    python -m pip wheel . --no-deps --wheel-dir dist
+
+                - name: Install exact wheel in a fresh environment
+                  run: |
+                    python -m venv .venv-v11-release
+                    .venv-v11-release/bin/python -m pip install --upgrade pip
+                    .venv-v11-release/bin/python -m pip install dist/catalysis_workbench-*.whl
+                    .venv-v11-release/bin/python -m pip check
+
+                - name: Audit reviewed Stable 1.1 installed scope
+                  run: .venv-v11-release/bin/python tests/installed_v11_release_smoke.py
+
+            release-platform-smoke:
+              name: v11-release-platform-${{ matrix.os }}-py${{ matrix.python }}
+              runs-on: ${{ matrix.os }}
+              strategy:
+                fail-fast: false
+                matrix:
+                  os: [ubuntu-latest, windows-latest, macos-latest]
+                  python: ["3.11", "3.14"]
+              steps:
+                - name: Check out repository
+                  uses: actions/checkout@v4
+
+                - name: Set up Python
+                  uses: actions/setup-python@v5
+                  with:
+                    python-version: ${{ matrix.python }}
+                    cache: pip
+
+                - name: Install Qt runtime libraries on Linux
+                  if: runner.os == 'Linux'
+                  shell: bash
+                  run: |
+                    sudo apt-get update
+                    sudo apt-get install -y libegl1 libgl1 libxkbcommon-x11-0
+
+                - name: Build candidate wheel
+                  run: |
+                    python -m pip install --upgrade pip
+                    python -m pip wheel . --no-deps --wheel-dir dist
+
+                - name: Audit isolated base and desktop installs
+                  run: python tests/run_v11_release_platform.py --wheel-dir dist --expected-version 1.1.0.dev0
+
+            release-artifact-smoke:
+              runs-on: ubuntu-latest
+              env:
+                CATALYSIS_WORKBENCH_EXPECTED_VERSION: "1.1.0.dev0"
+              steps:
+                - name: Check out repository
+                  uses: actions/checkout@v4
+
+                - name: Set up Python
+                  uses: actions/setup-python@v5
+                  with:
+                    python-version: "3.14"
+                    cache: pip
+
+                - name: Build wheel and sdist
+                  run: |
+                    python -m pip install --upgrade pip "build>=1.2" "twine>=6.0"
+                    python -m build --wheel --sdist
+
+                - name: Validate distribution metadata and exact candidate names
+                  run: |
+                    python -m twine check dist/*
+                    python -c "from pathlib import Path; files=list(Path('dist').iterdir()); wheels=[p.name for p in files if p.suffix == '.whl']; sdists=[p.name for p in files if p.name.endswith('.tar.gz')]; assert len(wheels) == 1, files; assert len(sdists) == 1, files; assert wheels[0].startswith('catalysis_workbench-1.1.0.dev0-'), wheels; assert sdists == ['catalysis_workbench-1.1.0.dev0.tar.gz'], sdists"
+
+                - name: Rebuild a wheel from the sdist
+                  run: python -m pip wheel dist/catalysis_workbench-*.tar.gz --no-deps --wheel-dir rebuilt
+          '''), encoding="utf-8")
+
+          Path("docs/V1_1_RELEASING.md").write_text(dedent(f'''\
+          # CatalysisWorkbench v1.1 Release Procedure
+
+          This document defines the release-maturity process for the reviewed v1.1 task-first workbench. GitHub is the operational source of truth. Every gate is bound to its exact head; evidence from an older head becomes stale after any change.
+
+          ## Frozen implementation baseline
+
+          - v1.1 Blocks 1–6: complete and merged;
+          - Block-6 PR: #305;
+          - Block-6 squash merge / Gate-A exact baseline: `{BASE}`;
+          - Block-6 post-merge CI: #851 — 4/4 jobs success;
+          - Block-6 post-merge Stable 1.0 Readiness: #113 — 8/8 jobs success;
+          - current candidate development version: `1.1.0.dev0`;
+          - project license: `BSD-3-Clause`;
+          - retained stable release before v1.1: `v1.0.0 -> 22b944992bfd3791f91cc951f89eb22e8bf47325`;
+          - Gate-A branch: `release/v1.1.0-gate-a`.
+
+          Gate A creates release-readiness evidence only. It does not finalize the version or publish any artifact.
+
+          ## Gate A — Stable 1.1 release hardening — in progress
+
+          Gate A retains `1.1.0.dev0` and owns only release validation/documentation:
+
+          - a unified Stable 1.1 installed-wheel audit that first re-runs the frozen Stable 1.0 audit and then all reviewed v1.1 headless installed smokes;
+          - explicit verification of the `catalysis-workbench` console entry point and Qt-free `--version` path;
+          - exact-wheel isolated base and `[desktop]` installs on Linux, Windows and macOS;
+          - Python 3.11 and 3.14 platform validation;
+          - exact wheel/sdist naming, metadata validation, and sdist-to-wheel rebuild;
+          - continued ordinary CI, including the full v1.1 offscreen desktop dogfood journeys;
+          - release procedure and draft release-note synchronization;
+          - no scientific, workflow, workspace, application, desktop-semantic, dependency, public-API, schema, or version change.
+
+          ### Gate A evidence
+
+          | Evidence | State |
+          | --- | --- |
+          | exact base | `{BASE}` |
+          | candidate version | `1.1.0.dev0` |
+          | final Gate-A head | pending |
+          | exact-head ordinary CI | pending |
+          | exact-head Stable 1.0 Readiness | pending |
+          | exact-head Stable 1.1 Readiness | pending |
+          | formal release/API/packaging review | pending |
+          | unresolved review threads | pending |
+          | merge gate | pending |
+          | squash merge / Gate-B baseline | pending |
+
+          Ready status never authorizes merge. Gate A must be squash-merged only after a separate explicit merge authorization and expected-head verification.
+
+          ## Gate B — final-version candidate
+
+          Gate B may start only from the exact post-merge Gate-A main after all Gate-A push workflows are green.
+
+          Gate B owns mechanical final-version synchronization only:
+
+          - `[project].version`: `1.1.0.dev0` -> `1.1.0`;
+          - runtime `__version__`: `1.1.0.dev0` -> `1.1.0`;
+          - ordinary CI and both release-readiness workflows' expected-version checks -> exact `1.1.0`;
+          - exact wheel/sdist artifact names -> final `1.1.0` names;
+          - version-sensitive installed-smoke and workflow-evidence assertions -> `1.1.0`;
+          - release-status documentation -> final candidate;
+          - no feature, scientific, dependency, schema, public-API, or runtime-semantic change.
+
+          The exact Gate-B head must pass ordinary CI, Stable 1.0 Readiness, and Stable 1.1 Readiness before final review.
+
+          ## Gate C — immutable tag
+
+          Creating `v1.1.0` is allowed only after Gate B is merged and its exact reviewed release commit passes post-merge validation. The tag target must be specified as an immutable commit SHA and reverse-verified after creation. A tag must never be moved or recreated as a side effect of another gate.
+
+          ## GitHub Release publication
+
+          A GitHub Release may be published only from an already verified `v1.1.0` tag. Release notes must describe only behavior present in that tagged commit. Release publication does not imply package-registry publication.
+
+          ## Installer/distribution packaging
+
+          Native installers or additional distribution bundles are optional and separate from the Python wheel/sdist release evidence. They require a separately reviewed packaging design, signing/provenance plan, platform matrix, and artifact-verification gate before publication.
+
+          ## PyPI/package-registry publication
+
+          Registry publication is a separate operation after the final tag is verified. Package-name availability, credentials or trusted-publishing configuration, provenance, exact artifact hashes, and the intended registry target must be re-checked immediately before upload. Building artifacts never authorizes uploading them.
+
+          ## Mandatory evidence discipline
+
+          For every v1.1 release gate:
+
+          1. record exact base and exact head;
+          2. invalidate CI/review evidence from older heads after any change;
+          3. require ordinary CI plus both Stable 1.0 and Stable 1.1 readiness on the exact candidate;
+          4. require unresolved review threads = 0;
+          5. preserve scientific/API/dependency/version/tag/publication boundaries;
+          6. use expected-head squash merge only after separate merge authorization;
+          7. re-read `main` after merge and validate post-merge push workflows;
+          8. treat final-version synchronization, tag creation, GitHub Release, installers, and registry publication as distinct gates.
+          '''), encoding="utf-8")
+
+          Path("docs/V1_1_RELEASE_NOTES_DRAFT.md").write_text(dedent('''\
+          # CatalysisWorkbench v1.1 Release Notes — Draft
+
+          These notes describe the reviewed v1.1 release-candidate scope. During Gate A the distribution/runtime identity remains `1.1.0.dev0`; final `1.1.0`, the `v1.1.0` tag, GitHub Release, installers, and registry publication remain later gates.
+
+          ## Overview
+
+          CatalysisWorkbench v1.1 redesigns the optional desktop around a task-first research workflow while retaining the reviewed v1.0 scientific, workflow, provenance, workspace, and compatibility contracts.
+
+          The ordinary-user path is:
+
+          ```text
+          Home
+            -> choose LSV / FE & Partial Current / Generic XY
+            -> Data Intake & Mapping
+            -> Live Scientific Analysis
+            -> Figure Workbench
+            -> Figure Package Export
+          ```
+
+          Projects remain local and explicit. Scientific transformations stay reviewable, deterministic where specified, and fail closed on incompatible state.
+
+          ## Task-first project lifecycle
+
+          v1.1 adds a deterministic `AnalysisDocument` / `AnalysisSession` path alongside the retained v1.0 application compatibility surface. A task starts as a clean in-memory analysis; no project directory is created until an explicit Save Project action succeeds.
+
+          Saved v1.1 projects retain `workspace.json` plus `project.json`, deterministic document identities, explicit dirty/undo/redo behavior, concurrency checks, atomic control-file replacement, and fail-closed open/save semantics.
+
+          ## Data intake and mapping
+
+          The reviewed desktop intake path supports `.csv`, `.txt`, `.tsv`, `.dat`, `.xlsx`, and `.xlsm` with bounded preview and explicit scientific X/Y mapping.
+
+          Raw byte identity, parser/mapping state, and scientific input identity are separated. Saved projects take verified ownership of raw copies. File paths do not become scientific identity, and the desktop does not recursively crawl directories or infer chemistry as authority.
+
+          ## Live scientific analysis
+
+          The three v1.1 task families provide explicit reviewed processing:
+
+          - **LSV / Polarization:** explicit reference/RHE handling, iR correction, optional geometric-area normalization, output current-density unit, and scientific analysis range;
+          - **FE & Partial Current:** explicit current-series to FE-series pairing, compatible x-grid requirement, reviewed signed partial-current calculation, and independent FE/partial-current result views; and
+          - **Generic XY:** explicit scientific analysis-range cropping only.
+
+          Invalid processing drafts do not mutate committed scientific state. Hidden interpolation, resampling, nearest-match alignment, smoothing, baseline correction, fitting, normalization, automatic FE/current pairing, and silent scientific repair are not introduced.
+
+          ## Figure Workbench
+
+          v1.1 adds presentation-only `FigureDraft` state bound to exact scientific trace identities. Users can control trace selection/order/labels, publication preset, physical figure size, axes/display ranges, legend, typography, lines, and markers without mutating scientific arrays or run identities.
+
+          Scientific analysis ranges and Figure display ranges remain separate. Stale figures are explicit and never silently refreshed.
+
+          ## Figure Package export
+
+          Figure Packages export selected SVG/PDF/PNG figures together with full scientific source data in XLSX/TXT form. Packages retain path-independent semantic identity, exact file hashes, project/workspace provenance, and fail-closed staging/publication/rollback behavior.
+
+          Display limits do not crop the exported scientific source arrays. Existing destinations are not silently overwritten, merged, or auto-suffixed.
+
+          ## Dogfooding hardening and desktop cleanup
+
+          The final v1.1 development block adds:
+
+          - complete fresh-wheel/offscreen Generic XY, LSV, and FE & Partial Current journeys from real files through package export and project reopen verification;
+          - explicit Save Project from export preflight;
+          - post-export Open Folder and Export Another actions;
+          - actionable ordinary-language errors with exact original exception text retained as technical details;
+          - presentation-only Recent Projects caching that avoids needless disk reopens;
+          - a normal-user `catalysis-workbench` command;
+          - explicit `--project PATH` launch into the v1.1 project path; and
+          - a Qt-free `--version` path that works from the base wheel.
+
+          ## Compatibility and release hardening
+
+          Stable v1.0 public/application/workspace/desktop compatibility remains an active regression gate.
+
+          Stable 1.1 Gate A adds:
+
+          - a unified exact-wheel audit covering the frozen Stable 1.0 audit plus all reviewed v1.1 headless installed smokes;
+          - console-entry-point and Qt-free version verification;
+          - Linux/Windows/macOS isolated base and `[desktop]` installs on Python 3.11 and 3.14;
+          - exact wheel/sdist metadata and naming checks; and
+          - sdist-to-wheel rebuild validation.
+
+          The project remains BSD-3-Clause. The base package remains independent of optional Qt, pymatgen, PyVista, and VTK backends until those extras are explicitly used.
+
+          ## Intentional non-goals
+
+          v1.1 does not add automatic chemistry/species/phase assignment, recursive project discovery, hidden scientific cleaning, workflow DAG inference, arbitrary serialized callable execution, database/server/cloud collaboration, background file watchers, automatic stale-Figure refresh, or implicit package overwrite/merge.
+
+          ## Release status
+
+          Gate A retains `1.1.0.dev0` while proving release readiness. Gate B will separately synchronize the exact reviewed candidate to `1.1.0`. Tagging, GitHub Release publication, installers, and package-registry publication occur only after their own verification gates.
+          '''), encoding="utf-8")
+
+          Path(".github/workflows/v11-gate-a-bootstrap.yml").unlink()
+          PY
+
+          python -m compileall -q tests/installed_v11_release_smoke.py tests/installed_v11_platform_smoke.py tests/run_v11_release_platform.py
+          git diff --check "$BASE"
+
+          expected=$(cat <<'EOF'
+          .github/workflows/v11-release-readiness.yml
+          CHANGELOG.md
+          README.md
+          docs/MASTER_PLAN.md
+          docs/ROADMAP.md
+          docs/V1_1_RELEASING.md
+          docs/V1_1_RELEASE_NOTES_DRAFT.md
+          tests/installed_v11_platform_smoke.py
+          tests/installed_v11_release_smoke.py
+          tests/run_v11_release_platform.py
+          EOF
+          )
+          actual="$(git diff --name-only "$BASE" | sort)"
+          test "$actual" = "$(printf '%s\n' "$expected" | sort)"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore: harden Stable 1.1 release readiness"
+          git push origin HEAD:release/v1.1.0-gate-a
