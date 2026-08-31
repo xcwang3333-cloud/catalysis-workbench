@@ -43,7 +43,6 @@ class CatalysisWorkbenchWindow(_V11TaskWindow):
         self.app_shell.register_page("figure", "Figure", self.figure_page, enabled=False)
         self.app_shell.register_page("export", "Export", self.export_page, enabled=False)
         self.setCentralWidget(self.app_shell)
-        self.setMinimumSize(1024, 640)
         self.resize(1440, 900)
 
         self.app_shell.route_requested.connect(self._shell_route_requested)
