@@ -92,7 +92,9 @@ def _assert_numerical_imports_are_presentation_lazy() -> None:
         or name.startswith("vtk.")
         or name.startswith("vtkmodules.")
     ]
-    assert not forbidden, f"numerical/application imports loaded presentation backends: {forbidden!r}"
+    assert not forbidden, (
+        f"numerical/application imports loaded presentation backends: {forbidden!r}"
+    )
 
 
 def _assert_public_exports() -> None:
