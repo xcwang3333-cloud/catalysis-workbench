@@ -28,7 +28,7 @@ The v0.6 release freezes the reviewed electronic-structure and catalysis-thermod
 - Explicit geometry–bonding correlation datasets without hidden matching, statistics, ranking, or causal interpretation.
 - CHE/free-energy thermodynamics with explicit correction/reference/potential/pH bookkeeping and no hidden chemistry/pathway lookup.
 - Passive free-energy-diagram state and plotting with explicit caller ordering/reference semantics and no hidden CHE recomputation.
-- Charge-density-difference arithmetic `Δn(r)=n_combined(r)-Σc_i n_reference_i n(r)` with strict grid/lattice/unit/component/common-registration validation and no hidden interpolation, resampling, alignment, supercell conversion, component conversion, or renormalization.
+- Charge-density-difference arithmetic `Δn(r)=n_combined(r)-Σc_i n_reference_i(r)` with strict grid/lattice/unit/component/common-registration validation and no hidden interpolation, resampling, alignment, supercell conversion, component conversion, or renormalization.
 - Unified v0.6 fresh-wheel installed/public-API release audit covering representative reviewed computation exports, optional structure/electronic/bonding adapters, and documented quickstarts.
 
 ### Changed
@@ -86,7 +86,7 @@ The v0.4 release freezes the reviewed advanced experimental-analysis scope after
 ### Changed
 
 - Gate A / Issue #103 / PR #104 hardened the frozen v0.4 scope while intentionally retaining version `0.3.0`; exact-head CI #302 / run `32758548117` and two formal release reviews passed before squash merge `ce06abc11559fa7679869fc83a59356735ce6824`.
-- Gate B / Issue #105 / PR #106 synchronized `[project].version` and runtime `__version__` to `0.4.0`; final head `ae3dc21b1a3a4e907d8c39eb85d3dbebefd8fbb4` passed exact-head CI #304 / run `32759679632` and reviews `5011014348`, `5011017132` before squash merge `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6`.
+- Gate B / Issue #105 / PR #106 synchronized `[project].version` and runtime `__version__` to `0.4.0`; final head `ae3dc21b1a3a4e907d8c39eb85d3dbebefd8fbb4` passed CI #304 / run `32759679632` and reviews `5011014348`, `5011017132` before squash merge `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6`.
 - Gate C / Issue #107 completed the separately authorized Git tag operation; `v0.4.0` resolves exactly to `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6` and reads distribution/runtime version `0.4.0` through the tag.
 - `v0.3.0` remains immutable at `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`; neither the v0.4 Git tag nor GitHub Release publishes a package-registry artifact.
 
