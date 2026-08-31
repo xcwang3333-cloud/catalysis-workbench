@@ -1,0 +1,132 @@
+name: Windows Installer Publication Readiness
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/v11-installer-publication-readiness.yml"
+      - "packaging/windows/verify_signed_artifact.ps1"
+      - "docs/CODE_SIGNING_POLICY.md"
+      - "docs/V1_1_INSTALLER.md"
+      - "README.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publication-policy-smoke:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    env:
+      RELEASE_TAG: v1.1.0
+      RELEASE_SHA: 80da57c65bb70f599c1e068f6fe71a1551eaa856
+      RELEASE_VERSION: 1.1.0
+      INNO_VERSION: 6.7.3
+      INFRA_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - name: Check out exact publication-infrastructure head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.INFRA_SHA }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify exact infrastructure head and immutable release tag
+        shell: pwsh
+        run: |
+          $head = (git rev-parse HEAD).Trim()
+          if ($head -ne $env:INFRA_SHA) {
+            throw "publication infrastructure drift: expected $env:INFRA_SHA, got $head"
+          }
+          git fetch --force --tags origin $env:RELEASE_TAG
+          if ($LASTEXITCODE -ne 0) { throw "release tag fetch failed" }
+          $release = (git rev-list -n 1 $env:RELEASE_TAG).Trim()
+          if ($release -ne $env:RELEASE_SHA) {
+            throw "release tag drift: expected $env:RELEASE_SHA, got $release"
+          }
+
+      - name: Validate code-signing policy contract
+        shell: pwsh
+        run: |
+          $policy = Get-Content .\docs\CODE_SIGNING_POLICY.md -Raw
+          $required = @(
+            "Code signing policy",
+            $env:RELEASE_TAG,
+            $env:RELEASE_SHA,
+            "CatalysisWorkbench-$env:RELEASE_VERSION-windows-x64-setup.exe",
+            "RFC3161",
+            "CatalysisWorkbench.exe",
+            "unins*.exe",
+            "Self-signed certificates",
+            "separate explicit authorization"
+          )
+          foreach ($needle in $required) {
+            if (-not $policy.Contains($needle)) {
+              throw "code-signing policy is missing required contract text: $needle"
+            }
+          }
+
+      - name: Exercise trusted Authenticode and timestamp verification path
+        shell: pwsh
+        run: |
+          $download = Join-Path $env:RUNNER_TEMP "innosetup-$env:INNO_VERSION.exe"
+          $uri = "https://github.com/jrsoftware/issrc/releases/download/is-6_7_3/innosetup-$env:INNO_VERSION.exe"
+          Invoke-WebRequest -Uri $uri -OutFile $download
+          .\packaging\windows\verify_signed_artifact.ps1 `
+            -Path $download `
+            -ExpectedFileName "innosetup-$env:INNO_VERSION.exe" `
+            -PublisherSubjectRegex "Pyrsys B\.V\." `
+            -RequireTimestamp | Out-File trusted-signature-probe.json -Encoding utf8
+
+      - name: Prove unsigned artifacts fail closed
+        shell: pwsh
+        run: |
+          $unsigned = Join-Path $env:RUNNER_TEMP "unsigned.exe"
+          Set-Content -LiteralPath $unsigned -Value "not a signed PE artifact" -Encoding ascii
+          $accepted = $false
+          try {
+            .\packaging\windows\verify_signed_artifact.ps1 `
+              -Path $unsigned `
+              -ExpectedFileName "unsigned.exe" `
+              -PublisherSubjectRegex ".*" | Out-Null
+            $accepted = $true
+          }
+          catch {
+            Write-Host "Expected fail-closed rejection: $($_.Exception.Message)"
+          }
+          if ($accepted) {
+            throw "unsigned artifact was incorrectly accepted"
+          }
+
+      - name: Prove signer mismatch fails closed
+        shell: pwsh
+        run: |
+          $download = Join-Path $env:RUNNER_TEMP "innosetup-$env:INNO_VERSION.exe"
+          $accepted = $false
+          try {
+            .\packaging\windows\verify_signed_artifact.ps1 `
+              -Path $download `
+              -ExpectedFileName "innosetup-$env:INNO_VERSION.exe" `
+              -PublisherSubjectRegex "Definitely-Not-Pyrsys" `
+              -RequireTimestamp | Out-Null
+            $accepted = $true
+          }
+          catch {
+            Write-Host "Expected signer mismatch rejection: $($_.Exception.Message)"
+          }
+          if ($accepted) {
+            throw "unexpected publisher identity was incorrectly accepted"
+          }
+
+      - name: Confirm workflow token is read-only
+        shell: pwsh
+        run: |
+          $lines = Get-Content .\.github\workflows\v11-installer-publication-readiness.yml
+          $readLines = @($lines | Where-Object { $_ -match '^\s*contents:\s*read\s*$' })
+          $writeLines = @($lines | Where-Object { $_ -match '^\s*contents:\s*write\s*$' })
+          if ($readLines.Count -ne 1) {
+            throw "publication-readiness workflow must declare exactly one contents: read permission"
+          }
+          if ($writeLines.Count -ne 0) {
+            throw "publication-readiness workflow must not declare contents: write"
+          }
