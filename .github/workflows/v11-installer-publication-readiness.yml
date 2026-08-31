@@ -64,14 +64,68 @@ jobs:
             }
           }
 
-      - name: Exercise trusted Authenticode verification path
+      - name: Exercise trusted Authenticode path and self-signed rejection
         shell: pwsh
         run: |
-          $probe = Join-Path $env:SystemRoot "System32\WindowsPowerShell\v1.0\powershell.exe"
-          .\packaging\windows\verify_signed_artifact.ps1 `
-            -Path $probe `
-            -ExpectedFileName "powershell.exe" `
-            -PublisherSubjectRegex "Microsoft" | Out-File trusted-signature-probe.json -Encoding utf8
+          $subject = "CN=CW Publication Gate Test"
+          $probe = Join-Path $env:RUNNER_TEMP "trusted-probe.ps1"
+          $cer = Join-Path $env:RUNNER_TEMP "cw-publication-gate-test.cer"
+          Set-Content -LiteralPath $probe -Value "Write-Output 'publication gate probe'" -Encoding utf8
+
+          $cert = New-SelfSignedCertificate `
+            -Type CodeSigningCert `
+            -Subject $subject `
+            -CertStoreLocation "Cert:\CurrentUser\My" `
+            -NotAfter (Get-Date).AddDays(1)
+          try {
+            Export-Certificate -Cert $cert -FilePath $cer | Out-Null
+            Import-Certificate -FilePath $cer -CertStoreLocation "Cert:\CurrentUser\Root" | Out-Null
+            $signed = Set-AuthenticodeSignature -FilePath $probe -Certificate $cert -HashAlgorithm SHA256
+            if ($signed.Status -ne "Valid") {
+              throw "test probe signing did not become trusted: $($signed.Status) $($signed.StatusMessage)"
+            }
+
+            .\packaging\windows\verify_signed_artifact.ps1 `
+              -Path $probe `
+              -ExpectedFileName "trusted-probe.ps1" `
+              -PublisherSubjectRegex "CW Publication Gate Test" `
+              -AllowSelfSignedTestCertificate | Out-File trusted-signature-probe.json -Encoding utf8
+
+            $acceptedSelfSigned = $false
+            try {
+              .\packaging\windows\verify_signed_artifact.ps1 `
+                -Path $probe `
+                -ExpectedFileName "trusted-probe.ps1" `
+                -PublisherSubjectRegex "CW Publication Gate Test" | Out-Null
+              $acceptedSelfSigned = $true
+            }
+            catch {
+              Write-Host "Expected public-mode self-signed rejection: $($_.Exception.Message)"
+            }
+            if ($acceptedSelfSigned) {
+              throw "self-signed certificate was incorrectly accepted for publication"
+            }
+
+            $acceptedWrongPublisher = $false
+            try {
+              .\packaging\windows\verify_signed_artifact.ps1 `
+                -Path $probe `
+                -ExpectedFileName "trusted-probe.ps1" `
+                -PublisherSubjectRegex "Definitely-Not-The-Test-Publisher" `
+                -AllowSelfSignedTestCertificate | Out-Null
+              $acceptedWrongPublisher = $true
+            }
+            catch {
+              Write-Host "Expected signer mismatch rejection: $($_.Exception.Message)"
+            }
+            if ($acceptedWrongPublisher) {
+              throw "unexpected publisher identity was incorrectly accepted"
+            }
+          }
+          finally {
+            Remove-Item -LiteralPath "Cert:\CurrentUser\My\$($cert.Thumbprint)" -Force -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath "Cert:\CurrentUser\Root\$($cert.Thumbprint)" -Force -ErrorAction SilentlyContinue
+          }
 
       - name: Prove unsigned artifacts fail closed
         shell: pwsh
@@ -91,25 +145,6 @@ jobs:
           }
           if ($accepted) {
             throw "unsigned artifact was incorrectly accepted"
-          }
-
-      - name: Prove signer mismatch fails closed
-        shell: pwsh
-        run: |
-          $probe = Join-Path $env:SystemRoot "System32\WindowsPowerShell\v1.0\powershell.exe"
-          $accepted = $false
-          try {
-            .\packaging\windows\verify_signed_artifact.ps1 `
-              -Path $probe `
-              -ExpectedFileName "powershell.exe" `
-              -PublisherSubjectRegex "Definitely-Not-The-Microsoft-Publisher" | Out-Null
-            $accepted = $true
-          }
-          catch {
-            Write-Host "Expected signer mismatch rejection: $($_.Exception.Message)"
-          }
-          if ($accepted) {
-            throw "unexpected publisher identity was incorrectly accepted"
           }
 
       - name: Confirm publication workflow remains read-only
