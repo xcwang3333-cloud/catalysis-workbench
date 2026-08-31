@@ -4,6 +4,7 @@ param(
     [Parameter(Mandatory = $true)][string]$InfraSource,
     [Parameter(Mandatory = $true)][string]$ConstraintsFile,
     [Parameter(Mandatory = $true)][string]$IsccPath,
+    [Parameter(Mandatory = $true)][string]$ExpectedInnoVersion,
     [Parameter(Mandatory = $true)][string]$ExpectedTag,
     [Parameter(Mandatory = $true)][string]$ExpectedReleaseSha,
     [Parameter(Mandatory = $true)][string]$ExpectedVersion,
@@ -102,7 +103,7 @@ $buildProvenance = [ordered]@{
     platform = "windows-x64"
     python_version = (& $PythonExe -c "import platform; print(platform.python_version())").Trim()
     pyinstaller_version = $pyinstallerVersion
-    inno_setup_compiler = (Get-Item $IsccPath).VersionInfo.ProductVersion
+    inno_setup_compiler = $ExpectedInnoVersion
     dependency_constraints_sha256 = $constraintsHash
     resolved_requirements_sha256 = $requirementsHash
     code_signing = "unsigned-readiness-build"

@@ -117,6 +117,7 @@ jobs:
             -InfraSource ".\infra" `
             -ConstraintsFile ".\infra\packaging\windows\constraints-v1.1.0-windows-x64.txt" `
             -IsccPath "$env:CW_ISCC" `
+            -ExpectedInnoVersion "$env:INNO_VERSION" `
             -ExpectedTag "$env:RELEASE_TAG" `
             -ExpectedReleaseSha "$env:RELEASE_SHA" `
             -ExpectedVersion "$env:RELEASE_VERSION" `
@@ -192,6 +193,9 @@ jobs:
           }
           if ($provenance.packaging_infrastructure_commit -ne $env:INFRA_SHA) {
             throw "provenance infrastructure SHA drift"
+          }
+          if ($provenance.inno_setup_compiler -ne $env:INNO_VERSION) {
+            throw "provenance Inno Setup version drift"
           }
           if ($provenance.code_signing -ne "unsigned-readiness-build") {
             throw "unexpected signing state"
