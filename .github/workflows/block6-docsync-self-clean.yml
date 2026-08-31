@@ -1,0 +1,142 @@
+name: Block 6 doc sync self-clean
+
+on:
+  push:
+    branches:
+      - v1.1-block6-dogfooding-hardening
+    paths:
+      - .github/workflows/block6-docsync-self-clean.yml
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: v1.1-block6-dogfooding-hardening
+          fetch-depth: 1
+
+      - name: Apply exact source-of-truth sync
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object CHANGELOG.md)" = "c09e36ce8ff8c95a5ffc26036dfa5e6bcbb79dcf"
+          test "$(git hash-object docs/V1_1_PLAN.md)" = "97e58a8acc964b3580b686e1b02c077927ea52f7"
+          python - <<'PY'
+          from pathlib import Path
+
+          changelog = Path("CHANGELOG.md")
+          changelog_text = changelog.read_text(encoding="utf-8")
+          marker = "## [Unreleased]\n\n"
+          addition = """### Added
+
+          - v1.1 desktop dogfooding hardening adds the `catalysis-workbench` CLI entry point, a Qt-free `--version` path, explicit `--project` launch into a v1.1 project, Export-page Save Project, post-export Open Folder / Export Another actions, actionable desktop errors with optional technical details, and a presentation-only Recent Projects cache.
+          - Cumulative fresh-wheel dogfood smoke coverage now exercises Generic XY, LSV / Polarization, and FE & Partial Current through the installed desktop path, with the Block-6 smokes wired into regular CI.
+
+          ### Changed
+
+          - v1.1 Block 6 hardens the ordinary desktop workflow without changing the reviewed scientific semantics or the frozen v1.0 compatibility surface; the development version remains `1.1.0.dev0`.
+          - Stable 1.0 Readiness remains an active compatibility gate. Block 6 does not authorize or create a v1.1 tag, GitHub Release, or PyPI/package-registry publication.
+
+          """
+          # Strip YAML-block indentation introduced above without touching content semantics.
+          addition = "\n".join(line[10:] if line.startswith("          ") else line for line in addition.split("\n"))
+          if changelog_text.count(marker) != 1:
+              raise SystemExit("unexpected CHANGELOG Unreleased marker")
+          if "v1.1 desktop dogfooding hardening adds" in changelog_text:
+              raise SystemExit("Block 6 changelog content already present")
+          new_changelog = changelog_text.replace(marker, marker + addition, 1)
+          with changelog.open("w", encoding="utf-8", newline="\n") as handle:
+              handle.write(new_changelog)
+
+          plan = Path("docs/V1_1_PLAN.md")
+          plan_text = plan.read_text(encoding="utf-8")
+          if "## Block 6 — Dogfooding Hardening & Desktop Cleanup" in plan_text:
+              raise SystemExit("Block 6 plan content already present")
+          if not plan_text.endswith("\n"):
+              raise SystemExit("V1_1_PLAN.md must end with newline")
+          block6 = """
+          ## Block 6 — Dogfooding Hardening & Desktop Cleanup
+
+          ### Purpose
+
+          Block 6 hardens the completed v1.1 ordinary-user desktop path for installed-wheel dogfooding. It does not add new scientific transforms, change deterministic identities, or expand the reviewed v1.0 compatibility surface.
+
+          ### Launch and project entry
+
+          The installed package exposes the `catalysis-workbench` console entry point. `catalysis-workbench --version` returns the distribution/runtime development version without importing Qt. `catalysis-workbench --project PATH` explicitly opens an existing v1.1 analysis project; no-argument launch remains the task-first Home shell.
+
+          CLI argument parsing and version reporting remain separated from Qt startup so headless package/version checks do not require PySide6 initialization.
+
+          ### Export completion flow
+
+          The Export page can explicitly Save Project when export preflight is blocked only because the current v1.1 analysis is unsaved or dirty. Saving remains the existing verified `AnalysisSession` project transaction; export never silently saves as a side effect.
+
+          After a successful Figure Package export, the desktop presents explicit Open Folder and Export Another actions. These are post-publication presentation actions and do not change package scientific identity, workspace provenance, document revision state, or export verification semantics.
+
+          ### Actionable errors and recent projects
+
+          Ordinary desktop failures present an actionable summary plus optional technical details instead of exposing raw exception text as the primary message. Technical details remain diagnostic presentation state and are not serialized into scientific/application identity.
+
+          Recent Projects uses a desktop presentation cache only. Cache failure or staleness must not change project persistence, scientific SHA identities, or fail-closed open/save semantics.
+
+          ### Installed-wheel dogfooding
+
+          Block 6 extends cumulative fresh-wheel smoke coverage over the installed desktop path for:
+
+          - Generic XY;
+          - LSV / Polarization; and
+          - FE & Partial Current.
+
+          The smokes exercise representative task creation/data intake/processing/figure/export or project lifecycle paths from an installed wheel, including offscreen desktop execution where required. They supplement rather than replace focused unit/regression coverage.
+
+          Regular CI wires the cumulative Block-6 smoke coverage while Stable 1.0 Readiness remains the compatibility gate for the frozen v1.0 surface.
+
+          ### Validation gates
+
+          Block 6 requires:
+
+          - console-entry installation and Qt-free `--version` coverage;
+          - explicit `--project` v1.1 launch coverage;
+          - Export-page Save Project behavior;
+          - successful-export Open Folder / Export Another behavior;
+          - actionable desktop error plus technical-details coverage;
+          - Recent Projects presentation-cache coverage;
+          - cumulative fresh-wheel Generic XY / LSV / FE & Partial Current dogfood smoke;
+          - full regular CI on the exact PR head; and
+          - complete Stable 1.0 Readiness on the exact PR head.
+
+          ## Block 6 non-scope
+
+          Block 6 does not add new scientific algorithms or transforms, change Figure Package scientific/source-data/provenance semantics, widen the frozen v1.0 public API, add new third-party scientific dependencies, create a v1.1 tag, publish a GitHub Release, merge the PR automatically, or publish to PyPI/package registries.
+          """
+          block6 = "\n".join(line[10:] if line.startswith("          ") else line for line in block6.split("\n"))
+          with plan.open("w", encoding="utf-8", newline="\n") as handle:
+              handle.write(plan_text + block6)
+
+          Path(".github/workflows/block6-docsync-self-clean.yml").unlink()
+          PY
+
+      - name: Validate exact patch shape
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          actual="$(git diff --name-only | sort)"
+          expected="$(printf '%s\n' '.github/workflows/block6-docsync-self-clean.yml' 'CHANGELOG.md' 'docs/V1_1_PLAN.md' | sort)"
+          test "$actual" = "$expected"
+          git diff -- CHANGELOG.md | grep -q '^+### Added'
+          git diff -- docs/V1_1_PLAN.md | grep -q '^+## Block 6 — Dogfooding Hardening & Desktop Cleanup'
+
+      - name: Commit doc sync and self-clean
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md docs/V1_1_PLAN.md .github/workflows/block6-docsync-self-clean.yml
+          git commit -m "docs: sync Block 6 source of truth"
+          git push origin HEAD:v1.1-block6-dogfooding-hardening
