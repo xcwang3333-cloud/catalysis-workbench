@@ -27,7 +27,6 @@ from .ui_foundation import (
     refresh_widget_style,
 )
 
-
 _ICON_ROLES: Mapping[str, QStyle.StandardPixmap] = {
     "home": QStyle.StandardPixmap.SP_DirHomeIcon,
     "analysis": QStyle.StandardPixmap.SP_FileDialogDetailedView,
