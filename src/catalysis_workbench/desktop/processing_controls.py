@@ -1,4 +1,4 @@
-"""Task-specific v1.1 Desktop processing controls with debounced valid-state commits."""
+"""Task-specific v1.2 Desktop processing inspector over retained semantics."""
 
 from __future__ import annotations
 
@@ -29,6 +29,8 @@ from catalysis_workbench.application import (
     PartialCurrentPair,
 )
 
+from .ui_foundation import SPACING, refresh_widget_style
+
 
 class ProcessingPanel(QWidget):
     """Edit scientific settings while invalid drafts stay outside the document."""
@@ -48,6 +50,7 @@ class ProcessingPanel(QWidget):
         self._timer.setSingleShot(True)
         self._timer.setInterval(200)
         self._timer.timeout.connect(self._apply_draft_now)
+        self.setObjectName("cwProcessingPanel")
         self._build_ui()
 
     @property
@@ -60,23 +63,34 @@ class ProcessingPanel(QWidget):
 
     def _build_ui(self) -> None:
         root = QVBoxLayout(self)
-        helper = QLabel(
-            "Scientific settings are committed only after validation. "
-            "Invalid fields keep the previous valid result."
+        root.setContentsMargins(
+            SPACING.compact,
+            SPACING.compact,
+            SPACING.compact,
+            SPACING.compact,
         )
+        root.setSpacing(SPACING.compact)
+        helper = QLabel(
+            "Scientific settings commit only after validation. Invalid fields "
+            "stay outside the document and preserve the previous valid result."
+        )
+        helper.setObjectName("cwInspectorHelp")
         helper.setWordWrap(True)
         root.addWidget(helper)
 
         self.override_box = QGroupBox("Apply to")
+        self.override_box.setObjectName("cwInspectorSection")
         override_layout = QVBoxLayout(self.override_box)
         self.override_check = QCheckBox("Override selected series")
         self.override_check.toggled.connect(self._override_toggled)
         override_layout.addWidget(self.override_check)
         self.override_target_label = QLabel("Common settings")
+        self.override_target_label.setObjectName("cwInspectorTarget")
         override_layout.addWidget(self.override_target_label)
         root.addWidget(self.override_box)
 
         self.potential_box = QGroupBox("Potential")
+        self.potential_box.setObjectName("cwInspectorSection")
         potential_form = QFormLayout(self.potential_box)
         self.rhe_mode_combo = QComboBox()
         self.rhe_mode_combo.addItem("No RHE conversion", "none")
@@ -96,6 +110,7 @@ class ProcessingPanel(QWidget):
         root.addWidget(self.potential_box)
 
         self.ir_box = QGroupBox("iR correction")
+        self.ir_box.setObjectName("cwInspectorSection")
         ir_form = QFormLayout(self.ir_box)
         self.resistance_edit = QLineEdit()
         self.resistance_edit.setPlaceholderText("blank = off")
@@ -105,6 +120,7 @@ class ProcessingPanel(QWidget):
         root.addWidget(self.ir_box)
 
         self.current_box = QGroupBox("Current density")
+        self.current_box.setObjectName("cwInspectorSection")
         current_form = QFormLayout(self.current_box)
         self.normalize_check = QCheckBox("Normalize total current by electrode area")
         current_form.addRow(self.normalize_check)
@@ -117,6 +133,7 @@ class ProcessingPanel(QWidget):
         root.addWidget(self.current_box)
 
         self.pair_box = QGroupBox("FE ↔ current pairs")
+        self.pair_box.setObjectName("cwInspectorSection")
         pair_layout = QVBoxLayout(self.pair_box)
         pair_form = QFormLayout()
         self.current_pair_combo = QComboBox()
@@ -125,16 +142,20 @@ class ProcessingPanel(QWidget):
         pair_form.addRow("FE series", self.fe_pair_combo)
         pair_layout.addLayout(pair_form)
         self.add_pair_button = QPushButton("Add explicit pair")
+        self.add_pair_button.setObjectName("cwSecondaryButton")
         self.add_pair_button.clicked.connect(self._add_pair)
         pair_layout.addWidget(self.add_pair_button)
         self.pair_list = QListWidget()
+        self.pair_list.setObjectName("cwInspectorPairList")
         pair_layout.addWidget(self.pair_list)
         self.remove_pair_button = QPushButton("Remove selected pair")
+        self.remove_pair_button.setObjectName("cwTertiaryButton")
         self.remove_pair_button.clicked.connect(self._remove_pair)
         pair_layout.addWidget(self.remove_pair_button)
         root.addWidget(self.pair_box)
 
         self.range_box = QGroupBox("Analysis range")
+        self.range_box.setObjectName("cwInspectorSection")
         range_form = QFormLayout(self.range_box)
         self.range_min_edit = QLineEdit()
         self.range_min_edit.setPlaceholderText("blank = no lower bound")
@@ -145,6 +166,8 @@ class ProcessingPanel(QWidget):
         root.addWidget(self.range_box)
 
         self.processing_status = QLabel("No analysis")
+        self.processing_status.setObjectName("cwProcessingStatus")
+        self.processing_status.setProperty("state", "empty")
         self.processing_status.setWordWrap(True)
         root.addWidget(self.processing_status)
         root.addStretch(1)
@@ -167,11 +190,13 @@ class ProcessingPanel(QWidget):
         self.current_density_unit_combo.currentIndexChanged.connect(self._schedule_apply)
         self._update_rhe_visibility()
 
+    def _set_status(self, text: str, state: str) -> None:
+        self.processing_status.setProperty("state", state)
+        self.processing_status.setText(text)
+        refresh_widget_style(self.processing_status)
+
     def _set_draft_state(self, invalid: bool, message: str = "") -> None:
-        changed = (
-            invalid != self._has_unapplied_draft
-            or message != self._draft_message
-        )
+        changed = invalid != self._has_unapplied_draft or message != self._draft_message
         self._has_unapplied_draft = invalid
         self._draft_message = message
         if changed:
@@ -305,17 +330,17 @@ class ProcessingPanel(QWidget):
         except (TypeError, ValueError) as exc:
             message = str(exc)
             self._set_draft_state(True, message)
-            self.processing_status.setText(f"Not applied: {message}")
+            self._set_status(f"Not applied: {message}", "draft")
             return
         self._set_draft_state(False)
         if candidate == self._analysis:
-            self.processing_status.setText("Settings valid")
+            self._set_status("Settings valid", "success")
             return
         self.analysis_spec_changed.emit(candidate)
 
     def mark_commit_error(self, message: str) -> None:
         self._set_draft_state(True, message)
-        self.processing_status.setText(f"Not applied: {message}")
+        self._set_status(f"Not applied: {message}", "error")
 
     def discard_draft(self) -> None:
         self._timer.stop()
@@ -465,7 +490,7 @@ class ProcessingPanel(QWidget):
             self._data_series = ()
             self._set_draft_state(False)
             self.setEnabled(False)
-            self.processing_status.setText("No analysis")
+            self._set_status("No analysis", "empty")
             return
         previous_analysis = self._analysis
         self._analysis = document.analysis
@@ -528,16 +553,17 @@ class ProcessingPanel(QWidget):
             text = "Previous valid result — current settings are not applied"
             if message:
                 text += f": {message}"
-            self.processing_status.setText(text)
+            self._set_status(text, "stale")
             return
         if status == "success":
-            self.processing_status.setText("Ready · live analysis is current")
+            self._set_status("Ready · live analysis is current", "success")
         elif status == "incomplete":
-            self.processing_status.setText(
-                f"Needs input: {message or 'analysis is incomplete'}"
+            self._set_status(
+                f"Needs input: {message or 'analysis is incomplete'}",
+                "incomplete",
             )
         else:
-            self.processing_status.setText(f"Error: {message or 'analysis failed'}")
+            self._set_status(f"Error: {message or 'analysis failed'}", "error")
 
 
 __all__ = ["ProcessingPanel"]
