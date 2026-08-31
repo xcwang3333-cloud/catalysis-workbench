@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
-from catalysis_workbench.application import AnalysisResult, AnalysisSession, get_analysis_task_descriptor
+from catalysis_workbench.application import (
+    AnalysisResult,
+    AnalysisSession,
+    get_analysis_task_descriptor,
+)
 
 from .app_shell import AppShell
 from .export_window import CatalysisWorkbenchWindow as _V11TaskWindow
