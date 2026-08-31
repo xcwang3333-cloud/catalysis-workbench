@@ -637,7 +637,8 @@ class ImportDataDialog(QDialog):
         error = self._draft_error(draft)
         item = self.file_list.item(index)
         if error is not None:
-            item.setText(f"✕ {draft.path.name}" if draft.preview is None else f"⚠ {draft.path.name}")
+            prefix = "✕" if draft.preview is None else "⚠"
+            item.setText(f"{prefix} {draft.path.name}")
             item.setToolTip(error)
             if index == self._current_index:
                 self.mapping_status.setProperty("state", "error")
