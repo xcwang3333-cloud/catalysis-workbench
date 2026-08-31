@@ -16,12 +16,16 @@ jobs:
       RELEASE_SHA: 80da57c65bb70f599c1e068f6fe71a1551eaa856
       RELEASE_VERSION: 1.1.0
       PYINSTALLER_VERSION: 6.22.2
+      PIP_VERSION: 26.2.1
       INNO_VERSION: 6.7.3
+      INFRA_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
-      - name: Check out packaging infrastructure
+      - name: Check out exact packaging infrastructure head
         uses: actions/checkout@v4
         with:
+          ref: ${{ env.INFRA_SHA }}
           path: infra
+          persist-credentials: false
 
       - name: Check out immutable release source
         uses: actions/checkout@v4
@@ -29,13 +33,18 @@ jobs:
           ref: v1.1.0
           path: release-source
           fetch-depth: 0
+          persist-credentials: false
 
-      - name: Verify immutable release source
+      - name: Verify exact infrastructure and immutable release source
         shell: pwsh
         run: |
-          $head = (git -C release-source rev-parse HEAD).Trim()
-          if ($head -ne $env:RELEASE_SHA) {
-            throw "release-source HEAD drift: $head"
+          $infraHead = (git -C infra rev-parse HEAD).Trim()
+          if ($infraHead -ne $env:INFRA_SHA) {
+            throw "packaging infrastructure drift: expected $env:INFRA_SHA, got $infraHead"
+          }
+          $releaseHead = (git -C release-source rev-parse HEAD).Trim()
+          if ($releaseHead -ne $env:RELEASE_SHA) {
+            throw "release-source HEAD drift: $releaseHead"
           }
           $tag = (git -C release-source rev-list -n 1 $env:RELEASE_TAG).Trim()
           if ($tag -ne $env:RELEASE_SHA) {
@@ -48,15 +57,21 @@ jobs:
           python-version: "3.11"
           architecture: x64
 
-      - name: Create isolated build environment
+      - name: Create constrained isolated build environment
         shell: pwsh
         run: |
           $venv = Join-Path $env:RUNNER_TEMP "cw-installer-venv"
           python -m venv $venv
           $python = Join-Path $venv "Scripts\python.exe"
-          & $python -m pip install --upgrade pip
-          & $python -m pip install ".\release-source[desktop]"
-          & $python -m pip install "pyinstaller==$env:PYINSTALLER_VERSION"
+          $constraints = ".\infra\packaging\windows\constraints-v1.1.0-windows-x64.txt"
+          & $python -m pip install "pip==$env:PIP_VERSION"
+          if ($LASTEXITCODE -ne 0) { throw "pip bootstrap failed: $LASTEXITCODE" }
+          & $python -m pip install -c $constraints ".\release-source[desktop]"
+          if ($LASTEXITCODE -ne 0) { throw "release dependency install failed: $LASTEXITCODE" }
+          & $python -m pip install -c $constraints "pyinstaller==$env:PYINSTALLER_VERSION"
+          if ($LASTEXITCODE -ne 0) { throw "PyInstaller install failed: $LASTEXITCODE" }
+          & $python -m pip check
+          if ($LASTEXITCODE -ne 0) { throw "pip check failed: $LASTEXITCODE" }
           $runtimeVersion = (& $python -c "import catalysis_workbench; print(catalysis_workbench.__version__)").Trim()
           if ($runtimeVersion -ne $env:RELEASE_VERSION) {
             throw "runtime version drift: $runtimeVersion"
@@ -77,9 +92,15 @@ jobs:
             throw "Unexpected Inno Setup signer: $($signature.SignerCertificate.Subject)"
           }
           $installDir = Join-Path $env:RUNNER_TEMP "InnoSetup-$env:INNO_VERSION"
-          & $download /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP- /DIR="$installDir"
-          if ($LASTEXITCODE -ne 0) {
-            throw "Inno Setup bootstrap failed: $LASTEXITCODE"
+          $bootstrap = Start-Process -FilePath $download -ArgumentList @(
+            "/VERYSILENT",
+            "/SUPPRESSMSGBOXES",
+            "/NORESTART",
+            "/SP-",
+            "/DIR=$installDir"
+          ) -Wait -PassThru
+          if ($bootstrap.ExitCode -ne 0) {
+            throw "Inno Setup bootstrap failed: $($bootstrap.ExitCode)"
           }
           $iscc = Join-Path $installDir "ISCC.exe"
           if (-not (Test-Path $iscc -PathType Leaf)) {
@@ -94,6 +115,7 @@ jobs:
             -PythonExe "$env:CW_INSTALLER_PYTHON" `
             -ReleaseSource ".\release-source" `
             -InfraSource ".\infra" `
+            -ConstraintsFile ".\infra\packaging\windows\constraints-v1.1.0-windows-x64.txt" `
             -IsccPath "$env:CW_ISCC" `
             -ExpectedTag "$env:RELEASE_TAG" `
             -ExpectedReleaseSha "$env:RELEASE_SHA" `
@@ -106,9 +128,15 @@ jobs:
           $artifact = Join-Path $env:RUNNER_TEMP "cw-installer-output\artifact"
           $installer = Join-Path $artifact "CatalysisWorkbench-$env:RELEASE_VERSION-windows-x64-setup.exe"
           $installDir = Join-Path $env:RUNNER_TEMP "cw-installed"
-          & $installer /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP- /DIR="$installDir"
-          if ($LASTEXITCODE -ne 0) {
-            throw "silent install failed: $LASTEXITCODE"
+          $install = Start-Process -FilePath $installer -ArgumentList @(
+            "/VERYSILENT",
+            "/SUPPRESSMSGBOXES",
+            "/NORESTART",
+            "/SP-",
+            "/DIR=$installDir"
+          ) -Wait -PassThru
+          if ($install.ExitCode -ne 0) {
+            throw "silent install failed: $($install.ExitCode)"
           }
           $app = Join-Path $installDir "CatalysisWorkbench.exe"
           $uninstaller = Join-Path $installDir "unins000.exe"
@@ -124,9 +152,13 @@ jobs:
           if ($LASTEXITCODE -ne 0) {
             throw "installed desktop smoke failed: $LASTEXITCODE"
           }
-          & $uninstaller /VERYSILENT /SUPPRESSMSGBOXES /NORESTART
-          if ($LASTEXITCODE -ne 0) {
-            throw "silent uninstall failed: $LASTEXITCODE"
+          $uninstall = Start-Process -FilePath $uninstaller -ArgumentList @(
+            "/VERYSILENT",
+            "/SUPPRESSMSGBOXES",
+            "/NORESTART"
+          ) -Wait -PassThru
+          if ($uninstall.ExitCode -ne 0) {
+            throw "silent uninstall failed: $($uninstall.ExitCode)"
           }
           Start-Sleep -Seconds 2
           if (Test-Path $app -PathType Leaf) {
@@ -141,6 +173,7 @@ jobs:
             "CatalysisWorkbench-$env:RELEASE_VERSION-windows-x64-setup.exe",
             "BUILD_PROVENANCE.json",
             "THIRD_PARTY_NOTICES.txt",
+            "constraints-v1.1.0-windows-x64.txt",
             "resolved-requirements.txt",
             "SHA256SUMS.txt"
           )
@@ -157,6 +190,9 @@ jobs:
           if ($provenance.product_version -ne $env:RELEASE_VERSION) {
             throw "provenance version drift"
           }
+          if ($provenance.packaging_infrastructure_commit -ne $env:INFRA_SHA) {
+            throw "provenance infrastructure SHA drift"
+          }
           if ($provenance.code_signing -ne "unsigned-readiness-build") {
             throw "unexpected signing state"
           }
@@ -169,6 +205,7 @@ jobs:
             ${{ runner.temp }}/cw-installer-output/artifact/CatalysisWorkbench-1.1.0-windows-x64-setup.exe
             ${{ runner.temp }}/cw-installer-output/artifact/BUILD_PROVENANCE.json
             ${{ runner.temp }}/cw-installer-output/artifact/THIRD_PARTY_NOTICES.txt
+            ${{ runner.temp }}/cw-installer-output/artifact/constraints-v1.1.0-windows-x64.txt
             ${{ runner.temp }}/cw-installer-output/artifact/resolved-requirements.txt
             ${{ runner.temp }}/cw-installer-output/artifact/SHA256SUMS.txt
           if-no-files-found: error

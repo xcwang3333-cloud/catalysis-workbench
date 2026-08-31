@@ -2,6 +2,7 @@ param(
     [Parameter(Mandatory = $true)][string]$PythonExe,
     [Parameter(Mandatory = $true)][string]$ReleaseSource,
     [Parameter(Mandatory = $true)][string]$InfraSource,
+    [Parameter(Mandatory = $true)][string]$ConstraintsFile,
     [Parameter(Mandatory = $true)][string]$IsccPath,
     [Parameter(Mandatory = $true)][string]$ExpectedTag,
     [Parameter(Mandatory = $true)][string]$ExpectedReleaseSha,
@@ -20,6 +21,7 @@ function Assert-LastExitCode([string]$Label) {
 
 $ReleaseSource = (Resolve-Path $ReleaseSource).Path
 $InfraSource = (Resolve-Path $InfraSource).Path
+$ConstraintsFile = (Resolve-Path $ConstraintsFile).Path
 $IsccPath = (Resolve-Path $IsccPath).Path
 New-Item -ItemType Directory -Force -Path $OutputRoot | Out-Null
 $OutputRoot = (Resolve-Path $OutputRoot).Path
@@ -75,13 +77,16 @@ $env:CATALYSIS_WORKBENCH_EXPECTED_VERSION = $ExpectedVersion
 Assert-LastExitCode "frozen desktop smoke"
 
 $resolvedRequirements = Join-Path $artifactRoot "resolved-requirements.txt"
-(& $PythonExe -m pip freeze) | Set-Content -Path $resolvedRequirements -Encoding utf8
+(& $PythonExe -m pip list --format=freeze --exclude catalysis-workbench) |
+    Sort-Object |
+    Set-Content -Path $resolvedRequirements -Encoding utf8
 
 $notices = Join-Path $artifactRoot "THIRD_PARTY_NOTICES.txt"
 & $PythonExe (Join-Path $InfraSource "packaging\windows\collect_notices.py") --output $notices
 Assert-LastExitCode "third-party notice generation"
 
 $requirementsHash = (Get-FileHash -Algorithm SHA256 $resolvedRequirements).Hash.ToLowerInvariant()
+$constraintsHash = (Get-FileHash -Algorithm SHA256 $ConstraintsFile).Hash.ToLowerInvariant()
 $infraSha = (& git -C $InfraSource rev-parse HEAD).Trim()
 Assert-LastExitCode "git resolve packaging infrastructure head"
 
@@ -96,11 +101,13 @@ $buildProvenance = [ordered]@{
     python_version = (& $PythonExe -c "import platform; print(platform.python_version())").Trim()
     pyinstaller_version = $pyinstallerVersion
     inno_setup_compiler = (Get-Item $IsccPath).VersionInfo.ProductVersion
+    dependency_constraints_sha256 = $constraintsHash
     resolved_requirements_sha256 = $requirementsHash
     code_signing = "unsigned-readiness-build"
 }
 $buildProvenancePath = Join-Path $artifactRoot "BUILD_PROVENANCE.json"
 $buildProvenance | ConvertTo-Json -Depth 4 | Set-Content -Path $buildProvenancePath -Encoding utf8
+Copy-Item $ConstraintsFile (Join-Path $artifactRoot "constraints-v1.1.0-windows-x64.txt")
 
 $licenseFile = Join-Path $ReleaseSource "LICENSE"
 if (-not (Test-Path $licenseFile -PathType Leaf)) {
