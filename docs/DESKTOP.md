@@ -5,11 +5,11 @@ CatalysisWorkbench provides an optional local Qt presentation layer over the rev
 ## Stable and development lines
 
 - stable baseline: `v1.0.0` at `22b944992bfd3791f91cc951f89eb22e8bf47325`;
-- current development identity: `1.1.0.dev0`;
-- current desktop phase: v1.1 Block 6 — Dogfooding Hardening & Desktop Cleanup;
+- current final-version candidate identity: `1.1.0`;
+- current desktop phase: v1.1 Gate B — final-version candidate;
 - PyPI/package-registry publication: not performed.
 
-The stable v1.0 compatibility shell remains available while v1.1 develops a task-first ordinary-user workbench.
+The stable v1.0 compatibility shell remains available while the completed v1.1 task-first workbench proceeds through final release validation.
 
 ## Installation
 

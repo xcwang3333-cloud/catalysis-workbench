@@ -1,6 +1,6 @@
 # CatalysisWorkbench v1.1 Release Notes — Draft
 
-These notes describe the reviewed v1.1 release-candidate scope. During Gate A the distribution/runtime identity remains `1.1.0.dev0`; final `1.1.0`, the `v1.1.0` tag, GitHub Release, installers, and registry publication remain later gates.
+These notes describe the reviewed v1.1 release-candidate scope. Gate A release hardening is complete and Gate B now uses exact distribution/runtime identity `1.1.0`. This is still a final-version candidate: the `v1.1.0` tag, GitHub Release, installers, and registry publication remain later separately verified gates.
 
 ## Overview
 
@@ -86,4 +86,4 @@ v1.1 does not add automatic chemistry/species/phase assignment, recursive projec
 
 ## Release status
 
-Gate A retains `1.1.0.dev0` while proving release readiness. Gate B will separately synchronize the exact reviewed candidate to `1.1.0`. Tagging, GitHub Release publication, installers, and package-registry publication occur only after their own verification gates.
+Gate A proved release readiness at `1.1.0.dev0` and was merged as `843df51828d740405aa5365142541ed361e069cc`. Gate B synchronizes the exact candidate to `1.1.0` and must pass ordinary CI plus Stable 1.0 and Stable 1.1 readiness before review/merge. Tagging, GitHub Release publication, installers, and package-registry publication occur only after their own verification gates.

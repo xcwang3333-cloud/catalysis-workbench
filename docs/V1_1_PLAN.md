@@ -582,3 +582,18 @@ Block 6 requires:
 ## Block 6 non-scope
 
 Block 6 does not add new scientific algorithms or transforms, change Figure Package scientific/source-data/provenance semantics, widen the frozen v1.0 public API, add new third-party scientific dependencies, create a v1.1 tag, publish a GitHub Release, merge the PR automatically, or publish to PyPI/package registries.
+
+
+## Release maturity — Gate B final-version candidate
+
+Blocks 1–6 are complete. Stable 1.1 Gate A was squash-merged as `843df51828d740405aa5365142541ed361e069cc` after exact-head CI #853, Stable 1.0 Readiness #115, and Stable 1.1 Readiness #2 succeeded. Post-merge CI #854, Stable 1.0 Readiness #116, and Stable 1.1 Readiness #3 then succeeded on that exact main commit.
+
+Gate B starts from `843df51828d740405aa5365142541ed361e069cc` and owns mechanical final-version synchronization only:
+
+- distribution and runtime identity become `1.1.0`;
+- ordinary CI and both release-readiness workflows expect exact `1.1.0`;
+- version-sensitive installed-smoke/workflow evidence expects `1.1.0`;
+- wheel/sdist artifact names use final `1.1.0` naming; and
+- release-status documentation identifies `1.1.0` as a final candidate, not an already published release.
+
+Gate B does not change scientific algorithms, task behavior, dependencies, schema, public API, runtime semantics, or desktop compatibility contracts. It does not create `v1.1.0`, publish a GitHub Release, create installers, or publish to PyPI/package registries. Gate B merge remains separately authorized after exact-head CI and formal review.

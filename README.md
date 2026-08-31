@@ -12,15 +12,15 @@ The retained stable baseline is **CatalysisWorkbench v1.0.0**. The immutable `v1
 
 A public GitHub Release named `CatalysisWorkbench v1.0.0` exists for that stable line.
 
-The active v1.1 release-candidate development identity is:
+The active v1.1 final-version candidate identity is:
 
 ```text
-1.1.0.dev0
+1.1.0
 ```
 
-v1.1 Blocks 1–6 are complete and merged on `main`. The exact Block-6 squash merge is `c81ee2e1aa8767e1560a14c5f7f4c1209fc4b6f9`; post-merge CI #851 and Stable 1.0 Readiness #113 both succeeded on that commit.
+v1.1 Blocks 1–6 and Stable 1.1 Gate A are complete and merged on `main`. Gate A was squash-merged as `843df51828d740405aa5365142541ed361e069cc`; post-merge CI #854, Stable 1.0 Readiness #116, and Stable 1.1 Readiness #3 all succeeded on that exact commit.
 
-Stable 1.1 Gate A now adds release-specific exact-wheel, cross-platform base/desktop, and wheel/sdist validation while deliberately retaining `1.1.0.dev0`. Gate A does **not** finalize `1.1.0`, create `v1.1.0`, publish a GitHub Release, or upload to a package registry.
+Stable 1.1 Gate B now performs mechanical final-version synchronization only: distribution/runtime identity, version-sensitive smoke evidence, and exact artifact expectations are `1.1.0`. Gate B does **not** create `v1.1.0`, publish a GitHub Release, create installers, or upload to a package registry.
 
 PyPI/package-registry publication remains deferred until a separately verified publication gate. Live GitHub state is authoritative if descriptive documentation drifts.
 

@@ -11,9 +11,10 @@ All notable changes to CatalysisWorkbench are recorded here.
 
 ### Changed
 
-- v1.1 Block 6 hardens the ordinary desktop workflow without changing the reviewed scientific semantics or the frozen v1.0 compatibility surface; the development version remains `1.1.0.dev0`.
-- Block 6 is merged and post-merge verified. Stable 1.1 Gate A adds a dedicated exact-wheel release audit, Linux/Windows/macOS base + desktop candidate validation, and exact wheel/sdist checks while retaining `1.1.0.dev0`.
-- Stable 1.0 Readiness remains an active compatibility gate. Gate A does not create a v1.1 tag, GitHub Release, installer, or PyPI/package-registry publication.
+- v1.1 Block 6 hardens the ordinary desktop workflow without changing the reviewed scientific semantics or the frozen v1.0 compatibility surface.
+- Stable 1.1 Gate A is merged and post-merge verified at `843df51828d740405aa5365142541ed361e069cc`; CI #854, Stable 1.0 Readiness #116, and Stable 1.1 Readiness #3 are green on that exact main commit.
+- Gate B synchronizes the release candidate mechanically to `1.1.0`, including distribution/runtime identity, version-sensitive installed-smoke evidence, and exact wheel/sdist expectations. No feature, scientific, dependency, schema, public-API, or runtime-semantic change is introduced.
+- Stable 1.0 Readiness remains an active compatibility gate. Gate B does not create `v1.1.0`, publish a GitHub Release, create installers, or publish to PyPI/package registries.
 
 ## [0.6.0] - 2026-08-25
 

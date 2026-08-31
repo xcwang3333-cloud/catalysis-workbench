@@ -14,7 +14,7 @@ GitHub is the operational source of truth. When descriptive documents disagree w
 
 Documentation must be corrected when it drifts; it never overrides merged code, exact CI, or explicit release decisions.
 
-## Current checkpoint — v1.1 release hardening
+## Current checkpoint — v1.1 Gate B final-version candidate
 
 Repository: `xcwang3333-cloud/catalysis-workbench`.
 
@@ -28,14 +28,15 @@ Stable baseline:
 
 Current v1.1 candidate:
 
-- candidate development version: `1.1.0.dev0`;
+- final-version candidate: `1.1.0`;
 - v1.1 Blocks 1–6: complete and merged;
-- exact Block-6 squash merge / Gate-A baseline: `c81ee2e1aa8767e1560a14c5f7f4c1209fc4b6f9`;
-- Block-6 post-merge CI #851: success;
-- Block-6 post-merge Stable 1.0 Readiness #113: success;
-- current phase: Stable 1.1 Gate A — release hardening at unchanged development version.
+- Stable 1.1 Gate A squash merge / Gate-B baseline: `843df51828d740405aa5365142541ed361e069cc`;
+- Gate-A post-merge CI #854: success;
+- Gate-A post-merge Stable 1.0 Readiness #116: success;
+- Gate-A post-merge Stable 1.1 Readiness #3: success;
+- current phase: Stable 1.1 Gate B — mechanical final-version candidate synchronization.
 
-Gate A adds v1.1-specific release audit, platform-install, and artifact validation only. Final `1.1.0`, the `v1.1.0` tag, GitHub Release publication, installers, and package-registry publication remain later gates.
+Gate A release hardening is complete. Gate B changes only release identity/evidence to exact `1.1.0`. The `v1.1.0` tag, GitHub Release publication, installers, and package-registry publication remain later separately authorized gates.
 
 ## Historical milestone summary
 
@@ -126,7 +127,7 @@ Block 6 is intentionally narrow:
 - provide a normal-user `catalysis-workbench` command with Qt-free `--version` and explicit v1.1 `--project` routing; and
 - reconcile central documentation with the real stable-v1.0/current-v1.1 state.
 
-Block 6 does **not** add scientific algorithms, new task families, a new `AnalysisDocument` schema, hidden interpolation/resampling, autosave, automatic stale-Figure refresh, package overwrite/merge, new dependencies, servers/cloud state, or release publication. It was squash-merged as `c81ee2e1aa8767e1560a14c5f7f4c1209fc4b6f9`; post-merge CI #851 and Stable 1.0 Readiness #113 succeeded. Stable 1.1 Gate A is now the active release-hardening phase.
+Block 6 does **not** add scientific algorithms, new task families, a new `AnalysisDocument` schema, hidden interpolation/resampling, autosave, automatic stale-Figure refresh, package overwrite/merge, new dependencies, servers/cloud state, or release publication. It was squash-merged as `c81ee2e1aa8767e1560a14c5f7f4c1209fc4b6f9`; post-merge CI #851 and Stable 1.0 Readiness #113 succeeded. Stable 1.1 Gate A later squash-merged as `843df51828d740405aa5365142541ed361e069cc` and passed post-merge CI #854, Stable 1.0 Readiness #116, and Stable 1.1 Readiness #3. Gate B is now the active final-version candidate phase.
 
 ## Scientific and reproducibility invariants
 
@@ -193,7 +194,7 @@ Without separate explicit authorization, do not:
 
 - merge a PR;
 - delete a branch;
-- finalize `1.1.0`;
+- change the final-version identity outside an explicitly authorized release gate;
 - create/move a v1.1 tag;
 - create a v1.1 GitHub Release; or
 - publish to PyPI/package registry.
