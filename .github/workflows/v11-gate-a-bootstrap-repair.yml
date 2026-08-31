@@ -28,8 +28,8 @@ jobs:
 
           source = Path('.github/workflows/v11-gate-a-bootstrap.yml').read_text(encoding='utf-8')
           marker = '        run: |\n'
-          if source.count(marker) != 1:
-              raise SystemExit('unexpected bootstrap run-block shape')
+          if marker not in source:
+              raise SystemExit('bootstrap run block not found')
           script = dedent(source.split(marker, 1)[1])
           script = script.replace(
               'test "$(git rev-parse HEAD^)" = "$BASE"',
