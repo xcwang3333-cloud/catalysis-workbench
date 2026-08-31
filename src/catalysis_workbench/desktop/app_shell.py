@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 
 from PySide6.QtCore import QSize, Qt, Signal
 from PySide6.QtGui import QResizeEvent
@@ -50,7 +50,12 @@ class ShellSidebar(QWidget):
         self._compact = False
 
         root = QVBoxLayout(self)
-        root.setContentsMargins(SPACING.control, SPACING.control, SPACING.control, SPACING.control)
+        root.setContentsMargins(
+            SPACING.control,
+            SPACING.control,
+            SPACING.control,
+            SPACING.control,
+        )
         root.setSpacing(SPACING.compact)
 
         header = QHBoxLayout()
@@ -125,8 +130,8 @@ class ShellSidebar(QWidget):
         if compact:
             self.setFixedWidth(62)
         else:
-            self.setMinimumWidth(208)
             self.setMaximumWidth(232)
+            self.setMinimumWidth(208)
         self.product_label.setVisible(not compact)
         for page_id, button in self._buttons.items():
             self._apply_compact_state(button, page_id)
@@ -167,7 +172,12 @@ class ShellCommandBar(QWidget):
         super().__init__(parent)
         self.setObjectName("cwCommandBar")
         root = QHBoxLayout(self)
-        root.setContentsMargins(SPACING.normal, SPACING.compact, SPACING.normal, SPACING.compact)
+        root.setContentsMargins(
+            SPACING.normal,
+            SPACING.compact,
+            SPACING.normal,
+            SPACING.compact,
+        )
         root.setSpacing(SPACING.compact)
 
         self.project_title = QLabel("Home")
@@ -209,7 +219,7 @@ class ShellCommandBar(QWidget):
         self,
         text: str,
         icon_role: QStyle.StandardPixmap,
-        callback: object,
+        callback: Callable[[], object],
         *,
         object_name: str = "cwCommandButton",
     ) -> QToolButton:
@@ -219,7 +229,7 @@ class ShellCommandBar(QWidget):
         button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         button.setIcon(self.style().standardIcon(icon_role))
         button.setIconSize(QSize(16, 16))
-        button.clicked.connect(callback)  # type: ignore[arg-type]
+        button.clicked.connect(lambda _checked=False: callback())
         return button
 
     def apply_state(
