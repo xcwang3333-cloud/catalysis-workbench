@@ -11,10 +11,10 @@ Implemented:
 - unified product sidebar;
 - cross-page command bar for project title/task/dirty state plus Undo/Redo/Save;
 - global status bar;
-- responsive sidebar compaction for ordinary laptop widths;
+- responsive sidebar compaction primitives for ordinary laptop widths;
 - composition-based product window hosting Home, Data & Analysis, Figure, and Export;
 - page enablement tied to retained v1.1 prerequisites;
-- reviewed 1024x640 shell minimum with 1440x900 default size;
+- preserved Stable v1.1 main-window minimum of 1200x760 and 1440x900 default size;
 - installed-wheel offscreen Block-1 shell smoke;
 - v1.2 architecture and seven-block implementation plan.
 
@@ -24,7 +24,7 @@ The existing v1.1 `workbench_window -> figure_window -> export_window` chain is 
 
 This means Block 1 changes application chrome without rewriting the existing Home, Data Intake, Analysis, Figure, or Export page behavior. Those pages remain the responsibility of later v1.2 blocks.
 
-The legacy v1.0 `create_desktop()` / `ApplicationSession` path remains unchanged.
+The legacy v1.0 `create_desktop()` / `ApplicationSession` path remains unchanged. The Stable v1.1 minimum-window contract also remains unchanged in Block 1. The shell can exercise compact-navigation behavior internally for future responsive work, but lowering the product window minimum requires a separate compatibility review rather than weakening existing installed-smoke guarantees.
 
 ## Scientific and persistence boundary
 
