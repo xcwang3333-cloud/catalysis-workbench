@@ -64,12 +64,12 @@ def main() -> None:
         assert window.session.state.document.title == "Untitled LSV analysis"
         assert not window.session.state.is_dirty
 
-        window.app_shell.resize(1100, 700)
-        application.processEvents()
+        window.app_shell.sidebar.set_compact(True)
         assert window.app_shell.sidebar.is_compact
-        window.app_shell.resize(1400, 800)
-        application.processEvents()
+        assert window.app_shell.sidebar.width() == 62
+        window.app_shell.sidebar.set_compact(False)
         assert not window.app_shell.sidebar.is_compact
+        assert window.app_shell.sidebar.minimumWidth() == 208
 
         window.app_shell.set_theme_mode("dark")
         assert ui_settings.theme_mode() is ui_module.ThemeMode.DARK
