@@ -8,9 +8,9 @@ CatalysisWorkbench is developed through staged scientific and product-maturity m
 - A public GitHub Release named `CatalysisWorkbench v1.0.0` exists for the stable v1.0 line.
 - `v0.7.0` remains a retained historical stable Release/tag at `e3062fc12c794f54c7b7613875ec73608a587a59`.
 - v0.8 and v0.9 are completed development milestones without routine standalone tags/Releases.
-- the active development identity is `1.1.0.dev0`.
+- the active v1.1 release-candidate development identity is `1.1.0.dev0`.
 - PyPI/package-registry publication has not been performed.
-- final `1.1.0`, a v1.1 tag, a GitHub Release, and any registry publication remain separate future decisions.
+- Stable 1.1 Gate A is in progress; final `1.1.0`, the v1.1 tag, GitHub Release, installers, and any registry publication remain later verified gates.
 
 ## v0.1–v0.4 — Core experimental analysis — historical complete
 
@@ -57,7 +57,7 @@ Stable 1.0 maturity gates then finalized and published `v1.0.0` at `22b944992bfd
 
 The stable v1.0 public/application/workspace/desktop compatibility surfaces remain active regression gates during v1.1 development.
 
-## v1.1 — Task-first research workbench — current development
+## v1.1 — Task-first research workbench — release hardening
 
 Architecture authority is split between:
 
@@ -97,7 +97,7 @@ SVG/PDF/PNG figures plus XLSX/TXT scientific source data, path-independent seman
 
 Exact post-merge Block-5 baseline: `eec2f85d117902459178f65c4543b5674de54912`. CI #832 and Stable 1.0 Readiness #94 succeeded on that exact main commit.
 
-### Block 6 — Dogfooding Hardening & Desktop Cleanup — current
+### Block 6 — Dogfooding Hardening & Desktop Cleanup — complete
 
 Block 6 is the final v1.1 development block, not a release publication step.
 
@@ -113,18 +113,18 @@ Scope:
 
 Block 6 explicitly does not add scientific algorithms, a new `AnalysisDocument` schema, hidden interpolation/resampling, autosave, automatic stale-Figure refresh, package overwrite/merge, new dependencies, server/cloud/background services, final-version changes, tags, Releases, or PyPI publication.
 
-## After Block 6
+## Stable 1.1 release hardening
 
-Block 6 completion should be followed by real dogfooding review of the candidate desktop behavior and package outputs. Only after that review may a separately scoped v1.1 release decision consider:
+Block 6 completed the real installed-wheel dogfooding review and was squash-merged as `c81ee2e1aa8767e1560a14c5f7f4c1209fc4b6f9`. Post-merge CI #851 and Stable 1.0 Readiness #113 both succeeded on that exact commit.
 
-- whether `1.1.0.dev0` is ready to become final `1.1.0`;
-- exact release-candidate SHA;
-- tag creation;
-- GitHub Release publication;
-- optional installer/distribution packaging; and
-- whether PyPI/package-registry publication is desired.
+The active release path is now staged:
 
-No release action is implied by Block 6 completion.
+1. **Gate A — release hardening:** retain `1.1.0.dev0`, add Stable 1.1 exact-wheel audit, Linux/Windows/macOS base + desktop install checks, wheel/sdist validation, and release documentation;
+2. **Gate B — final-version candidate:** synchronize distribution/runtime/gate expectations to exact `1.1.0` without feature changes;
+3. **Gate C — immutable tag:** create and reverse-verify `v1.1.0` only on the reviewed Gate-B release commit;
+4. **Publication:** publish the GitHub Release from the verified tag; installers and package-registry publication remain separately verified operations.
+
+Each merge and publication boundary remains fail-closed and exact-head evidence from an older candidate becomes stale after any change.
 
 ## Long-range non-goals unless separately re-architected
 

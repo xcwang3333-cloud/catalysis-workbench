@@ -12,15 +12,17 @@ The retained stable baseline is **CatalysisWorkbench v1.0.0**. The immutable `v1
 
 A public GitHub Release named `CatalysisWorkbench v1.0.0` exists for that stable line.
 
-The active development identity is:
+The active v1.1 release-candidate development identity is:
 
 ```text
 1.1.0.dev0
 ```
 
-v1.1 redesigns the optional desktop around an ordinary-user, task-first workflow. Blocks 1–5 are merged on `main`; Block 6 is the final dogfooding/hardening block. Completing Block 6 does **not** finalize `1.1.0` and does not authorize a v1.1 tag, GitHub Release, or package-registry publication.
+v1.1 Blocks 1–6 are complete and merged on `main`. The exact Block-6 squash merge is `c81ee2e1aa8767e1560a14c5f7f4c1209fc4b6f9`; post-merge CI #851 and Stable 1.0 Readiness #113 both succeeded on that commit.
 
-PyPI/package-registry publication remains deferred. Live GitHub state is authoritative if descriptive documentation drifts.
+Stable 1.1 Gate A now adds release-specific exact-wheel, cross-platform base/desktop, and wheel/sdist validation while deliberately retaining `1.1.0.dev0`. Gate A does **not** finalize `1.1.0`, create `v1.1.0`, publish a GitHub Release, or upload to a package registry.
+
+PyPI/package-registry publication remains deferred until a separately verified publication gate. Live GitHub state is authoritative if descriptive documentation drifts.
 
 ## Installation
 

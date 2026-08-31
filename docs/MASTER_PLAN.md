@@ -14,7 +14,7 @@ GitHub is the operational source of truth. When descriptive documents disagree w
 
 Documentation must be corrected when it drifts; it never overrides merged code, exact CI, or explicit release decisions.
 
-## Current checkpoint — v1.1 development
+## Current checkpoint — v1.1 release hardening
 
 Repository: `xcwang3333-cloud/catalysis-workbench`.
 
@@ -26,16 +26,16 @@ Stable baseline:
 - project license: BSD-3-Clause;
 - PyPI/package-registry publication: not performed.
 
-Current development:
+Current v1.1 candidate:
 
-- development version: `1.1.0.dev0`;
-- v1.1 Blocks 1–5: complete and merged;
-- exact Block-5 post-merge main baseline: `eec2f85d117902459178f65c4543b5674de54912`;
-- Block-5 post-merge CI #832: success;
-- Block-5 post-merge Stable 1.0 Readiness #94: success;
-- current phase: v1.1 Block 6 — Dogfooding Hardening & Desktop Cleanup.
+- candidate development version: `1.1.0.dev0`;
+- v1.1 Blocks 1–6: complete and merged;
+- exact Block-6 squash merge / Gate-A baseline: `c81ee2e1aa8767e1560a14c5f7f4c1209fc4b6f9`;
+- Block-6 post-merge CI #851: success;
+- Block-6 post-merge Stable 1.0 Readiness #113: success;
+- current phase: Stable 1.1 Gate A — release hardening at unchanged development version.
 
-Block 6 is not a release gate. Final `1.1.0`, a v1.1 tag, a GitHub Release, and PyPI/package-registry publication remain separately authorized future decisions.
+Gate A adds v1.1-specific release audit, platform-install, and artifact validation only. Final `1.1.0`, the `v1.1.0` tag, GitHub Release publication, installers, and package-registry publication remain later gates.
 
 ## Historical milestone summary
 
@@ -112,7 +112,7 @@ Added SVG/PDF/PNG publication output plus XLSX/TXT scientific source data, path-
 
 Block-5 exact post-merge main is `eec2f85d117902459178f65c4543b5674de54912`; CI #832 and Stable 1.0 Readiness #94 both succeeded on that exact commit.
 
-### Block 6 — Dogfooding Hardening & Desktop Cleanup — current
+### Block 6 — Dogfooding Hardening & Desktop Cleanup — complete
 
 Architecture contract: [`V1_1_BLOCK6.md`](V1_1_BLOCK6.md).
 
@@ -126,7 +126,7 @@ Block 6 is intentionally narrow:
 - provide a normal-user `catalysis-workbench` command with Qt-free `--version` and explicit v1.1 `--project` routing; and
 - reconcile central documentation with the real stable-v1.0/current-v1.1 state.
 
-Block 6 does **not** add scientific algorithms, new task families, a new `AnalysisDocument` schema, hidden interpolation/resampling, autosave, automatic stale-Figure refresh, package overwrite/merge, new dependencies, servers/cloud state, or release publication.
+Block 6 does **not** add scientific algorithms, new task families, a new `AnalysisDocument` schema, hidden interpolation/resampling, autosave, automatic stale-Figure refresh, package overwrite/merge, new dependencies, servers/cloud state, or release publication. It was squash-merged as `c81ee2e1aa8767e1560a14c5f7f4c1209fc4b6f9`; post-merge CI #851 and Stable 1.0 Readiness #113 succeeded. Stable 1.1 Gate A is now the active release-hardening phase.
 
 ## Scientific and reproducibility invariants
 
