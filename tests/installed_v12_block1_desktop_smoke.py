@@ -41,8 +41,8 @@ def main() -> None:
         assert window.app_shell.page_enabled("analysis") is False
         assert window.app_shell.page_enabled("figure") is False
         assert window.app_shell.page_enabled("export") is False
-        assert window.minimumWidth() == 1024
-        assert window.minimumHeight() == 640
+        assert window.minimumWidth() >= 1200
+        assert window.minimumHeight() >= 760
 
         window.start_analysis("lsv")
         assert window.stack.currentWidget() is window.analysis_page
