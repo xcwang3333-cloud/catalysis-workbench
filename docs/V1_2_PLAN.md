@@ -69,9 +69,9 @@ The theme preference supports `system`, `light`, and `dark`. Block 1 establishes
 
 ## Responsive desktop targets
 
-1920x1080 is the wide reference layout. Ordinary laptop windows are first-class targets rather than degraded fallbacks.
+1920x1080 is the wide reference layout. Ordinary laptop windows remain an explicit v1.2 product target.
 
-The shell uses a full navigation rail on wide windows and a compact icon rail below approximately 1180 px. The reviewed v1.2 shell minimum is 1024x640; later page blocks must remove page-local assumptions that prevent useful operation at that size.
+Block 1 adds responsive shell primitives: the navigation rail can compact below approximately 1180 px and the presentation architecture no longer assumes full-width navigation chrome. However, the reviewed Stable v1.1 main-window minimum of 1200x760 remains an active compatibility contract in Block 1 and is not weakened by the shell refactor. Any future reduction of that minimum requires a separately reviewed compatibility decision in a later responsive-hardening block rather than silently changing the frozen v1.1 desktop contract.
 
 ## Block plan
 
@@ -81,7 +81,7 @@ The shell uses a full navigation rail on wide windows and a compact icon rail be
 - desktop-only UI settings;
 - unified sidebar, command bar, and status bar;
 - composition-based product window hosting the retained v1.1 Home/Analysis/Figure/Export pages;
-- responsive shell navigation;
+- responsive shell navigation primitives while preserving the v1.1 main-window minimum contract;
 - retained page widgets and scientific behavior unchanged;
 - cumulative offscreen installed-wheel shell smoke.
 
@@ -109,7 +109,7 @@ Unify Figure Package preflight, destination/options presentation, dirty guards, 
 
 ### Block 7 — Theme / Responsive / Accessibility / Dogfooding
 
-Complete System/Light/Dark visual QA, 1920/1440/1366/1280/compact-window behavior, high-DPI behavior, keyboard/focus review, and cumulative Generic XY / LSV / FE & Partial Current desktop journeys.
+Complete System/Light/Dark visual QA, 1920/1440/1366/1280/compact-window behavior, high-DPI behavior, keyboard/focus review, and cumulative Generic XY / LSV / FE & Partial Current desktop journeys. Any proposal to lower the inherited Stable v1.1 main-window minimum belongs here or in another explicitly reviewed compatibility change, not in the Block-1 shell bootstrap.
 
 ## Block workflow
 
