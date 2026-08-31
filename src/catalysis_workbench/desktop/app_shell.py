@@ -20,8 +20,8 @@ from PySide6.QtWidgets import (
 )
 
 from .ui_foundation import (
-    DesktopUiSettings,
     SPACING,
+    DesktopUiSettings,
     ThemeMode,
     apply_theme,
     refresh_widget_style,
