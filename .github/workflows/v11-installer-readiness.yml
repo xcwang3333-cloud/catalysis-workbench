@@ -1,0 +1,216 @@
+name: Windows Installer Readiness
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-installer-readiness:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    env:
+      RELEASE_TAG: v1.1.0
+      RELEASE_SHA: 80da57c65bb70f599c1e068f6fe71a1551eaa856
+      RELEASE_VERSION: 1.1.0
+      PYINSTALLER_VERSION: 6.22.2
+      PIP_VERSION: 26.2.1
+      INNO_VERSION: 6.7.3
+      INFRA_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - name: Check out exact packaging infrastructure head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.INFRA_SHA }}
+          path: infra
+          persist-credentials: false
+
+      - name: Check out immutable release source
+        uses: actions/checkout@v4
+        with:
+          ref: v1.1.0
+          path: release-source
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify exact infrastructure and immutable release source
+        shell: pwsh
+        run: |
+          $infraHead = (git -C infra rev-parse HEAD).Trim()
+          if ($infraHead -ne $env:INFRA_SHA) {
+            throw "packaging infrastructure drift: expected $env:INFRA_SHA, got $infraHead"
+          }
+          $releaseHead = (git -C release-source rev-parse HEAD).Trim()
+          if ($releaseHead -ne $env:RELEASE_SHA) {
+            throw "release-source HEAD drift: $releaseHead"
+          }
+          $tag = (git -C release-source rev-list -n 1 $env:RELEASE_TAG).Trim()
+          if ($tag -ne $env:RELEASE_SHA) {
+            throw "release tag drift: $tag"
+          }
+
+      - name: Set up CPython 3.11 x64
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          architecture: x64
+
+      - name: Create constrained isolated build environment
+        shell: pwsh
+        run: |
+          $venv = Join-Path $env:RUNNER_TEMP "cw-installer-venv"
+          python -m venv $venv
+          $python = Join-Path $venv "Scripts\python.exe"
+          $constraints = ".\infra\packaging\windows\constraints-v1.1.0-windows-x64.txt"
+          & $python -m pip install "pip==$env:PIP_VERSION"
+          if ($LASTEXITCODE -ne 0) { throw "pip bootstrap failed: $LASTEXITCODE" }
+          & $python -m pip install -c $constraints ".\release-source[desktop]"
+          if ($LASTEXITCODE -ne 0) { throw "release dependency install failed: $LASTEXITCODE" }
+          & $python -m pip install -c $constraints "pyinstaller==$env:PYINSTALLER_VERSION"
+          if ($LASTEXITCODE -ne 0) { throw "PyInstaller install failed: $LASTEXITCODE" }
+          & $python -m pip check
+          if ($LASTEXITCODE -ne 0) { throw "pip check failed: $LASTEXITCODE" }
+          $runtimeVersion = (& $python -c "import catalysis_workbench; print(catalysis_workbench.__version__)").Trim()
+          if ($runtimeVersion -ne $env:RELEASE_VERSION) {
+            throw "runtime version drift: $runtimeVersion"
+          }
+          "CW_INSTALLER_PYTHON=$python" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Install verified Inno Setup compiler
+        shell: pwsh
+        run: |
+          $download = Join-Path $env:RUNNER_TEMP "innosetup-$env:INNO_VERSION.exe"
+          $uri = "https://github.com/jrsoftware/issrc/releases/download/is-6_7_3/innosetup-$env:INNO_VERSION.exe"
+          Invoke-WebRequest -Uri $uri -OutFile $download
+          $signature = Get-AuthenticodeSignature $download
+          if ($signature.Status -ne "Valid") {
+            throw "Inno Setup Authenticode signature is not valid: $($signature.Status)"
+          }
+          if ($signature.SignerCertificate.Subject -notmatch "Pyrsys B\.V\.") {
+            throw "Unexpected Inno Setup signer: $($signature.SignerCertificate.Subject)"
+          }
+          $installDir = Join-Path $env:RUNNER_TEMP "InnoSetup-$env:INNO_VERSION"
+          $bootstrap = Start-Process -FilePath $download -ArgumentList @(
+            "/VERYSILENT",
+            "/SUPPRESSMSGBOXES",
+            "/NORESTART",
+            "/SP-",
+            "/DIR=$installDir"
+          ) -Wait -PassThru
+          if ($bootstrap.ExitCode -ne 0) {
+            throw "Inno Setup bootstrap failed: $($bootstrap.ExitCode)"
+          }
+          $iscc = Join-Path $installDir "ISCC.exe"
+          if (-not (Test-Path $iscc -PathType Leaf)) {
+            throw "ISCC.exe not found"
+          }
+          "CW_ISCC=$iscc" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Build exact-tag frozen application and installer
+        shell: pwsh
+        run: |
+          .\infra\packaging\windows\build_installer.ps1 `
+            -PythonExe "$env:CW_INSTALLER_PYTHON" `
+            -ReleaseSource ".\release-source" `
+            -InfraSource ".\infra" `
+            -ConstraintsFile ".\infra\packaging\windows\constraints-v1.1.0-windows-x64.txt" `
+            -IsccPath "$env:CW_ISCC" `
+            -ExpectedInnoVersion "$env:INNO_VERSION" `
+            -ExpectedTag "$env:RELEASE_TAG" `
+            -ExpectedReleaseSha "$env:RELEASE_SHA" `
+            -ExpectedVersion "$env:RELEASE_VERSION" `
+            -OutputRoot "$env:RUNNER_TEMP\cw-installer-output"
+
+      - name: Silent install and installed desktop smoke
+        shell: pwsh
+        run: |
+          $artifact = Join-Path $env:RUNNER_TEMP "cw-installer-output\artifact"
+          $installer = Join-Path $artifact "CatalysisWorkbench-$env:RELEASE_VERSION-windows-x64-setup.exe"
+          $installDir = Join-Path $env:RUNNER_TEMP "cw-installed"
+          $install = Start-Process -FilePath $installer -ArgumentList @(
+            "/VERYSILENT",
+            "/SUPPRESSMSGBOXES",
+            "/NORESTART",
+            "/SP-",
+            "/DIR=$installDir"
+          ) -Wait -PassThru
+          if ($install.ExitCode -ne 0) {
+            throw "silent install failed: $($install.ExitCode)"
+          }
+          $app = Join-Path $installDir "CatalysisWorkbench.exe"
+          $uninstaller = Join-Path $installDir "unins000.exe"
+          if (-not (Test-Path $app -PathType Leaf)) {
+            throw "installed executable missing"
+          }
+          if (-not (Test-Path $uninstaller -PathType Leaf)) {
+            throw "uninstaller missing"
+          }
+          $env:QT_QPA_PLATFORM = "offscreen"
+          $env:CATALYSIS_WORKBENCH_EXPECTED_VERSION = $env:RELEASE_VERSION
+          $installedSmoke = Start-Process -FilePath $app -ArgumentList @("--installer-smoke") -Wait -PassThru
+          if ($installedSmoke.ExitCode -ne 0) {
+            throw "installed desktop smoke failed: $($installedSmoke.ExitCode)"
+          }
+          $uninstall = Start-Process -FilePath $uninstaller -ArgumentList @(
+            "/VERYSILENT",
+            "/SUPPRESSMSGBOXES",
+            "/NORESTART"
+          ) -Wait -PassThru
+          if ($uninstall.ExitCode -ne 0) {
+            throw "silent uninstall failed: $($uninstall.ExitCode)"
+          }
+          Start-Sleep -Seconds 2
+          if (Test-Path $app -PathType Leaf) {
+            throw "installed executable remained after uninstall"
+          }
+
+      - name: Validate readiness artifact set
+        shell: pwsh
+        run: |
+          $artifact = Join-Path $env:RUNNER_TEMP "cw-installer-output\artifact"
+          $required = @(
+            "CatalysisWorkbench-$env:RELEASE_VERSION-windows-x64-setup.exe",
+            "BUILD_PROVENANCE.json",
+            "THIRD_PARTY_NOTICES.txt",
+            "constraints-v1.1.0-windows-x64.txt",
+            "resolved-requirements.txt",
+            "SHA256SUMS.txt"
+          )
+          foreach ($name in $required) {
+            $path = Join-Path $artifact $name
+            if (-not (Test-Path $path -PathType Leaf)) {
+              throw "readiness artifact missing: $name"
+            }
+          }
+          $provenance = Get-Content (Join-Path $artifact "BUILD_PROVENANCE.json") -Raw | ConvertFrom-Json
+          if ($provenance.release_commit -ne $env:RELEASE_SHA) {
+            throw "provenance release SHA drift"
+          }
+          if ($provenance.product_version -ne $env:RELEASE_VERSION) {
+            throw "provenance version drift"
+          }
+          if ($provenance.packaging_infrastructure_commit -ne $env:INFRA_SHA) {
+            throw "provenance infrastructure SHA drift"
+          }
+          if ($provenance.inno_setup_compiler -ne $env:INNO_VERSION) {
+            throw "provenance Inno Setup version drift"
+          }
+          if ($provenance.code_signing -ne "unsigned-readiness-build") {
+            throw "unexpected signing state"
+          }
+
+      - name: Upload unsigned readiness artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: CatalysisWorkbench-1.1.0-windows-x64-unsigned-readiness
+          path: |
+            ${{ runner.temp }}/cw-installer-output/artifact/CatalysisWorkbench-1.1.0-windows-x64-setup.exe
+            ${{ runner.temp }}/cw-installer-output/artifact/BUILD_PROVENANCE.json
+            ${{ runner.temp }}/cw-installer-output/artifact/THIRD_PARTY_NOTICES.txt
+            ${{ runner.temp }}/cw-installer-output/artifact/constraints-v1.1.0-windows-x64.txt
+            ${{ runner.temp }}/cw-installer-output/artifact/resolved-requirements.txt
+            ${{ runner.temp }}/cw-installer-output/artifact/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 14
