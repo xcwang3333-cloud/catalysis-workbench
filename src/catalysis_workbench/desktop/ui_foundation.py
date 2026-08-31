@@ -329,9 +329,81 @@ QPushButton[cwRole="taskCard"][selected="true"] {{
     color: {palette.accent};
     font-weight: 600;
 }}
-QDialog#cwNewAnalysisDialog {{
+QDialog#cwNewAnalysisDialog,
+QDialog#cwDataImportDialog,
+QDialog#cwSeriesPreviewDialog {{
     background: {palette.window};
     color: {palette.text};
+}}
+QLabel#cwImportTitle {{
+    color: {palette.text};
+    font-size: 20px;
+    font-weight: 600;
+}}
+QLabel#cwImportSubtitle,
+QLabel#cwImportPaneHelp,
+QLabel#cwPreviewMeta {{
+    color: {palette.muted};
+}}
+QLabel#cwImportSummary {{
+    border: 1px solid {palette.border};
+    border-radius: 7px;
+    padding: 7px 10px;
+    background: {palette.surface_alt};
+    color: {palette.muted};
+}}
+QGroupBox#cwImportPane,
+QGroupBox#cwParserGroup,
+QGroupBox#cwScientificMappingGroup {{
+    border: 1px solid {palette.border};
+    border-radius: 8px;
+    margin-top: 12px;
+    padding-top: 10px;
+    background: {palette.surface};
+    color: {palette.text};
+    font-weight: 600;
+}}
+QGroupBox#cwImportPane::title,
+QGroupBox#cwParserGroup::title,
+QGroupBox#cwScientificMappingGroup::title {{
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 4px;
+    color: {palette.text};
+}}
+QListWidget#cwImportFileList,
+QTableWidget#cwPreviewTable {{
+    border: 1px solid {palette.border};
+    border-radius: 6px;
+    background: {palette.surface};
+    alternate-background-color: {palette.surface_alt};
+    color: {palette.text};
+    selection-background-color: {palette.accent_soft};
+    selection-color: {palette.text};
+}}
+QListWidget#cwImportFileList::item {{
+    padding: 7px 6px;
+}}
+QListWidget#cwImportFileList::item:selected {{
+    background: {palette.accent_soft};
+    color: {palette.accent};
+}}
+QLabel#cwPreviewStatus,
+QLabel#cwMappingStatus {{
+    border-radius: 6px;
+    padding: 6px 8px;
+    background: {palette.surface_alt};
+    color: {palette.muted};
+}}
+QLabel#cwPreviewStatus[state="error"],
+QLabel#cwMappingStatus[state="error"] {{
+    color: {palette.danger};
+}}
+QLabel#cwMappingStatus[state="confirmed"] {{
+    color: {palette.success};
+}}
+QLabel#cwMappingStatus[state="review"] {{
+    color: {palette.warning};
 }}
 QScrollArea#cwRecentScroll {{
     border: 0;
