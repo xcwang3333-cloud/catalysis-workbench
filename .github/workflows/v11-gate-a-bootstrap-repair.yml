@@ -41,6 +41,11 @@ jobs:
               'Path(".github/workflows/v11-gate-a-bootstrap.yml").unlink(); Path(".github/workflows/v11-gate-a-bootstrap-repair.yml").unlink()',
               1,
           )
+          script = script.replace(
+              'actual="$(git diff --name-only "$BASE" | sort)"',
+              'actual="$( (git diff --name-only "$BASE"; git ls-files --others --exclude-standard) | sort -u)"',
+              1,
+          )
           path = Path('/tmp/v11-gate-a-bootstrap.sh')
           path.write_text(script, encoding='utf-8')
           subprocess.run(['bash', '-x', str(path)], check=True)
