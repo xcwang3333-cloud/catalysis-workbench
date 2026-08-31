@@ -3,8 +3,7 @@ param(
     [Parameter(Mandatory = $true)][string]$ExpectedFileName,
     [Parameter(Mandatory = $true)][string]$PublisherSubjectRegex,
     [string]$ExpectedSha256 = "",
-    [switch]$RequireTimestamp,
-    [switch]$AllowSelfSignedTestCertificate
+    [switch]$RequireTimestamp
 )
 
 $ErrorActionPreference = "Stop"
@@ -31,7 +30,7 @@ if ($signature.SignerCertificate.Subject -notmatch $PublisherSubjectRegex) {
 }
 
 $isSelfSigned = $signature.SignerCertificate.Subject -eq $signature.SignerCertificate.Issuer
-if ($isSelfSigned -and -not $AllowSelfSignedTestCertificate) {
+if ($isSelfSigned) {
     throw "Self-signed certificates are not accepted for publication"
 }
 
