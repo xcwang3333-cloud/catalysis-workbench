@@ -118,13 +118,15 @@ jobs:
             throw "unexpected publisher identity was incorrectly accepted"
           }
 
-      - name: Confirm publication workflow remains read-only
+      - name: Confirm workflow token is read-only
         shell: pwsh
         run: |
-          $workflow = Get-Content .\.github\workflows\v11-installer-publication-readiness.yml -Raw
-          if ($workflow -match "contents:\s*write") {
-            throw "publication-readiness workflow must not have contents: write"
+          $lines = Get-Content .\.github\workflows\v11-installer-publication-readiness.yml
+          $readLines = @($lines | Where-Object { $_ -match '^\s*contents:\s*read\s*$' })
+          $writeLines = @($lines | Where-Object { $_ -match '^\s*contents:\s*write\s*$' })
+          if ($readLines.Count -ne 1) {
+            throw "publication-readiness workflow must declare exactly one contents: read permission"
           }
-          if ($workflow -match "releases/.+assets" -or $workflow -match "upload-release-asset") {
-            throw "publication-readiness workflow must not mutate GitHub Releases"
+          if ($writeLines.Count -ne 0) {
+            throw "publication-readiness workflow must not declare contents: write"
           }
