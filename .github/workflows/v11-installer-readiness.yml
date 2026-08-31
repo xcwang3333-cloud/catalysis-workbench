@@ -148,9 +148,9 @@ jobs:
           }
           $env:QT_QPA_PLATFORM = "offscreen"
           $env:CATALYSIS_WORKBENCH_EXPECTED_VERSION = $env:RELEASE_VERSION
-          & $app --installer-smoke
-          if ($LASTEXITCODE -ne 0) {
-            throw "installed desktop smoke failed: $LASTEXITCODE"
+          $installedSmoke = Start-Process -FilePath $app -ArgumentList @("--installer-smoke") -Wait -PassThru
+          if ($installedSmoke.ExitCode -ne 0) {
+            throw "installed desktop smoke failed: $($installedSmoke.ExitCode)"
           }
           $uninstall = Start-Process -FilePath $uninstaller -ArgumentList @(
             "/VERYSILENT",

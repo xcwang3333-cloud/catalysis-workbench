@@ -73,8 +73,10 @@ if (-not (Test-Path $appExe -PathType Leaf)) {
 
 $env:QT_QPA_PLATFORM = "offscreen"
 $env:CATALYSIS_WORKBENCH_EXPECTED_VERSION = $ExpectedVersion
-& $appExe --installer-smoke
-Assert-LastExitCode "frozen desktop smoke"
+$frozenSmoke = Start-Process -FilePath $appExe -ArgumentList @("--installer-smoke") -Wait -PassThru
+if ($frozenSmoke.ExitCode -ne 0) {
+    throw "frozen desktop smoke failed with exit code $($frozenSmoke.ExitCode)"
+}
 
 $resolvedRequirements = Join-Path $artifactRoot "resolved-requirements.txt"
 (& $PythonExe -m pip list --format=freeze --exclude catalysis-workbench) |
