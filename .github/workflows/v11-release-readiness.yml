@@ -1,0 +1,97 @@
+name: Stable 1.1 Readiness
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  release-audit:
+    runs-on: ubuntu-latest
+    env:
+      CATALYSIS_WORKBENCH_EXPECTED_VERSION: "1.1.0.dev0"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Build candidate wheel
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip wheel . --no-deps --wheel-dir dist
+
+      - name: Install exact wheel in a fresh environment
+        run: |
+          python -m venv .venv-v11-release
+          .venv-v11-release/bin/python -m pip install --upgrade pip
+          .venv-v11-release/bin/python -m pip install dist/catalysis_workbench-*.whl
+          .venv-v11-release/bin/python -m pip check
+
+      - name: Audit reviewed Stable 1.1 installed scope
+        run: .venv-v11-release/bin/python tests/installed_v11_release_smoke.py
+
+  release-platform-smoke:
+    name: v11-release-platform-${{ matrix.os }}-py${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python: ["3.11", "3.14"]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+
+      - name: Install Qt runtime libraries on Linux
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libegl1 libgl1 libxkbcommon-x11-0
+
+      - name: Build candidate wheel
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip wheel . --no-deps --wheel-dir dist
+
+      - name: Audit isolated base and desktop installs
+        run: python tests/run_v11_release_platform.py --wheel-dir dist --expected-version 1.1.0.dev0
+
+  release-artifact-smoke:
+    runs-on: ubuntu-latest
+    env:
+      CATALYSIS_WORKBENCH_EXPECTED_VERSION: "1.1.0.dev0"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+
+      - name: Build wheel and sdist
+        run: |
+          python -m pip install --upgrade pip "build>=1.2" "twine>=6.0"
+          python -m build --wheel --sdist
+
+      - name: Validate distribution metadata and exact candidate names
+        run: |
+          python -m twine check dist/*
+          python -c "from pathlib import Path; files=list(Path('dist').iterdir()); wheels=[p.name for p in files if p.suffix == '.whl']; sdists=[p.name for p in files if p.name.endswith('.tar.gz')]; assert len(wheels) == 1, files; assert len(sdists) == 1, files; assert wheels[0].startswith('catalysis_workbench-1.1.0.dev0-'), wheels; assert sdists == ['catalysis_workbench-1.1.0.dev0.tar.gz'], sdists"
+
+      - name: Rebuild a wheel from the sdist
+        run: python -m pip wheel dist/catalysis_workbench-*.tar.gz --no-deps --wheel-dir rebuilt
