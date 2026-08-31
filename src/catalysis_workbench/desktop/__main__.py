@@ -2,19 +2,7 @@
 
 from __future__ import annotations
 
-import sys
-
-from . import DesktopDependencyError, launch_desktop
-
-
-def main() -> int:
-    try:
-        result = launch_desktop()
-    except DesktopDependencyError as exc:
-        print(str(exc), file=sys.stderr)
-        return 2
-    return int(result)
-
+from .cli import main
 
 if __name__ == "__main__":
     raise SystemExit(main())

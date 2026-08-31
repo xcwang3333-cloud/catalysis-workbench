@@ -4,6 +4,16 @@ All notable changes to CatalysisWorkbench are recorded here.
 
 ## [Unreleased]
 
+### Added
+
+- v1.1 desktop dogfooding hardening adds the `catalysis-workbench` CLI entry point, a Qt-free `--version` path, explicit `--project` launch into a v1.1 project, Export-page Save Project, post-export Open Folder / Export Another actions, actionable desktop errors with optional technical details, and a presentation-only Recent Projects cache.
+- Cumulative fresh-wheel dogfood smoke coverage now exercises Generic XY, LSV / Polarization, and FE & Partial Current through the installed desktop path, with the Block-6 smokes wired into regular CI.
+
+### Changed
+
+- v1.1 Block 6 hardens the ordinary desktop workflow without changing the reviewed scientific semantics or the frozen v1.0 compatibility surface; the development version remains `1.1.0.dev0`.
+- Stable 1.0 Readiness remains an active compatibility gate. Block 6 does not authorize or create a v1.1 tag, GitHub Release, or PyPI/package-registry publication.
+
 ## [0.6.0] - 2026-08-25
 
 The v0.6 release freezes the reviewed electronic-structure and catalysis-thermodynamics scope after Gate A release hardening, Gate B final-version exact-wheel validation, Gate C tag verification, and public GitHub Release publication. Tag `v0.6.0` resolves exactly to reviewed Gate-B release commit `c7793b309f41d174c14534bd6d4acdacc2a57636`, and distribution/runtime version through the tag is `0.6.0`. The GitHub Release `CatalysisWorkbench v0.6.0` is published from that existing tag with reviewed release notes. PyPI/package-registry publication remains deferred.
