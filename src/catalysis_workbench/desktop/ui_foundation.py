@@ -224,6 +224,119 @@ QToolButton#cwSaveButton:disabled {{
     background: {palette.surface_alt};
     color: {palette.muted};
 }}
+QWidget#cwHomePage,
+QWidget#cwHomeContent,
+QWidget#cwRecentContainer {{
+    background: transparent;
+    color: {palette.text};
+}}
+QFrame#cwHomeIntro,
+QFrame#cwRecentProjectRow,
+QFrame#cwHomeEmptyState {{
+    border: 1px solid {palette.border};
+    border-radius: 10px;
+    background: {palette.surface};
+}}
+QLabel#cwHomeHeadline {{
+    color: {palette.text};
+    font-size: 28px;
+    font-weight: 650;
+}}
+QLabel#cwHomeSubtitle,
+QLabel#cwMutedText,
+QLabel#cwPathText {{
+    color: {palette.muted};
+}}
+QLabel#cwSectionTitle,
+QLabel#cwDialogTitle {{
+    color: {palette.text};
+    font-size: 17px;
+    font-weight: 600;
+}}
+QLabel#cwRecentProjectTitle {{
+    color: {palette.text};
+    font-size: 14px;
+    font-weight: 600;
+}}
+QLabel#cwTaskBadge,
+QLabel#cwUnavailableBadge {{
+    border: 1px solid {palette.border};
+    border-radius: 8px;
+    padding: 2px 7px;
+    background: {palette.surface_alt};
+    color: {palette.muted};
+}}
+QLabel#cwUnavailableBadge {{
+    color: {palette.warning};
+}}
+QPushButton#cwPrimaryButton {{
+    border: 1px solid {palette.accent};
+    border-radius: 7px;
+    padding: 8px 14px;
+    background: {palette.accent};
+    color: white;
+    font-weight: 600;
+}}
+QPushButton#cwPrimaryButton:hover {{
+    background: {palette.accent_hover};
+}}
+QPushButton#cwPrimaryButton:disabled {{
+    border-color: {palette.border};
+    background: {palette.surface_alt};
+    color: {palette.muted};
+}}
+QPushButton#cwSecondaryButton {{
+    border: 1px solid {palette.border};
+    border-radius: 7px;
+    padding: 8px 14px;
+    background: {palette.surface};
+    color: {palette.text};
+}}
+QPushButton#cwSecondaryButton:hover {{
+    border-color: {palette.accent};
+    background: {palette.accent_soft};
+}}
+QPushButton#cwSecondaryButton:disabled {{
+    color: {palette.muted};
+    background: {palette.surface_alt};
+}}
+QPushButton#cwTertiaryButton {{
+    border: 0;
+    border-radius: 6px;
+    padding: 7px 9px;
+    background: transparent;
+    color: {palette.muted};
+}}
+QPushButton#cwTertiaryButton:hover {{
+    background: {palette.surface_alt};
+    color: {palette.text};
+}}
+QPushButton[cwRole="taskCard"] {{
+    border: 1px solid {palette.border};
+    border-radius: 8px;
+    padding: 12px 14px;
+    text-align: left;
+    background: {palette.surface};
+    color: {palette.text};
+}}
+QPushButton[cwRole="taskCard"]:hover {{
+    border-color: {palette.accent};
+    background: {palette.surface_alt};
+}}
+QPushButton[cwRole="taskCard"][selected="true"] {{
+    border: 2px solid {palette.accent};
+    background: {palette.accent_soft};
+    color: {palette.accent};
+    font-weight: 600;
+}}
+QDialog#cwNewAnalysisDialog {{
+    background: {palette.window};
+    color: {palette.text};
+}}
+QScrollArea#cwRecentScroll {{
+    border: 0;
+    background: transparent;
+}}
 """
 
 
