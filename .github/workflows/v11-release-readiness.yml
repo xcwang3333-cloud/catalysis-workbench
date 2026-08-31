@@ -10,7 +10,7 @@ jobs:
   release-audit:
     runs-on: ubuntu-latest
     env:
-      CATALYSIS_WORKBENCH_EXPECTED_VERSION: "1.1.0.dev0"
+      CATALYSIS_WORKBENCH_EXPECTED_VERSION: "1.1.0"
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -67,12 +67,12 @@ jobs:
           python -m pip wheel . --no-deps --wheel-dir dist
 
       - name: Audit isolated base and desktop installs
-        run: python tests/run_v11_release_platform.py --wheel-dir dist --expected-version 1.1.0.dev0
+        run: python tests/run_v11_release_platform.py --wheel-dir dist --expected-version 1.1.0
 
   release-artifact-smoke:
     runs-on: ubuntu-latest
     env:
-      CATALYSIS_WORKBENCH_EXPECTED_VERSION: "1.1.0.dev0"
+      CATALYSIS_WORKBENCH_EXPECTED_VERSION: "1.1.0"
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -91,7 +91,7 @@ jobs:
       - name: Validate distribution metadata and exact candidate names
         run: |
           python -m twine check dist/*
-          python -c "from pathlib import Path; files=list(Path('dist').iterdir()); wheels=[p.name for p in files if p.suffix == '.whl']; sdists=[p.name for p in files if p.name.endswith('.tar.gz')]; assert len(wheels) == 1, files; assert len(sdists) == 1, files; assert wheels[0].startswith('catalysis_workbench-1.1.0.dev0-'), wheels; assert sdists == ['catalysis_workbench-1.1.0.dev0.tar.gz'], sdists"
+          python -c "from pathlib import Path; files=list(Path('dist').iterdir()); wheels=[p.name for p in files if p.suffix == '.whl']; sdists=[p.name for p in files if p.name.endswith('.tar.gz')]; assert len(wheels) == 1, files; assert len(sdists) == 1, files; assert wheels[0].startswith('catalysis_workbench-1.1.0-'), wheels; assert sdists == ['catalysis_workbench-1.1.0.tar.gz'], sdists"
 
       - name: Rebuild a wheel from the sdist
         run: python -m pip wheel dist/catalysis_workbench-*.tar.gz --no-deps --wheel-dir rebuilt
