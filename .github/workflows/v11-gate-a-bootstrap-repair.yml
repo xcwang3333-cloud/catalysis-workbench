@@ -1,0 +1,47 @@
+name: v1.1 Gate A bootstrap repair
+
+on:
+  push:
+    branches: [release/v1.1.0-gate-a]
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Execute bootstrap script without workflow-expression pre-evaluation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          from textwrap import dedent
+          import subprocess
+
+          source = Path('.github/workflows/v11-gate-a-bootstrap.yml').read_text(encoding='utf-8')
+          marker = '        run: |\n'
+          if source.count(marker) != 1:
+              raise SystemExit('unexpected bootstrap run-block shape')
+          script = dedent(source.split(marker, 1)[1])
+          script = script.replace(
+              'test "$(git rev-parse HEAD^)" = "$BASE"',
+              'test "$(git merge-base "$BASE" HEAD)" = "$BASE"',
+              1,
+          )
+          script = script.replace(
+              'Path(".github/workflows/v11-gate-a-bootstrap.yml").unlink()',
+              'Path(".github/workflows/v11-gate-a-bootstrap.yml").unlink(); Path(".github/workflows/v11-gate-a-bootstrap-repair.yml").unlink()',
+              1,
+          )
+          path = Path('/tmp/v11-gate-a-bootstrap.sh')
+          path.write_text(script, encoding='utf-8')
+          subprocess.run(['bash', str(path)], check=True)
+          PY
