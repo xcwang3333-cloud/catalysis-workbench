@@ -1,4 +1,4 @@
-"""v1.1 Analysis Workbench with data intake, live analysis, and processing controls."""
+"""v1.2 Analysis Workspace presentation over retained scientific behavior."""
 
 from __future__ import annotations
 
@@ -12,6 +12,7 @@ from PySide6.QtGui import QDragEnterEvent, QDropEvent
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QComboBox,
+    QFrame,
     QGroupBox,
     QHBoxLayout,
     QLabel,
@@ -19,6 +20,7 @@ from PySide6.QtWidgets import (
     QListWidget,
     QListWidgetItem,
     QPushButton,
+    QScrollArea,
     QSplitter,
     QVBoxLayout,
     QWidget,
@@ -32,10 +34,11 @@ from catalysis_workbench.application import (
 )
 
 from .processing_controls import ProcessingPanel
+from .ui_foundation import SPACING, refresh_widget_style
 
 
 class AnalysisShellPage(QWidget):
-    """Task-driven three-column Analysis Workbench for mapped scientific data."""
+    """Task-driven Data Navigator / Scientific Canvas / Processing Inspector."""
 
     home_requested = Signal()
     title_changed = Signal(str)
@@ -63,6 +66,7 @@ class AnalysisShellPage(QWidget):
         self._analysis_status = "incomplete"
         self._analysis_message: str | None = None
         self._analysis_stale = False
+        self.setObjectName("cwAnalysisWorkspace")
         self.setAcceptDrops(True)
         self._build_ui()
 
@@ -78,45 +82,86 @@ class AnalysisShellPage(QWidget):
 
     def _build_ui(self) -> None:
         root = QVBoxLayout(self)
-        toolbar = QHBoxLayout()
+        root.setContentsMargins(
+            SPACING.normal,
+            SPACING.normal,
+            SPACING.normal,
+            SPACING.normal,
+        )
+        root.setSpacing(SPACING.normal)
+
+        # Retain the v1.1 page-local command widgets as a hidden compatibility
+        # bridge. The v1.2 App Shell is the visible owner of these global actions.
+        self._legacy_chrome = QWidget(self)
+        self._legacy_chrome.setObjectName("cwLegacyAnalysisChrome")
+        legacy = QHBoxLayout(self._legacy_chrome)
+        legacy.setContentsMargins(0, 0, 0, 0)
         self.home_button = QPushButton("← Home")
         self.home_button.clicked.connect(self.home_requested.emit)
-        toolbar.addWidget(self.home_button)
+        legacy.addWidget(self.home_button)
         self.task_label = QLabel("No task")
-        toolbar.addWidget(self.task_label)
+        legacy.addWidget(self.task_label)
+        self.undo_button = QPushButton("Undo")
+        self.undo_button.clicked.connect(self.undo_requested.emit)
+        legacy.addWidget(self.undo_button)
+        self.redo_button = QPushButton("Redo")
+        self.redo_button.clicked.connect(self.redo_requested.emit)
+        legacy.addWidget(self.redo_button)
+        self.save_button = QPushButton("Save Project")
+        self.save_button.clicked.connect(self.save_requested.emit)
+        legacy.addWidget(self.save_button)
+        self._legacy_chrome.setVisible(False)
+        root.addWidget(self._legacy_chrome)
+
+        context = QFrame()
+        context.setObjectName("cwAnalysisContext")
+        context_layout = QHBoxLayout(context)
+        context_layout.setContentsMargins(
+            SPACING.control,
+            SPACING.compact,
+            SPACING.control,
+            SPACING.compact,
+        )
+        context_layout.setSpacing(SPACING.control)
+        title_label = QLabel("Analysis title")
+        title_label.setObjectName("cwWorkspaceFieldLabel")
+        context_layout.addWidget(title_label)
         self.title_edit = QLineEdit()
+        self.title_edit.setObjectName("cwAnalysisTitleEdit")
         self.title_edit.editingFinished.connect(
             lambda: self.title_changed.emit(self.title_edit.text())
         )
-        toolbar.addWidget(self.title_edit, 1)
-        self.undo_button = QPushButton("Undo")
-        self.undo_button.clicked.connect(self.undo_requested.emit)
-        toolbar.addWidget(self.undo_button)
-        self.redo_button = QPushButton("Redo")
-        self.redo_button.clicked.connect(self.redo_requested.emit)
-        toolbar.addWidget(self.redo_button)
-        self.save_button = QPushButton("Save Project")
-        self.save_button.clicked.connect(self.save_requested.emit)
-        toolbar.addWidget(self.save_button)
-        root.addLayout(toolbar)
-
+        context_layout.addWidget(self.title_edit, 1)
         self.status_label = QLabel("No analysis")
-        root.addWidget(self.status_label)
+        self.status_label.setObjectName("cwWorkspaceStatus")
+        context_layout.addWidget(self.status_label)
+        root.addWidget(context)
 
         splitter = QSplitter(Qt.Orientation.Horizontal)
+        splitter.setObjectName("cwAnalysisSplitter")
 
-        data_box = QGroupBox("DATA")
+        data_box = QGroupBox("DATA NAVIGATOR")
+        data_box.setObjectName("cwAnalysisPane")
         data_layout = QVBoxLayout(data_box)
+        data_layout.setSpacing(SPACING.compact)
         self.add_files_button = QPushButton("+ Add files")
+        self.add_files_button.setObjectName("cwPrimaryButton")
         self.add_files_button.clicked.connect(self.add_files_requested.emit)
         data_layout.addWidget(self.add_files_button)
         helper = QLabel(
-            "Add CSV/TXT/TSV/DAT/Excel files. Each file is previewed and mapped explicitly."
+            "Mapped scientific inputs. Rename or drag to reorder; mapping changes "
+            "remain explicit."
         )
+        helper.setObjectName("cwWorkspaceHelp")
         helper.setWordWrap(True)
         data_layout.addWidget(helper)
 
+        self.data_state_label = QLabel("No mapped data yet")
+        self.data_state_label.setObjectName("cwDataState")
+        data_layout.addWidget(self.data_state_label)
+
         self.series_list = QListWidget()
+        self.series_list.setObjectName("cwDataNavigatorList")
         self.series_list.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.series_list.setDragDropMode(QAbstractItemView.DragDropMode.InternalMove)
         self.series_list.setDefaultDropAction(Qt.DropAction.MoveAction)
@@ -126,63 +171,115 @@ class AnalysisShellPage(QWidget):
         data_layout.addWidget(self.series_list, 1)
 
         button_row = QHBoxLayout()
+        button_row.setSpacing(SPACING.compact)
         self.edit_mapping_button = QPushButton("Edit mapping")
+        self.edit_mapping_button.setObjectName("cwSecondaryButton")
         self.edit_mapping_button.clicked.connect(self._emit_edit_mapping)
         button_row.addWidget(self.edit_mapping_button)
         self.preview_data_button = QPushButton("Preview data")
+        self.preview_data_button.setObjectName("cwSecondaryButton")
         self.preview_data_button.clicked.connect(self._emit_preview_data)
         button_row.addWidget(self.preview_data_button)
         data_layout.addLayout(button_row)
         self.remove_series_button = QPushButton("Remove selected")
+        self.remove_series_button.setObjectName("cwTertiaryButton")
         self.remove_series_button.clicked.connect(self._emit_remove_series)
         data_layout.addWidget(self.remove_series_button)
 
         self.mapping_summary = QLabel("No data selected.")
+        self.mapping_summary.setObjectName("cwMappingSummary")
         self.mapping_summary.setWordWrap(True)
         data_layout.addWidget(self.mapping_summary)
         splitter.addWidget(data_box)
 
-        preview_box = QGroupBox("LIVE ANALYSIS PREVIEW")
+        preview_box = QGroupBox("SCIENTIFIC CANVAS")
+        preview_box.setObjectName("cwScientificCanvas")
         preview_layout = QVBoxLayout(preview_box)
+        preview_layout.setSpacing(SPACING.compact)
         view_row = QHBoxLayout()
-        view_row.addWidget(QLabel("View"))
+        view_row.setSpacing(SPACING.compact)
+        view_label = QLabel("View")
+        view_label.setObjectName("cwWorkspaceFieldLabel")
+        view_row.addWidget(view_label)
         self.view_combo = QComboBox()
+        self.view_combo.setObjectName("cwAnalysisViewCombo")
         self.view_combo.currentIndexChanged.connect(self._render_current_view)
         view_row.addWidget(self.view_combo, 1)
+        self.canvas_state_label = QLabel("Waiting for data")
+        self.canvas_state_label.setObjectName("cwCanvasState")
+        self.canvas_state_label.setProperty("state", "empty")
+        view_row.addWidget(self.canvas_state_label)
         preview_layout.addLayout(view_row)
+
         self.preview_note = QLabel(
             "Add mapped data to begin live scientific analysis."
         )
+        self.preview_note.setObjectName("cwCanvasNote")
+        self.preview_note.setProperty("state", "empty")
         self.preview_note.setWordWrap(True)
         preview_layout.addWidget(self.preview_note)
+
         self.figure = Figure(figsize=(6.5, 4.5), constrained_layout=True)
         self.canvas = FigureCanvasQTAgg(self.figure)
+        self.canvas.setObjectName("cwAnalysisCanvas")
         self.axes = self.figure.add_subplot(111)
         preview_layout.addWidget(self.canvas, 1)
+
+        canvas_action_row = QHBoxLayout()
+        canvas_action_row.addStretch(1)
+        self.continue_button = QPushButton("Continue to Figure")
+        self.continue_button.setObjectName("cwPrimaryButton")
+        self.continue_button.setEnabled(False)
+        self.continue_button.setToolTip(
+            "Open Figure Workbench using the current successful scientific result."
+        )
+        canvas_action_row.addWidget(self.continue_button)
+        preview_layout.addLayout(canvas_action_row)
         splitter.addWidget(preview_box)
 
-        processing_box = QGroupBox("PROCESSING")
+        processing_box = QGroupBox("PROCESSING INSPECTOR")
+        processing_box.setObjectName("cwAnalysisPane")
         processing_layout = QVBoxLayout(processing_box)
+        processing_layout.setContentsMargins(
+            SPACING.compact,
+            SPACING.compact,
+            SPACING.compact,
+            SPACING.compact,
+        )
         self.processing_panel = ProcessingPanel()
         self.processing_panel.analysis_spec_changed.connect(
             self.analysis_spec_changed.emit
         )
-        processing_layout.addWidget(self.processing_panel)
+        self.processing_scroll = QScrollArea()
+        self.processing_scroll.setObjectName("cwProcessingScroll")
+        self.processing_scroll.setWidgetResizable(True)
+        self.processing_scroll.setFrameShape(QFrame.Shape.NoFrame)
+        self.processing_scroll.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
+        self.processing_scroll.setWidget(self.processing_panel)
+        processing_layout.addWidget(self.processing_scroll)
         splitter.addWidget(processing_box)
 
-        splitter.setSizes([280, 720, 360])
+        splitter.setSizes([300, 700, 360])
         splitter.setStretchFactor(0, 0)
         splitter.setStretchFactor(1, 1)
         splitter.setStretchFactor(2, 0)
         root.addWidget(splitter, 1)
-
-        self.continue_button = QPushButton("Continue to Figure")
-        self.continue_button.setEnabled(False)
-        self.continue_button.setToolTip(
-            "Figure Workbench remains disabled until v1.1 Block 4."
-        )
-        root.addWidget(self.continue_button)
         self._update_selection()
+
+    def _set_workspace_status(self, text: str, state: str) -> None:
+        self.status_label.setProperty("state", state)
+        self.status_label.setText(text)
+        refresh_widget_style(self.status_label)
+
+    def _set_canvas_state(self, state: str, label: str, note: str) -> None:
+        self.canvas_state_label.setProperty("state", state)
+        self.canvas_state_label.setText(label)
+        self.preview_note.setProperty("state", state)
+        self.preview_note.setText(note)
+        refresh_widget_style(self.canvas_state_label)
+        refresh_widget_style(self.preview_note)
 
     def _selected_data_id(self) -> str | None:
         item = self.series_list.currentItem()
@@ -332,33 +429,45 @@ class AnalysisShellPage(QWidget):
             text = "Previous valid result — current settings are not applied"
             if self._analysis_message:
                 text += f": {self._analysis_message}"
-            self.preview_note.setText(text)
+            self._set_canvas_state("stale", "Previous valid result", text)
             return
         if self._analysis_status == "success":
             view_id = self.view_combo.currentData()
             if view_id == "raw":
-                self.preview_note.setText(
+                note = (
                     "Mapped raw values · display sampling only for large series; "
                     "scientific data are unchanged."
                 )
             elif self._task_id == "fe_partial_current":
-                self.preview_note.setText(
+                note = (
                     "Live scientific result · FE and partial current use separate "
                     "views and no interpolation."
                 )
             else:
-                self.preview_note.setText(
+                note = (
                     "Live scientific result · committed processing settings are current."
                 )
+            self._set_canvas_state("success", "Analysis current", note)
             return
         if self._analysis_status == "error":
-            self.preview_note.setText(
-                f"Analysis error: {self._analysis_message or 'live analysis failed'}"
+            self._set_canvas_state(
+                "error",
+                "Analysis error",
+                f"Analysis error: {self._analysis_message or 'live analysis failed'}",
             )
-        else:
-            self.preview_note.setText(
-                f"Needs input: {self._analysis_message or 'analysis is incomplete'}"
+            return
+        if not self._raw_inputs:
+            self._set_canvas_state(
+                "empty",
+                "Waiting for data",
+                f"Needs input: {self._analysis_message or 'analysis is incomplete'}",
             )
+            return
+        self._set_canvas_state(
+            "incomplete",
+            "Needs input",
+            f"Needs input: {self._analysis_message or 'analysis is incomplete'}",
+        )
 
     def set_materialized_inputs(
         self,
@@ -399,11 +508,12 @@ class AnalysisShellPage(QWidget):
             self._task_id = None
             self.task_label.setText("No task")
             self.title_edit.clear()
-            self.status_label.setText("No analysis")
+            self._set_workspace_status("No analysis", "empty")
             self.undo_button.setEnabled(False)
             self.redo_button.setEnabled(False)
             self.save_button.setEnabled(False)
             self.add_files_button.setEnabled(False)
+            self.data_state_label.setText("No mapped data yet")
             self._series_by_id = {}
             self._rebuild_series(())
             self._raw_inputs = ()
@@ -425,13 +535,22 @@ class AnalysisShellPage(QWidget):
         self._rebuild_series(document.data_series, selected_id=selected_id)
 
         count = len(document.data_series)
+        self.data_state_label.setText(
+            f"{count} mapped series" if count else "No mapped data yet"
+        )
         if state.is_dirty:
             storage = "Unsaved changes"
+            storage_state = "dirty"
         elif state.is_unsaved:
             storage = "Not saved yet"
+            storage_state = "unsaved"
         else:
             storage = "Saved"
-        self.status_label.setText(f"{count} mapped series · {storage}")
+            storage_state = "saved"
+        self._set_workspace_status(
+            f"{count} mapped series · {storage}",
+            storage_state,
+        )
 
     def _rebuild_series(
         self,
