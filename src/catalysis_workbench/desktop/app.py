@@ -10,8 +10,9 @@ from PySide6.QtWidgets import QApplication
 
 from catalysis_workbench.application import AnalysisSession, ApplicationSession
 
-from .export_window import CatalysisWorkbenchWindow
+from .product_window import CatalysisWorkbenchWindow
 from .recent_projects import RecentProjectsStore
+from .ui_foundation import DesktopUiSettings
 from .window import CatalysisWorkbenchMainWindow
 
 
@@ -25,7 +26,7 @@ class DesktopHandle:
 
 @dataclass(frozen=True, slots=True)
 class WorkbenchDesktopHandle:
-    """Live v1.1 task-first Qt application/window pair."""
+    """Live task-first Qt application/window pair."""
 
     application: QApplication
     window: CatalysisWorkbenchWindow
@@ -66,13 +67,20 @@ def create_workbench_desktop(
     session: AnalysisSession | None = None,
     argv: Sequence[str] | None = None,
     recent_store: RecentProjectsStore | None = None,
+    ui_settings: DesktopUiSettings | None = None,
 ) -> WorkbenchDesktopHandle:
-    """Create the v1.1 Home/Analysis/Figure/Export shell without entering Qt."""
+    """Create the task-first Home/Analysis/Figure/Export shell without entering Qt."""
 
     if session is not None and not isinstance(session, AnalysisSession):
         raise TypeError("session must be an AnalysisSession or None")
+    if ui_settings is not None and not isinstance(ui_settings, DesktopUiSettings):
+        raise TypeError("ui_settings must be a DesktopUiSettings or None")
     application = _qt_application(argv)
-    window = CatalysisWorkbenchWindow(session=session, recent_store=recent_store)
+    window = CatalysisWorkbenchWindow(
+        session=session,
+        recent_store=recent_store,
+        ui_settings=ui_settings,
+    )
     if root is not None:
         window.open_project_path(root)
     return WorkbenchDesktopHandle(application=application, window=window)
