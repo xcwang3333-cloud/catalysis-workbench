@@ -113,11 +113,11 @@ def main() -> None:
         assert not recovery.confirm_current_mapping()
         recovery.reload_current_preview()
         assert recovery.preview_table.columnCount() == 2
+        assert "[V]" in recovery.preview_table.horizontalHeaderItem(0).text()
+        assert "[µA]" in recovery.preview_table.horizontalHeaderItem(1).text()
         assert recovery.confirm_current_mapping() is True
         recovered = recovery.mapped_items()[0][0]
         assert recovered.mapping.encoding == "latin-1"
-        assert recovered.mapping.x_unit == "V"
-        assert recovered.mapping.y_unit == "µA"
         recovery.close()
 
         stylesheet = window.app_shell.styleSheet()
