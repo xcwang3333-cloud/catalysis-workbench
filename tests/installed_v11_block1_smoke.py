@@ -13,7 +13,7 @@ from catalysis_workbench.workspace import open_workspace
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_TREE = (ROOT / "src").resolve()
-EXPECTED_VERSION = "1.1.0.dev0"
+EXPECTED_VERSION = "1.1.0"
 
 
 def _assert_installed_import() -> None:

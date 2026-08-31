@@ -378,7 +378,7 @@ def test_run_records_only_deterministic_environment_evidence() -> None:
         {"source": _series()},
         input_identities={"source": "source-fixture-v1"},
     )
-    assert run.environment_evidence == {"catalysis_workbench_version": "1.1.0.dev0"}
+    assert run.environment_evidence == {"catalysis_workbench_version": "1.1.0"}
     assert all(
         forbidden not in run.environment_evidence
         for forbidden in ("timestamp", "duration", "host", "user", "pid", "path")

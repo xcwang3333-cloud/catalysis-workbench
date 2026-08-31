@@ -9,14 +9,14 @@ This document defines the release-maturity process for the reviewed v1.1 task-fi
 - Block-6 squash merge / Gate-A exact baseline: `c81ee2e1aa8767e1560a14c5f7f4c1209fc4b6f9`;
 - Block-6 post-merge CI: #851 — 4/4 jobs success;
 - Block-6 post-merge Stable 1.0 Readiness: #113 — 8/8 jobs success;
-- current candidate development version: `1.1.0.dev0`;
+- current Gate-B final-version candidate: `1.1.0`;
 - project license: `BSD-3-Clause`;
 - retained stable release before v1.1: `v1.0.0 -> 22b944992bfd3791f91cc951f89eb22e8bf47325`;
 - Gate-A branch: `release/v1.1.0-gate-a`.
 
 Gate A creates release-readiness evidence only. It does not finalize the version or publish any artifact.
 
-## Gate A — Stable 1.1 release hardening — in progress
+## Gate A — Stable 1.1 release hardening — complete
 
 Gate A retains `1.1.0.dev0` and owns only release validation/documentation:
 
@@ -35,20 +35,20 @@ Gate A retains `1.1.0.dev0` and owns only release validation/documentation:
 | --- | --- |
 | exact base | `c81ee2e1aa8767e1560a14c5f7f4c1209fc4b6f9` |
 | candidate version | `1.1.0.dev0` |
-| final Gate-A head | pending |
-| exact-head ordinary CI | pending |
-| exact-head Stable 1.0 Readiness | pending |
-| exact-head Stable 1.1 Readiness | pending |
-| formal release/API/packaging review | pending |
-| unresolved review threads | pending |
-| merge gate | pending |
-| squash merge / Gate-B baseline | pending |
+| final Gate-A head | `edf7c8554177e6bf25a146085633a047f0744e7a` |
+| exact-head ordinary CI | #853 — success |
+| exact-head Stable 1.0 Readiness | #115 — success |
+| exact-head Stable 1.1 Readiness | #2 — success |
+| formal release/API/packaging review | `5062533798` — clean |
+| unresolved review threads | 0 |
+| merge gate | separately authorized expected-head squash merge |
+| squash merge / Gate-B baseline | `843df51828d740405aa5365142541ed361e069cc` |
 
 Ready status never authorizes merge. Gate A must be squash-merged only after a separate explicit merge authorization and expected-head verification.
 
-## Gate B — final-version candidate
+## Gate B — final-version candidate — in progress
 
-Gate B may start only from the exact post-merge Gate-A main after all Gate-A push workflows are green.
+Gate B starts from exact post-merge Gate-A main `843df51828d740405aa5365142541ed361e069cc`. Gate-A post-merge CI #854, Stable 1.0 Readiness #116, and Stable 1.1 Readiness #3 are all green on that exact commit.
 
 Gate B owns mechanical final-version synchronization only:
 
@@ -61,6 +61,24 @@ Gate B owns mechanical final-version synchronization only:
 - no feature, scientific, dependency, schema, public-API, or runtime-semantic change.
 
 The exact Gate-B head must pass ordinary CI, Stable 1.0 Readiness, and Stable 1.1 Readiness before final review.
+
+
+### Gate B evidence
+
+| Evidence | State |
+| --- | --- |
+| exact base | `843df51828d740405aa5365142541ed361e069cc` |
+| candidate version | `1.1.0` |
+| Gate-B branch | `release/v1.1.0-gate-b` |
+| final Gate-B head | pending final documentation sync |
+| exact-head ordinary CI | pending |
+| exact-head Stable 1.0 Readiness | pending |
+| exact-head Stable 1.1 Readiness | pending |
+| formal release/API/packaging review | pending |
+| unresolved review threads | pending |
+| merge gate | pending separate authorization |
+
+Ready status never authorizes Gate B merge. Tagging remains Gate C and is not implied by a successful Gate B candidate.
 
 ## Gate C — immutable tag
 

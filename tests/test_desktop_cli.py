@@ -11,7 +11,7 @@ def test_version_path_is_qt_free(capsys) -> None:
     assert cli.main(("--version",)) == 0
     after = {name for name in sys.modules if name == "PySide6" or name.startswith("PySide6.")}
     assert after == before
-    assert capsys.readouterr().out.strip() == "CatalysisWorkbench 1.1.0.dev0"
+    assert capsys.readouterr().out.strip() == "CatalysisWorkbench 1.1.0"
 
 
 def test_cli_routes_default_and_project_to_task_first_workbench(

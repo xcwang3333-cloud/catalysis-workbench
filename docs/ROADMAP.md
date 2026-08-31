@@ -8,9 +8,9 @@ CatalysisWorkbench is developed through staged scientific and product-maturity m
 - A public GitHub Release named `CatalysisWorkbench v1.0.0` exists for the stable v1.0 line.
 - `v0.7.0` remains a retained historical stable Release/tag at `e3062fc12c794f54c7b7613875ec73608a587a59`.
 - v0.8 and v0.9 are completed development milestones without routine standalone tags/Releases.
-- the active v1.1 release-candidate development identity is `1.1.0.dev0`.
+- the active v1.1 final-version candidate identity is `1.1.0`.
 - PyPI/package-registry publication has not been performed.
-- Stable 1.1 Gate A is in progress; final `1.1.0`, the v1.1 tag, GitHub Release, installers, and any registry publication remain later verified gates.
+- Stable 1.1 Gate A is complete and merged; Gate B final-version validation is active. The v1.1 tag, GitHub Release, installers, and any registry publication remain later separately verified gates.
 
 ## v0.1–v0.4 — Core experimental analysis — historical complete
 
@@ -115,12 +115,12 @@ Block 6 explicitly does not add scientific algorithms, a new `AnalysisDocument` 
 
 ## Stable 1.1 release hardening
 
-Block 6 completed the real installed-wheel dogfooding review and was squash-merged as `c81ee2e1aa8767e1560a14c5f7f4c1209fc4b6f9`. Post-merge CI #851 and Stable 1.0 Readiness #113 both succeeded on that exact commit.
+Block 6 completed the real installed-wheel dogfooding review and was squash-merged as `c81ee2e1aa8767e1560a14c5f7f4c1209fc4b6f9`. Stable 1.1 Gate A then added the exact-wheel/cross-platform/artifact release evidence and was squash-merged as `843df51828d740405aa5365142541ed361e069cc`; post-merge CI #854, Stable 1.0 Readiness #116, and Stable 1.1 Readiness #3 all succeeded on that exact commit.
 
 The active release path is now staged:
 
-1. **Gate A — release hardening:** retain `1.1.0.dev0`, add Stable 1.1 exact-wheel audit, Linux/Windows/macOS base + desktop install checks, wheel/sdist validation, and release documentation;
-2. **Gate B — final-version candidate:** synchronize distribution/runtime/gate expectations to exact `1.1.0` without feature changes;
+1. **Gate A — release hardening: complete.** `1.1.0.dev0` was retained while Stable 1.1 exact-wheel, Linux/Windows/macOS base + desktop, wheel/sdist, and release-documentation evidence was established;
+2. **Gate B — final-version candidate: active.** Distribution/runtime/gate expectations are synchronized to exact `1.1.0` without feature changes;
 3. **Gate C — immutable tag:** create and reverse-verify `v1.1.0` only on the reviewed Gate-B release commit;
 4. **Publication:** publish the GitHub Release from the verified tag; installers and package-registry publication remain separately verified operations.
 

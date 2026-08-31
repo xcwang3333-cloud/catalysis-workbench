@@ -323,7 +323,7 @@ def test_batch_run_record_is_frozen_and_deeply_read_only() -> None:
     assert isinstance(item.input_identities, MappingProxyType)
     assert isinstance(result.environment_evidence, MappingProxyType)
     assert result.environment_evidence == {
-        "catalysis_workbench_version": "1.1.0.dev0"
+        "catalysis_workbench_version": "1.1.0"
     }
     with pytest.raises(FrozenInstanceError):
         result.error_policy = "record"  # type: ignore[misc]
