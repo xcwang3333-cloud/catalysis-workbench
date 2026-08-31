@@ -43,5 +43,5 @@ jobs:
           )
           path = Path('/tmp/v11-gate-a-bootstrap.sh')
           path.write_text(script, encoding='utf-8')
-          subprocess.run(['bash', str(path)], check=True)
+          subprocess.run(['bash', '-x', str(path)], check=True)
           PY
