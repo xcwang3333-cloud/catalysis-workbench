@@ -39,7 +39,7 @@ The v0.6 release freezes the reviewed electronic-structure and catalysis-thermod
 - Gate B / Issue #188 / PR #189 synchronized `[project].version`, runtime `__version__`, and the exact-wheel expected version to `0.6.0`; final head `4544a464ab54e13408e3db23a68acf565f764328` passed CI #453 / run `32845155122` and reviews `5018619904`, `5018620923` before squash merge/reviewed release commit `c7793b309f41d174c14534bd6d4acdacc2a57636`.
 - Gate C / Issue #192 created and reverse-verified `v0.6.0` exactly on `c7793b309f41d174c14534bd6d4acdacc2a57636`; distribution/runtime version through the tag is `0.6.0`.
 - GitHub Release tracking Issue #193 completed after the public `CatalysisWorkbench v0.6.0` Release was published from the existing tag with populated release notes.
-- `v0.5.0` remains immutable at `9400ac0044ac333d2cae228554c08d955a816a4c`; `v0.4.0` remains immutable at `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6`.
+- `v0.5.0` remains immutable at `9400ac0044ac333d2cae228554c08d955a816a4c`; `v0.4.0` remains immutable at `bb4cb26a500eb1a1ce98fdf42760d33e7d7cd6`.
 - PyPI/package-registry publication remains deferred.
 
 ## [0.5.0] - 2026-08-25
@@ -66,12 +66,12 @@ The v0.5 release freezes the reviewed XAS, structure, and basic DFT-energetics s
 - Gate B / Issue #138 / PR #139 synchronized `[project].version`, runtime `__version__`, and the exact-wheel expected version to `0.5.0`; final head `b95841ed472aff1fa4d05af7335547ee5c3cd611` passed CI #360 / run `32800514038` and reviews `5014348449`, `5014349058` before squash merge `9400ac0044ac333d2cae228554c08d955a816a4c`.
 - Post-Gate-B state synchronization #140/#141 merged before Gate C; Gate C / Issue #142 then created and reverse-verified `v0.5.0` exactly on `9400ac0044ac333d2cae228554c08d955a816a4c`.
 - GitHub Release tracking Issue #144 completed after the public `CatalysisWorkbench v0.5.0` Release was published from the existing tag with populated release notes.
-- `v0.4.0` remains immutable at `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6`.
+- `v0.4.0` remains immutable at `bb4cb26a500eb1a1ce98fdf42760d33e7d7cd6`.
 - PyPI/package-registry publication remains deferred.
 
 ## [0.4.0] - 2026-08-25
 
-The v0.4 release freezes the reviewed advanced experimental-analysis scope after Gate A release hardening and Gate B final-version validation. Tag `v0.4.0` was created on 2026-08-25 and reverse-verified to resolve exactly to release commit `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6`. The GitHub Release has been published from that existing immutable tag; package-registry/PyPI publication remains deferred.
+The v0.4 release freezes the reviewed advanced experimental-analysis scope after Gate A release hardening and Gate B final-version validation. Tag `v0.4.0` was created on 2026-08-25 and reverse-verified to resolve exactly to release commit `bb4cb26a500eb1a1ce98fdf42760d33e7d7cd6`. The GitHub Release has been published from that existing immutable tag; package-registry/PyPI publication remains deferred.
 
 ### Added
 
@@ -86,7 +86,7 @@ The v0.4 release freezes the reviewed advanced experimental-analysis scope after
 ### Changed
 
 - Gate A / Issue #103 / PR #104 hardened the frozen v0.4 scope while intentionally retaining version `0.3.0`; exact-head CI #302 / run `32758548117` and two formal release reviews passed before squash merge `ce06abc11559fa7679869fc83a59356735ce6824`.
-- Gate B / Issue #105 / PR #106 synchronized `[project].version` and runtime `__version__` to `0.4.0`; final head `ae3dc21b1a3a4e907d8c39eb85d3dbebefd8fbb4` passed CI #304 / run `32759679632` and reviews `5011014348`, `5011017132` before squash merge `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6`.
+- Gate B / Issue #105 / PR #106 synchronized `[project].version` and runtime `__version__` to `0.4.0`; final head `ae3dc21b1a3a4e907d8c39eb85d3dbebefd8fbb4` passed exact-head CI #304 / run `32759679632` and reviews `5011014348`, `5011017132` before squash merge `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6`.
 - Gate C / Issue #107 completed the separately authorized Git tag operation; `v0.4.0` resolves exactly to `bb4cb26a500eb1a1a1ce98fdf42760d33e7d7cd6` and reads distribution/runtime version `0.4.0` through the tag.
 - `v0.3.0` remains immutable at `845ac4c15d399a8816c7ba66d61ea6ec4cc11293`; neither the v0.4 Git tag nor GitHub Release publishes a package-registry artifact.
 
