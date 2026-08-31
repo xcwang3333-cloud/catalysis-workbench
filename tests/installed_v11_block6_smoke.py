@@ -18,7 +18,7 @@ def main() -> None:
     output = io.StringIO()
     with contextlib.redirect_stdout(output):
         assert cli.main(("--version",)) == 0
-    assert output.getvalue().strip() == "CatalysisWorkbench 1.1.0.dev0"
+    assert output.getvalue().strip() == "CatalysisWorkbench 1.1.0"
     assert not any(name == "PySide6" or name.startswith("PySide6.") for name in sys.modules)
 
     calls: list[Path | None] = []

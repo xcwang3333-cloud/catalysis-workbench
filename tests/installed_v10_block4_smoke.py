@@ -21,7 +21,7 @@ from catalysis_workbench.workspace.composition import (
     save_recipe_asset,
 )
 
-EXPECTED_VERSION = "1.1.0.dev0"
+EXPECTED_VERSION = "1.1.0"
 
 assert catalysis_workbench.__version__ == EXPECTED_VERSION
 

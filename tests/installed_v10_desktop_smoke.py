@@ -24,7 +24,7 @@ from catalysis_workbench.workspace.evidence import (
     record_evidence,
 )
 
-EXPECTED_VERSION = "1.1.0.dev0"
+EXPECTED_VERSION = "1.1.0"
 
 assert catalysis_workbench.__version__ == EXPECTED_VERSION
 assert not any(name == "PySide6" or name.startswith("PySide6.") for name in sys.modules)

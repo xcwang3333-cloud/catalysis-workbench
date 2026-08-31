@@ -29,8 +29,8 @@ def _assert_installed_import() -> None:
 
 def main() -> None:
     _assert_installed_import()
-    assert catalysis_workbench.__version__ == "1.1.0.dev0"
-    assert distribution_version("catalysis-workbench") == "1.1.0.dev0"
+    assert catalysis_workbench.__version__ == "1.1.0"
+    assert distribution_version("catalysis-workbench") == "1.1.0"
     assert assets.__all__ == ["import_asset"]
 
     forbidden = [
