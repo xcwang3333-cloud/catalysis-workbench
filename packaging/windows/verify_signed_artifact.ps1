@@ -3,7 +3,8 @@ param(
     [Parameter(Mandatory = $true)][string]$ExpectedFileName,
     [Parameter(Mandatory = $true)][string]$PublisherSubjectRegex,
     [string]$ExpectedSha256 = "",
-    [switch]$RequireTimestamp
+    [switch]$RequireTimestamp,
+    [switch]$AllowSelfSignedTestCertificate
 )
 
 $ErrorActionPreference = "Stop"
@@ -29,8 +30,21 @@ if ($signature.SignerCertificate.Subject -notmatch $PublisherSubjectRegex) {
     throw "Unexpected signer subject: $($signature.SignerCertificate.Subject)"
 }
 
+$isSelfSigned = $signature.SignerCertificate.Subject -eq $signature.SignerCertificate.Issuer
+if ($isSelfSigned -and -not $AllowSelfSignedTestCertificate) {
+    throw "Self-signed certificates are not accepted for publication"
+}
+
 $codeSigningOid = "1.3.6.1.5.5.7.3.3"
-$ekuOids = @($signature.SignerCertificate.EnhancedKeyUsageList | ForEach-Object { $_.ObjectId.Value })
+$ekuOids = @()
+foreach ($extension in $signature.SignerCertificate.Extensions) {
+    if ($extension.Oid.Value -eq "2.5.29.37") {
+        $eku = [System.Security.Cryptography.X509Certificates.X509EnhancedKeyUsageExtension]$extension
+        foreach ($oid in $eku.EnhancedKeyUsages) {
+            $ekuOids += $oid.Value
+        }
+    }
+}
 if ($ekuOids -notcontains $codeSigningOid) {
     throw "Signer certificate is missing the Code Signing EKU ($codeSigningOid)"
 }
@@ -67,6 +81,7 @@ $result = [ordered]@{
         subject = $signature.SignerCertificate.Subject
         issuer = $signature.SignerCertificate.Issuer
         thumbprint = $signature.SignerCertificate.Thumbprint
+        self_signed = $isSelfSigned
         not_before = $signature.SignerCertificate.NotBefore.ToUniversalTime().ToString("o")
         not_after = $signature.SignerCertificate.NotAfter.ToUniversalTime().ToString("o")
     }
