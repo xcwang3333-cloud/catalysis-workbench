@@ -405,8 +405,114 @@ QLabel#cwMappingStatus[state="confirmed"] {{
 QLabel#cwMappingStatus[state="review"] {{
     color: {palette.warning};
 }}
-QScrollArea#cwRecentScroll {{
+QWidget#cwAnalysisWorkspace,
+QWidget#cwProcessingPanel {{
+    background: transparent;
+    color: {palette.text};
+}}
+QFrame#cwAnalysisContext {{
+    border: 1px solid {palette.border};
+    border-radius: 8px;
+    background: {palette.surface};
+}}
+QLabel#cwWorkspaceFieldLabel {{
+    color: {palette.muted};
+    font-weight: 600;
+}}
+QLineEdit#cwAnalysisTitleEdit {{
+    border: 1px solid {palette.border};
+    border-radius: 6px;
+    padding: 6px 8px;
+    background: {palette.surface};
+    color: {palette.text};
+}}
+QLineEdit#cwAnalysisTitleEdit:focus {{
+    border-color: {palette.accent};
+}}
+QLabel#cwWorkspaceHelp,
+QLabel#cwInspectorHelp,
+QLabel#cwInspectorTarget {{
+    color: {palette.muted};
+}}
+QLabel#cwWorkspaceStatus,
+QLabel#cwDataState,
+QLabel#cwCanvasState,
+QLabel#cwCanvasNote,
+QLabel#cwProcessingStatus,
+QLabel#cwMappingSummary {{
+    border-radius: 6px;
+    padding: 6px 8px;
+    background: {palette.surface_alt};
+    color: {palette.muted};
+}}
+QLabel#cwWorkspaceStatus[state="dirty"],
+QLabel#cwWorkspaceStatus[state="unsaved"] {{
+    color: {palette.warning};
+}}
+QLabel#cwWorkspaceStatus[state="saved"] {{
+    color: {palette.success};
+}}
+QGroupBox#cwAnalysisPane,
+QGroupBox#cwScientificCanvas,
+QGroupBox#cwInspectorSection {{
+    border: 1px solid {palette.border};
+    border-radius: 8px;
+    margin-top: 12px;
+    padding-top: 10px;
+    background: {palette.surface};
+    color: {palette.text};
+    font-weight: 600;
+}}
+QGroupBox#cwAnalysisPane::title,
+QGroupBox#cwScientificCanvas::title,
+QGroupBox#cwInspectorSection::title {{
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 4px;
+    color: {palette.text};
+}}
+QListWidget#cwDataNavigatorList,
+QListWidget#cwInspectorPairList {{
+    border: 1px solid {palette.border};
+    border-radius: 6px;
+    background: {palette.surface};
+    color: {palette.text};
+    selection-background-color: {palette.accent_soft};
+    selection-color: {palette.text};
+}}
+QListWidget#cwDataNavigatorList::item,
+QListWidget#cwInspectorPairList::item {{
+    padding: 7px 6px;
+}}
+QLabel#cwCanvasState[state="success"],
+QLabel#cwProcessingStatus[state="success"] {{
+    color: {palette.success};
+}}
+QLabel#cwCanvasState[state="stale"],
+QLabel#cwCanvasState[state="incomplete"],
+QLabel#cwCanvasNote[state="stale"],
+QLabel#cwCanvasNote[state="incomplete"],
+QLabel#cwProcessingStatus[state="stale"],
+QLabel#cwProcessingStatus[state="incomplete"],
+QLabel#cwProcessingStatus[state="draft"] {{
+    color: {palette.warning};
+}}
+QLabel#cwCanvasState[state="error"],
+QLabel#cwCanvasNote[state="error"],
+QLabel#cwProcessingStatus[state="error"] {{
+    color: {palette.danger};
+}}
+QLabel#cwCanvasState[state="empty"],
+QLabel#cwCanvasNote[state="empty"],
+QLabel#cwProcessingStatus[state="empty"] {{
+    color: {palette.muted};
+}}
+QScrollArea#cwRecentScroll,
+QScrollArea#cwProcessingScroll {{
     border: 0;
+    background: transparent;
+}}
+QScrollArea#cwProcessingScroll > QWidget > QWidget {{
     background: transparent;
 }}
 """
