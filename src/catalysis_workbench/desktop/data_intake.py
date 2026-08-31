@@ -1,4 +1,4 @@
-"""Qt data-intake dialogs for explicit v1.1 tabular mapping."""
+"""Qt data-intake dialogs for explicit v1.2 tabular mapping."""
 
 from __future__ import annotations
 
@@ -13,11 +13,13 @@ from PySide6.QtWidgets import (
     QDialogButtonBox,
     QFormLayout,
     QGroupBox,
+    QHBoxLayout,
     QLabel,
     QLineEdit,
     QListWidget,
     QListWidgetItem,
     QPushButton,
+    QSpinBox,
     QSplitter,
     QTableWidget,
     QTableWidgetItem,
@@ -32,6 +34,8 @@ from catalysis_workbench.application import (
     source_spec_from_file,
 )
 from catalysis_workbench.io.tabular_preview import TabularPreview, inspect_tabular
+
+from .ui_foundation import SPACING
 
 
 @dataclass(slots=True)
@@ -58,7 +62,9 @@ class _ImportDraft:
 
     def mapping(self) -> TabularMappingSpec:
         if self.preview is None:
-            raise ValueError(self.preview_error or f"cannot preview {self.path.name!r}")
+            raise ValueError(
+                self.preview_error or f"cannot preview {self.path.name!r}"
+            )
         if self.x_index < 0 or self.x_index >= len(self.preview.columns):
             raise ValueError("choose a valid X column")
         if self.y_index < 0 or self.y_index >= len(self.preview.columns):
@@ -102,7 +108,9 @@ def _column_index(preview: TabularPreview, reference: str | int) -> int:
     for column in preview.columns:
         if column.name == reference:
             return column.index
-    raise ValueError(f"mapped column {reference!r} is not present in the source preview")
+    raise ValueError(
+        f"mapped column {reference!r} is not present in the source preview"
+    )
 
 
 def _initial_draft(
@@ -139,11 +147,7 @@ def _initial_draft(
         if existing is None:
             x_index = 0
             y_index = 1 if len(preview.columns) > 1 else -1
-            x_unit = (
-                preview.columns[0].inferred_unit or ""
-                if preview.columns
-                else ""
-            )
+            x_unit = preview.columns[0].inferred_unit or "" if preview.columns else ""
             y_unit = (
                 preview.columns[y_index].inferred_unit or ""
                 if y_index >= 0
@@ -207,7 +211,9 @@ class ImportDataDialog(QDialog):
         if not paths:
             raise ValueError("choose at least one data file")
         if existing_spec is not None and len(paths) != 1:
-            raise ValueError("editing an existing mapping requires exactly one source file")
+            raise ValueError(
+                "editing an existing mapping requires exactly one source file"
+            )
         self._edit_mode = existing_spec is not None
         self._drafts = [
             _initial_draft(
@@ -219,25 +225,53 @@ class ImportDataDialog(QDialog):
         ]
         self._current_index = -1
         self._loading = False
+        self.setObjectName("cwDataImportDialog")
         self.setWindowTitle("Edit data mapping" if self._edit_mode else "Import Data")
-        self.resize(1120, 700)
+        self.resize(1180, 760)
         self._build_ui()
         self.file_list.setCurrentRow(0)
         self._refresh_all_statuses()
 
     def _build_ui(self) -> None:
         root = QVBoxLayout(self)
-        intro = QLabel(
-            "Confirm which columns and scientific meanings should be used. "
-            "No scientific transformation is applied during import."
+        root.setContentsMargins(
+            SPACING.section,
+            SPACING.section,
+            SPACING.section,
+            SPACING.section,
         )
+        root.setSpacing(SPACING.normal)
+
+        title = QLabel("Review source data and mapping")
+        title.setObjectName("cwImportTitle")
+        root.addWidget(title)
+        intro = QLabel(
+            "Preview parser settings first, then explicitly map X and Y scientific "
+            "meanings. Import never transforms the scientific values."
+        )
+        intro.setObjectName("cwImportSubtitle")
         intro.setWordWrap(True)
         root.addWidget(intro)
 
+        self.file_summary = QLabel()
+        self.file_summary.setObjectName("cwImportSummary")
+        root.addWidget(self.file_summary)
+
         splitter = QSplitter(Qt.Orientation.Horizontal)
+        splitter.setObjectName("cwImportSplitter")
+
         files_box = QGroupBox("FILES")
+        files_box.setObjectName("cwImportPane")
         files_layout = QVBoxLayout(files_box)
+        files_layout.setSpacing(SPACING.compact)
+        file_help = QLabel(
+            "Select a file to review. ✓ confirmed · ⚠ needs review · ✕ invalid"
+        )
+        file_help.setObjectName("cwImportPaneHelp")
+        file_help.setWordWrap(True)
+        files_layout.addWidget(file_help)
         self.file_list = QListWidget()
+        self.file_list.setObjectName("cwImportFileList")
         self.file_list.currentRowChanged.connect(self._select_file)
         files_layout.addWidget(self.file_list, 1)
         for draft in self._drafts:
@@ -247,33 +281,77 @@ class ImportDataDialog(QDialog):
         splitter.addWidget(files_box)
 
         preview_box = QGroupBox("PREVIEW")
+        preview_box.setObjectName("cwImportPane")
         preview_layout = QVBoxLayout(preview_box)
+        preview_layout.setSpacing(SPACING.compact)
+        self.preview_meta = QLabel()
+        self.preview_meta.setObjectName("cwPreviewMeta")
+        self.preview_meta.setWordWrap(True)
+        preview_layout.addWidget(self.preview_meta)
         self.preview_status = QLabel()
+        self.preview_status.setObjectName("cwPreviewStatus")
         self.preview_status.setWordWrap(True)
         preview_layout.addWidget(self.preview_status)
         self.preview_table = QTableWidget()
-        self.preview_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.preview_table.setObjectName("cwPreviewTable")
+        self.preview_table.setEditTriggers(
+            QAbstractItemView.EditTrigger.NoEditTriggers
+        )
         self.preview_table.setAlternatingRowColors(True)
         preview_layout.addWidget(self.preview_table, 1)
         splitter.addWidget(preview_box)
 
         mapping_box = QGroupBox("MAPPING")
+        mapping_box.setObjectName("cwImportPane")
         mapping_layout = QVBoxLayout(mapping_box)
-        form = QFormLayout()
-        self.series_name = QLineEdit()
-        self.series_name.textEdited.connect(self._mapping_edited)
-        form.addRow("Series name", self.series_name)
+        mapping_layout.setSpacing(SPACING.normal)
+
+        parser_group = QGroupBox("Parser")
+        parser_group.setObjectName("cwParserGroup")
+        parser_layout = QFormLayout(parser_group)
+        parser_layout.setSpacing(SPACING.compact)
 
         self.sheet_combo = QComboBox()
         self.sheet_combo.currentIndexChanged.connect(self._sheet_changed)
-        form.addRow("Excel sheet", self.sheet_combo)
+        parser_layout.addRow("Excel sheet", self.sheet_combo)
+
         self.delimiter_edit = QLineEdit()
         self.delimiter_edit.setPlaceholderText("Detected delimiter")
         self.delimiter_edit.textEdited.connect(self._parser_edited)
-        form.addRow("Text delimiter", self.delimiter_edit)
-        self.reload_button = QPushButton("Reload preview")
+        parser_layout.addRow("Text delimiter", self.delimiter_edit)
+
+        self.header_spin = QSpinBox()
+        self.header_spin.setRange(-1, 999)
+        self.header_spin.setSpecialValueText("No header")
+        self.header_spin.setToolTip("Zero-based header row after skipped rows")
+        self.header_spin.valueChanged.connect(self._parser_edited)
+        parser_layout.addRow("Header row", self.header_spin)
+
+        self.skip_rows_spin = QSpinBox()
+        self.skip_rows_spin.setRange(0, 10000)
+        self.skip_rows_spin.valueChanged.connect(self._parser_edited)
+        parser_layout.addRow("Skip first rows", self.skip_rows_spin)
+
+        self.encoding_combo = QComboBox()
+        self.encoding_combo.setEditable(True)
+        self.encoding_combo.addItems(("utf-8", "utf-8-sig", "latin-1", "cp1252"))
+        self.encoding_combo.currentTextChanged.connect(self._parser_edited)
+        parser_layout.addRow("Text encoding", self.encoding_combo)
+
+        self.reload_button = QPushButton("Reload Preview")
+        self.reload_button.setObjectName("cwSecondaryButton")
         self.reload_button.clicked.connect(self.reload_current_preview)
-        form.addRow("", self.reload_button)
+        parser_layout.addRow("", self.reload_button)
+        mapping_layout.addWidget(parser_group)
+
+        science_group = QGroupBox("Scientific mapping")
+        science_group.setObjectName("cwScientificMappingGroup")
+        form = QFormLayout(science_group)
+        form.setSpacing(SPACING.compact)
+
+        self.series_name = QLineEdit()
+        self.series_name.textEdited.connect(self._mapping_edited)
+        form.addRow("Series name", self.series_name)
 
         self.x_column = QComboBox()
         self.x_column.currentIndexChanged.connect(self._mapping_edited)
@@ -298,32 +376,52 @@ class ImportDataDialog(QDialog):
         self.y_unit = QLineEdit()
         self.y_unit.textEdited.connect(self._mapping_edited)
         form.addRow("Y unit", self.y_unit)
-        mapping_layout.addLayout(form)
+        mapping_layout.addWidget(science_group)
 
         self.mapping_status = QLabel()
+        self.mapping_status.setObjectName("cwMappingStatus")
         self.mapping_status.setWordWrap(True)
         mapping_layout.addWidget(self.mapping_status)
+
+        action_row = QHBoxLayout()
+        action_row.setSpacing(SPACING.compact)
         self.confirm_button = QPushButton("Confirm this mapping")
+        self.confirm_button.setObjectName("cwPrimaryButton")
         self.confirm_button.clicked.connect(self.confirm_current_mapping)
-        mapping_layout.addWidget(self.confirm_button)
-        self.apply_button = QPushButton("Apply this mapping to compatible files")
+        action_row.addWidget(self.confirm_button)
+        self.apply_button = QPushButton("Apply to compatible files")
+        self.apply_button.setObjectName("cwSecondaryButton")
         self.apply_button.clicked.connect(self.apply_current_mapping_to_compatible)
         self.apply_button.setVisible(not self._edit_mode and len(self._drafts) > 1)
-        mapping_layout.addWidget(self.apply_button)
+        action_row.addWidget(self.apply_button)
+        mapping_layout.addLayout(action_row)
         mapping_layout.addStretch(1)
         splitter.addWidget(mapping_box)
-        splitter.setSizes([240, 560, 320])
+
+        splitter.setSizes([240, 600, 340])
+        splitter.setStretchFactor(0, 0)
         splitter.setStretchFactor(1, 1)
+        splitter.setStretchFactor(2, 0)
         root.addWidget(splitter, 1)
 
         self.buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+            QDialogButtonBox.StandardButton.Ok
+            | QDialogButtonBox.StandardButton.Cancel
         )
         ok_button = self.buttons.button(QDialogButtonBox.StandardButton.Ok)
+        ok_button.setObjectName("cwPrimaryButton")
         ok_button.setText("Save mapping" if self._edit_mode else "Add data")
         self.buttons.accepted.connect(self._accept_if_ready)
         self.buttons.rejected.connect(self.reject)
         root.addWidget(self.buttons)
+
+    @staticmethod
+    def _header_from_spin(value: int) -> int | None:
+        return None if value < 0 else value
+
+    @staticmethod
+    def _spin_from_header(value: int | None) -> int:
+        return -1 if value is None else value
 
     def _capture_current(self) -> None:
         if self._loading or self._current_index < 0:
@@ -345,14 +443,18 @@ class ImportDataDialog(QDialog):
         draft.x_unit = self.x_unit.text().strip()
         draft.y_unit = self.y_unit.text().strip()
         draft.x_reference = self.x_reference.text().strip()
+        draft.header = self._header_from_spin(self.header_spin.value())
+        draft.skip_rows = self.skip_rows_spin.value()
         if draft.source.source_format == "delimited_text":
-            text = self.delimiter_edit.text()
-            draft.delimiter = text if text else None
-        if (
-            draft.source.source_format == "excel"
-            and self.sheet_combo.currentIndex() >= 0
-        ):
-            draft.sheet = self.sheet_combo.currentText()
+            delimiter = self.delimiter_edit.text()
+            draft.delimiter = delimiter if delimiter else None
+            encoding = self.encoding_combo.currentText().strip()
+            draft.encoding = encoding if encoding else None
+        else:
+            draft.delimiter = None
+            draft.encoding = None
+            if self.sheet_combo.currentIndex() >= 0:
+                draft.sheet = self.sheet_combo.currentText()
         self._refresh_status(self._current_index)
 
     def _select_file(self, index: int) -> None:
@@ -364,8 +466,10 @@ class ImportDataDialog(QDialog):
     def _load_controls(self, draft: _ImportDraft) -> None:
         self._loading = True
         try:
+            is_text = draft.source.source_format == "delimited_text"
             self.series_name.setText(draft.display_name)
             self.series_name.setEnabled(not self._edit_mode)
+
             self.sheet_combo.clear()
             if draft.preview is not None:
                 self.sheet_combo.addItems(draft.preview.available_sheets)
@@ -373,11 +477,15 @@ class ImportDataDialog(QDialog):
                     position = self.sheet_combo.findText(draft.sheet)
                     if position >= 0:
                         self.sheet_combo.setCurrentIndex(position)
-            self.sheet_combo.setEnabled(draft.source.source_format == "excel")
+            self.sheet_combo.setEnabled(not is_text)
+
             self.delimiter_edit.setText(draft.delimiter or "")
-            self.delimiter_edit.setEnabled(
-                draft.source.source_format == "delimited_text"
-            )
+            self.delimiter_edit.setEnabled(is_text)
+            self.header_spin.setValue(self._spin_from_header(draft.header))
+            self.skip_rows_spin.setValue(draft.skip_rows)
+            self.encoding_combo.setCurrentText(draft.encoding or "")
+            self.encoding_combo.setEnabled(is_text)
+
             self.x_column.clear()
             self.y_column.clear()
             if draft.preview is not None:
@@ -409,9 +517,14 @@ class ImportDataDialog(QDialog):
 
     def _populate_preview_table(self, draft: _ImportDraft) -> None:
         self.preview_table.clear()
+        self.preview_meta.setText(
+            f"{draft.source.original_name} · {draft.source.file_suffix[1:].upper()} · "
+            f"{draft.source.size_bytes:,} bytes"
+        )
         if draft.preview is None:
             self.preview_table.setRowCount(0)
             self.preview_table.setColumnCount(0)
+            self.preview_status.setProperty("state", "error")
             self.preview_status.setText(draft.preview_error or "Preview unavailable")
             return
         preview = draft.preview
@@ -431,9 +544,10 @@ class ImportDataDialog(QDialog):
                     column_index,
                     QTableWidgetItem("" if value is None else value),
                 )
-        detail = f"{len(preview.rows)} preview rows"
+        detail = f"{len(preview.rows)} preview rows · {len(preview.columns)} columns"
         if preview.truncated:
-            detail += " (preview truncated)"
+            detail += " · preview truncated"
+        self.preview_status.setProperty("state", "ready")
         self.preview_status.setText(detail)
         self.preview_table.resizeColumnsToContents()
 
@@ -451,7 +565,7 @@ class ImportDataDialog(QDialog):
         draft.parser_dirty = True
         self._capture_current()
         self.mapping_status.setText(
-            "Parser changed. Reload the preview before confirming."
+            "Parser settings changed. Reload Preview before confirming this mapping."
         )
 
     def _sheet_changed(self, *args: object) -> None:
@@ -523,21 +637,40 @@ class ImportDataDialog(QDialog):
         error = self._draft_error(draft)
         item = self.file_list.item(index)
         if error is not None:
-            item.setText(f"✕ {draft.path.name}")
+            item.setText(f"✕ {draft.path.name}" if draft.preview is None else f"⚠ {draft.path.name}")
             item.setToolTip(error)
             if index == self._current_index:
+                self.mapping_status.setProperty("state", "error")
                 self.mapping_status.setText(error)
         elif draft.confirmed:
             item.setText(f"✓ {draft.path.name}")
             item.setToolTip("Mapping confirmed")
             if index == self._current_index:
+                self.mapping_status.setProperty("state", "confirmed")
                 self.mapping_status.setText("✓ Mapping confirmed")
         else:
             item.setText(f"⚠ {draft.path.name}")
             item.setToolTip("Review and confirm this mapping")
             if index == self._current_index:
+                self.mapping_status.setProperty("state", "review")
                 self.mapping_status.setText("Review and confirm this mapping.")
+        self._update_summary()
         self._update_ok_button()
+
+    def _update_summary(self) -> None:
+        total = len(self._drafts)
+        confirmed = sum(
+            draft.confirmed and self._draft_error(draft) is None
+            for draft in self._drafts
+        )
+        invalid = sum(
+            draft.preview is None or self._draft_error(draft) is not None
+            for draft in self._drafts
+        )
+        detail = f"{confirmed} of {total} mappings confirmed"
+        if invalid:
+            detail += f" · {invalid} require attention"
+        self.file_summary.setText(detail)
 
     def _refresh_all_statuses(self) -> None:
         for index in range(len(self._drafts)):
@@ -612,9 +745,7 @@ class ImportDataDialog(QDialog):
         seen: set[str] = set()
         for draft in self._drafts:
             if not draft.confirmed:
-                raise ValueError(
-                    f"mapping is not confirmed for {draft.path.name!r}"
-                )
+                raise ValueError(f"mapping is not confirmed for {draft.path.name!r}")
             spec = draft.series_spec()
             if spec.data_id in seen:
                 raise ValueError(
@@ -645,16 +776,27 @@ class SeriesPreviewDialog(QDialog):
     def __init__(self, materialized: object, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         value = materialized.value
+        self.setObjectName("cwSeriesPreviewDialog")
         self.setWindowTitle(value.label or "Data preview")
-        self.resize(720, 560)
+        self.resize(760, 600)
         root = QVBoxLayout(self)
-        root.addWidget(
-            QLabel(
-                f"{value.n_points} points · input "
-                f"{materialized.input_sha256[:12]}…"
-            )
+        root.setContentsMargins(
+            SPACING.section,
+            SPACING.section,
+            SPACING.section,
+            SPACING.section,
         )
+        root.setSpacing(SPACING.compact)
+        title = QLabel(value.label or "Mapped data")
+        title.setObjectName("cwImportTitle")
+        root.addWidget(title)
+        summary = QLabel(
+            f"{value.n_points} points · input {materialized.input_sha256[:12]}…"
+        )
+        summary.setObjectName("cwPreviewMeta")
+        root.addWidget(summary)
         table = QTableWidget()
+        table.setObjectName("cwPreviewTable")
         table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         table.setColumnCount(2)
         x_label = value.x_axis.label or value.x_axis.name
@@ -672,11 +814,11 @@ class SeriesPreviewDialog(QDialog):
         table.resizeColumnsToContents()
         root.addWidget(table, 1)
         if value.n_points > count:
-            root.addWidget(
-                QLabel(
-                    f"Showing first {count} rows; scientific data are not truncated."
-                )
+            note = QLabel(
+                f"Showing first {count} rows; scientific data are not truncated."
             )
+            note.setObjectName("cwImportSubtitle")
+            root.addWidget(note)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
         buttons.rejected.connect(self.reject)
         root.addWidget(buttons)
