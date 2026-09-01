@@ -16,10 +16,10 @@ jobs:
           python-version: "3.11"
           cache: pip
 
-      - name: Install Qt headless runtime libraries
+      - name: Install Qt headless runtime libraries and CJK fonts
         run: |
           sudo apt-get update
-          sudo apt-get install -y libegl1 libgl1 libxkbcommon-x11-0
+          sudo apt-get install -y libegl1 libgl1 libxkbcommon-x11-0 fonts-noto-cjk
 
       - name: Build wheel
         run: |
