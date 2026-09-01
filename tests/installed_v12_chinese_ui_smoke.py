@@ -15,6 +15,7 @@ def main() -> None:
     recent_module = importlib.import_module("catalysis_workbench.desktop.recent_projects")
     ui_module = importlib.import_module("catalysis_workbench.desktop.ui_foundation")
     qtcore = importlib.import_module("PySide6.QtCore")
+    qtwidgets = importlib.import_module("PySide6.QtWidgets")
 
     with tempfile.TemporaryDirectory() as directory:
         base = Path(directory)
@@ -71,6 +72,10 @@ def main() -> None:
         analysis = window.analysis_page
         assert analysis.title_edit.text() == "Untitled LSV analysis"
         assert analysis.add_files_button.text() == "+ 添加文件"
+        assert analysis.status_label.text() == "已映射 0 个序列 · 尚未保存"
+        assert analysis.view_combo.itemText(0) == "原始数据"
+        assert analysis.canvas_state_label.text() == "等待数据"
+        assert analysis.preview_note.text() == "需要输入：请添加并映射至少一个数据序列后再运行分析。"
         assert analysis.processing_panel.potential_box.title() == "电位"
         assert analysis.processing_panel.ir_box.title() == "iR 校正"
         assert analysis.processing_panel.current_box.title() == "电流密度"
@@ -80,7 +85,8 @@ def main() -> None:
         assert analysis.processing_panel.current_density_unit_combo.itemText(0) == "mA/cm^2"
         assert analysis.processing_panel.ph_edit.parent() is not None
 
-        # User-owned titles are never translated.
+        # User-owned titles are never translated. The retained default title is also
+        # document content, not a UI label, so it stays English until the user edits it.
         window.rename_analysis("Home")
         app.processEvents()
         app.processEvents()
@@ -95,7 +101,20 @@ def main() -> None:
         export = window.export_page
         assert figure.create_button.text() == "从当前结果创建图形"
         assert figure.preset_combo.itemText(0) == "publication"
+        assert figure.preview_note.text() == "从当前分析结果创建图形。"
+        assert figure.unit_format_combo.itemText(0) == "标签 (单位)"
+        assert figure.legend_combo.itemText(0) == "自动"
+        figure_labels = {
+            label.text() for label in figure.findChildren(qtwidgets.QLabel)
+        }
+        assert "显示状态" in figure_labels
+        assert "字体" in figure_labels
+        assert "线型" in figure_labels
+        assert "线宽" in figure_labels
+        assert "标记大小" in figure_labels
+
         assert export.title_label.text() == "导出图包"
+        assert export.save_project_button.text() == "保存项目"
         assert export.svg_check.text() == "SVG"
         assert export.pdf_check.text() == "PDF"
         assert export.png_check.text() == "PNG"
@@ -108,6 +127,9 @@ def main() -> None:
         assert localization.translate_ui_text("pH") == "pH"
         assert localization.translate_ui_text("mA/cm^2") == "mA/cm^2"
         assert localization.translate_ui_text("Ω") == "Ω"
+        assert localization.translate_ui_text("linear") == "linear"
+        assert localization.translate_ui_text("publication") == "publication"
+        assert localization.translate_ui_text("best") == "best"
 
         # Accessibility metadata stays stable in this focused presentation change.
         assert shell.accessibleName() == "CatalysisWorkbench application shell"
