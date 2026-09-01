@@ -49,6 +49,9 @@ _TEXT = {
     "Save": "保存",
     "Modified": "已修改",
     "Ready": "就绪",
+    "Unsaved changes": "有未保存修改",
+    "Not saved yet": "尚未保存",
+    "Saved": "已保存",
     "Unsaved analysis": "分析尚未保存",
     "Analysis current": "分析结果为最新",
     "Analysis needs valid processing state": "分析需要有效的处理参数",
@@ -124,6 +127,21 @@ _TEXT = {
     "Add data": "添加数据",
     "Detected delimiter": "自动识别分隔符",
     "Optional, e.g. RHE": "可选，例如 RHE",
+    "Preview unavailable": "预览不可用",
+    (
+        "Parser settings changed. Reload Preview before confirming this mapping."
+    ): "解析设置已更改。请重新加载预览后再确认映射。",
+    (
+        "parser settings changed; reload preview before confirming"
+    ): "解析设置已更改；请重新加载预览后再确认",
+    "preview unavailable": "预览不可用",
+    "Mapping confirmed": "映射已确认",
+    "✓ Mapping confirmed": "✓ 映射已确认",
+    "Review and confirm this mapping": "检查并确认此映射",
+    "Review and confirm this mapping.": "请检查并确认此映射。",
+    "choose a valid X column": "请选择有效的 X 列",
+    "choose a valid Y column": "请选择有效的 Y 列",
+    "X and Y columns must be different": "X 与 Y 列不能相同",
     # Analysis workspace.
     "Analysis title": "分析标题",
     "No analysis": "未打开分析",
@@ -140,9 +158,31 @@ _TEXT = {
     "No data selected.": "未选择数据。",
     "Mapped input": "已映射数据",
     "SCIENTIFIC CANVAS": "科学画布",
+    "Raw": "原始数据",
+    "Processed": "处理后",
+    "Partial current density": "分电流密度",
     "Add mapped data to begin live scientific analysis.": "添加映射数据后开始实时科学分析。",
     "Continue to Figure": "进入图形编辑",
     "PROCESSING INSPECTOR": "处理参数",
+    "Previous valid result": "上一份有效结果",
+    "Needs input": "需要输入",
+    "Analysis error": "分析错误",
+    "analysis is incomplete": "分析尚不完整",
+    "live analysis failed": "实时分析失败",
+    "Add and map at least one data series to run the analysis.":
+        "请添加并映射至少一个数据序列后再运行分析。",
+    "Add at least one explicit current ↔ FE pair.": "请至少添加一组明确的电流 ↔ FE 配对。",
+    (
+        "Mapped raw values · display sampling only for large series; "
+        "scientific data are unchanged."
+    ): "已映射原始数据 · 大数据序列仅对显示进行抽样；科学数据保持不变。",
+    (
+        "Live scientific result · FE and partial current use separate "
+        "views and no interpolation."
+    ): "实时科学结果 · FE 与分电流使用独立视图，不进行插值。",
+    (
+        "Live scientific result · committed processing settings are current."
+    ): "实时科学结果 · 当前已应用的处理参数为最新。",
     # Processing inspector. Scientific abbreviations and units remain unchanged.
     (
         "Scientific settings commit only after validation. Invalid fields stay "
@@ -180,6 +220,7 @@ _TEXT = {
     "blank = no upper bound": "留空 = 无上限",
     "Settings valid": "参数有效",
     "Ready · live analysis is current": "就绪 · 实时分析结果为最新",
+    "<none>": "<无>",
     # Figure Workbench.
     "CONTENT": "内容",
     "PUBLICATION CANVAS": "出版画布",
@@ -193,6 +234,7 @@ _TEXT = {
     "Traces": "曲线",
     "Presentation preview": "图形预览",
     "Create a figure": "创建图形",
+    "Create a figure from the current analysis result.": "从当前分析结果创建图形。",
     "Analysis changed": "分析结果已变化",
     "Current · unsaved changes": "当前 · 有未保存修改",
     "Figure current": "图形为最新",
@@ -209,10 +251,34 @@ _TEXT = {
     "X scale": "X 轴尺度",
     "Y scale": "Y 轴尺度",
     "Unit style": "单位格式",
+    "Label (unit)": "标签 (单位)",
+    "Label / unit": "标签 / 单位",
+    "Label only": "仅标签",
     "Legend": "图例",
+    "Visibility": "显示状态",
+    "Location": "位置",
+    "Show": "显示",
+    "Hide": "隐藏",
     "Typography": "字体",
+    "Font family": "字体",
+    "Axis label size": "轴标题字号",
+    "Tick size": "刻度字号",
+    "Legend size": "图例字号",
     "Selected trace": "选中曲线",
+    "Label": "标签",
+    "Color": "颜色",
+    "Choose…": "选择…",
+    "Line style": "线型",
+    "Line width": "线宽",
+    "Marker": "标记",
+    "Marker size": "标记大小",
     "Auto": "自动",
+    "Trace color": "曲线颜色",
+    "No figure draft for this result": "当前结果尚未创建图形",
+    "Analysis changed — refresh this figure": "分析结果已变化 — 请刷新图形",
+    (
+        "Publication preview · display range and styling do not modify scientific arrays."
+    ): "出版预览 · 显示范围和样式不会修改科学数据。",
     # Export.
     "Export Figure Package": "导出图包",
     (
@@ -240,10 +306,21 @@ _TEXT = {
     "Choose a new package directory": "选择新的图包目录",
     "Browse…": "浏览…",
     "○ Project saved": "○ 项目已保存",
+    "✓ Project saved and clean": "✓ 项目已保存且无未保存修改",
+    "✕ Save the project before export": "✕ 导出前请先保存项目",
     "○ Figure current": "○ 图形为最新",
+    "✓ Figure current": "✓ 图形为最新",
+    "✕ Refresh the Figure from Analysis": "✕ 请从分析结果刷新图形",
     "○ Font available": "○ 字体可用",
+    "✓ Font available": "✓ 字体可用",
+    "✕ Figure font unavailable": "✕ 图形字体不可用",
     "○ Visible traces": "○ 可见曲线",
+    "✕ At least one visible trace is required": "✕ 至少需要一条可见曲线",
     "○ Destination available": "○ 目标位置可用",
+    "✓ Destination available": "✓ 目标位置可用",
+    (
+        "✕ Destination must be a new directory with an existing parent"
+    ): "✕ 目标位置必须是位于现有父目录下的新目录",
     "Export Package": "导出图包",
     "Open Folder": "打开文件夹",
     "Export Another": "继续导出",
@@ -289,6 +366,8 @@ _PREFIXES = (
     ("Not applied: ", "未应用："),
     ("Needs input: ", "需要输入："),
     ("Error: ", "错误："),
+    ("Analysis error: ", "分析错误："),
+    ("Invalid presentation value: ", "无效的图形参数："),
     ("Package exported successfully:\n", "图包已成功导出：\n"),
     (
         "Previous valid result — current settings are not applied",
@@ -298,6 +377,15 @@ _PREFIXES = (
 
 _TRACE_RE = re.compile(r"^✓ (\d+) visible trace\(s\)$")
 _REMOVE_RE = re.compile(r"^Remove (.+) from this analysis\?$")
+_SERIES_STATUS_RE = re.compile(
+    r"^(\d+) mapped series(?: · (Unsaved changes|Not saved yet|Saved))?$"
+)
+_PREVIEW_ROWS_RE = re.compile(
+    r"^(\d+) preview rows · (\d+) columns(?: · (preview truncated))?$"
+)
+_MAPPING_COUNT_RE = re.compile(
+    r"^(\d+) of (\d+) mappings confirmed(?: · (\d+) require attention)?$"
+)
 
 
 def translate_ui_text(text: str) -> str:
@@ -308,15 +396,56 @@ def translate_ui_text(text: str) -> str:
     translated = _TEXT.get(text)
     if translated is not None:
         return translated
+
+    match = _SERIES_STATUS_RE.match(text)
+    if match is not None:
+        count, storage = match.groups()
+        result = f"已映射 {count} 个序列"
+        if storage:
+            result += f" · {_TEXT[storage]}"
+        return result
+
     match = _TRACE_RE.match(text)
     if match is not None:
         return f"✓ 可见曲线：{match.group(1)} 条"
+
+    match = _PREVIEW_ROWS_RE.match(text)
+    if match is not None:
+        rows, columns, truncated = match.groups()
+        result = f"预览 {rows} 行 · {columns} 列"
+        if truncated:
+            result += " · 预览已截断"
+        return result
+
+    match = _MAPPING_COUNT_RE.match(text)
+    if match is not None:
+        confirmed, total, attention = match.groups()
+        result = f"已确认 {confirmed}/{total} 个映射"
+        if attention:
+            result += f" · {attention} 个需要处理"
+        return result
+
     match = _REMOVE_RE.match(text)
     if match is not None:
         return f"从当前分析中移除 {match.group(1)}？"
+
+    if text in {"Figure up to date", "Figure up to date · Unsaved changes"}:
+        return (
+            "图形为最新 · 有未保存修改"
+            if "Unsaved changes" in text
+            else "图形为最新"
+        )
+
+    if "\nX: column " in text and "\nY: column " in text:
+        result = re.sub(r"\nX: column (\d+) →", r"\nX：第 \1 列 →", text)
+        result = re.sub(r"\nY: column (\d+) →", r"\nY：第 \1 列 →", result)
+        return result.replace(" · ref ", " · 参比 ")
+
     for english, chinese in _PREFIXES:
         if text.startswith(english):
-            return chinese + text[len(english) :]
+            suffix = text[len(english) :]
+            translated_suffix = _TEXT.get(suffix, suffix)
+            return chinese + translated_suffix
     return text
 
 
@@ -382,6 +511,7 @@ class ChineseUiLocalizer(QObject):
             self._localize_widget(widget)
         for action in self.window.findChildren(QAction):
             self._set_action_text(action)
+        self._localize_special_controls()
 
         shell = getattr(self.window, "app_shell", None)
         status_bar = getattr(shell, "status_bar", None)
@@ -475,6 +605,28 @@ class ChineseUiLocalizer(QObject):
         translated_tooltip = translate_ui_text(tooltip)
         if translated_tooltip != tooltip:
             widget.setToolTip(translated_tooltip)
+
+    def _localize_special_controls(self) -> None:
+        figure = getattr(self.window, "figure_page", None)
+        if figure is not None:
+            # Legend visibility is semantically backed by currentData(), including
+            # the automatic None value, so all three display labels are safe to localize.
+            legend_combo = getattr(figure, "legend_combo", None)
+            if isinstance(legend_combo, QComboBox):
+                for index in range(legend_combo.count()):
+                    text = legend_combo.itemText(index)
+                    translated = translate_ui_text(text)
+                    if translated != text:
+                        legend_combo.setItemText(index, translated)
+
+            # The empty Figure canvas is Matplotlib-rendered rather than a Qt label.
+            # Re-render only when the retained draft is absent and the placeholder
+            # itself has an exact presentation translation.
+            if getattr(figure, "draft", None) is None:
+                note = figure.preview_note.text()
+                translated_note = translate_ui_text(note)
+                if translated_note != note:
+                    figure.set_preview_message(translated_note)
 
     @staticmethod
     def _set_action_text(action: QAction) -> None:
