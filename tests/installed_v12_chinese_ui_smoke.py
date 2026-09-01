@@ -101,6 +101,7 @@ def main() -> None:
         localizer.refresh()
         figure = window.figure_page
         export = window.export_page
+        window.v12_figure_canvas_localizer.refresh()
         assert figure.create_button.text() == "从当前结果创建图形"
         assert figure.preset_combo.itemText(0) == "publication"
         assert figure.preview_note.text() == "从当前分析结果创建图形。"
@@ -114,6 +115,13 @@ def main() -> None:
         assert "线型" in figure_labels
         assert "线宽" in figure_labels
         assert "标记大小" in figure_labels
+        canvas_texts = {
+            artist.get_text()
+            for axes in figure._canvas.figure.axes
+            for artist in axes.texts
+        }
+        assert "从当前分析结果创建图形。" in canvas_texts
+        assert "Create a figure from the current analysis result." not in canvas_texts
 
         assert export.title_label.text() == "导出图包"
         assert export.save_project_button.text() == "保存项目"
