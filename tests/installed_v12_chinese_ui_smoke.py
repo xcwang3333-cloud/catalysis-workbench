@@ -75,7 +75,9 @@ def main() -> None:
         assert analysis.status_label.text() == "已映射 0 个序列 · 尚未保存"
         assert analysis.view_combo.itemText(0) == "原始数据"
         assert analysis.canvas_state_label.text() == "等待数据"
-        assert analysis.preview_note.text() == "需要输入：请添加并映射至少一个数据序列后再运行分析。"
+        assert analysis.preview_note.text() == (
+            "需要输入：请添加并映射至少一个数据序列后再运行分析。"
+        )
         assert analysis.processing_panel.potential_box.title() == "电位"
         assert analysis.processing_panel.ir_box.title() == "iR 校正"
         assert analysis.processing_panel.current_box.title() == "电流密度"
