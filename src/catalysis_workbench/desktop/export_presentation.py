@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
-from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (
+    QLabel,
+    QVBoxLayout,
+    QWidget,
+)
 
 from .ui_foundation import SPACING, refresh_widget_style
 
