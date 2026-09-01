@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from matplotlib.font_manager import FontProperties, findfont
 from PySide6.QtCore import QEvent, QObject
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget
+from matplotlib.font_manager import FontProperties, findfont
 
 
 _CANVAS_TEXT = {
