@@ -16,6 +16,12 @@ _STATE_TEXT = {
 }
 
 
+def _section_label(text: str, parent: QWidget) -> QLabel:
+    label = QLabel(text, parent)
+    label.setObjectName("cwSectionTitle")
+    return label
+
+
 def productize_export_workbench(page: QWidget) -> None:
     """Apply v1.2 Export presentation without changing package semantics."""
 
@@ -60,6 +66,14 @@ def productize_export_workbench(page: QWidget) -> None:
     ):
         group.setTitle(title)
         group.setObjectName("cwInspectorSection")
+
+    contents_label = _section_label("CONTENTS", page)
+    root.insertWidget(root.indexOf(page.figure_files_group), contents_label)
+    page.contents_section_label = contents_label
+
+    result_label = _section_label("RESULT", page)
+    root.insertWidget(root.indexOf(page.message_label), result_label)
+    page.result_section_label = result_label
 
     page.location_edit.setObjectName("cwAnalysisTitleEdit")
     page.browse_button.setObjectName("cwSecondaryButton")
