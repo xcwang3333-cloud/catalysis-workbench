@@ -10,6 +10,7 @@ from PySide6.QtWidgets import QApplication
 
 from catalysis_workbench.application import AnalysisSession, ApplicationSession
 
+from .desktop_hardening import install_desktop_hardening
 from .product_window import CatalysisWorkbenchWindow
 from .recent_projects import RecentProjectsStore
 from .ui_foundation import DesktopUiSettings
@@ -81,6 +82,7 @@ def create_workbench_desktop(
         recent_store=recent_store,
         ui_settings=ui_settings,
     )
+    window.v12_hardening = install_desktop_hardening(window)
     if root is not None:
         window.open_project_path(root)
     return WorkbenchDesktopHandle(application=application, window=window)
