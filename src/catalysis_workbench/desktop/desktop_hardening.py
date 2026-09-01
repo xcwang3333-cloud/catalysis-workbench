@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 
-from PySide6.QtCore import QEvent, QObject, QTimer, Qt
+from PySide6.QtCore import QEvent, QObject, Qt, QTimer
 from PySide6.QtGui import QAction, QActionGroup, QKeySequence
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget
 
-from .ui_foundation import ThemeMode, _DARK, _LIGHT, resolved_theme
+from .ui_foundation import _DARK, _LIGHT, ThemeMode, resolved_theme
 
 _A11Y_MARKER = "/* cw-block7-a11y:"
 _COMPACT_WIDTH = 1320
