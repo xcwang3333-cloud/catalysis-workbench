@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QFrame,
     QGroupBox,
@@ -45,7 +46,7 @@ def productize_figure_workbench(page: QWidget) -> None:
     root.setSpacing(SPACING.normal)
 
     status_label = page.status_label
-    status_label.setObjectName("cwFigureStatus")
+    status_label.setObjectName("cwWorkspaceStatus")
     for widget in _toolbar_widgets(root):
         if widget is not status_label:
             widget.setVisible(False)
@@ -62,8 +63,8 @@ def productize_figure_workbench(page: QWidget) -> None:
     if not all(isinstance(item, QGroupBox) for item in (content, canvas, properties)):
         raise TypeError("Figure Workbench panes must remain QGroupBox widgets")
 
-    content.setObjectName("cwFigureContent")
-    canvas.setObjectName("cwPublicationCanvas")
+    content.setObjectName("cwAnalysisPane")
+    canvas.setObjectName("cwScientificCanvas")
     canvas.setTitle("PUBLICATION CANVAS")
     properties.setObjectName("cwFigureProperties")
 
@@ -72,27 +73,27 @@ def productize_figure_workbench(page: QWidget) -> None:
     page.create_button.setObjectName("cwPrimaryButton")
     page.refresh_button.setObjectName("cwSecondaryButton")
     page.reset_button.setObjectName("cwTertiaryButton")
-    page.trace_list.setObjectName("cwFigureTraceList")
-    page.preview_note.setObjectName("cwFigureCanvasNote")
+    page.trace_list.setObjectName("cwDataNavigatorList")
+    page.preview_note.setObjectName("cwCanvasNote")
     page.continue_export_button.setObjectName("cwPrimaryButton")
 
     state_label = QLabel("Create a figure", canvas)
-    state_label.setObjectName("cwFigureCanvasState")
+    state_label.setObjectName("cwCanvasState")
     state_label.setProperty("state", "empty")
     page.preview_layout.insertWidget(0, state_label)
     page.canvas_state_label = state_label
 
     for group in properties.findChildren(QGroupBox):
         if group is not properties:
-            group.setObjectName("cwFigurePropertyGroup")
+            group.setObjectName("cwInspectorSection")
 
     properties.setParent(None)
     properties_scroll = QScrollArea(splitter)
-    properties_scroll.setObjectName("cwFigurePropertiesScroll")
+    properties_scroll.setObjectName("cwProcessingScroll")
     properties_scroll.setWidgetResizable(True)
     properties_scroll.setFrameShape(QFrame.Shape.NoFrame)
     properties_scroll.setHorizontalScrollBarPolicy(
-        properties_scroll.horizontalScrollBarPolicy().ScrollBarAlwaysOff
+        Qt.ScrollBarPolicy.ScrollBarAlwaysOff
     )
     properties_scroll.setWidget(properties)
     splitter.insertWidget(2, properties_scroll)
@@ -122,21 +123,29 @@ def refresh_figure_presentation_state(page: QWidget) -> None:
 
     if page.draft is None:
         state = "empty"
+        status_state = "unsaved"
         text = "Create a figure"
     elif "refresh this figure" in lowered_status or "results changed" in lowered_note:
         state = "stale"
+        status_state = "unsaved"
         text = "Analysis changed"
     elif note.startswith("Publication preview"):
-        state = "dirty" if "unsaved changes" in lowered_status else "current"
-        text = "Current · unsaved changes" if state == "dirty" else "Figure current"
+        state = "success"
+        status_state = "dirty" if "unsaved changes" in lowered_status else "saved"
+        text = (
+            "Current · unsaved changes"
+            if status_state == "dirty"
+            else "Figure current"
+        )
     else:
         state = "error"
+        status_state = "unsaved"
         text = "Preview needs attention"
 
     label.setProperty("state", state)
     label.setText(text)
     page.preview_note.setProperty("state", state)
-    page.status_label.setProperty("state", state)
+    page.status_label.setProperty("state", status_state)
     refresh_widget_style(label)
     refresh_widget_style(page.preview_note)
     refresh_widget_style(page.status_label)
