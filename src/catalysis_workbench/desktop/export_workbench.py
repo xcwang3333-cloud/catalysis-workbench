@@ -29,34 +29,50 @@ class FigurePackageExportPage(QWidget):
     export_requested = Signal(str, object)
     open_folder_requested = Signal(str)
     export_another_requested = Signal()
+    presentation_state_changed = Signal(str)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
+        self._preflight_applied = False
         self._preflight_ready = False
+        self._busy = False
+        self._presentation_state = "empty"
         self._last_package_path: str | None = None
         self._build_ui()
         self._update_export_enabled()
 
+    @property
+    def presentation_state(self) -> str:
+        """Return presentation-only export state without changing package semantics."""
+
+        return self._presentation_state
+
+    @property
+    def is_busy(self) -> bool:
+        return self._busy
+
     def _build_ui(self) -> None:
         root = QVBoxLayout(self)
+        self.root_layout = root
         toolbar = QHBoxLayout()
-        back = QPushButton("← Back to Figure")
-        back.clicked.connect(self.back_requested.emit)
-        toolbar.addWidget(back)
-        title = QLabel("EXPORT FIGURE PACKAGE")
-        toolbar.addWidget(title, 1)
+        self.toolbar_layout = toolbar
+        self.back_button = QPushButton("← Back to Figure")
+        self.back_button.clicked.connect(self.back_requested.emit)
+        toolbar.addWidget(self.back_button)
+        self.title_label = QLabel("EXPORT FIGURE PACKAGE")
+        toolbar.addWidget(self.title_label, 1)
         root.addLayout(toolbar)
 
-        summary = QGroupBox("Figure")
-        summary_form = QFormLayout(summary)
+        self.summary_group = QGroupBox("Figure")
+        summary_form = QFormLayout(self.summary_group)
         self.figure_label = QLabel("No figure")
         self.figure_status = QLabel("Not ready")
         summary_form.addRow("Result", self.figure_label)
         summary_form.addRow("Status", self.figure_status)
-        root.addWidget(summary)
+        root.addWidget(self.summary_group)
 
-        figure_files = QGroupBox("Figure files")
-        figure_layout = QHBoxLayout(figure_files)
+        self.figure_files_group = QGroupBox("Figure files")
+        figure_layout = QHBoxLayout(self.figure_files_group)
         self.svg_check = QCheckBox("SVG")
         self.pdf_check = QCheckBox("PDF")
         self.png_check = QCheckBox("PNG")
@@ -65,10 +81,10 @@ class FigurePackageExportPage(QWidget):
             checkbox.toggled.connect(self._update_export_enabled)
             figure_layout.addWidget(checkbox)
         figure_layout.addStretch(1)
-        root.addWidget(figure_files)
+        root.addWidget(self.figure_files_group)
 
-        source_files = QGroupBox("Figure source data")
-        source_layout = QHBoxLayout(source_files)
+        self.source_files_group = QGroupBox("Figure source data")
+        source_layout = QHBoxLayout(self.source_files_group)
         self.xlsx_check = QCheckBox("XLSX")
         self.txt_check = QCheckBox("TXT")
         for checkbox in (self.xlsx_check, self.txt_check):
@@ -76,21 +92,21 @@ class FigurePackageExportPage(QWidget):
             checkbox.toggled.connect(self._update_export_enabled)
             source_layout.addWidget(checkbox)
         source_layout.addStretch(1)
-        root.addWidget(source_files)
+        root.addWidget(self.source_files_group)
 
-        destination = QGroupBox("Package location")
-        destination_layout = QHBoxLayout(destination)
+        self.destination_group = QGroupBox("Package location")
+        destination_layout = QHBoxLayout(self.destination_group)
         self.location_edit = QLineEdit()
         self.location_edit.setPlaceholderText("Choose a new package directory")
         self.location_edit.textChanged.connect(self._update_export_enabled)
         destination_layout.addWidget(self.location_edit, 1)
-        browse = QPushButton("Browse…")
-        browse.clicked.connect(self.browse_requested.emit)
-        destination_layout.addWidget(browse)
-        root.addWidget(destination)
+        self.browse_button = QPushButton("Browse…")
+        self.browse_button.clicked.connect(self.browse_requested.emit)
+        destination_layout.addWidget(self.browse_button)
+        root.addWidget(self.destination_group)
 
-        preflight = QGroupBox("Preflight")
-        preflight_layout = QVBoxLayout(preflight)
+        self.preflight_group = QGroupBox("Preflight")
+        preflight_layout = QVBoxLayout(self.preflight_group)
         project_row = QHBoxLayout()
         self.project_check = QLabel("○ Project saved")
         project_row.addWidget(self.project_check, 1)
@@ -109,7 +125,7 @@ class FigurePackageExportPage(QWidget):
             self.destination_check,
         ):
             preflight_layout.addWidget(label)
-        root.addWidget(preflight)
+        root.addWidget(self.preflight_group)
 
         self.message_label = QLabel("")
         self.message_label.setWordWrap(True)
@@ -156,6 +172,16 @@ class FigurePackageExportPage(QWidget):
     def set_location(self, path: str | Path) -> None:
         self.location_edit.setText(str(path))
 
+    def set_busy(self, busy: bool) -> None:
+        """Expose synchronous export progress as presentation-only state."""
+
+        if type(busy) is not bool:
+            raise TypeError("busy must be bool")
+        if busy == self._busy:
+            return
+        self._busy = busy
+        self._update_export_enabled()
+
     def apply_preflight(
         self,
         *,
@@ -165,6 +191,7 @@ class FigurePackageExportPage(QWidget):
         font_available: bool,
         visible_trace_count: int,
     ) -> None:
+        self._preflight_applied = True
         self.figure_label.setText(figure_label)
         self.figure_status.setText("Up to date" if figure_current else "Needs attention")
         self.project_check.setText(
@@ -200,6 +227,7 @@ class FigurePackageExportPage(QWidget):
         self.message_label.setText(message)
         self._last_package_path = None
         self.success_actions.setVisible(False)
+        self._update_export_enabled()
 
     def _destination_available(self) -> bool:
         text = self.location_edit.text().strip()
@@ -222,8 +250,31 @@ class FigurePackageExportPage(QWidget):
         sources = any(checkbox.isChecked() for checkbox in (self.xlsx_check, self.txt_check))
         destination = self._destination_available()
         self.export_button.setEnabled(
-            self._preflight_ready and figures and sources and destination
+            not self._busy
+            and self._preflight_ready
+            and figures
+            and sources
+            and destination
         )
+        self._sync_presentation_state()
+
+    def _sync_presentation_state(self) -> None:
+        if self._busy:
+            state = "exporting"
+        elif self._last_package_path is not None:
+            state = "success"
+        elif self.message_label.text().strip():
+            state = "error"
+        elif not self._preflight_applied:
+            state = "empty"
+        elif self.export_button.isEnabled():
+            state = "ready"
+        else:
+            state = "blocked"
+        if state == self._presentation_state:
+            return
+        self._presentation_state = state
+        self.presentation_state_changed.emit(state)
 
     def _emit_export(self) -> None:
         try:
