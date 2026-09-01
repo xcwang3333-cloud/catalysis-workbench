@@ -10,6 +10,10 @@ from catalysis_workbench.application import (
 
 from .app_shell import AppShell
 from .export_window import CatalysisWorkbenchWindow as _V11TaskWindow
+from .figure_presentation import (
+    productize_figure_workbench,
+    refresh_figure_presentation_state,
+)
 from .recent_projects import RecentProjectsStore
 from .ui_foundation import DesktopUiSettings
 
@@ -26,6 +30,7 @@ class CatalysisWorkbenchWindow(_V11TaskWindow):
     ) -> None:
         self._v12_ui_settings = ui_settings or DesktopUiSettings()
         super().__init__(session=session, recent_store=recent_store)
+        productize_figure_workbench(self.figure_page)
 
         self.takeCentralWidget()
         self.app_shell = AppShell(
@@ -80,6 +85,7 @@ class CatalysisWorkbenchWindow(_V11TaskWindow):
 
     def _refresh_figure_workbench(self, view_id: str | None = None) -> None:
         super()._refresh_figure_workbench(view_id)
+        refresh_figure_presentation_state(self.figure_page)
         if not hasattr(self, "app_shell"):
             return
         self.app_shell.set_page_enabled(
