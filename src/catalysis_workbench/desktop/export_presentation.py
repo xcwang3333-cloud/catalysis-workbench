@@ -10,7 +10,6 @@ from PySide6.QtWidgets import (
 
 from .ui_foundation import SPACING, refresh_widget_style
 
-
 _STATE_TEXT = {
     "empty": "Waiting for export preflight",
     "ready": "Ready to export",
