@@ -190,3 +190,4 @@ jobs:
           .venv-desktop/bin/python tests/installed_v12_block2_desktop_smoke.py
           .venv-desktop/bin/python tests/installed_v12_block3_desktop_smoke.py
           .venv-desktop/bin/python tests/installed_v12_block4_desktop_smoke.py
+          .venv-desktop/bin/python tests/installed_v12_block5_desktop_smoke.py
