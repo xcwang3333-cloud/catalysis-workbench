@@ -1,0 +1,41 @@
+name: v1.2 Chinese UI Readiness
+
+on:
+  pull_request:
+
+jobs:
+  chinese-ui:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install Qt headless runtime libraries and CJK fonts
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libegl1 libgl1 libxkbcommon-x11-0 fonts-noto-cjk
+
+      - name: Build wheel
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip wheel . --no-deps --wheel-dir dist
+
+      - name: Install wheel with desktop backend
+        run: |
+          python -m venv .venv-desktop
+          .venv-desktop/bin/python -m pip install --upgrade pip
+          wheel_path="$(realpath "$(ls dist/catalysis_workbench-*.whl)")"
+          .venv-desktop/bin/python -m pip install "catalysis-workbench[desktop] @ file://${wheel_path}"
+          .venv-desktop/bin/python -m pip check
+
+      - name: Audit Chinese-first v1.2 presentation
+        env:
+          QT_QPA_PLATFORM: "offscreen"
+          MPLBACKEND: "Agg"
+        run: .venv-desktop/bin/python tests/installed_v12_chinese_ui_smoke.py

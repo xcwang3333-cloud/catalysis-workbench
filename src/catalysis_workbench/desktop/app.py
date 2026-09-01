@@ -11,6 +11,8 @@ from PySide6.QtWidgets import QApplication
 from catalysis_workbench.application import AnalysisSession, ApplicationSession
 
 from .desktop_hardening import install_desktop_hardening
+from .desktop_localization import install_chinese_localization
+from .figure_canvas_localization import install_figure_canvas_localization
 from .product_window import CatalysisWorkbenchWindow
 from .recent_projects import RecentProjectsStore
 from .ui_foundation import DesktopUiSettings
@@ -83,6 +85,8 @@ def create_workbench_desktop(
         ui_settings=ui_settings,
     )
     window.v12_hardening = install_desktop_hardening(window)
+    window.v12_localizer = install_chinese_localization(window)
+    window.v12_figure_canvas_localizer = install_figure_canvas_localization(window)
     if root is not None:
         window.open_project_path(root)
     return WorkbenchDesktopHandle(application=application, window=window)
