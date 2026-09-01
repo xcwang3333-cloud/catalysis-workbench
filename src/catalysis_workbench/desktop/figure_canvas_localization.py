@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
+from matplotlib.font_manager import FontProperties, findfont
 from PySide6.QtCore import QEvent, QObject
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget
-from matplotlib.font_manager import FontProperties, findfont
-
 
 _CANVAS_TEXT = {
     "Create a figure from the current analysis result.": "从当前分析结果创建图形。",
