@@ -12,8 +12,8 @@ import re
 from PySide6.QtCore import QEvent, QObject, QTimer
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
-    QApplication,
     QAbstractButton,
+    QApplication,
     QComboBox,
     QGroupBox,
     QLabel,
@@ -23,7 +23,6 @@ from PySide6.QtWidgets import (
     QStatusBar,
     QWidget,
 )
-
 
 _TEXT = {
     # Shell and menus.
@@ -57,8 +56,10 @@ _TEXT = {
     "Modified — save to update the project baseline": "已修改 — 保存以更新项目基线",
     # Home and New Analysis.
     "Start your analysis": "开始分析",
-    "Start a new scientific workflow or continue a recent project. A project directory is created only when you save.":
-        "开始新的科研分析，或继续最近的项目。只有保存时才会创建项目目录。",
+    (
+        "Start a new scientific workflow or continue a recent project. "
+        "A project directory is created only when you save."
+    ): "开始新的科研分析，或继续最近的项目。只有保存时才会创建项目目录。",
     "New Analysis": "新建分析",
     "Recent Projects": "最近项目",
     "Your recently opened projects will appear here.": "最近打开的项目会显示在这里。",
@@ -67,15 +68,23 @@ _TEXT = {
     "Open": "打开",
     "Remove": "移除",
     "Choose an analysis type": "选择分析类型",
-    "Select the scientific workflow that matches your data. You can add files after the analysis opens.":
-        "选择与数据匹配的科研工作流。进入分析后再添加数据文件。",
+    (
+        "Select the scientific workflow that matches your data. "
+        "You can add files after the analysis opens."
+    ): "选择与数据匹配的科研工作流。进入分析后再添加数据文件。",
     "Start Analysis": "开始分析",
-    "LSV / Polarization\nAnalyze polarization curves and electrochemical LSV data.":
-        "LSV / 极化曲线\n分析极化曲线和电化学 LSV 数据。",
-    "FE & Partial Current\nAnalyze Faradaic efficiency and product partial-current data.":
-        "FE 与分电流\n分析法拉第效率（FE）与产物分电流数据。",
-    "Generic XY Plot\nStart a general two-column or multi-series XY analysis.":
-        "通用 XY 绘图\n用于通用双列或多序列 XY 数据分析。",
+    (
+        "LSV / Polarization\n"
+        "Analyze polarization curves and electrochemical LSV data."
+    ): "LSV / 极化曲线\n分析极化曲线和电化学 LSV 数据。",
+    (
+        "FE & Partial Current\n"
+        "Analyze Faradaic efficiency and product partial-current data."
+    ): "FE 与分电流\n分析法拉第效率（FE）与产物分电流数据。",
+    (
+        "Generic XY Plot\n"
+        "Start a general two-column or multi-series XY analysis."
+    ): "通用 XY 绘图\n用于通用双列或多序列 XY 数据分析。",
     "LSV / Polarization": "LSV / 极化曲线",
     "FE & Partial Current": "FE 与分电流",
     "Generic XY Plot": "通用 XY 绘图",
@@ -83,13 +92,16 @@ _TEXT = {
     "Import Data": "导入数据",
     "Edit data mapping": "编辑数据映射",
     "Review source data and mapping": "检查源数据与映射",
-    "Preview parser settings first, then explicitly map X and Y scientific meanings. Import never transforms the scientific values.":
-        "先检查解析设置，再明确映射 X 和 Y 的科学含义。导入过程不会修改科学数值。",
+    (
+        "Preview parser settings first, then explicitly map X and Y scientific "
+        "meanings. Import never transforms the scientific values."
+    ): "先检查解析设置，再明确映射 X 和 Y 的科学含义。导入过程不会修改科学数值。",
     "FILES": "文件",
     "PREVIEW": "预览",
     "MAPPING": "映射",
-    "Select a file to review. ✓ confirmed · ⚠ needs review · ✕ invalid":
-        "选择文件进行检查。✓ 已确认 · ⚠ 待检查 · ✕ 无效",
+    (
+        "Select a file to review. ✓ confirmed · ⚠ needs review · ✕ invalid"
+    ): "选择文件进行检查。✓ 已确认 · ⚠ 待检查 · ✕ 无效",
     "Parser": "解析设置",
     "Excel sheet": "Excel 工作表",
     "Text delimiter": "文本分隔符",
@@ -117,8 +129,10 @@ _TEXT = {
     "No analysis": "未打开分析",
     "DATA NAVIGATOR": "数据导航",
     "+ Add files": "+ 添加文件",
-    "Mapped scientific inputs. Rename or drag to reorder; mapping changes remain explicit.":
-        "已映射的科研数据。可重命名或拖动排序；映射修改始终需要明确确认。",
+    (
+        "Mapped scientific inputs. Rename or drag to reorder; mapping changes "
+        "remain explicit."
+    ): "已映射的科研数据。可重命名或拖动排序；映射修改始终需要明确确认。",
     "No mapped data yet": "尚未添加映射数据",
     "Edit mapping": "编辑映射",
     "Preview data": "预览数据",
@@ -126,13 +140,14 @@ _TEXT = {
     "No data selected.": "未选择数据。",
     "Mapped input": "已映射数据",
     "SCIENTIFIC CANVAS": "科学画布",
-    "Waiting for data": "等待数据",
     "Add mapped data to begin live scientific analysis.": "添加映射数据后开始实时科学分析。",
     "Continue to Figure": "进入图形编辑",
     "PROCESSING INSPECTOR": "处理参数",
     # Processing inspector. Scientific abbreviations and units remain unchanged.
-    "Scientific settings commit only after validation. Invalid fields stay outside the document and preserve the previous valid result.":
-        "科学参数仅在验证通过后应用。无效输入不会写入项目，并会保留上一份有效结果。",
+    (
+        "Scientific settings commit only after validation. Invalid fields stay "
+        "outside the document and preserve the previous valid result."
+    ): "科学参数仅在验证通过后应用。无效输入不会写入项目，并会保留上一份有效结果。",
     "Apply to": "应用范围",
     "Override selected series": "覆盖选中序列",
     "Common settings": "通用设置",
@@ -200,8 +215,10 @@ _TEXT = {
     "Auto": "自动",
     # Export.
     "Export Figure Package": "导出图包",
-    "Validate the current publication figure, choose package contents, and export to a new directory.":
-        "检查当前出版图形，选择导出内容，并导出到新的目录。",
+    (
+        "Validate the current publication figure, choose package contents, "
+        "and export to a new directory."
+    ): "检查当前出版图形，选择导出内容，并导出到新的目录。",
     "Waiting for export preflight": "等待导出检查",
     "Ready to export": "可以导出",
     "Exporting package…": "正在导出图包…",
@@ -223,7 +240,6 @@ _TEXT = {
     "Choose a new package directory": "选择新的图包目录",
     "Browse…": "浏览…",
     "○ Project saved": "○ 项目已保存",
-    "Save Project": "保存项目",
     "○ Figure current": "○ 图形为最新",
     "○ Font available": "○ 字体可用",
     "○ Visible traces": "○ 可见曲线",
@@ -243,15 +259,20 @@ _TEXT = {
     # Common dialog decisions.
     "Save changes?": "保存修改？",
     "Save changes before leaving this analysis?": "离开当前分析前是否保存修改？",
-    "Save keeps the current edits. Discard closes without saving. Cancel keeps the current analysis open.":
-        "保存会保留当前修改；放弃将不保存并关闭；取消则继续保留当前分析。",
+    (
+        "Save keeps the current edits. Discard closes without saving. "
+        "Cancel keeps the current analysis open."
+    ): "保存会保留当前修改；放弃将不保存并关闭；取消则继续保留当前分析。",
     "Discard unapplied settings?": "放弃未应用的参数？",
-    "Current processing fields are invalid and have not been applied.": "当前处理参数无效，因此尚未应用。",
-    "Discard removes only the unapplied field values. Cancel keeps them for editing.":
-        "放弃仅移除尚未应用的输入；取消可继续编辑这些参数。",
+    (
+        "Current processing fields are invalid and have not been applied."
+    ): "当前处理参数无效，因此尚未应用。",
+    (
+        "Discard removes only the unapplied field values. "
+        "Cancel keeps them for editing."
+    ): "放弃仅移除尚未应用的输入；取消可继续编辑这些参数。",
     "Remove data?": "移除数据？",
     "The original raw file is not modified.": "原始数据文件不会被修改。",
-    "Save": "保存",
     "Discard": "放弃",
     "Cancel": "取消",
     "OK": "确定",
@@ -264,15 +285,16 @@ _TEXT = {
     "Figure preview needs attention": "图形预览需要处理",
 }
 
-
 _PREFIXES = (
     ("Not applied: ", "未应用："),
     ("Needs input: ", "需要输入："),
     ("Error: ", "错误："),
     ("Package exported successfully:\n", "图包已成功导出：\n"),
-    ("Previous valid result — current settings are not applied", "上一份有效结果 — 当前参数尚未应用"),
+    (
+        "Previous valid result — current settings are not applied",
+        "上一份有效结果 — 当前参数尚未应用",
+    ),
 )
-
 
 _TRACE_RE = re.compile(r"^✓ (\d+) visible trace\(s\)$")
 _REMOVE_RE = re.compile(r"^Remove (.+) from this analysis\?$")
@@ -361,7 +383,8 @@ class ChineseUiLocalizer(QObject):
         for action in self.window.findChildren(QAction):
             self._set_action_text(action)
 
-        status_bar = getattr(getattr(self.window, "app_shell", None), "status_bar", None)
+        shell = getattr(self.window, "app_shell", None)
+        status_bar = getattr(shell, "status_bar", None)
         if isinstance(status_bar, QStatusBar):
             message = status_bar.currentMessage()
             translated = translate_ui_text(message)
@@ -424,8 +447,8 @@ class ChineseUiLocalizer(QObject):
                 widget.setText(translated)
 
         if isinstance(widget, QLabel):
-            # Do not translate user-owned project titles or filesystem paths.
-            if widget.objectName() not in {"cwProjectTitle", "cwRecentProjectTitle", "cwPathText"}:
+            excluded = {"cwProjectTitle", "cwRecentProjectTitle", "cwPathText"}
+            if widget.objectName() not in excluded:
                 text = widget.text()
                 translated = translate_ui_text(text)
                 if translated != text:
@@ -438,8 +461,8 @@ class ChineseUiLocalizer(QObject):
                 widget.setPlaceholderText(translated)
 
         if isinstance(widget, QComboBox):
-            # Translate only display strings backed by stable itemData. Combos whose
-            # currentText is itself a scientific/serialized value stay untouched.
+            # Only localize labels backed by stable itemData. Some combos use
+            # currentText() as a scientific/serialized value and must stay English.
             for index in range(widget.count()):
                 if widget.itemData(index) is None:
                     continue
